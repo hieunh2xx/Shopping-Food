@@ -1,0 +1,110 @@
+using System;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using ShoppingFood.API.Filters;
+using ShoppingFood.Application;
+using ShoppingFood.Core.Middlewares;
+using ShoppingFood.Domain.Context;
+using ShoppingFood.Repository;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add API controllers and hook up the global Authentication & Action Audit filter
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<AuthenticationFilter>();
+}).AddNewtonsoftJson();
+
+// Add clean architecture layer service registrations
+builder.Services.AddRepositoryServices(builder.Configuration);
+builder.Services.AddApplicationServices();
+
+// Add API documentation via Swagger/OpenAPI
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new() { Title = "Shopping Food API", Version = "v1" });
+    
+    // Add Bearer Token security definition in Swagger UI
+    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+        Name = "Authorization",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
+// Configure CORS policy
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
+var app = builder.Build();
+
+// Auto-create local SQL Server database at first startup for effortless execution
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<ShoppingFoodContext>();
+        var logContext = services.GetRequiredService<LogContext>();
+        
+        // This will create the database and all tables if they do not exist
+        context.Database.EnsureCreated();
+        logContext.Database.EnsureCreated();
+        
+        Console.WriteLine("Database and tables created successfully!");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"An error occurred while creating the database: {ex.Message}");
+    }
+}
+
+// Global exception capturing middleware
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+// Configure HTTP pipeline for Swagger UI
+if (app.Environment.IsDevelopment() || true) // always enable for user demo/testing convenience
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Shopping Food API v1");
+    });
+}
+
+app.UseHttpsRedirection();
+
+app.UseCors("AllowAll");
+
+app.UseAuthorization();
+
+app.MapControllers();
+
+app.Run();
