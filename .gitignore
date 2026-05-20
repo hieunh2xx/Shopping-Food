@@ -1,12 +1,11 @@
-## Ignore Visual Studio & build outputs
-## ---------------------------------
-[Db]/
-[Dd]/
-[Bb]/bin/
-[Oo]/obj/
-[Bb]/Build/
-[Rr]/Release/
-[Dd]/Debug/
+# Build outputs
+bin/
+obj/
+[Bb]in/
+[Oo]bj/
+TestResults/
+
+# Visual Studio & IDE files
 .vs/
 .vscode/
 .idea/
@@ -22,12 +21,10 @@
 *.vssscc
 *.log
 
-## EF Core Migrations & User Secrets
-## ---------------------------------
+# EF Core & User Secrets
 appsettings.Development.json
 
-## OS generated files
-## ------------------
+# OS generated files
 .DS_Store
 .DS_Store?
 ehthumbs.db
