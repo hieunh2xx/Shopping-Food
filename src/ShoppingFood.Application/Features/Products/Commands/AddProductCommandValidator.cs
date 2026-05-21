@@ -1,0 +1,44 @@
+﻿using FluentValidation;
+using ShoppingFood.Repository.Interfaces;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace ShoppingFood.Application.Features.Products.Commands
+{
+    public class AddProductCommandValidator : AbstractValidator<AddProductCommand>
+    {
+        private readonly IProductRepository _productRepository;
+
+        public AddProductCommandValidator(IProductRepository productRepository)
+        {
+            _productRepository = productRepository;
+
+            RuleFor(p => p.ItemName)
+                .NotEmpty().WithMessage("{PropertyName} is required")
+                .NotNull()
+                .MaximumLength(100).WithMessage("{PropertyName} must not exceed 100 characters.");
+
+            RuleFor(p => p.Price)
+                .GreaterThan(0).WithMessage("{PropertyName} must be greater than 0.");
+
+            RuleFor(p => p.Category)
+                .NotEmpty().WithMessage("{PropertyName} is required");
+
+            RuleFor(p => p.RestaurantId)
+                .NotEmpty().WithMessage("{PropertyName} is required");
+           
+            RuleFor(p => p)
+                .MustAsync(BeUniqueNameInRestaurant)
+                .WithMessage("The name of this dish already exists on the restaurant's menu.");
+        }
+
+        private async Task<bool> BeUniqueNameInRestaurant(AddProductCommand command, CancellationToken cancellationToken)
+        {
+            var existingProduct = await _productRepository.GetAsync(p => 
+                p.ItemName.ToLower() == command.ItemName.ToLower() && 
+                p.RestaurantId == command.RestaurantId);
+
+            return existingProduct.Count == 0;
+        }
+    }
+}

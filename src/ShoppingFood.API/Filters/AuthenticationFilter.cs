@@ -38,7 +38,8 @@ namespace ShoppingFood.API.Filters
             if (path == "/" || 
                 path.Equals("/api/User/Login", StringComparison.OrdinalIgnoreCase) || 
                 path.Equals("/api/User/Register", StringComparison.OrdinalIgnoreCase) || 
-                path.StartsWith("/swagger", StringComparison.OrdinalIgnoreCase))
+                path.StartsWith("/swagger", StringComparison.OrdinalIgnoreCase) ||
+                (context.HttpContext.Request.Method == "GET" && path.StartsWith("/api/Product", StringComparison.OrdinalIgnoreCase)))
             {
                 await next();
                 return;
