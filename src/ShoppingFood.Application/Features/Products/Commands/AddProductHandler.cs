@@ -54,7 +54,7 @@ namespace ShoppingFood.Application.Features.Products.Commands
                 return ApiResponse.Success(productDto, "Add product successfully");
             }
             catch (Exception ex) {
-                await _unitOfWork.LogErrorAsync("AddProductHandler.Handler", ex);
+                await _unitOfWork.LogErrorAsync("AddProductHandler.Handle", ex);
                 return ApiResponse.Failure(500, $"An error occurred: {ex.Message}");
             }
         }

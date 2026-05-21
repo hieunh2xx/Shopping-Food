@@ -115,7 +115,7 @@ namespace ShoppingFood.Domain.Context
                 entity.Property(e => e.Price).HasColumnType("decimal(12,2)").IsRequired();
                 entity.Property(e => e.Category).IsRequired().HasMaxLength(50);
                 entity.Property(e => e.StockStatus).HasConversion<string>().IsRequired();
-
+                entity.Property(e => e.IsHidden).IsRequired();
                 entity.HasOne(d => d.Restaurant)
                     .WithMany()
                     .HasForeignKey(d => d.RestaurantId)

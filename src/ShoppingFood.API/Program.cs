@@ -1,5 +1,6 @@
 using System;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using ShoppingFood.API.Filters;
@@ -74,11 +75,11 @@ using (var scope = app.Services.CreateScope())
         var context = services.GetRequiredService<ShoppingFoodContext>();
         var logContext = services.GetRequiredService<LogContext>();
         
-        // This will create the database and all tables if they do not exist
-        context.Database.EnsureCreated();
-        logContext.Database.EnsureCreated();
+        // This will apply any pending migrations to the database
+        context.Database.Migrate();
+        logContext.Database.Migrate();
         
-        Console.WriteLine("Database and tables created successfully!");
+        Console.WriteLine("Database migrations applied successfully!");
     }
     catch (Exception ex)
     {
@@ -99,7 +100,7 @@ if (app.Environment.IsDevelopment() || true) // always enable for user demo/test
     });
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 app.UseCors("AllowAll");
 

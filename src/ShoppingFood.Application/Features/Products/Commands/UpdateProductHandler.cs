@@ -31,7 +31,8 @@ namespace ShoppingFood.Application.Features.Products.Commands
             {
                 var product = await _productRepository.GetByIdAsync(request.Id);
 
-                if (product == null) return ApiResponse.Failure(400, "This dish cannot be found.");
+                if (product == null) 
+                    return ApiResponse.Failure(400, "This dish cannot be found.");
 
                 _mapper.Map(request, product);
                 product.UpdatedAt = DateTime.UtcNow;
@@ -54,7 +55,7 @@ namespace ShoppingFood.Application.Features.Products.Commands
             }
             catch (Exception ex)
             {
-                await _unitOfWork.LogErrorAsync("UpdateProductHandler.Handler", ex);
+                await _unitOfWork.LogErrorAsync("UpdateProductHandler.Handle", ex);
                 return ApiResponse.Failure(500, $"An error occurred: {ex.Message}");
             }
         }

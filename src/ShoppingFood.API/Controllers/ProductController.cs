@@ -35,7 +35,18 @@ namespace ShoppingFood.API.Controllers
             var response = await _mediator.Send(new DeleteProductQuery(id));
             return Ok(response);
         }
-
+        [HttpPatch("StockStatus/{id}")]
+        public async Task<ActionResult<ApiResponse>> UpdateStockStatus(Guid id, [FromBody] UpdateProductStockCommand command)
+        {
+            var response = await _mediator.Send(command);
+            return Ok(response);
+        }
+        [HttpPatch("Visibility/{id}")]
+        public async Task<ActionResult<ApiResponse>> UpdateVisibility(Guid id, [FromBody] ToggleProductVisibilityCommand command)
+        {
+            var response = await _mediator.Send(command);
+            return Ok(response);
+        }
         [HttpGet]
         public async Task<ActionResult<ApiResponse>> Get([FromQuery] GetProductsQuery query)
         {

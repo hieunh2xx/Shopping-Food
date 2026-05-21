@@ -16,5 +16,6 @@ namespace ShoppingFood.Dto.Product
         public string? PrimaryImageUrl { get; set; }
         public List<string> Images { get; set; } = new List<string>();
         public DateTime CreatedAt { get; set; }
+        public bool IsHidden { get; set; }
     }
 }

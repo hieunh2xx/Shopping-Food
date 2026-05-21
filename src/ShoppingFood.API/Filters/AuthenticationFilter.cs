@@ -10,6 +10,7 @@ using ShoppingFood.Core.Interfaces;
 using ShoppingFood.Core.Security;
 using ShoppingFood.Domain.Context;
 using ShoppingFood.Domain.Models;
+using ShoppingFood.Domain.Enums;
 using ShoppingFood.Dto.Security;
 using ShoppingFood.Dto.User;
 
@@ -72,6 +73,19 @@ namespace ShoppingFood.API.Filters
 
             var userDto = _mapper.Map<UserDto>(user);
             context.HttpContext.User = new MyPrincipal(userDto);
+
+            // Phân quyền: CUD món ăn chỉ dành cho Seller
+            if (path.Contains("/api/Product", StringComparison.OrdinalIgnoreCase) && 
+                (context.HttpContext.Request.Method == "POST" || 
+                 context.HttpContext.Request.Method == "PUT" || 
+                 context.HttpContext.Request.Method == "DELETE" ||
+                 context.HttpContext.Request.Method == "PATCH"))
+            {
+                if (user.Profile?.Role != UserRole.Seller)
+                {
+                    throw new UnauthorizedAccessException("Only the seller has the right to perform this operation.");
+                }
+            }
 
             // Inject CurrentUserId into Commands/Queries
             foreach (var arg in context.ActionArguments.Values)

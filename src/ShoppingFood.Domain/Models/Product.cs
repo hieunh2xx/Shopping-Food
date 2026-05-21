@@ -15,7 +15,7 @@ namespace ShoppingFood.Domain.Models
         public StockStatus StockStatus { get; set; } = StockStatus.InStock;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-
+        public bool IsHidden { get; set; } = false;
         // Navigation properties
         public virtual RestaurantProfile Restaurant { get; set; } = null!;
         public virtual ICollection<ProductImage> Images { get; set; } = new List<ProductImage>();
