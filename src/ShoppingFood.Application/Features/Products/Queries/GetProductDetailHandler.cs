@@ -28,7 +28,10 @@ namespace ShoppingFood.Application.Features.Products.Queries
         {
             var products = await _productRepository.GetAsync(
                 predicate: p => p.Id == request.Id,
-                include: q => q.Include(p => p.Restaurant).Include(p => p.Images),
+                include: q => q.Include(p => p.Restaurant)
+                               .Include(p => p.Images)
+                               .Include(p => p.ProductToppings)
+                               .Include(p => p.ProductSizes),
                 disableTracking: true
             );
 

@@ -31,12 +31,16 @@ namespace ShoppingFood.Application.Features.Products.Queries
 
             if (!string.IsNullOrEmpty(request.Filter))
             {
-                predicate = p => p.ItemName.Contains(request.Filter) || p.Category.Contains(request.Filter);
+                predicate = p => p.ItemName.Contains(request.Filter) || p.Category.Title.Contains(request.Filter);
             }
 
             var products = await _productRepository.GetAsync(
                 predicate: predicate,
-                include: q => q.Include(p => p.Restaurant).Include(p => p.Images),
+                include: q => q.Include(p => p.Restaurant)
+                               .Include(p => p.Images)
+                               .Include(p => p.Category)
+                               .Include(p => p.ProductToppings)
+                               .Include(p => p.ProductSizes),
                 skip: request.Skip,
                 take: request.Take,
                 disableTracking: true

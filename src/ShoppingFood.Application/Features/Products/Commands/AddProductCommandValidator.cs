@@ -21,7 +21,7 @@ namespace ShoppingFood.Application.Features.Products.Commands
             RuleFor(p => p.Price)
                 .GreaterThan(0).WithMessage("{PropertyName} must be greater than 0.");
 
-            RuleFor(p => p.Category)
+            RuleFor(p => p.CategoryId)
                 .NotEmpty().WithMessage("{PropertyName} is required");
 
             RuleFor(p => p.RestaurantId)

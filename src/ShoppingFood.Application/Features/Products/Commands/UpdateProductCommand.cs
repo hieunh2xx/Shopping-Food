@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Domain.Enums;
+using ShoppingFood.Dto.Product;
 using System;
 using System.Collections.Generic;
 
@@ -12,8 +13,10 @@ namespace ShoppingFood.Application.Features.Products.Commands
         public string ItemName { get; set; } = string.Empty;
         public string? Description { get; set; }
         public decimal Price { get; set; }
-        public string Category { get; set; } = string.Empty;
+        public Guid CategoryId { get; set; }
         
         public List<string>? ImageUrls { get; set; }
+        public List<ProductToppingDto>? Toppings { get; set; }
+        public List<ProductSizeDto>? Sizes { get; set; }
     }
 }

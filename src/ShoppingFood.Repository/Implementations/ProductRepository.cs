@@ -46,9 +46,22 @@ namespace ShoppingFood.Repository.Implementations
         public async Task<List<string>> GetCategoriesAsync()
         {
             return await _dbContext.Set<Product>()
-                .Select(p => p.Category)
+                .Include(p => p.Category)
+                .Where(p => p.Category != null)
+                .Select(p => p.Category.Title)
                 .Distinct()
                 .ToListAsync();
+        }
+
+        public async Task<Product?> GetByIdWithDetailsAsync(Guid id)
+        {
+            return await _dbContext.Set<Product>()
+                .Include(p => p.Restaurant)
+                .Include(p => p.Category)
+                .Include(p => p.Images)
+                .Include(p => p.ProductToppings)
+                .Include(p => p.ProductSizes)
+                .FirstOrDefaultAsync(p => p.Id == id);
         }
     }
 }

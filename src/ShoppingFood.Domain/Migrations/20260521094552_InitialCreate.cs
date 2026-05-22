@@ -324,14 +324,14 @@ namespace ShoppingFood.Domain.Migrations
                 table: "CART",
                 column: "GuestUserId",
                 unique: true,
-                filter: "[guest_user_id] IS NOT NULL");
+                filter: "[GuestUserId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_CART_UserAccountId",
                 table: "CART",
                 column: "UserAccountId",
                 unique: true,
-                filter: "[user_account_id] IS NOT NULL");
+                filter: "[UserAccountId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_CART_ITEM_CartId",
@@ -400,21 +400,21 @@ namespace ShoppingFood.Domain.Migrations
                 table: "USER_ACCOUNT",
                 column: "Email",
                 unique: true,
-                filter: "[email] IS NOT NULL");
+                filter: "[Email] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_USER_ACCOUNT_Phone",
                 table: "USER_ACCOUNT",
                 column: "Phone",
                 unique: true,
-                filter: "[phone] IS NOT NULL");
+                filter: "[Phone] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_USER_ACCOUNT_UserName",
                 table: "USER_ACCOUNT",
                 column: "UserName",
                 unique: true,
-                filter: "[username] IS NOT NULL");
+                filter: "[UserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_USER_PROFILE_UserAccountId",

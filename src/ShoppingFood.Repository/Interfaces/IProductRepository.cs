@@ -7,5 +7,6 @@ namespace ShoppingFood.Repository.Interfaces
     {
         Task<IReadOnlyList<Product>> GetBestSellersAsync(int top);
         Task<List<string>> GetCategoriesAsync();
+        Task<Product?> GetByIdWithDetailsAsync(Guid id);
     }
 }

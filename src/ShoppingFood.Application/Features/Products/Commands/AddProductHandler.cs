@@ -48,6 +48,24 @@ namespace ShoppingFood.Application.Features.Products.Commands
                 }
 
                 _productRepository.Add(product);
+
+                if (product.ProductToppings != null)
+                {
+                    foreach (var t in product.ProductToppings)
+                    {
+                        if (t.Id == Guid.Empty) t.Id = Guid.NewGuid();
+                        t.ProductId = product.Id;
+                    }
+                }
+                if (product.ProductSizes != null)
+                {
+                    foreach (var s in product.ProductSizes)
+                    {
+                        if (s.Id == Guid.Empty) s.Id = Guid.NewGuid();
+                        s.ProductId = product.Id;
+                    }
+                }
+
                 await _unitOfWork.SaveChangesAsync();
 
                 var productDto = _mapper.Map<ProductDto>(product);

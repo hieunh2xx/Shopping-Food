@@ -11,13 +11,17 @@ namespace ShoppingFood.Domain.Models
         public string ItemName { get; set; } = string.Empty;
         public string? Description { get; set; }
         public decimal Price { get; set; }
-        public string Category { get; set; } = string.Empty;
+        public Guid CategoryId { get; set; }
         public StockStatus StockStatus { get; set; } = StockStatus.InStock;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
         public bool IsHidden { get; set; } = false;
+
         // Navigation properties
         public virtual RestaurantProfile Restaurant { get; set; } = null!;
+        public virtual MenuCategory Category { get; set; } = null!;
         public virtual ICollection<ProductImage> Images { get; set; } = new List<ProductImage>();
+        public virtual ICollection<ProductTopping> ProductToppings { get; set; } = new List<ProductTopping>();
+        public virtual ICollection<ProductSize> ProductSizes { get; set; } = new List<ProductSize>();
     }
 }

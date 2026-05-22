@@ -11,10 +11,13 @@ namespace ShoppingFood.Dto.Product
         public string ItemName { get; set; } = string.Empty;
         public string? Description { get; set; }
         public decimal Price { get; set; }
-        public string Category { get; set; } = string.Empty;
+        public Guid CategoryId { get; set; }
+        public string CategoryName { get; set; } = string.Empty;
         public string StockStatus { get; set; } = string.Empty;
         public string? PrimaryImageUrl { get; set; }
         public List<string> Images { get; set; } = new List<string>();
+        public List<ProductToppingDto> Toppings { get; set; } = new List<ProductToppingDto>();
+        public List<ProductSizeDto> Sizes { get; set; } = new List<ProductSizeDto>();
         public DateTime CreatedAt { get; set; }
         public bool IsHidden { get; set; }
     }

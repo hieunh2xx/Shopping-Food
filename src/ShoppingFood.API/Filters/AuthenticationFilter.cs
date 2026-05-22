@@ -87,6 +87,17 @@ namespace ShoppingFood.API.Filters
                 }
             }
 
+            if(path.Contains("/api/MenuCategory", StringComparison.OrdinalIgnoreCase) &&
+               ( context.HttpContext.Request.Method == "POST" ||
+                 context.HttpContext.Request.Method == "PUT" ||
+                 context.HttpContext.Request.Method == "DELETE" ||
+                 context.HttpContext.Request.Method == "PATCH"))
+            {
+                if (user.Profile?.Role != UserRole.Seller)
+                {
+                    throw new UnauthorizedAccessException("Only the seller has the right to perform this operation.");
+                }
+            }
             // Inject CurrentUserId into Commands/Queries
             foreach (var arg in context.ActionArguments.Values)
             {

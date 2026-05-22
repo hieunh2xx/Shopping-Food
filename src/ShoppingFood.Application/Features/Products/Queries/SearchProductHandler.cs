@@ -34,7 +34,7 @@ namespace ShoppingFood.Application.Features.Products.Queries
                 (!hasFilter || (
                     p.ItemName.ToLower().Contains(filter!) ||
                     (p.Description != null && p.Description.ToLower().Contains(filter!)) ||
-                    p.Category.ToLower().Contains(filter!) ||
+                    p.Category.Title.ToLower().Contains(filter!) ||
                     p.Restaurant.RestaurantName.ToLower().Contains(filter!)
                 )) &&
                 (!request.MinPrice.HasValue || p.Price >= request.MinPrice.Value) &&
@@ -61,7 +61,7 @@ namespace ShoppingFood.Application.Features.Products.Queries
             var products = await _productRepository.GetAsync(
                 predicate: predicate,
                 orderBy: orderBy,
-                include: q => q.Include(p => p.Restaurant).Include(p => p.Images),
+                include: q => q.Include(p => p.Restaurant).Include(p => p.Images).Include(p => p.Category),
                 skip: request.Skip,
                 take: request.Take,
                 disableTracking: true

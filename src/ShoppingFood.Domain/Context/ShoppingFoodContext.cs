@@ -15,6 +15,7 @@ namespace ShoppingFood.Domain.Context
         public DbSet<RestaurantProfile> RestaurantProfiles { get; set; } = null!;
         public DbSet<Product> Products { get; set; } = null!;
         public DbSet<ProductImage> ProductImages { get; set; } = null!;
+        public DbSet<MenuCategory> MenuCategories { get; set; } = null!;
         public DbSet<GuestUser> GuestUsers { get; set; } = null!;
         public DbSet<Cart> Carts { get; set; } = null!;
         public DbSet<CartItem> CartItems { get; set; } = null!;
@@ -22,6 +23,8 @@ namespace ShoppingFood.Domain.Context
         public DbSet<OrderItem> OrderItems { get; set; } = null!;
         public DbSet<OtpRecord> OtpRecords { get; set; } = null!;
 
+        public DbSet<ProductTopping> ProductToppings { get; set; } = null!;
+        public DbSet<ProductSize> ProductSizes { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -106,6 +109,21 @@ namespace ShoppingFood.Domain.Context
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
+            // MenuCategory Entity
+            modelBuilder.Entity<MenuCategory>(entity =>
+            {
+                entity.ToTable("MENU_CATEGORY");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Title).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Description).HasMaxLength(255);
+                entity.Property(e => e.SortOrder).IsRequired();
+
+                entity.HasOne(d => d.Restaurant)
+                    .WithMany()
+                    .HasForeignKey(d => d.RestaurantId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
             // Product Entity
             modelBuilder.Entity<Product>(entity =>
             {
@@ -113,13 +131,18 @@ namespace ShoppingFood.Domain.Context
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.ItemName).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.Price).HasColumnType("decimal(12,2)").IsRequired();
-                entity.Property(e => e.Category).IsRequired().HasMaxLength(50);
                 entity.Property(e => e.StockStatus).HasConversion<string>().IsRequired();
                 entity.Property(e => e.IsHidden).IsRequired();
+
                 entity.HasOne(d => d.Restaurant)
                     .WithMany()
                     .HasForeignKey(d => d.RestaurantId)
                     .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(d => d.Category)
+                    .WithMany(c => c.Products)
+                    .HasForeignKey(d => d.CategoryId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             // ProductImage Entity
@@ -236,6 +259,36 @@ namespace ShoppingFood.Domain.Context
                 entity.Property(e => e.EmailOrPhone).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.OtpCode).IsRequired().HasMaxLength(6);
                 entity.Property(e => e.IpAddress).IsRequired().HasMaxLength(45);
+            });
+            // ProductTopping Entity
+            modelBuilder.Entity<ProductTopping>(entity =>
+            {
+                entity.ToTable("PRODUCT_TOPPING");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.ToppingName).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Price).HasColumnType("decimal(12,2)").IsRequired();
+                entity.Property(e => e.ImageUrl).HasMaxLength(255);
+                entity.Property(e => e.IsAvailable).IsRequired();
+
+                entity.HasOne(d => d.Product)
+                    .WithMany(p => p.ProductToppings)
+                    .HasForeignKey(d => d.ProductId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // ProductSize Entity
+            modelBuilder.Entity<ProductSize>(entity =>
+            {
+                entity.ToTable("PRODUCT_SIZE");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.SizeName).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.ExtraPrice).HasColumnType("decimal(12,2)").IsRequired();
+                entity.Property(e => e.IsDefault).IsRequired();
+
+                entity.HasOne(d => d.Product)
+                    .WithMany(p => p.ProductSizes)
+                    .HasForeignKey(d => d.ProductId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }

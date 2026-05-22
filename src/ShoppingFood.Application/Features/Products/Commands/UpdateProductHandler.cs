@@ -29,7 +29,7 @@ namespace ShoppingFood.Application.Features.Products.Commands
         {
             try
             {
-                var product = await _productRepository.GetByIdAsync(request.Id);
+                var product = await _productRepository.GetByIdWithDetailsAsync(request.Id);
 
                 if (product == null) 
                     return ApiResponse.Failure(400, "This dish cannot be found.");
@@ -44,10 +44,37 @@ namespace ShoppingFood.Application.Features.Products.Commands
                     {
                         product.Images.Add(new ProductImage
                         {
+                            Id = Guid.NewGuid(),
+                            ProductId = product.Id,
                             ImageUrl = url
                         });
                     }
                 }
+
+                if (request.Toppings != null)
+                {
+                    product.ProductToppings.Clear();
+                    foreach (var toppingDto in request.Toppings)
+                    {
+                        var topping = _mapper.Map<ProductTopping>(toppingDto);
+                        topping.Id = topping.Id == Guid.Empty ? Guid.NewGuid() : topping.Id;
+                        topping.ProductId = product.Id;
+                        product.ProductToppings.Add(topping);
+                    }
+                }
+
+                if (request.Sizes != null)
+                {
+                    product.ProductSizes.Clear();
+                    foreach (var sizeDto in request.Sizes)
+                    {
+                        var size = _mapper.Map<ProductSize>(sizeDto);
+                        size.Id = size.Id == Guid.Empty ? Guid.NewGuid() : size.Id;
+                        size.ProductId = product.Id;
+                        product.ProductSizes.Add(size);
+                    }
+                }
+
                 _productRepository.Update(product);
                 await _unitOfWork.SaveChangesAsync();
                 var productDto = _mapper.Map<ProductDto>(product);
