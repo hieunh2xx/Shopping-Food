@@ -33,6 +33,13 @@ namespace ShoppingFood.API.Controllers
             return Ok(response);
         }
 
+        [HttpPost("RegisterSeller")]
+        public async Task<ActionResult<ApiResponse>> RegisterSeller([FromBody] AddSellerCommand command)
+        {
+            var response = await _mediator.Send(command);
+            return Ok(response);
+        }
+
         [HttpGet]
         public async Task<ActionResult<ApiResponse>> Get([FromQuery] GetUserQuery query)
         {

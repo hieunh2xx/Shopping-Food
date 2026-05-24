@@ -287,6 +287,12 @@ namespace ShoppingFood.Domain.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<TimeSpan?>("AvailableFrom")
+                        .HasColumnType("time");
+
+                    b.Property<TimeSpan?>("AvailableTo")
+                        .HasColumnType("time");
+
                     b.Property<Guid>("CategoryId")
                         .HasColumnType("uniqueidentifier");
 
@@ -295,6 +301,9 @@ namespace ShoppingFood.Domain.Migrations
 
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsFreeship")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsHidden")
                         .HasColumnType("bit");
@@ -309,6 +318,10 @@ namespace ShoppingFood.Domain.Migrations
 
                     b.Property<Guid>("RestaurantId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("StockStatus")
                         .IsRequired()
@@ -351,6 +364,37 @@ namespace ShoppingFood.Domain.Migrations
                     b.HasIndex("ProductId");
 
                     b.ToTable("PRODUCT_IMAGE", (string)null);
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.ProductReview", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Rating")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("UserProfileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("UserProfileId");
+
+                    b.ToTable("PRODUCT_REVIEW", (string)null);
                 });
 
             modelBuilder.Entity("ShoppingFood.Domain.Models.ProductSize", b =>
@@ -429,9 +473,15 @@ namespace ShoppingFood.Domain.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("float");
+
                     b.Property<string>("LogoUrl")
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
+
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("float");
 
                     b.Property<Guid>("OwnerId")
                         .HasColumnType("uniqueidentifier");
@@ -726,6 +776,25 @@ namespace ShoppingFood.Domain.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("ShoppingFood.Domain.Models.ProductReview", b =>
+                {
+                    b.HasOne("ShoppingFood.Domain.Models.Product", "Product")
+                        .WithMany("Reviews")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ShoppingFood.Domain.Models.UserProfile", "UserProfile")
+                        .WithMany()
+                        .HasForeignKey("UserProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+
+                    b.Navigation("UserProfile");
+                });
+
             modelBuilder.Entity("ShoppingFood.Domain.Models.ProductSize", b =>
                 {
                     b.HasOne("ShoppingFood.Domain.Models.Product", "Product")
@@ -818,6 +887,8 @@ namespace ShoppingFood.Domain.Migrations
                     b.Navigation("ProductSizes");
 
                     b.Navigation("ProductToppings");
+
+                    b.Navigation("Reviews");
                 });
 
             modelBuilder.Entity("ShoppingFood.Domain.Models.SellerApplication", b =>

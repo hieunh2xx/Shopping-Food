@@ -1,8 +1,9 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
 using ShoppingFood.Domain.Models;
+using ShoppingFood.Domain.Enums;
 using ShoppingFood.Dto.Product;
 using ShoppingFood.Repository.Interfaces;
 using System;
@@ -33,6 +34,7 @@ namespace ShoppingFood.Application.Features.Products.Commands
                 if(product.Id == Guid.Empty) product.Id = Guid.NewGuid();
                 product.CreatedAt = DateTime.UtcNow;
                 product.UpdatedAt = DateTime.UtcNow;
+                product.Status = ProductStatus.Pending;
                 if (request.ImageUrls != null && request.ImageUrls.Count > 0)
                 {
                     product.Images = new List<ProductImage>();
@@ -46,9 +48,9 @@ namespace ShoppingFood.Application.Features.Products.Commands
                         });
                     }
                 }
-
+                
                 _productRepository.Add(product);
-
+            
                 if (product.ProductToppings != null)
                 {
                     foreach (var t in product.ProductToppings)

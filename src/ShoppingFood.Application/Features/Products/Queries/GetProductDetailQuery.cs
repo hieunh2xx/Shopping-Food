@@ -4,9 +4,9 @@ using ShoppingFood.Core.Base;
 
 namespace ShoppingFood.Application.Features.Products.Queries
 {
-    public class GetProductDetailQuery : IRequest<ApiResponse>
+    public class GetProductDetailQuery : BaseQuery, IRequest<ApiResponse>
     {
-        public Guid Id { get; }
+        public Guid Id { get; set; }
 
         public GetProductDetailQuery(Guid id)
         {

@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ShoppingFood.Application.Features.MenuCategories.Commands
+namespace ShoppingFood.Application.Features.Products.Menu.Commands
 {
     public class AddMenuCategoryCommand : BaseCommand, IRequest<ApiResponse>
     {

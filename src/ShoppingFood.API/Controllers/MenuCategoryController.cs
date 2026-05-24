@@ -1,6 +1,6 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using ShoppingFood.Application.Features.MenuCategories.Commands;
+using ShoppingFood.Application.Features.Products.Menu.Commands;
 using ShoppingFood.Core.Base;
 using System.Threading.Tasks;
 

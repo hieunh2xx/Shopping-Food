@@ -5,7 +5,7 @@ using ShoppingFood.Dto.User;
 using ShoppingFood.Dto.Product;
 using ShoppingFood.Application.Features.Users.Commands;
 using ShoppingFood.Application.Features.Products.Commands;
-using ShoppingFood.Application.Features.MenuCategories.Commands;
+using ShoppingFood.Application.Features.Products.Menu.Commands;
 
 namespace ShoppingFood.Application.Mappings
 {
@@ -40,7 +40,16 @@ namespace ShoppingFood.Application.Mappings
                 .ForMember(dest => dest.PrimaryImageUrl, opt => opt.MapFrom(src => src.Images != null && src.Images.Any() ? src.Images.First().ImageUrl : null))
                 .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.Images != null ? src.Images.Select(i => i.ImageUrl).ToList() : new System.Collections.Generic.List<string>()))
                 .ForMember(dest => dest.Toppings, opt => opt.MapFrom(src => src.ProductToppings))
-                .ForMember(dest => dest.Sizes, opt => opt.MapFrom(src => src.ProductSizes));
+                .ForMember(dest => dest.Sizes, opt => opt.MapFrom(src => src.ProductSizes))
+                .ForMember(dest => dest.AverageRating, opt => opt.MapFrom(src => src.Reviews != null && src.Reviews.Any() ? src.Reviews.Average(r => r.Rating) : 0.0))
+                .ForMember(dest => dest.ReviewCount, opt => opt.MapFrom(src => src.Reviews != null ? src.Reviews.Count : 0))
+                .ForMember(dest => dest.IsFreeship, opt => opt.MapFrom(src => src.IsFreeship))
+                .ForMember(dest => dest.AvailableFrom, opt => opt.MapFrom(src => src.AvailableFrom.HasValue ? src.AvailableFrom.Value.ToString(@"hh\:mm") : null))
+                .ForMember(dest => dest.AvailableTo, opt => opt.MapFrom(src => src.AvailableTo.HasValue ? src.AvailableTo.Value.ToString(@"hh\:mm") : null))
+                .ForMember(dest => dest.IsAvailableNow, opt => opt.MapFrom(src => 
+                (!src.AvailableFrom.HasValue || !src.AvailableTo.HasValue) || 
+                (DateTime.UtcNow.TimeOfDay >= src.AvailableFrom.Value && DateTime.UtcNow.TimeOfDay <= src.AvailableTo.Value)))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
 
             CreateMap<ProductTopping, ProductToppingDto>().ReverseMap();
             CreateMap<ProductSize, ProductSizeDto>().ReverseMap();

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -9,6 +9,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Domain.Models;
+using ShoppingFood.Domain.Enums;
 using ShoppingFood.Dto.Product;
 using ShoppingFood.Repository.Interfaces;
 
@@ -17,11 +18,16 @@ namespace ShoppingFood.Application.Features.Products.Queries
     public class SearchProductHandler : IRequestHandler<SearchProductQuery, ApiResponse>
     {
         private readonly IProductRepository _productRepository;
+        private readonly IUserRepository _userRepository;
         private readonly IMapper _mapper;
 
-        public SearchProductHandler(IProductRepository productRepository, IMapper mapper)
+        public SearchProductHandler(
+            IProductRepository productRepository,
+            IUserRepository userRepository,
+            IMapper mapper)
         {
             _productRepository = productRepository;
+            _userRepository = userRepository;
             _mapper = mapper;
         }
 
@@ -30,7 +36,38 @@ namespace ShoppingFood.Application.Features.Products.Queries
             var filter = request.Filter?.ToLower();
             var hasFilter = !string.IsNullOrEmpty(filter);
 
+            double? latMin = null;
+            double? latMax = null;
+            double? lonMin = null;
+            double? lonMax = null;
+
+            if (request.UserLatitude.HasValue && request.UserLongitude.HasValue && request.MaxDistanceInKm.HasValue)
+            {
+                var userLat = request.UserLatitude.Value;
+                var userLon = request.UserLongitude.Value;
+                var maxDist = request.MaxDistanceInKm.Value;
+
+                var latDiff = maxDist / 111.0;
+                latMin = userLat - latDiff;
+                latMax = userLat + latDiff;
+
+                var lonDiff = maxDist / (111.0 * Math.Cos(userLat * Math.PI / 180.0));
+                lonMin = userLon - lonDiff;
+                lonMax = userLon + lonDiff;
+            }
+
+            Guid? userProfileId = null;
+            if (request.CurrentUserId.HasValue)
+            {
+                var users = await _userRepository.GetAsync(
+                    predicate: u => u.Id == request.CurrentUserId.Value,
+                    include: q => q.Include(u => u.Profile)
+                );
+                userProfileId = users.FirstOrDefault()?.Profile?.Id;
+            }
+
             Expression<Func<Product, bool>> predicate = p =>
+                (p.Status == ProductStatus.Approved || (userProfileId != null && p.Restaurant.OwnerId == userProfileId)) &&
                 (!hasFilter || (
                     p.ItemName.ToLower().Contains(filter!) ||
                     (p.Description != null && p.Description.ToLower().Contains(filter!)) ||
@@ -39,7 +76,14 @@ namespace ShoppingFood.Application.Features.Products.Queries
                 )) &&
                 (!request.MinPrice.HasValue || p.Price >= request.MinPrice.Value) &&
                 (!request.MaxPrice.HasValue || p.Price <= request.MaxPrice.Value) &&
-                (!request.RestaurantId.HasValue || p.RestaurantId == request.RestaurantId.Value);
+                (!request.RestaurantId.HasValue || p.RestaurantId == request.RestaurantId.Value) &&
+                (!request.MinRating.HasValue || (p.Reviews.Any() && p.Reviews.Average(r => r.Rating) >= request.MinRating.Value)) &&
+                (!request.IsFreeship.HasValue || p.IsFreeship == request.IsFreeship.Value) &&
+                (!latMin.HasValue || !latMax.HasValue || !lonMin.HasValue || !lonMax.HasValue || (
+                    p.Restaurant.Latitude.HasValue && p.Restaurant.Longitude.HasValue &&
+                    p.Restaurant.Latitude.Value >= latMin.Value && p.Restaurant.Latitude.Value <= latMax.Value &&
+                    p.Restaurant.Longitude.Value >= lonMin.Value && p.Restaurant.Longitude.Value <= lonMax.Value
+                ));
 
             Func<IQueryable<Product>, IOrderedQueryable<Product>>? orderBy = null;
             if (!string.IsNullOrEmpty(request.SortBy))
@@ -61,7 +105,7 @@ namespace ShoppingFood.Application.Features.Products.Queries
             var products = await _productRepository.GetAsync(
                 predicate: predicate,
                 orderBy: orderBy,
-                include: q => q.Include(p => p.Restaurant).Include(p => p.Images).Include(p => p.Category),
+                include: q => q.Include(p => p.Restaurant).Include(p => p.Images).Include(p => p.Category).Include(p => p.Reviews),
                 skip: request.Skip,
                 take: request.Take,
                 disableTracking: true

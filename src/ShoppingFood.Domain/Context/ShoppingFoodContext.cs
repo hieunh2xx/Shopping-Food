@@ -25,6 +25,7 @@ namespace ShoppingFood.Domain.Context
 
         public DbSet<ProductTopping> ProductToppings { get; set; } = null!;
         public DbSet<ProductSize> ProductSizes { get; set; } = null!;
+        public DbSet<ProductReview> ProductReviews { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -97,6 +98,8 @@ namespace ShoppingFood.Domain.Context
                 entity.Property(e => e.Email).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.LogoUrl).HasMaxLength(255);
                 entity.Property(e => e.Status).HasConversion<string>().IsRequired();
+                entity.Property(e => e.Latitude);
+                entity.Property(e => e.Longitude);
 
                 entity.HasOne(d => d.SellerApplication)
                     .WithOne(p => p.RestaurantProfile)
@@ -133,6 +136,10 @@ namespace ShoppingFood.Domain.Context
                 entity.Property(e => e.Price).HasColumnType("decimal(12,2)").IsRequired();
                 entity.Property(e => e.StockStatus).HasConversion<string>().IsRequired();
                 entity.Property(e => e.IsHidden).IsRequired();
+                entity.Property(e => e.IsFreeship).IsRequired();
+                entity.Property(e => e.AvailableFrom);
+                entity.Property(e => e.AvailableTo);
+                entity.Property(e => e.Status).HasConversion<string>().IsRequired();
 
                 entity.HasOne(d => d.Restaurant)
                     .WithMany()
@@ -288,6 +295,25 @@ namespace ShoppingFood.Domain.Context
                 entity.HasOne(d => d.Product)
                     .WithMany(p => p.ProductSizes)
                     .HasForeignKey(d => d.ProductId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<ProductReview>(entity =>
+            {
+                entity.ToTable("PRODUCT_REVIEW");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Rating).IsRequired();
+                entity.Property(e => e.Comment).HasMaxLength(1000);
+                entity.Property(e => e.CreatedAt).IsRequired();
+
+                entity.HasOne(d => d.Product)
+                    .WithMany(p => p.Reviews)
+                    .HasForeignKey(d => d.ProductId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(d => d.UserProfile)
+                    .WithMany()
+                    .HasForeignKey(d => d.UserProfileId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
         }

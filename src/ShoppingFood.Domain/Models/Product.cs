@@ -16,6 +16,10 @@ namespace ShoppingFood.Domain.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
         public bool IsHidden { get; set; } = false;
+        public bool IsFreeship { get; set; } = false;
+        public TimeSpan? AvailableFrom {get; set;}
+        public TimeSpan? AvailableTo {get; set;}
+        public ProductStatus Status { get; set; } = ProductStatus.Pending;
 
         // Navigation properties
         public virtual RestaurantProfile Restaurant { get; set; } = null!;
@@ -23,5 +27,6 @@ namespace ShoppingFood.Domain.Models
         public virtual ICollection<ProductImage> Images { get; set; } = new List<ProductImage>();
         public virtual ICollection<ProductTopping> ProductToppings { get; set; } = new List<ProductTopping>();
         public virtual ICollection<ProductSize> ProductSizes { get; set; } = new List<ProductSize>();
+        public virtual ICollection<ProductReview> Reviews { get; set; } = new List<ProductReview>();
     }
 }

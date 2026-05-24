@@ -5,5 +5,6 @@ namespace ShoppingFood.Application.Features.Products.Queries
 {
     public class GetProductsQuery : BaseQuery, IRequest<ApiResponse>
     {
+        public Guid? CategoryId { get; set; }
     }
 }

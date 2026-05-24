@@ -20,5 +20,12 @@ namespace ShoppingFood.Dto.Product
         public List<ProductSizeDto> Sizes { get; set; } = new List<ProductSizeDto>();
         public DateTime CreatedAt { get; set; }
         public bool IsHidden { get; set; }
+        public double AverageRating { get; set; }
+        public int ReviewCount { get; set; }
+        public bool IsFreeship { get; set; }
+        public string? AvailableFrom { get; set; }
+        public string? AvailableTo { get; set; }
+        public bool IsAvailableNow { get; set; }
+        public string Status { get; set; } = string.Empty;
     }
 }

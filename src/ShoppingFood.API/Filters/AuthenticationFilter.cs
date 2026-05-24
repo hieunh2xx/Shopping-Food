@@ -39,6 +39,7 @@ namespace ShoppingFood.API.Filters
             if (path == "/" || 
                 path.Equals("/api/User/Login", StringComparison.OrdinalIgnoreCase) || 
                 path.Equals("/api/User/Register", StringComparison.OrdinalIgnoreCase) || 
+                path.Equals("/api/User/RegisterSeller", StringComparison.OrdinalIgnoreCase) || 
                 path.StartsWith("/swagger", StringComparison.OrdinalIgnoreCase) ||
                 (context.HttpContext.Request.Method == "GET" && path.StartsWith("/api/Product", StringComparison.OrdinalIgnoreCase)))
             {
@@ -96,6 +97,12 @@ namespace ShoppingFood.API.Filters
                 if (user.Profile?.Role != UserRole.Seller)
                 {
                     throw new UnauthorizedAccessException("Only the seller has the right to perform this operation.");
+                }
+            }
+            if(path.Contains("/api/Admin", StringComparison.OrdinalIgnoreCase)){
+                if(user.Profile?.Role != UserRole.Admin)
+                {
+                    throw new UnauthorizedAccessException("Only the admin has the right to perform this operation");
                 }
             }
             // Inject CurrentUserId into Commands/Queries

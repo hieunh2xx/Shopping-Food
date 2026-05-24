@@ -81,5 +81,13 @@ namespace ShoppingFood.API.Controllers
             var response = await _mediator.Send(new GetCategoriesQuery());
             return Ok(response);
         }
+        
+        [HttpPatch("TimeAvailability/{id}")]
+        public async Task<ActionResult<ApiResponse>> UpdateAvailability(Guid id, [FromBody] UpdateProductAvailabilityCommand command)
+        {
+            command.Id = id;
+            var response = await _mediator.Send(command);
+            return Ok(response);
+        }
     }
 }

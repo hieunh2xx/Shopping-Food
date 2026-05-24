@@ -23,6 +23,12 @@ namespace ShoppingFood.Domain.Enums
         NeedsInfo
     }
 
+    public enum ProductStatus{
+        Pending,
+        Approved,
+        Rejected,
+        
+    }
     public enum RestaurantStatus
     {
         Active,
@@ -52,4 +58,6 @@ namespace ShoppingFood.Domain.Enums
         CreditCard,
         EWallet
     }
+
+    
 }

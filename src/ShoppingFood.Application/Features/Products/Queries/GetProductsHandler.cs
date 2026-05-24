@@ -9,6 +9,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Domain.Models;
+using ShoppingFood.Domain.Enums;
 using ShoppingFood.Dto.Product;
 using ShoppingFood.Repository.Interfaces;
 
@@ -17,21 +18,52 @@ namespace ShoppingFood.Application.Features.Products.Queries
     public class GetProductsHandler : IRequestHandler<GetProductsQuery, ApiResponse>
     {
         private readonly IProductRepository _productRepository;
+        private readonly IUserRepository _userRepository;
         private readonly IMapper _mapper;
 
-        public GetProductsHandler(IProductRepository productRepository, IMapper mapper)
+        public GetProductsHandler(IProductRepository productRepository, IUserRepository userRepository, IMapper mapper)
         {
             _productRepository = productRepository;
+            _userRepository = userRepository;
             _mapper = mapper;
         }
 
         public async Task<ApiResponse> Handle(GetProductsQuery request, CancellationToken cancellationToken)
         {
-            Expression<Func<Product, bool>> predicate = p => true;
+            Guid? userProfileId = null;
+            if (request.CurrentUserId.HasValue)
+            {
+                var users = await _userRepository.GetAsync(
+                    predicate: u => u.Id == request.CurrentUserId.Value,
+                    include: q => q.Include(u => u.Profile)
+                );
+                userProfileId = users.FirstOrDefault()?.Profile?.Id;
+            }
+
+            Expression<Func<Product, bool>> predicate = p => 
+                (p.Status == ProductStatus.Approved || (userProfileId != null && p.Restaurant.OwnerId == userProfileId));
+
+            if (request.CategoryId.HasValue)
+            {
+                var catId = request.CategoryId.Value;
+                predicate = p => (p.Status == ProductStatus.Approved || (userProfileId != null && p.Restaurant.OwnerId == userProfileId)) && p.CategoryId == catId;
+            }
 
             if (!string.IsNullOrEmpty(request.Filter))
             {
-                predicate = p => p.ItemName.Contains(request.Filter) || p.Category.Title.Contains(request.Filter);
+                var filter = request.Filter;
+                if(request.CategoryId.HasValue)
+                {
+                    var catId = request.CategoryId.Value;
+                    predicate = p => (p.Status == ProductStatus.Approved || (userProfileId != null && p.Restaurant.OwnerId == userProfileId)) &&
+                                    p.CategoryId == catId &&
+                                    (p.ItemName.Contains(filter) || (p.Category.Title.Contains(filter)));
+                }
+                else
+                {
+                    predicate = p => (p.Status == ProductStatus.Approved || (userProfileId != null && p.Restaurant.OwnerId == userProfileId)) &&
+                                    p.ItemName.Contains(filter) && p.Category.Title.Contains(filter);
+                }
             }
 
             var products = await _productRepository.GetAsync(
@@ -40,7 +72,8 @@ namespace ShoppingFood.Application.Features.Products.Queries
                                .Include(p => p.Images)
                                .Include(p => p.Category)
                                .Include(p => p.ProductToppings)
-                               .Include(p => p.ProductSizes),
+                               .Include(p => p.ProductSizes)
+                               .Include(p => p.Reviews),
                 skip: request.Skip,
                 take: request.Take,
                 disableTracking: true
