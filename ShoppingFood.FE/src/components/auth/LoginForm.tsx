@@ -16,8 +16,8 @@ export function LoginForm() {
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
-    if (!userName.trim()) newErrors.userName = 'Vui lÃ²ng nháº­p tÃªn Ä‘Äƒng nháº­p';
-    if (!password) newErrors.password = 'Vui lÃ²ng nháº­p máº­t kháº©u';
+    if (!userName.trim()) newErrors.userName = 'Vui lòng nhập tên đăng nhập';
+    if (!password) newErrors.password = 'Vui lòng nhập mật khẩu';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -35,22 +35,22 @@ export function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <Input
-        label="TÃªn Ä‘Äƒng nháº­p"
+        label="Tên đăng nhập"
         value={userName}
         onChange={(e) => setUserName(e.target.value)}
         error={errors.userName}
-        placeholder="Nháº­p tÃªn Ä‘Äƒng nháº­p"
+        placeholder="Nhập tên đăng nhập"
         autoComplete="username"
       />
 
       <div className="relative">
         <Input
-          label="Máº­t kháº©u"
+          label="Mật khẩu"
           type={showPassword ? 'text' : 'password'}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           error={errors.password}
-          placeholder="Nháº­p máº­t kháº©u"
+          placeholder="Nhập mật khẩu"
           autoComplete="current-password"
         />
         <button
@@ -71,7 +71,7 @@ export function LoginForm() {
           <div className="w-full border-t border-gray-200"></div>
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="px-2 bg-white/50 text-gray-500">Hoặc</span>
+          <span className="px-2 bg-white text-gray-500">Hoặc</span>
         </div>
       </div>
 

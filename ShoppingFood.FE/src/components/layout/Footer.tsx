@@ -1,10 +1,10 @@
-﻿import { ChefHat } from 'lucide-react';
+import { ChefHat } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '../../routes/routeConfig';
 
 export function Footer() {
   return (
-    <footer className="bg-gray-50 border-t border-gray-200/50 mt-auto">
+    <footer className="bg-gray-50 border-t border-gray-200 mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
@@ -17,74 +17,74 @@ export function Footer() {
                 Shopping Food
               </span>
             </Link>
-            <p className="text-sm text-gray-500 leading-relaxed">
-              Ná»n táº£ng Ä‘áº·t vÃ  giao nháº­n Ä‘á»“ Äƒn trá»±c tuyáº¿n hÃ ng Ä‘áº§u Viá»‡t Nam.
+            <p className="text-sm text-gray-600 leading-relaxed">
+              Nền tảng đặt và giao nhận đồ ăn trực tuyến hàng đầu Việt Nam.
             </p>
           </div>
 
           {/* Links */}
           <div>
-            <h4 className="text-sm font-semibold text-gray-700 mb-4">KhÃ¡m phÃ¡</h4>
+            <h4 className="text-sm font-semibold text-gray-700 mb-4">Khám phá</h4>
             <ul className="space-y-2">
               <li>
-                <Link to={ROUTES.PRODUCTS} className="text-sm text-gray-500 hover:text-orange-400 transition-colors">
-                  Thá»±c Ä‘Æ¡n
+                <Link to={ROUTES.PRODUCTS} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                  Thực đơn
                 </Link>
               </li>
               <li>
-                <Link to={ROUTES.PRODUCTS} className="text-sm text-gray-500 hover:text-orange-400 transition-colors">
-                  NhÃ  hÃ ng
+                <Link to={ROUTES.PRODUCTS} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                  Nhà hàng
                 </Link>
               </li>
               <li>
-                <Link to={ROUTES.PRODUCTS} className="text-sm text-gray-500 hover:text-orange-400 transition-colors">
-                  Khuyáº¿n mÃ£i
+                <Link to={ROUTES.PRODUCTS} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                  Khuyến mãi
                 </Link>
               </li>
             </ul>
           </div>
 
           <div>
-            <h4 className="text-sm font-semibold text-gray-700 mb-4">Äá»‘i tÃ¡c</h4>
+            <h4 className="text-sm font-semibold text-gray-700 mb-4">Đối tác</h4>
             <ul className="space-y-2">
               <li>
-                <Link to={ROUTES.REGISTER_SELLER} className="text-sm text-gray-500 hover:text-orange-400 transition-colors">
-                  ÄÄƒng kÃ½ bÃ¡n hÃ ng
+                <Link to={ROUTES.REGISTER_SELLER} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                  Đăng ký bán hàng
                 </Link>
               </li>
               <li>
-                <a href="#" className="text-sm text-gray-500 hover:text-orange-400 transition-colors">
-                  Trá»Ÿ thÃ nh tÃ i xáº¿
+                <a href="#" className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                  Trở thành tài xế
                 </a>
               </li>
             </ul>
           </div>
 
           <div>
-            <h4 className="text-sm font-semibold text-gray-700 mb-4">Há»— trá»£</h4>
+            <h4 className="text-sm font-semibold text-gray-700 mb-4">Hỗ trợ</h4>
             <ul className="space-y-2">
               <li>
-                <a href="#" className="text-sm text-gray-500 hover:text-orange-400 transition-colors">
-                  Trung tÃ¢m trá»£ giÃºp
+                <a href="#" className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                  Trung tâm trợ giúp
                 </a>
               </li>
               <li>
-                <a href="#" className="text-sm text-gray-500 hover:text-orange-400 transition-colors">
-                  Äiá»u khoáº£n sá»­ dá»¥ng
+                <a href="#" className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                  Điều khoản sử dụng
                 </a>
               </li>
               <li>
-                <a href="#" className="text-sm text-gray-500 hover:text-orange-400 transition-colors">
-                  ChÃ­nh sÃ¡ch báº£o máº­t
+                <a href="#" className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                  Chính sách bảo mật
                 </a>
               </li>
             </ul>
           </div>
         </div>
 
-        <div className="mt-10 pt-6 border-t border-gray-200/50 text-center">
-          <p className="text-xs text-gray-600">
-            Â© {new Date().getFullYear()} Shopping Food. All rights reserved.
+        <div className="mt-10 pt-6 border-t border-gray-200 text-center">
+          <p className="text-xs text-gray-500">
+            © {new Date().getFullYear()} Shopping Food. All rights reserved.
           </p>
         </div>
       </div>

@@ -1,5 +1,5 @@
+import { Star, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Star, Clock, Truck } from 'lucide-react';
 import { Card } from '../common';
 import { formatCurrency } from '../../utils/formatters';
 import { getProductDetailPath } from '../../routes/routeConfig';
@@ -16,75 +16,63 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <Card
-      hoverable
+      className="group overflow-hidden cursor-pointer flex flex-col h-full hover:shadow-lg transition-all duration-300"
       onClick={() => navigate(getProductDetailPath(product.id))}
     >
-      {/* Image */}
+      {/* Image Container */}
       <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
         {product.primaryImageUrl ? (
           <img
             src={product.primaryImageUrl}
             alt={product.itemName}
-            className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <div className="text-center">
-              <div className="w-16 h-16 mx-auto rounded-2xl bg-gray-200/50 flex items-center justify-center mb-2">
-                <span className="text-3xl">ðŸœ</span>
-              </div>
-              <p className="text-xs text-gray-500">ChÆ°a cÃ³ áº£nh</p>
-            </div>
+          <div className="w-full h-full flex items-center justify-center text-4xl opacity-50">
+            🍜
+          </div>
+        )}
+        
+        {/* Status Badge */}
+        {product.stockStatus === 'OutOfStock' && (
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center">
+            <span className="px-3 py-1 rounded-full bg-red-500 text-white text-sm font-medium">
+              Hết hàng
+            </span>
           </div>
         )}
 
-        {/* Badges */}
-        <div className="absolute top-3 left-3 flex flex-col gap-1.5">
-          {product.isFreeship && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-green-500/90 text-[11px] font-semibold text-gray-900 backdrop-blur-sm">
-              <Truck className="w-3 h-3" />
-              Freeship
+        {/* Promo Badge - Example static UI */}
+        {product.stockStatus === 'InStock' && (
+          <div className="absolute top-3 left-3 flex gap-2">
+            <span className="px-2.5 py-1 rounded-lg bg-orange-500 text-white text-xs font-bold shadow-sm">
+              Hot
             </span>
-          )}
-          {product.stockStatus === 'OutOfStock' && (
-            <span className="px-2 py-0.5 rounded-lg bg-red-500/90 text-[11px] font-semibold text-gray-900 backdrop-blur-sm">
-              Háº¿t hÃ ng
-            </span>
-          )}
-        </div>
-
-        {/* Rating badge */}
-        {product.averageRating > 0 && (
-          <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 rounded-lg bg-black/60 backdrop-blur-sm">
-            <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-            <span className="text-xs font-semibold text-gray-900">{product.averageRating.toFixed(1)}</span>
           </div>
         )}
       </div>
 
       {/* Content */}
-      <div className="p-4 space-y-2">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="text-sm font-semibold text-gray-100 line-clamp-2 leading-tight">
+      <div className="p-4 flex-1 flex flex-col">
+        <div className="flex justify-between items-start gap-2 mb-2">
+          <h3 className="text-base font-semibold text-gray-900 line-clamp-2 leading-tight group-hover:text-orange-500 transition-colors">
             {product.itemName}
           </h3>
+          <span className="flex items-center gap-1 text-sm font-medium text-gray-900 bg-gray-50 px-1.5 py-0.5 rounded-lg whitespace-nowrap">
+            <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
+            4.8
+          </span>
         </div>
 
-        <p className="text-xs text-gray-500 flex items-center gap-1">
-          <span className="truncate">{product.restaurantName}</span>
-          {product.categoryName && (
-            <>
-              <span className="text-gray-700">â€¢</span>
-              <span className="text-orange-400/80">{product.categoryName}</span>
-            </>
-          )}
+        <p className="text-sm text-gray-500 mb-3 line-clamp-1">
+          {product.restaurantName}
         </p>
 
-        <div className="flex items-center justify-between pt-1">
-          <p className="text-base font-bold text-orange-400">
+        <div className="mt-auto flex items-center justify-between">
+          <span className="text-lg font-bold text-orange-600">
             {formatCurrency(product.price)}
-          </p>
-          {!product.isAvailableNow && product.availableFrom && (
+          </span>
+          {product.availableFrom && (
             <span className="flex items-center gap-1 text-[11px] text-gray-500">
               <Clock className="w-3 h-3" />
               {product.availableFrom}

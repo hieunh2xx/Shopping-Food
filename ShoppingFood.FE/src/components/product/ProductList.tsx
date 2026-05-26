@@ -1,4 +1,4 @@
-﻿import { ProductCard } from './ProductCard';
+import { ProductCard } from './ProductCard';
 import { Loading } from '../common';
 import type { IProductDto } from '../../interfaces';
 
@@ -8,24 +8,29 @@ interface ProductListProps {
   emptyMessage?: string;
 }
 
-export function ProductList({ products, isLoading, emptyMessage = 'KhÃ´ng tÃ¬m tháº¥y sáº£n pháº©m nÃ o' }: ProductListProps) {
+export function ProductList({ products, isLoading, emptyMessage = 'Không có sản phẩm nào.' }: ProductListProps) {
   if (isLoading) {
-    return <Loading text="Äang táº£i sáº£n pháº©m..." />;
+    return (
+      <div className="py-20 flex justify-center">
+        <Loading size="lg" text="Đang tải món ngon..." />
+      </div>
+    );
   }
 
   if (products.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16">
-        <div className="w-20 h-20 rounded-2xl bg-gray-100/50 flex items-center justify-center mb-4">
-          <span className="text-4xl">ðŸ”</span>
+      <div className="py-20 text-center">
+        <div className="w-20 h-20 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
+          <span className="text-3xl text-gray-400">🔍</span>
         </div>
-        <p className="text-gray-600 text-sm">{emptyMessage}</p>
+        <h3 className="text-lg font-medium text-gray-900 mb-1">Trống</h3>
+        <p className="text-gray-500">{emptyMessage}</p>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {products.map((product) => (
         <ProductCard key={product.id} product={product} />
       ))}

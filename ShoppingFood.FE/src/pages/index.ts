@@ -5,4 +5,7 @@ export { ProductsPage } from './ProductsPage';
 export { ProductDetailPage } from './ProductDetailPage';
 export { SellerDashboardPage } from './SellerDashboardPage';
 export { AdminDashboardPage } from './AdminDashboardPage';
+export { AdminPermissionsPage } from './admin/AdminPermissionsPage';
+export { SellerProductsPage } from './seller/SellerProductsPage';
+export { AdminUsersPage } from './admin/AdminUsersPage';
 export { NotFoundPage } from './NotFoundPage';

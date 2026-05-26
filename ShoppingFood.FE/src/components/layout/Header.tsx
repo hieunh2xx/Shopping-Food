@@ -10,51 +10,49 @@ export function Header() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
 
+  const handleLogout = () => {
+    logout();
+    navigate(ROUTES.HOME);
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`${ROUTES.PRODUCTS}?search=${encodeURIComponent(searchQuery.trim())}`);
+      navigate(`${ROUTES.PRODUCTS}?search=${encodeURIComponent(searchQuery)}`);
     }
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full">
-      <div className="bg-gray-50/80 backdrop-blur-xl border-b border-gray-200/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <Link to={ROUTES.HOME} className="flex items-center gap-2.5 group">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/20 group-hover:shadow-orange-500/40 transition-shadow">
-                <ChefHat className="w-5 h-5 text-gray-900" />
-              </div>
-              <span className="text-lg font-bold bg-gradient-to-r from-orange-400 to-orange-500 bg-clip-text text-transparent hidden sm:block">
-                Shopping Food
-              </span>
-            </Link>
+    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="flex justify-between items-center h-16">
+          {/* Logo */}
+          <Link to={ROUTES.HOME} className="flex items-center gap-2.5 group">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/20 group-hover:scale-105 transition-transform">
+              <ChefHat className="w-6 h-6 text-gray-900" />
+            </div>
+            <span className="hidden sm:block text-xl font-bold bg-gradient-to-r from-orange-400 to-orange-500 bg-clip-text text-transparent">
+              Shopping Food
+            </span>
+          </Link>
 
-            {/* Search Bar */}
-            <form onSubmit={handleSearch} className="flex-1 max-w-md mx-4 hidden md:block">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="TÃ¬m mÃ³n Äƒn, nhÃ  hÃ ng..."
-                  className="w-full pl-10 pr-4 py-2 rounded-xl bg-gray-100/50 border border-gray-300/50 text-sm text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500/30 transition-all"
-                />
-              </div>
+          {/* Search Bar - Hidden on small mobile */}
+          <div className="hidden md:flex flex-1 max-w-md mx-8">
+            <form onSubmit={handleSearch} className="relative w-full">
+              <input
+                type="text"
+                placeholder="Tìm kiếm món ăn, nhà hàng..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-colors"
+              />
+              <Search className="absolute left-4 top-[11px] w-4 h-4 text-gray-400" />
             </form>
+          </div>
 
-            {/* Right Actions */}
-            <div className="flex items-center gap-2">
-              <Link
-                to={ROUTES.PRODUCTS}
-                className="px-3 py-2 rounded-xl text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100/50 transition-colors hidden sm:block"
-              >
-                Thá»±c Ä‘Æ¡n
-              </Link>
-
+          {/* Right Actions */}
+          <div className="flex items-center gap-1 sm:gap-3">
+            <nav className="flex items-center">
               {isAuthenticated ? (
                 <>
                   {/* Cart */}
@@ -63,50 +61,52 @@ export function Header() {
                   {/* User Menu */}
                   <div className="relative group">
                     <button className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-gray-100/50 transition-colors">
-                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
-                        <User className="w-4 h-4 text-gray-900" />
+                      <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
+                        <User className="w-4 h-4 text-orange-600" />
                       </div>
-                      <span className="text-sm font-medium text-gray-700 hidden lg:block">
+                      <span className="hidden sm:block text-sm font-medium text-gray-700">
                         {user?.fullName || user?.userName}
                       </span>
                     </button>
 
-                    {/* Dropdown */}
-                    <div className="absolute right-0 mt-1 w-56 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 origin-top-right">
-                      <div className="bg-white border border-gray-200 rounded-xl shadow-2xl p-1.5">
-                        <div className="px-3 py-2 border-b border-gray-200 mb-1">
-                          <p className="text-sm font-medium text-gray-800">{user?.fullName}</p>
-                          <p className="text-xs text-gray-500">{user?.role}</p>
-                        </div>
-
-                        {user?.role === 'Seller' && (
-                          <Link
-                            to={ROUTES.SELLER_DASHBOARD}
-                            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-                          >
-                            <ChefHat className="w-4 h-4" />
-                            Quáº£n lÃ½ cá»­a hÃ ng
-                          </Link>
-                        )}
-
-                        {user?.role === 'Admin' && (
-                          <Link
-                            to={ROUTES.ADMIN_DASHBOARD}
-                            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-                          >
-                            <User className="w-4 h-4" />
-                            Quáº£n trá»‹ há»‡ thá»‘ng
-                          </Link>
-                        )}
-
-                        <button
-                          onClick={logout}
-                          className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-gray-100 rounded-lg transition-colors"
+                    {/* Dropdown Menu */}
+                    <div className="absolute right-0 top-full mt-1 w-48 py-2 bg-white rounded-xl shadow-lg border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right">
+                      {user?.role === 'Admin' && (
+                        <Link
+                          to={ROUTES.ADMIN.DASHBOARD}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600"
                         >
-                          <LogOut className="w-4 h-4" />
-                          ÄÄƒng xuáº¥t
-                        </button>
-                      </div>
+                          Quản trị hệ thống
+                        </Link>
+                      )}
+                      {user?.role === 'Seller' && (
+                        <Link
+                          to={ROUTES.SELLER.DASHBOARD}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600"
+                        >
+                          Quản lý cửa hàng
+                        </Link>
+                      )}
+                      <Link
+                        to="/profile"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600"
+                      >
+                        Hồ sơ cá nhân
+                      </Link>
+                      <Link
+                        to="/orders"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600"
+                      >
+                        Đơn hàng của tôi
+                      </Link>
+                      <div className="h-px bg-gray-100 my-1"></div>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Đăng xuất
+                      </button>
                     </div>
                   </div>
                 </>
@@ -117,17 +117,17 @@ export function Header() {
                     to={ROUTES.LOGIN}
                     className="px-4 py-2 rounded-xl text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100/50 transition-colors"
                   >
-                    ÄÄƒng nháº­p
+                    Đăng nhập
                   </Link>
                   <Link
                     to={ROUTES.REGISTER}
-                    className="px-4 py-2 rounded-xl text-sm font-medium bg-gradient-to-r from-orange-500 to-orange-600 text-gray-900 shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 transition-all"
+                    className="hidden sm:flex px-4 py-2 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:shadow-lg hover:shadow-orange-500/25 transition-all"
                   >
-                    ÄÄƒng kÃ½
+                    Đăng ký
                   </Link>
                 </div>
               )}
-            </div>
+            </nav>
           </div>
         </div>
       </div>

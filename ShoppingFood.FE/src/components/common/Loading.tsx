@@ -1,30 +1,21 @@
-﻿interface LoadingProps {
+import { Loader2 } from 'lucide-react';
+
+interface LoadingProps {
+  size?: 'sm' | 'md' | 'lg';
   text?: string;
-  fullScreen?: boolean;
 }
 
-export function Loading({ text = 'Äang táº£i...', fullScreen = false }: LoadingProps) {
-  const content = (
-    <div className="flex flex-col items-center justify-center gap-4">
-      <div className="relative">
-        <div className="w-12 h-12 rounded-full border-4 border-gray-300" />
-        <div className="w-12 h-12 rounded-full border-4 border-orange-500 border-t-transparent absolute top-0 left-0 animate-spin" />
-      </div>
-      <p className="text-gray-600 text-sm font-medium">{text}</p>
-    </div>
-  );
+const sizes = {
+  sm: 'w-4 h-4',
+  md: 'w-6 h-6',
+  lg: 'w-8 h-8',
+};
 
-  if (fullScreen) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        {content}
-      </div>
-    );
-  }
-
+export function Loading({ size = 'md', text }: LoadingProps) {
   return (
-    <div className="flex items-center justify-center py-12">
-      {content}
+    <div className="flex flex-col items-center justify-center gap-3">
+      <Loader2 className={`animate-spin text-orange-500 ${sizes[size]}`} />
+      {text && <p className="text-sm font-medium text-gray-600 animate-pulse">{text}</p>}
     </div>
   );
 }
