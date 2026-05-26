@@ -29,3 +29,8 @@ appsettings.Development.json
 .DS_Store?
 ehthumbs.db
 Thumbs.db
+.env
+.env.development
+.env.production
+.node_modules/
+dist/
