@@ -89,5 +89,13 @@ namespace ShoppingFood.API.Controllers
             var response = await _mediator.Send(command);
             return Ok(response);
         }
+
+        [HttpPost("Report")]
+        public async Task<ActionResult<ApiResponse>> ReportProduct([FromBody] CreateProductReportCommand command)
+        {
+            var response = await _mediator.Send(command);
+            return Ok(response);
+        }
+
     }
 }

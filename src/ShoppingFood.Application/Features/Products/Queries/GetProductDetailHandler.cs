@@ -38,6 +38,7 @@ namespace ShoppingFood.Application.Features.Products.Queries
                                .Include(p => p.Images)
                                .Include(p => p.Category)
                                .Include(p => p.ProductToppings)
+                                   .ThenInclude(pt => pt.Topping)
                                .Include(p => p.ProductSizes)
                                .Include(p => p.Reviews),
                 disableTracking: true
@@ -47,13 +48,13 @@ namespace ShoppingFood.Application.Features.Products.Queries
 
             if (product == null)
             {
-                return ApiResponse.Failure(400, "Product was not found.");
+                return ApiResponse.Failure(404, "Product was not found.");
             }
 
-            // Nếu sản phẩm chưa được duyệt, chỉ cho phép chủ nhà hàng xem chi tiết
+          
             if (product.Status != ProductStatus.Pending && product.Status != ProductStatus.Approved)
             {
-                // Status is Rejected
+       
                 bool isOwner = false;
                 if (request.CurrentUserId.HasValue)
                 {

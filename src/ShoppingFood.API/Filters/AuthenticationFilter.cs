@@ -41,7 +41,8 @@ namespace ShoppingFood.API.Filters
                 path.Equals("/api/User/Register", StringComparison.OrdinalIgnoreCase) || 
                 path.Equals("/api/User/RegisterSeller", StringComparison.OrdinalIgnoreCase) || 
                 path.StartsWith("/swagger", StringComparison.OrdinalIgnoreCase) ||
-                (context.HttpContext.Request.Method == "GET" && path.StartsWith("/api/Product", StringComparison.OrdinalIgnoreCase)))
+                (context.HttpContext.Request.Method == "GET" && path.StartsWith("/api/Product", StringComparison.OrdinalIgnoreCase)) ||
+                (context.HttpContext.Request.Method == "GET" && path.StartsWith("/api/Admin/GlobalMenuCategory", StringComparison.OrdinalIgnoreCase)))
             {
                 await next();
                 return;
@@ -75,8 +76,9 @@ namespace ShoppingFood.API.Filters
             var userDto = _mapper.Map<UserDto>(user);
             context.HttpContext.User = new MyPrincipal(userDto);
 
-            // Phân quyền: CUD món ăn chỉ dành cho Seller
-            if (path.Contains("/api/Product", StringComparison.OrdinalIgnoreCase) && 
+            // Phân quyền: CUD món ăn & topping chỉ dành cho Seller
+            if ((path.Contains("/api/Product", StringComparison.OrdinalIgnoreCase) || 
+                 path.Contains("/api/Topping", StringComparison.OrdinalIgnoreCase)) && 
                 (context.HttpContext.Request.Method == "POST" || 
                  context.HttpContext.Request.Method == "PUT" || 
                  context.HttpContext.Request.Method == "DELETE" ||
@@ -85,6 +87,13 @@ namespace ShoppingFood.API.Filters
                 if (user.Profile?.Role != UserRole.Seller)
                 {
                     throw new UnauthorizedAccessException("Only the seller has the right to perform this operation.");
+                }
+            }
+            if(path.Equals("/api/Product/Report", StringComparison.OrdinalIgnoreCase) && context.HttpContext.Request.Method == "POST")
+            {
+                if(user.Profile?.Role != UserRole.Customer)
+                {
+                    throw new UnauthorizedAccessException("Only customers can report products.");
                 }
             }
 
@@ -99,6 +108,7 @@ namespace ShoppingFood.API.Filters
                     throw new UnauthorizedAccessException("Only the seller has the right to perform this operation.");
                 }
             }
+           
             if(path.Contains("/api/Admin", StringComparison.OrdinalIgnoreCase)){
                 if(user.Profile?.Role != UserRole.Admin)
                 {

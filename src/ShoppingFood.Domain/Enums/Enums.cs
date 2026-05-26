@@ -29,6 +29,13 @@ namespace ShoppingFood.Domain.Enums
         Rejected,
         
     }
+
+    public enum ProductReportStatus
+    {
+        Pending,
+        Resolved,
+        Dismissed
+    }
     public enum RestaurantStatus
     {
         Active,

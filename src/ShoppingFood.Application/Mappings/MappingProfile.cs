@@ -6,6 +6,7 @@ using ShoppingFood.Dto.Product;
 using ShoppingFood.Application.Features.Users.Commands;
 using ShoppingFood.Application.Features.Products.Commands;
 using ShoppingFood.Application.Features.Products.Menu.Commands;
+using ShoppingFood.Application.Features.Products.GlobalMenuCategories.Commands;
 
 namespace ShoppingFood.Application.Mappings
 {
@@ -26,12 +27,12 @@ namespace ShoppingFood.Application.Mappings
             // Product mappings
             CreateMap<AddProductCommand, Product>()
                 .ForMember(dest => dest.Images, opt => opt.Ignore())
-                .ForMember(dest => dest.ProductToppings, opt => opt.MapFrom(src => src.Toppings))
+                .ForMember(dest => dest.ProductToppings, opt => opt.Ignore())
                 .ForMember(dest => dest.ProductSizes, opt => opt.MapFrom(src => src.Sizes));
 
             CreateMap<UpdateProductCommand, Product>()
                 .ForMember(dest => dest.Images, opt => opt.Ignore())
-                .ForMember(dest => dest.ProductToppings, opt => opt.MapFrom(src => src.Toppings))
+                .ForMember(dest => dest.ProductToppings, opt => opt.Ignore())
                 .ForMember(dest => dest.ProductSizes, opt => opt.MapFrom(src => src.Sizes));
 
             CreateMap<Product, ProductDto>()
@@ -51,7 +52,17 @@ namespace ShoppingFood.Application.Mappings
                 (DateTime.UtcNow.TimeOfDay >= src.AvailableFrom.Value && DateTime.UtcNow.TimeOfDay <= src.AvailableTo.Value)))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
 
-            CreateMap<ProductTopping, ProductToppingDto>().ReverseMap();
+            CreateMap<ProductTopping, ProductToppingDto>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.ToppingId))
+                .ForMember(dest => dest.ToppingName, opt => opt.MapFrom(src => src.Topping != null ? src.Topping.ToppingName : string.Empty))
+                .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Topping != null ? src.Topping.Price : 0))
+                .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.Topping != null ? src.Topping.ImageUrl : null))
+                .ForMember(dest => dest.IsAvailable, opt => opt.MapFrom(src => src.Topping != null && src.Topping.IsAvailable));
+
+            CreateMap<Topping, ToppingDto>().ReverseMap();
+            CreateMap<Features.Products.Toppings.Commands.CreateToppingCommand, Topping>();
+            CreateMap<Features.Products.Toppings.Commands.UpdateToppingCommand, Topping>();
+
             CreateMap<ProductSize, ProductSizeDto>().ReverseMap();
 
             // MenuCategory mappings
@@ -61,6 +72,18 @@ namespace ShoppingFood.Application.Mappings
             
             CreateMap<MenuCategory, MenuCategoryDto>()
                 .ForMember(dest => dest.ProductCount, opt => opt.MapFrom(src => src.Products != null ? src.Products.Count : 0));
+
+            // GlobalMenuCategory mappings
+            CreateMap<GlobalMenuCategory, GlobalMenuCategoryDto>().ReverseMap();
+            CreateMap<AddGlobalMenuCategoryCommand, GlobalMenuCategory>().ReverseMap();
+            CreateMap<UpdateGlobalMenuCategoryCommand, GlobalMenuCategory>().ReverseMap();
+
+            //ProductReport mappings
+            CreateMap<ProductReport, ProductReportDto>()
+                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product != null ? src.Product.ItemName : string.Empty))
+                .ForMember(dest => dest.ReporterName, opt => opt.MapFrom(src => src.Reporter != null ? src.Reporter.FullName : string.Empty))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
+            CreateMap<CreateProductReportCommand, ProductReport>();
         }
     }
 }

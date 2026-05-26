@@ -23,7 +23,8 @@ namespace ShoppingFood.Application.Features.Products.Menu.Commands
                 .NotEmpty().WithMessage("{PropertyName} is required");
 
             RuleFor(m => m.SortOrder)
-                .NotEmpty().WithMessage("{PropertyName} is required");
+                .NotEmpty().WithMessage("{PropertyName} is required")
+                .GreaterThan(0).WithMessage("{PropertyName} must be greater than 0");
 
             RuleFor(m => m)
                 .MustAsync(BeUniqueTitleInRestaurant).WithMessage("A category with this title already exists in this restaurant.");

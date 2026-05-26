@@ -45,7 +45,7 @@ namespace ShoppingFood.Application.Features.Products.Commands
             catch (Exception ex)
             {
                 await _unitOfWork.LogErrorAsync("ToggleProductVisibilityHandler.Handle", ex);
-                return ApiResponse.Failure(500, $"An error occurred: {ex.Message}");
+                return ApiResponse.Failure(400, $"An error occurred: {ex.Message}");
             }
         }
     }

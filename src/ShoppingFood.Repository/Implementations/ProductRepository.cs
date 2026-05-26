@@ -60,6 +60,7 @@ namespace ShoppingFood.Repository.Implementations
                 .Include(p => p.Category)
                 .Include(p => p.Images)
                 .Include(p => p.ProductToppings)
+                    .ThenInclude(pt => pt.Topping)
                 .Include(p => p.ProductSizes)
                 .FirstOrDefaultAsync(p => p.Id == id);
         }

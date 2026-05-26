@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Domain.Enums;
 using ShoppingFood.Dto.Product;
@@ -16,7 +16,7 @@ namespace ShoppingFood.Application.Features.Products.Commands
         public Guid CategoryId { get; set; }
         
         public List<string>? ImageUrls { get; set; }
-        public List<ProductToppingDto>? Toppings { get; set; }
+        public List<Guid>? ToppingIds { get; set; }
         public List<ProductSizeDto>? Sizes { get; set; }
     }
 }

@@ -23,9 +23,14 @@ namespace ShoppingFood.Domain.Context
         public DbSet<OrderItem> OrderItems { get; set; } = null!;
         public DbSet<OtpRecord> OtpRecords { get; set; } = null!;
 
+        public DbSet<Topping> Toppings { get; set; } = null!;
         public DbSet<ProductTopping> ProductToppings { get; set; } = null!;
         public DbSet<ProductSize> ProductSizes { get; set; } = null!;
         public DbSet<ProductReview> ProductReviews { get; set; } = null!;
+        public DbSet<GlobalMenuCategory> GlobalMenuCategories { get; set; } = null!;
+        public DbSet<ProductReport> ProductReports { get; set; } = null!;
+        public DbSet<Notification> Notifications { get; set; } = null!;
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -150,6 +155,10 @@ namespace ShoppingFood.Domain.Context
                     .WithMany(c => c.Products)
                     .HasForeignKey(d => d.CategoryId)
                     .OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(d => d.GlobalCategory)
+                    .WithMany(c => c.Products)
+                    .HasForeignKey(d => d.GlobalCategoryId)
+                    .OnDelete(DeleteBehavior.SetNull);
             });
 
             // ProductImage Entity
@@ -267,20 +276,37 @@ namespace ShoppingFood.Domain.Context
                 entity.Property(e => e.OtpCode).IsRequired().HasMaxLength(6);
                 entity.Property(e => e.IpAddress).IsRequired().HasMaxLength(45);
             });
-            // ProductTopping Entity
-            modelBuilder.Entity<ProductTopping>(entity =>
+            // Topping Entity
+            modelBuilder.Entity<Topping>(entity =>
             {
-                entity.ToTable("PRODUCT_TOPPING");
+                entity.ToTable("TOPPING");
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.ToppingName).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.Price).HasColumnType("decimal(12,2)").IsRequired();
                 entity.Property(e => e.ImageUrl).HasMaxLength(255);
                 entity.Property(e => e.IsAvailable).IsRequired();
 
+                entity.HasOne(d => d.Restaurant)
+                    .WithMany()
+                    .HasForeignKey(d => d.RestaurantId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // ProductTopping Entity (Junction Table)
+            modelBuilder.Entity<ProductTopping>(entity =>
+            {
+                entity.ToTable("PRODUCT_TOPPING");
+                entity.HasKey(e => new { e.ProductId, e.ToppingId });
+
                 entity.HasOne(d => d.Product)
                     .WithMany(p => p.ProductToppings)
                     .HasForeignKey(d => d.ProductId)
                     .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(d => d.Topping)
+                    .WithMany(t => t.ProductToppings)
+                    .HasForeignKey(d => d.ToppingId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             // ProductSize Entity
@@ -314,6 +340,52 @@ namespace ShoppingFood.Domain.Context
                 entity.HasOne(d => d.UserProfile)
                     .WithMany()
                     .HasForeignKey(d => d.UserProfileId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+            modelBuilder.Entity<GlobalMenuCategory>(entity =>
+            {
+                entity.ToTable("GLOBAL_MENU_CATEGORY");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Description).HasMaxLength(255);
+                entity.Property(e => e.SortOrder).IsRequired();
+                entity.Property(e => e.IsHidden).IsRequired();
+                entity.Property(e => e.CreatedAt);
+                entity.Property(e => e.UpdatedAt);
+            });
+
+            modelBuilder.Entity<ProductReport>(entity =>
+            {
+                entity.ToTable("PRODUCT_REPORT");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Reason).IsRequired().HasMaxLength(150);
+                entity.Property(e => e.Description).HasMaxLength(100);
+                entity.Property(e => e.Status).HasConversion<string>().IsRequired();
+
+                entity.HasOne(d => d.Product)
+                .WithMany()
+                .HasForeignKey(d => d.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(d => d.Reporter)
+                .WithMany()
+                .HasForeignKey(d => d.ReporterId)
+                .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<Notification>(entity =>
+            {
+                entity.ToTable("NOTIFICATION");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Title).IsRequired().HasMaxLength(150);
+                entity.Property(e => e.Message).IsRequired().HasMaxLength(500);
+                entity.Property(e => e.NotificationType).IsRequired(false);
+                entity.Property(e => e.IsRead).IsRequired();
+                entity.Property(e => e.CreateAt);
+
+                entity.HasOne(d => d.User)
+                    .WithMany()
+                    .HasForeignKey(d => d.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
         }

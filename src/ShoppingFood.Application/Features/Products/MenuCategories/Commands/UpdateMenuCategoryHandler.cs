@@ -48,7 +48,7 @@ namespace ShoppingFood.Application.Features.Products.Menu.Commands
             catch (Exception ex) 
             {
                 await _unitOfWork.LogErrorAsync("UpdateMenuCategoryHandler.Handle", ex);
-                return ApiResponse.Failure(500, $"An error occurred: {ex.Message}");
+                return ApiResponse.Failure(400, $"An error occurred: {ex.Message}");
             }
         }
     }

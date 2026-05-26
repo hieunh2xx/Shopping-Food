@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using ShoppingFood.Core.Base;
 using System;
 using System.Collections.Generic;
@@ -18,7 +18,7 @@ namespace ShoppingFood.Application.Features.Products.Commands
         public Guid CategoryId { get; set; }
         public StockStatus StockStatus { get; set; } = StockStatus.InStock;
         public List<string>? ImageUrls { get; set; }
-        public List<ProductToppingDto>? Toppings { get; set; }
+        public List<Guid>? ToppingIds { get; set; }
         public List<ProductSizeDto>? Sizes { get; set; }
     }
 }

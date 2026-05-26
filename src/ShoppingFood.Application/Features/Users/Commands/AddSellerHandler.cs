@@ -37,44 +37,11 @@ namespace ShoppingFood.Application.Features.Users.Commands
         {
             try
             {
-                var user = new User
-                {
-                    Id = Guid.NewGuid(),
-                    UserName = request.UserName,
-                    PasswordHash = HashPassword(request.Password),
-                    Phone = request.Phone,
-                    Email = request.Email,
-                    Status = UserStatus.Active, 
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
-
-                var profile = new UserProfile
-                {
-                    Id = Guid.NewGuid(),
-                    UserAccountId = user.Id,
-                    FullName = request.BusinessName,
-                    Role = UserRole.Seller,
-                    AvatarUrl = request.AvatarUrl,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
-
+                var user = CreateUserEntity(request);
+                var profile = CreateUserProfileEntity(user.Id, request);
                 user.Profile = profile;
 
-                var application = new SellerApplication
-                {
-                    Id = Guid.NewGuid(),
-                    UserProfileId = profile.Id,
-                    BusinessName = request.BusinessName,
-                    BusinessAddress = request.BusinessAddress,
-                    BusinessLicenseUrl = request.BusinessLicenseUrl,
-                    ShopImageUrl = request.ShopImageUrl,
-                    ContactInfo = request.ContactInfo,
-                    Status = SellerApplicationStatus.Pending,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
+                var application = CreateSellerApplicationEntity(profile.Id, request);
 
                 _userRepository.Add(user);
                 _sellerApplicationRepository.Add(application);
@@ -96,8 +63,54 @@ namespace ShoppingFood.Application.Features.Users.Commands
             catch (Exception ex)
             {
                 await _unitOfWork.LogErrorAsync("AddSellerHandler.Handle", ex);
-                return ApiResponse.Failure(500, $"An error occurred: {ex.Message}");
+                return ApiResponse.Failure(400, $"An error occurred: {ex.Message}");
             }
+        }
+
+        private User CreateUserEntity(AddSellerCommand request)
+        {
+            return new User
+            {
+                Id = Guid.NewGuid(),
+                UserName = request.UserName,
+                PasswordHash = HashPassword(request.Password),
+                Phone = request.Phone,
+                Email = request.Email,
+                Status = UserStatus.Active,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+        }
+
+        private UserProfile CreateUserProfileEntity(Guid userAccountId, AddSellerCommand request)
+        {
+            return new UserProfile
+            {
+                Id = Guid.NewGuid(),
+                UserAccountId = userAccountId,
+                FullName = request.BusinessName,
+                Role = UserRole.Customer,
+                AvatarUrl = request.AvatarUrl,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+        }
+
+        private SellerApplication CreateSellerApplicationEntity(Guid userProfileId, AddSellerCommand request)
+        {
+            return new SellerApplication
+            {
+                Id = Guid.NewGuid(),
+                UserProfileId = userProfileId,
+                BusinessName = request.BusinessName,
+                BusinessAddress = request.BusinessAddress,
+                BusinessLicenseUrl = request.BusinessLicenseUrl,
+                ShopImageUrl = request.ShopImageUrl,
+                ContactInfo = request.ContactInfo,
+                Status = SellerApplicationStatus.Pending,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
         }
 
         private static string HashPassword(string password)

@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
+using ShoppingFood.Domain.Context;
 using ShoppingFood.Domain.Enums;
 using ShoppingFood.Domain.Models;
 using ShoppingFood.Repository.Interfaces;
@@ -10,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ShoppingFood.Application.Features.Admin
@@ -21,42 +23,51 @@ namespace ShoppingFood.Application.Features.Admin
         private readonly IUserRepository _userRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IEmailService _emailService;
+        private readonly INotificationRepository _notificationRepository;
+        private readonly ShoppingFoodContext _dbContext;
 
         public ApproveApplicationHandler(
             ISellerApplicationRepository sellerApplicationRepository,
             IRestaurantProfileRepository restaurantProfileRepository,
             IUserRepository userRepository,
-            IUnitOfWork unitOfWork, IMapper mapper)
+            IUnitOfWork unitOfWork,
+            IMapper mapper,
+            IEmailService emailService,
+            INotificationRepository notificationRepository,
+            ShoppingFoodContext dbContext)
         {
             _sellerApplicationRepository = sellerApplicationRepository;
             _restaurantProfileRepository = restaurantProfileRepository;
             _userRepository = userRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _emailService = emailService;
+            _notificationRepository = notificationRepository;
+            _dbContext = dbContext;
         }
+
         public async Task<ApiResponse> Handle(ApproveApplicationCommand request, CancellationToken cancellationToken)
         {
+            using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
             try
             {
                 if (!request.CurrentUserId.HasValue)
-                    return ApiResponse.Failure(401, "User is unauthorize.");
-                var adminUser = await _userRepository.GetAsync(
-                    predicate: u => u.Id == request.CurrentUserId.Value,
-                    include: q => q.Include(u => u.Profile)
-                    );
-                var admin = adminUser.FirstOrDefault();
+                    return ApiResponse.Failure(401, "User is unauthorized.");
 
-                if (admin?.Profile == null || admin.Profile.Role != UserRole.Admin)
-                    return ApiResponse.Failure(403, "Forbidden. Only administrator can review seller application.");
+                var adminProfile = await GetAdminProfileAsync(request.CurrentUserId.Value);
+                if (adminProfile == null)
+                    return ApiResponse.Failure(403, "Forbidden. Only administrator can review seller applications.");
 
                 var applications = await _sellerApplicationRepository.GetAsync(
                     predicate: a => a.Id == request.ApplicationId,
                     include: q => q.Include(a => a.UserProfile).ThenInclude(p => p.UserAccount),
                     disableTracking: false
-                    );
+                );
                 var application = applications.FirstOrDefault();
+
                 if (application == null)
-                    return ApiResponse.Failure(400, $"Seller application with Id: '{request.ApplicationId}' was not found.");
+                    return ApiResponse.Failure(404, $"Seller application with Id: '{request.ApplicationId}' was not found.");
 
                 if (application.Status != SellerApplicationStatus.Pending)
                     return ApiResponse.Failure(400, $"Seller application is already processed. Current status: {application.Status}");
@@ -64,20 +75,15 @@ namespace ShoppingFood.Application.Features.Admin
                 if (request.IsApproved)
                 {
                     application.Status = SellerApplicationStatus.Approved;
-                    var restaurant = new RestaurantProfile
+                    
+                    if (application.UserProfile != null)
                     {
-                        Id = Guid.NewGuid(),
-                        SellerApplicationId = application.Id,
-                        OwnerId = application.UserProfileId,
-                        RestaurantName = application.BusinessName,
-                        Address = application.BusinessAddress,
-                        Phone = application.ContactInfo,
-                        Email = application.UserProfile.UserAccount?.Email ?? string.Empty,
-                        Status = RestaurantStatus.Active,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow,
-                    };
-                    _restaurantProfileRepository.Add( restaurant );
+                        application.UserProfile.Role = UserRole.Seller;
+                        application.UserProfile.UpdatedAt = DateTime.UtcNow;
+                    }
+
+                    var restaurant = CreateRestaurantProfileEntity(application);
+                    _restaurantProfileRepository.Add(restaurant);
                 }
                 else
                 {
@@ -85,20 +91,98 @@ namespace ShoppingFood.Application.Features.Admin
                     application.RejectionReason = request.RejectionReason;
                 }
 
-                application.ReviewedBy = admin.Profile.Id;
+                application.ReviewedBy = adminProfile.Id;
                 application.ReviewedAt = DateTime.UtcNow;
                 application.UpdatedAt = DateTime.UtcNow;
 
+                
+                AddDbNotification(application, request.IsApproved);
+
                 await _unitOfWork.SaveChangesAsync();
 
-                string statusMessage = request.IsApproved ? "Seller application has been approved and restaurant profile has been created."
-                    : "Seller application has been rejected,";
+                await SendEmailNotificationAsync(application, request.IsApproved);
+
+                await transaction.CommitAsync(cancellationToken);
+
+                string statusMessage = request.IsApproved 
+                    ? "Seller application has been approved and restaurant profile has been created."
+                    : "Seller application has been rejected.";
+
                 return ApiResponse.Success(null, statusMessage);
             }
             catch (Exception ex)
             {
+                await transaction.RollbackAsync(cancellationToken);
+
                 await _unitOfWork.LogErrorAsync("ApproveApplicationHandler.Handle", ex);
-                return ApiResponse.Failure(500, $"An error occurred: {ex.Message}");
+                return ApiResponse.Failure(400, $"An error occurred (transaction rolled back): {ex.Message}");
+            }
+        }
+
+        private async Task<UserProfile?> GetAdminProfileAsync(Guid userId)
+        {
+            var adminUser = await _userRepository.GetAsync(
+                predicate: u => u.Id == userId,
+                include: q => q.Include(u => u.Profile)
+            );
+            var admin = adminUser.FirstOrDefault();
+            return admin?.Profile != null && admin.Profile.Role == UserRole.Admin ? admin.Profile : null;
+        }
+
+        private RestaurantProfile CreateRestaurantProfileEntity(SellerApplication application)
+        {
+            return new RestaurantProfile
+            {
+                Id = Guid.NewGuid(),
+                SellerApplicationId = application.Id,
+                OwnerId = application.UserProfileId,
+                RestaurantName = application.BusinessName,
+                Address = application.BusinessAddress,
+                Phone = application.ContactInfo,
+                Email = application.UserProfile.UserAccount?.Email ?? string.Empty,
+                Status = RestaurantStatus.Active,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+            };
+        }
+
+        private async Task SendEmailNotificationAsync(SellerApplication application, bool isApproved)
+        {
+            var sellerEmail = application.UserProfile?.UserAccount?.Email;
+            if (!string.IsNullOrEmpty(sellerEmail))
+            {
+                string subject = isApproved
+                    ? "Yêu cầu đăng ký làm đối tác cửa hàng đã được duyệt"
+                    : "Yêu cầu đăng ký làm đối tác cửa hàng đã bị từ chối";
+
+                string body = isApproved
+                    ? $"<p>Xin chúc mừng,</p><p>Yêu cầu đăng ký đối tác bán hàng cho cửa hàng <strong>{application.BusinessName}</strong> đã được phê duyệt thành công.</p><p>Hồ sơ cửa hàng của bạn đã được khởi tạo và bạn có thể bắt đầu đăng bán sản phẩm.</p>"
+                    : $"<p>Xin chào,</p><p>Yêu cầu đăng ký đối tác bán hàng cho cửa hàng <strong>{application.BusinessName}</strong> đã bị từ chối phê duyệt.</p><p><strong>Lý do từ chối:</strong> {application.RejectionReason}</p><p>Vui lòng cập nhật hồ sơ và gửi lại yêu cầu.</p>";
+
+               
+                await _emailService.SendEmailAsync(sellerEmail, subject, body);
+            }
+        }
+
+        private void AddDbNotification(SellerApplication application, bool isApproved)
+        {
+            var userAccountId = application.UserProfile?.UserAccountId;
+            if (userAccountId.HasValue)
+            {
+                var notification = new Notification
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = userAccountId.Value,
+                    Title = isApproved ? "Yêu cầu đối tác đã được duyệt" : "Yêu cầu đối tác bị từ chối",
+                    Message = isApproved
+                        ? $"Đơn đăng ký đối tác cửa hàng '{application.BusinessName}' của bạn đã được phê duyệt."
+                        : $"Đơn đăng ký đối tác cửa hàng '{application.BusinessName}' của bạn đã bị từ chối. Lý do: {application.RejectionReason}.",
+                    NotificationType = null,
+                    IsRead = false,
+                    CreateAt = DateTime.UtcNow
+                };
+
+                _notificationRepository.Add(notification);
             }
         }
     }

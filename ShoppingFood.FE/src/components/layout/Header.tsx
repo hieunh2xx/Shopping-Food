@@ -73,7 +73,7 @@ export function Header() {
                     <div className="absolute right-0 top-full mt-1 w-48 py-2 bg-white rounded-xl shadow-lg border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right">
                       {user?.role === 'Admin' && (
                         <Link
-                          to={ROUTES.ADMIN.DASHBOARD}
+                          to={ROUTES.ADMIN_DASHBOARD}
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600"
                         >
                           Quản trị hệ thống
@@ -81,7 +81,7 @@ export function Header() {
                       )}
                       {user?.role === 'Seller' && (
                         <Link
-                          to={ROUTES.SELLER.DASHBOARD}
+                          to={ROUTES.SELLER_DASHBOARD}
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600"
                         >
                           Quản lý cửa hàng

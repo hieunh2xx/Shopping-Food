@@ -45,7 +45,7 @@ namespace ShoppingFood.Application.Features.Products.Commands
                 );
                 var user = users.FirstOrDefault();
                 if (user == null || user.Profile == null)
-                    return ApiResponse.Failure(401, "User profile not found.");
+                    return ApiResponse.Failure(404, "User profile not found.");
 
                 var products = await _productRepository.GetAsync(
                     predicate: p => p.Id == request.Id,
@@ -55,7 +55,7 @@ namespace ShoppingFood.Application.Features.Products.Commands
                 var product = products.FirstOrDefault();
 
                 if (product == null)
-                    return ApiResponse.Failure(400, "This dish cannot be found.");
+                    return ApiResponse.Failure(404, "This dish cannot be found.");
 
                 if (product.Restaurant == null || product.Restaurant.OwnerId != user.Profile.Id)
                     return ApiResponse.Failure(403, "Forbidden. You do not own this restaurant.");
@@ -73,7 +73,7 @@ namespace ShoppingFood.Application.Features.Products.Commands
             catch (Exception ex)
             {
                 await _unitOfWork.LogErrorAsync("UpdateProductAvailabilityHandler.Handle", ex);
-                return ApiResponse.Failure(500, $"An error occurred: {ex.Message}");
+                return ApiResponse.Failure(400, $"An error occurred: {ex.Message}");
             }
         }
     }

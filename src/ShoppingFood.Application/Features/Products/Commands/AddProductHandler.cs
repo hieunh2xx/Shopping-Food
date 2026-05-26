@@ -31,43 +31,13 @@ namespace ShoppingFood.Application.Features.Products.Commands
             try
             {
                 var product = _mapper.Map<Product>(request);
-                if(product.Id == Guid.Empty) product.Id = Guid.NewGuid();
-                product.CreatedAt = DateTime.UtcNow;
-                product.UpdatedAt = DateTime.UtcNow;
-                product.Status = ProductStatus.Pending;
-                if (request.ImageUrls != null && request.ImageUrls.Count > 0)
-                {
-                    product.Images = new List<ProductImage>();
-                    foreach (var url in request.ImageUrls)
-                    {
-                        product.Images.Add(new ProductImage
-                        {
-                            Id = Guid.NewGuid(),
-                            ProductId = product.Id,
-                            ImageUrl = url
-                        });
-                    }
-                }
-                
-                _productRepository.Add(product);
-            
-                if (product.ProductToppings != null)
-                {
-                    foreach (var t in product.ProductToppings)
-                    {
-                        if (t.Id == Guid.Empty) t.Id = Guid.NewGuid();
-                        t.ProductId = product.Id;
-                    }
-                }
-                if (product.ProductSizes != null)
-                {
-                    foreach (var s in product.ProductSizes)
-                    {
-                        if (s.Id == Guid.Empty) s.Id = Guid.NewGuid();
-                        s.ProductId = product.Id;
-                    }
-                }
+                InitializeProduct(product); 
 
+                AddImages(product, request.ImageUrls);
+                AddToppings(product, request.ToppingIds);
+                AddSizes(product, request.Sizes);
+
+                _productRepository.Add(product);
                 await _unitOfWork.SaveChangesAsync();
 
                 var productDto = _mapper.Map<ProductDto>(product);
@@ -75,8 +45,61 @@ namespace ShoppingFood.Application.Features.Products.Commands
             }
             catch (Exception ex) {
                 await _unitOfWork.LogErrorAsync("AddProductHandler.Handle", ex);
-                return ApiResponse.Failure(500, $"An error occurred: {ex.Message}");
+                return ApiResponse.Failure(400, $"An error occurred: {ex.Message}");
             }
+        }
+
+        private void AddSizes(Product product, List<ProductSizeDto>? sizes)
+        {
+            if (sizes == null || !sizes.Any()) return;
+
+            product.ProductSizes = new List<ProductSize>();
+            foreach(var sizeDto in sizes)
+            {
+                var size = _mapper.Map<ProductSize>(sizeDto);
+                size.Id = size.Id == Guid.Empty ? Guid.NewGuid() : size.Id;
+                size.ProductId = product.Id;
+                product.ProductSizes.Add(size);
+            }
+        }
+
+        private void AddToppings(Product product, List<Guid>? toppingIds)
+        {
+            if(toppingIds == null || !toppingIds.Any()) return;
+
+            product.ProductToppings = new List<ProductTopping>();
+            foreach(var toppingId in toppingIds)
+            {
+                product.ProductToppings.Add(new ProductTopping
+                {
+                    ProductId = product.Id,
+                    ToppingId = toppingId
+                });
+            }
+        }
+
+        private void AddImages(Product product, List<string>? imageUrls)
+        {
+            if (imageUrls == null || !imageUrls.Any()) return;
+
+            product.Images = new List<ProductImage>();
+            foreach(var url in imageUrls)
+            {
+                product.Images.Add(new ProductImage
+                {
+                    Id = Guid.NewGuid(),
+                    ProductId = product.Id,
+                    ImageUrl = url
+                });
+            }
+        }
+
+        private void InitializeProduct(Product product)
+        {
+            if(product.Id == Guid.Empty) product.Id = Guid.NewGuid();
+            product.CreatedAt = DateTime.UtcNow;
+            product.UpdatedAt = DateTime.UtcNow;
+            product.Status = ProductStatus.Pending;
         }
     }
 }

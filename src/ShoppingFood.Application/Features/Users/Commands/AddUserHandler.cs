@@ -58,7 +58,7 @@ namespace ShoppingFood.Application.Features.Users.Commands
             catch (Exception ex)
             {
                 await _unitOfWork.LogErrorAsync("AddUserHandler.Handle", ex);
-                return ApiResponse.Failure(500, $"An error occurred: {ex.Message}");
+                return ApiResponse.Failure(400, $"An error occurred: {ex.Message}");
             }
         }
 

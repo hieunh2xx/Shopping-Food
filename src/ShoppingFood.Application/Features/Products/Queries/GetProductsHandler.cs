@@ -72,6 +72,7 @@ namespace ShoppingFood.Application.Features.Products.Queries
                                .Include(p => p.Images)
                                .Include(p => p.Category)
                                .Include(p => p.ProductToppings)
+                                   .ThenInclude(pt => pt.Topping)
                                .Include(p => p.ProductSizes)
                                .Include(p => p.Reviews),
                 skip: request.Skip,
