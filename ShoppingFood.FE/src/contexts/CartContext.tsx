@@ -16,6 +16,47 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   });
 
+  // Inject mock data if empty (for testing)
+  useEffect(() => {
+    if (items.length === 0) {
+      setItems([
+        {
+          product: {
+            id: 'mock-1',
+            restaurantId: 'rest-1',
+            restaurantName: 'Cơm Tấm Phúc Lộc Thọ',
+            itemName: 'Cơm tấm sườn bì chả đặc biệt với trứng ốp la lòng đào',
+            price: 55000,
+            primaryImageUrl: 'https://images.unsplash.com/photo-1626804475297-4160aae059fe?w=500&q=80',
+          },
+          quantity: 2
+        },
+        {
+          product: {
+            id: 'mock-2',
+            restaurantId: 'rest-1',
+            restaurantName: 'Cơm Tấm Phúc Lộc Thọ',
+            itemName: 'Canh rong biển đậu hũ',
+            price: 15000,
+            primaryImageUrl: 'https://images.unsplash.com/photo-1547592180-85f173990554?w=500&q=80',
+          },
+          quantity: 1
+        },
+        {
+          product: {
+            id: 'mock-3',
+            restaurantId: 'rest-2',
+            restaurantName: 'Phê La - Cà Phê Đặc Sản',
+            itemName: 'Ô Long Sữa Phê La size L',
+            price: 65000,
+            primaryImageUrl: 'https://images.unsplash.com/photo-1558160074-4d7d8bdf4256?w=500&q=80',
+          },
+          quantity: 3
+        }
+      ] as any);
+    }
+  }, []);
+
   useEffect(() => {
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
   }, [items]);
