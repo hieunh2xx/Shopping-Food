@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
@@ -41,6 +41,9 @@ namespace ShoppingFood.Application.Features.Products.Commands
         {
             try
             {
+                if (request.CurrentUserId == null)
+                    return ApiResponse.Failure(401, "Unauthorized access.");
+
                 var product = await _productRepository.GetByIdAsync(request.ProductId);
                 if (product == null)
                     return ApiResponse.Failure(404, "This product cannot be found");

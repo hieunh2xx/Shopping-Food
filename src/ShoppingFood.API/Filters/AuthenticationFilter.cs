@@ -36,12 +36,14 @@ namespace ShoppingFood.API.Filters
             var path = context.HttpContext.Request.Path.Value ?? string.Empty;
 
             // Bypass authentication for public endpoints
-            if (path == "/" || 
-                path.Equals("/api/User/Login", StringComparison.OrdinalIgnoreCase) || 
-                path.Equals("/api/User/Register", StringComparison.OrdinalIgnoreCase) || 
-                path.Equals("/api/User/RegisterSeller", StringComparison.OrdinalIgnoreCase) || 
+            if (path == "/" ||
+                path.Equals("/api/User/Login", StringComparison.OrdinalIgnoreCase) ||
+                path.Equals("/api/User/Register", StringComparison.OrdinalIgnoreCase) ||
+                path.Equals("/api/User/RegisterSeller", StringComparison.OrdinalIgnoreCase) ||
                 path.StartsWith("/swagger", StringComparison.OrdinalIgnoreCase) ||
-                (context.HttpContext.Request.Method == "GET" && path.StartsWith("/api/Product", StringComparison.OrdinalIgnoreCase)) ||
+                (context.HttpContext.Request.Method == "GET" && path.StartsWith("/api/Product", StringComparison.OrdinalIgnoreCase))  ||
+                (context.HttpContext.Request.Method == "GET" && path.StartsWith("/api/Restaurant", StringComparison.OrdinalIgnoreCase) &&
+                !path.Equals("/api/Restaurant/favorites", StringComparison.OrdinalIgnoreCase)) ||
                 (context.HttpContext.Request.Method == "GET" && path.StartsWith("/api/Admin/GlobalMenuCategory", StringComparison.OrdinalIgnoreCase)))
             {
                 await next();
@@ -77,28 +79,9 @@ namespace ShoppingFood.API.Filters
             context.HttpContext.User = new MyPrincipal(userDto);
 
             // Phân quyền: CUD món ăn & topping chỉ dành cho Seller
-            if ((path.Contains("/api/Product", StringComparison.OrdinalIgnoreCase) || 
-                 path.Contains("/api/Topping", StringComparison.OrdinalIgnoreCase)) && 
-                (context.HttpContext.Request.Method == "POST" || 
-                 context.HttpContext.Request.Method == "PUT" || 
-                 context.HttpContext.Request.Method == "DELETE" ||
-                 context.HttpContext.Request.Method == "PATCH"))
-            {
-                if (user.Profile?.Role != UserRole.Seller)
-                {
-                    throw new UnauthorizedAccessException("Only the seller has the right to perform this operation.");
-                }
-            }
-            if(path.Equals("/api/Product/Report", StringComparison.OrdinalIgnoreCase) && context.HttpContext.Request.Method == "POST")
-            {
-                if(user.Profile?.Role != UserRole.Customer)
-                {
-                    throw new UnauthorizedAccessException("Only customers can report products.");
-                }
-            }
-
-            if(path.Contains("/api/MenuCategory", StringComparison.OrdinalIgnoreCase) &&
-               ( context.HttpContext.Request.Method == "POST" ||
+            if ((path.Contains("/api/Product", StringComparison.OrdinalIgnoreCase) ||
+                 path.Contains("/api/Topping", StringComparison.OrdinalIgnoreCase)) &&
+                (context.HttpContext.Request.Method == "POST" ||
                  context.HttpContext.Request.Method == "PUT" ||
                  context.HttpContext.Request.Method == "DELETE" ||
                  context.HttpContext.Request.Method == "PATCH"))
@@ -108,11 +91,40 @@ namespace ShoppingFood.API.Filters
                     throw new UnauthorizedAccessException("Only the seller has the right to perform this operation.");
                 }
             }
-           
-            if(path.Contains("/api/Admin", StringComparison.OrdinalIgnoreCase)){
-                if(user.Profile?.Role != UserRole.Admin)
+            if (path.Equals("/api/Product/Report", StringComparison.OrdinalIgnoreCase) && context.HttpContext.Request.Method == "POST")
+            {
+                if (user.Profile?.Role != UserRole.Customer)
+                {
+                    throw new UnauthorizedAccessException("Only customers can report products.");
+                }
+            }
+
+            if (path.Contains("/api/MenuCategory", StringComparison.OrdinalIgnoreCase) &&
+               (context.HttpContext.Request.Method == "POST" ||
+                 context.HttpContext.Request.Method == "PUT" ||
+                 context.HttpContext.Request.Method == "DELETE" ||
+                 context.HttpContext.Request.Method == "PATCH"))
+            {
+                if (user.Profile?.Role != UserRole.Seller)
+                {
+                    throw new UnauthorizedAccessException("Only the seller has the right to perform this operation.");
+                }
+            }
+
+            if (path.Contains("/api/Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                if (user.Profile?.Role != UserRole.Admin)
                 {
                     throw new UnauthorizedAccessException("Only the admin has the right to perform this operation");
+                }
+            }
+
+            if ((path.Contains("/api/Restaurant/Favorite", StringComparison.OrdinalIgnoreCase) ||
+                 path.Contains("/api/Restaurant/Favorites", StringComparison.OrdinalIgnoreCase)))
+            {
+                if (user.Profile?.Role != UserRole.Customer)
+                {
+                    throw new UnauthorizedAccessException("Only customers can use favorite restaurant features.");
                 }
             }
             // Inject CurrentUserId into Commands/Queries

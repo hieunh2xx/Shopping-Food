@@ -83,6 +83,24 @@ namespace ShoppingFood.Domain.Migrations
                     b.ToTable("CART_ITEM", (string)null);
                 });
 
+            modelBuilder.Entity("ShoppingFood.Domain.Models.FavoriteRestaurant", b =>
+                {
+                    b.Property<Guid>("UserProfileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RestaurantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("UserProfileId", "RestaurantId");
+
+                    b.HasIndex("RestaurantId");
+
+                    b.ToTable("FAVORITE_RESTAURANT", (string)null);
+                });
+
             modelBuilder.Entity("ShoppingFood.Domain.Models.GlobalMenuCategory", b =>
                 {
                     b.Property<Guid>("Id")
@@ -828,6 +846,25 @@ namespace ShoppingFood.Domain.Migrations
                     b.Navigation("Cart");
 
                     b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.FavoriteRestaurant", b =>
+                {
+                    b.HasOne("ShoppingFood.Domain.Models.RestaurantProfile", "RestaurantProfile")
+                        .WithMany()
+                        .HasForeignKey("RestaurantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ShoppingFood.Domain.Models.UserProfile", "UserProfile")
+                        .WithMany()
+                        .HasForeignKey("UserProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("RestaurantProfile");
+
+                    b.Navigation("UserProfile");
                 });
 
             modelBuilder.Entity("ShoppingFood.Domain.Models.MenuCategory", b =>

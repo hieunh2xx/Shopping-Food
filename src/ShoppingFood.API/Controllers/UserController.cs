@@ -88,6 +88,20 @@ namespace ShoppingFood.API.Controllers
                 return Convert.ToBase64String(hashedBytes);
             }
         }
+
+        [HttpGet("SellerApplication/Status")]
+        public async Task<ActionResult<ApiResponse>> GetSellerApplicationStatus([FromQuery] GetSellerApplicationStatusQuery query)
+        {
+            var response = await _mediator.Send(query);
+            return Ok(response);
+        }
+
+        [HttpPut("SellerApplication")]
+        public async Task<ActionResult<ApiResponse>> UpdateSellerApplication([FromBody] UpdateSellerApplicationCommand command)
+        {
+            var response = await _mediator.Send(command);
+            return Ok(response);
+        }
     }
 
     public class LoginRequest

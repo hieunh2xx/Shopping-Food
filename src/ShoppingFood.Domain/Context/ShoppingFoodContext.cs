@@ -30,7 +30,7 @@ namespace ShoppingFood.Domain.Context
         public DbSet<GlobalMenuCategory> GlobalMenuCategories { get; set; } = null!;
         public DbSet<ProductReport> ProductReports { get; set; } = null!;
         public DbSet<Notification> Notifications { get; set; } = null!;
-
+        public DbSet<FavoriteRestaurant> FavoriteRestaurants { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -387,6 +387,22 @@ namespace ShoppingFood.Domain.Context
                     .WithMany()
                     .HasForeignKey(d => d.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<FavoriteRestaurant>(entity =>
+            {
+                entity.ToTable("FAVORITE_RESTAURANT");
+                entity.HasKey(e => new { e.UserProfileId, e.RestaurantId });
+
+                entity.HasOne(d => d.UserProfile)
+                .WithMany()
+                .HasForeignKey(d => d.UserProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(d => d.RestaurantProfile)
+                .WithMany()
+                .HasForeignKey(d => d.RestaurantId)
+                .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }

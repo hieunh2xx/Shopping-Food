@@ -7,6 +7,7 @@ using ShoppingFood.Application.Features.Users.Commands;
 using ShoppingFood.Application.Features.Products.Commands;
 using ShoppingFood.Application.Features.Products.Menu.Commands;
 using ShoppingFood.Application.Features.Products.GlobalMenuCategories.Commands;
+using ShoppingFood.Dto.Restaurant;
 
 namespace ShoppingFood.Application.Mappings
 {
@@ -84,6 +85,23 @@ namespace ShoppingFood.Application.Mappings
                 .ForMember(dest => dest.ReporterName, opt => opt.MapFrom(src => src.Reporter != null ? src.Reporter.FullName : string.Empty))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
             CreateMap<CreateProductReportCommand, ProductReport>();
+
+            //RestaurantProfile mappings
+            CreateMap<RestaurantProfile, RestaurantProfileDto>()
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+                .ForMember(dest => dest.Products, opt => opt.Ignore());
+
+            //FavoriteRestaurant mappings
+            CreateMap<FavoriteRestaurant, FavoriteRestaurantDto>()
+                .ForMember(dest => dest.RestaurantId, opt => opt.MapFrom(src => src.RestaurantId))
+                .ForMember(dest => dest.RestaurantName, opt => opt.MapFrom(src => src.RestaurantProfile.RestaurantName))
+                .ForMember(dest => dest.LogoUrl, opt => opt.MapFrom(src => src.RestaurantProfile.LogoUrl))
+                .ForMember(dest => dest.Address, opt => opt.MapFrom(src => src.RestaurantProfile.Address))
+                .ForMember(dest => dest.FavoritedAt, opt => opt.MapFrom(src => src.RestaurantProfile.CreatedAt));
+
+            //SellerApplication mappings
+            CreateMap<SellerApplication, SellerApplicationStatusDto>()
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
         }
     }
 }
