@@ -102,10 +102,14 @@ namespace ShoppingFood.Domain.Context
                 entity.Property(e => e.Phone).IsRequired().HasMaxLength(15);
                 entity.Property(e => e.Email).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.LogoUrl).HasMaxLength(255);
+                entity.Property(e => e.BannerUrl).HasMaxLength(255);
                 entity.Property(e => e.Status).HasConversion<string>().IsRequired();
                 entity.Property(e => e.Latitude);
                 entity.Property(e => e.Longitude);
-
+                entity.Property(e => e.OpeningTime);
+                entity.Property(e => e.ClosingTime);
+                entity.Property(e => e.MaxDeliveryRadiusKm);
+                entity.Property(e => e.ShippingFee).HasColumnType("decimal(12,2)").IsRequired().HasDefaultValue(0);
                 entity.HasOne(d => d.SellerApplication)
                     .WithOne(p => p.RestaurantProfile)
                     .HasForeignKey<RestaurantProfile>(d => d.SellerApplicationId)

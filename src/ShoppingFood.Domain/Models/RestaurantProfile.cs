@@ -13,9 +13,14 @@ namespace ShoppingFood.Domain.Models
         public string Phone { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string? LogoUrl { get; set; }
+        public string? BannerUrl { get; set; }
         public RestaurantStatus Status { get; set; } = RestaurantStatus.Active;
         public double? Latitude { get; set; }
         public double? Longitude { get; set; }
+        public TimeSpan? OpeningTime { get; set; }
+        public TimeSpan? ClosingTime { get; set; }
+        public double? MaxDeliveryRadiusKm { get; set; }
+        public decimal ShippingFee { get; set; } = 0;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

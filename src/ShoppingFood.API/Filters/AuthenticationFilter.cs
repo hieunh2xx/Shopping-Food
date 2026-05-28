@@ -127,6 +127,20 @@ namespace ShoppingFood.API.Filters
                     throw new UnauthorizedAccessException("Only customers can use favorite restaurant features.");
                 }
             }
+            
+            if (path.StartsWith("/api/Restaurant", StringComparison.OrdinalIgnoreCase) &&
+                !path.Contains("/favorite", StringComparison.OrdinalIgnoreCase) &&
+                !path.Contains("/favorites", StringComparison.OrdinalIgnoreCase) &&
+                (context.HttpContext.Request.Method == "PUT" ||
+                 context.HttpContext.Request.Method == "POST" ||
+                 context.HttpContext.Request.Method == "DELETE"))
+            {
+                if (user.Profile?.Role != UserRole.Seller)
+                {
+                    throw new UnauthorizedAccessException("Only the seller can update restaurant settings.");
+                }
+            }
+
             // Inject CurrentUserId into Commands/Queries
             foreach (var arg in context.ActionArguments.Values)
             {

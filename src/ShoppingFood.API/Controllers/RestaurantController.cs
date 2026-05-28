@@ -34,5 +34,40 @@ namespace ShoppingFood.API.Controllers
             var response = await _mediator.Send(command);
             return Ok(response);
         }
+
+        [HttpPut("basic-info")]
+        public async Task<ActionResult<ApiResponse>> UpdateBasicInfo([FromBody] UpdateRestaurantBasicInfoCommand command)
+        {
+            var response = await _mediator.Send(command);
+            return Ok(response);
+        }
+        
+        [HttpPut("operating-hours")]
+        public async Task<ActionResult<ApiResponse>> UpdateOperatingHours([FromBody] UpdateRestaurantOperatingHoursCommand command)
+        {
+            var response = await _mediator.Send(command);
+            return Ok(response);
+        }
+
+        [HttpPut("status")]
+        public async Task<ActionResult<ApiResponse>> UpdateStatus([FromBody] UpdateRestaurantStatusCommand command)
+        {
+            var response = await _mediator.Send(command);
+            return Ok(response);
+        }
+
+        [HttpPut("delivery-radius")]
+        public async Task<ActionResult<ApiResponse>> UpdateDeliveryRadius([FromBody] UpdateRestaurantDeliveryRadiusCommand command)
+        {
+            var response = await _mediator.Send(command);
+            return Ok(response);
+        }
+
+        [HttpPut("shipping-fee")]
+        public async Task<ActionResult<ApiResponse>> UpdateShippingFee([FromBody] UpdateRestaurantShippingFeeCommand command)
+        {
+            var response = await _mediator.Send(command);
+            return Ok(response);
+        }
     }
 }
