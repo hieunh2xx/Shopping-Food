@@ -102,6 +102,11 @@ namespace ShoppingFood.Application.Mappings
             //SellerApplication mappings
             CreateMap<SellerApplication, SellerApplicationStatusDto>()
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
+
+            //ProductReview mappings
+            CreateMap<ProductReview, ProductReviewDto>()
+                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.UserProfile != null ? src.UserProfile.FullName : string.Empty))
+                .ForMember(dest => dest.AvatarUrl, opt => opt.MapFrom(src => src.UserProfile != null ? src.UserProfile.AvatarUrl : null));
         }
     }
 }

@@ -118,9 +118,11 @@ namespace ShoppingFood.API.Filters
                 }
             }
 
-            // Phân quyền: CUD món ăn & topping chỉ dành cho Seller
+            // Phân quyền: CUD món ăn & topping chỉ dành cho Seller (ngoại trừ Report và Review)
             if ((path.Contains("/api/Product", StringComparison.OrdinalIgnoreCase) ||
                  path.Contains("/api/Topping", StringComparison.OrdinalIgnoreCase)) &&
+                !path.Equals("/api/Product/Report", StringComparison.OrdinalIgnoreCase) &&
+                !path.Equals("/api/Product/review", StringComparison.OrdinalIgnoreCase) &&
                 (context.HttpContext.Request.Method == "POST" ||
                  context.HttpContext.Request.Method == "PUT" ||
                  context.HttpContext.Request.Method == "DELETE" ||
@@ -131,11 +133,14 @@ namespace ShoppingFood.API.Filters
                     throw new UnauthorizedAccessException("Only the seller has the right to perform this operation.");
                 }
             }
-            if (path.Equals("/api/Product/Report", StringComparison.OrdinalIgnoreCase) && context.HttpContext.Request.Method == "POST")
+            // Phân quyền: Report và Review chỉ dành cho Customer
+            if ((path.Equals("/api/Product/Report", StringComparison.OrdinalIgnoreCase) ||
+                 path.Equals("/api/Product/review", StringComparison.OrdinalIgnoreCase)) && 
+                context.HttpContext.Request.Method == "POST")
             {
                 if (user.Profile?.Role != UserRole.Customer)
                 {
-                    throw new UnauthorizedAccessException("Only customers can report products.");
+                    throw new UnauthorizedAccessException("Only customers can report or review products.");
                 }
             }
 

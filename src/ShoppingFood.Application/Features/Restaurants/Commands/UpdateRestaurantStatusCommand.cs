@@ -1,7 +1,7 @@
 using MediatR;
 using ShoppingFood.Core.Base;
 
-namespace ShoppingFood.Application.Restaurants.Commands
+namespace ShoppingFood.Application.Features.Restaurants.Commands
 {
     public class UpdateRestaurantStatusCommand : BaseCommand, IRequest<ApiResponse>
     {

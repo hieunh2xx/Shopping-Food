@@ -18,6 +18,8 @@ namespace ShoppingFood.Dto.Restaurant
         public string Status {  get; set; } = string.Empty;
         public double? Latitude { get; set; }
         public double? Longitude { get; set; }
+        public double AverageRating { get; set; }
+        public int ReviewCount { get; set; }
         public DateTime CreatedAt { get; set; }
 
         public List<ProductDto> Products { get; set; } = new List<ProductDto>();

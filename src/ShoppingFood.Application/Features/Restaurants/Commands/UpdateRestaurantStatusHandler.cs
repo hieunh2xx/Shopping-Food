@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
+using ShoppingFood.Domain.Enums;
 using ShoppingFood.Domain.Models;
 using ShoppingFood.Repository.Interfaces;
 using System;
@@ -10,55 +11,57 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ShoppingFood.Application.Restaurants.Commands
+namespace ShoppingFood.Application.Features.Restaurants.Commands
 {
-    public class UpdateRestaurantOperatingHoursHandler : IRequestHandler<UpdateRestaurantOperatingHoursCommand, ApiResponse>
+    public class UpdateRestaurantStatusHandler : IRequestHandler<UpdateRestaurantStatusCommand, ApiResponse>
     {
         private readonly IRestaurantProfileRepository _restaurantProfileRepository;
         private readonly IUserRepository _userRepository;
         private readonly IUnitOfWork _unitOfWork;
 
-        public UpdateRestaurantOperatingHoursHandler(
+        public UpdateRestaurantStatusHandler(
             IRestaurantProfileRepository restaurantProfileRepository,
-            IUserRepository userRepository,
-            IUnitOfWork unitOfWork)
+            IUserRepository userRepository, 
+            IUnitOfWork unitOfWork) 
         {
             _restaurantProfileRepository = restaurantProfileRepository;
             _userRepository = userRepository;
             _unitOfWork = unitOfWork;
         }
-        public async Task<ApiResponse> Handle(UpdateRestaurantOperatingHoursCommand request, CancellationToken cancellationToken)
+        public async Task<ApiResponse> Handle(UpdateRestaurantStatusCommand request, CancellationToken cancellationToken)
         {
             try
             {
                 if (!request.CurrentUserId.HasValue)
                     return ApiResponse.Failure(401, "Unauthorized.");
 
-                if (!TimeSpan.TryParse(request.OpeningTime, out var openingTime) ||
-                   !TimeSpan.TryParse(request.ClosingTime, out var closingTime))
-                    return ApiResponse.Failure(400, "Invalid time format. Use HH:mm.");
-
                 var restaurant = await GetRestaurantByOwnerIdAsync(request.CurrentUserId.Value);
                 if (restaurant == null)
                     return ApiResponse.Failure(404, "Restaurant profile not found.");
 
-                UpdateRestaurantOperatingHours(restaurant, openingTime, closingTime);
+                if (restaurant.Status == RestaurantStatus.Suspended)
+                {
+                    return ApiResponse.Failure(403, "Your restaurant has been suspended by Admin and cannot change status.");
+                }
+
+                UpdateStatus(restaurant, request.IsTemporarilyClosed);
                 _restaurantProfileRepository.Update(restaurant);
                 await _unitOfWork.SaveChangesAsync();
 
-                return ApiResponse.Success(null, "Operatings hours updated successfully.");
+                string statusMessage = request.IsTemporarilyClosed ? "Restaurant status updated to Temporarily Closed." : "Restaurant status updated to Active.";
+                return ApiResponse.Success(null, statusMessage);
             }
             catch (Exception ex)
             {
-                await _unitOfWork.LogErrorAsync("UpdateRestaurantOperatingHoursHandler.Handle", ex);
-                return ApiResponse.Failure(400, $"An error occurred: {ex.Message}");
+                await _unitOfWork.LogErrorAsync("UpdateRestaurantStatusHandler.Handle", ex);
+                return ApiResponse.Failure(400, ex.Message);
             }
         }
+        
 
-        private void UpdateRestaurantOperatingHours(RestaurantProfile restaurant, TimeSpan openingTime, TimeSpan closingTime)
+        private void UpdateStatus(RestaurantProfile restaurant, bool isTemporarilyClosed)
         {
-            restaurant.OpeningTime = openingTime;
-            restaurant.ClosingTime = closingTime;
+            restaurant.Status = isTemporarilyClosed ? RestaurantStatus.Inactive : RestaurantStatus.Active;
             restaurant.UpdatedAt = DateTime.UtcNow;
         }
 

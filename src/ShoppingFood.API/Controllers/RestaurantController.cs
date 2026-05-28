@@ -1,7 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using ShoppingFood.Application.Restaurants.Commands;
-using ShoppingFood.Application.Restaurants.Queries;
+using ShoppingFood.Application.Features.Restaurants.Commands;
+using ShoppingFood.Application.Features.Restaurants.Queries;
 using ShoppingFood.Core.Base;
 
 namespace ShoppingFood.API.Controllers

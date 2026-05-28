@@ -10,7 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ShoppingFood.Application.Restaurants.Queries
+namespace ShoppingFood.Application.Features.Restaurants.Queries
 {
     public class GetFavoriteRestaurantsHandler : IRequestHandler<GetFavoriteRestaurantsQuery, ApiResponse>
     {

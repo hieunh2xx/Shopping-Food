@@ -21,6 +21,8 @@ namespace ShoppingFood.Domain.Models
         public TimeSpan? ClosingTime { get; set; }
         public double? MaxDeliveryRadiusKm { get; set; }
         public decimal ShippingFee { get; set; } = 0;
+        public double AverageRating { get; set; } = 0.0;
+        public int ReviewCount { get; set; } = 0;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

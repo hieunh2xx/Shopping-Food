@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ShoppingFood.Application.Restaurants.Commands
+namespace ShoppingFood.Application.Features.Restaurants.Commands
 {
     public class UpdateRestaurantBasicInfoCommand : BaseCommand, IRequest<ApiResponse>
     {

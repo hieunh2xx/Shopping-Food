@@ -115,6 +115,8 @@ namespace ShoppingFood.Domain.Context
                 entity.Property(e => e.ClosingTime);
                 entity.Property(e => e.MaxDeliveryRadiusKm);
                 entity.Property(e => e.ShippingFee).HasColumnType("decimal(12,2)").IsRequired().HasDefaultValue(0);
+                entity.Property(e => e.AverageRating).HasDefaultValue(0.0).IsRequired();
+                entity.Property(e => e.ReviewCount).HasDefaultValue(0).IsRequired();
                 entity.HasOne(d => d.SellerApplication)
                     .WithOne(p => p.RestaurantProfile)
                     .HasForeignKey<RestaurantProfile>(d => d.SellerApplicationId)

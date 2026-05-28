@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace ShoppingFood.Application.Restaurants.Commands
+namespace ShoppingFood.Application.Features.Restaurants.Commands
 {
     public class UpdateRestaurantOperatingHoursCommandValidator : AbstractValidator<UpdateRestaurantOperatingHoursCommand>
     {
