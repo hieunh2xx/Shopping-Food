@@ -1,6 +1,7 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig, type InternalAxiosRequestConfig } from 'axios';
 import { ENV } from '../../config/env';
 import { StorageUtil } from '../../utils/storage';
+import { authService } from '../AuthService';
 
 /**
  * Singleton HTTP Client wrapper around Axios
@@ -13,6 +14,8 @@ import { StorageUtil } from '../../utils/storage';
 class HttpClient {
   private static instance: HttpClient;
   private axiosInstance: AxiosInstance;
+  private isRefreshing = false;
+  private refreshSubscribers: ((token: string) => void)[] = [];
 
   private constructor() {
     this.axiosInstance = axios.create({
@@ -55,10 +58,51 @@ class HttpClient {
     // Response interceptor: handle 401 unauthorized
     this.axiosInstance.interceptors.response.use(
       (response) => response,
-      (error) => {
-        if (error.response?.status === 401) {
-          StorageUtil.clearAuth();
-          window.location.href = '/login';
+      async (error) => {
+        const originalRequest = error.config;
+        if (error.response?.status === 401 && !originalRequest._retry) {
+          if (this.isRefreshing) {
+            return new Promise((resolve) => {
+              this.refreshSubscribers.push((token: string) => {
+                originalRequest.headers.Authorization = `Bearer ${token}`;
+                resolve(this.axiosInstance(originalRequest));
+              });
+            });
+          }
+
+          originalRequest._retry = true;
+          this.isRefreshing = true;
+
+          try {
+            const token = StorageUtil.getToken();
+            const refreshToken = StorageUtil.getRefreshToken();
+            if (!token || !refreshToken) {
+              throw new Error('No refresh token available');
+            }
+
+            const response = await authService.refreshToken(token, refreshToken);
+            if (!response.error && response.data) {
+              StorageUtil.setToken(response.data.token);
+              StorageUtil.setRefreshToken(response.data.refreshToken);
+
+              // Update authorization header for current request
+              originalRequest.headers.Authorization = `Bearer ${response.data.token}`;
+              
+              // Notify all subscribers
+              this.refreshSubscribers.forEach((cb) => cb(response.data.token));
+              this.refreshSubscribers = [];
+
+              return this.axiosInstance(originalRequest);
+            } else {
+              throw new Error('Failed to refresh token');
+            }
+          } catch (refreshError) {
+            StorageUtil.clearAuth();
+            window.location.href = '/login';
+            return Promise.reject(refreshError);
+          } finally {
+            this.isRefreshing = false;
+          }
         }
         return Promise.reject(error);
       }

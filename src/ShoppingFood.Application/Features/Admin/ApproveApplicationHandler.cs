@@ -78,12 +78,23 @@ namespace ShoppingFood.Application.Features.Admin
                     
                     if (application.UserProfile != null)
                     {
-                        application.UserProfile.Role = UserRole.Seller;
+                        if (application.Type == ApplicationType.UpgradeToMall)
+                        {
+                            application.UserProfile.Role = UserRole.Mall;
+                        }
+                        else
+                        {
+                            application.UserProfile.Role = UserRole.Seller;
+                        }
                         application.UserProfile.UpdatedAt = DateTime.UtcNow;
+                        _userRepository.Update(application.UserProfile.UserAccount); 
                     }
 
-                    var restaurant = CreateRestaurantProfileEntity(application);
-                    _restaurantProfileRepository.Add(restaurant);
+                    if (application.Type == ApplicationType.NewSeller)
+                    {
+                        var restaurant = CreateRestaurantProfileEntity(application);
+                        _restaurantProfileRepository.Add(restaurant);
+                    }
                 }
                 else
                 {

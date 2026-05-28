@@ -1,4 +1,5 @@
 import { BaseService } from './base/BaseService';
+import { API_ENDPOINTS } from '../config/endpoints';
 import type { IMenuCategoryDto, IAddMenuCategoryRequest, IUpdateMenuCategoryRequest } from '../interfaces';
 
 /**
@@ -8,7 +9,7 @@ import type { IMenuCategoryDto, IAddMenuCategoryRequest, IUpdateMenuCategoryRequ
  * POST /api/MenuCategory and PUT /api/MenuCategory
  */
 class MenuCategoryService extends BaseService<IMenuCategoryDto, IAddMenuCategoryRequest, IUpdateMenuCategoryRequest> {
-  protected readonly endpoint = '/MenuCategory';
+  protected readonly endpoint = API_ENDPOINTS.MENU_CATEGORY.BASE;
 }
 
 // Export singleton instance

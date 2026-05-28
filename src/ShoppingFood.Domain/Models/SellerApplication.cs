@@ -12,6 +12,7 @@ namespace ShoppingFood.Domain.Models
         public string BusinessLicenseUrl { get; set; } = string.Empty;
         public string ShopImageUrl { get; set; } = string.Empty;
         public string ContactInfo { get; set; } = string.Empty;
+        public ApplicationType Type { get; set; } = ApplicationType.NewSeller;
         public SellerApplicationStatus Status { get; set; } = SellerApplicationStatus.Pending;
         public Guid? ReviewedBy { get; set; }
         public DateTime? ReviewedAt { get; set; }

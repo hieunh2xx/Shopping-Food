@@ -21,13 +21,25 @@ export interface ILoginRequest {
   password: string;
 }
 
+export interface ILoginGoogleRequest {
+  credential?: string;
+}
+
+export interface ILoginMicrosoftRequest {
+  code: string;
+  redirectUri: string;
+}
+
 /**
  * Login response payload from POST /api/User/Login
  */
 export interface ILoginResponse {
   token: string;
+  refreshToken: string;
   username: string;
+  fullName: string | null;
   role: string;
+  avatarUrl: string | null;
 }
 
 /**

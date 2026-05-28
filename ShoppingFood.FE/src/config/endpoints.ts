@@ -9,12 +9,22 @@ export const API_ENDPOINTS = {
     LOGIN: '/User/Login',
     REGISTER: '/User/Register',
     REGISTER_SELLER: '/User/RegisterSeller',
+    LOGIN_GOOGLE: '/User/LoginGoogle',
+    LOGIN_MICROSOFT: '/User/LoginMicrosoft',
   },
-
+  ROLE:{
+    UPGRADE_TO_MALL: '/User/UpgradeToMall',
+  },
   // === User Management (UserController) ===
   USER: {
     BASE: '/User',
     GET_ALL: '/User',          // GET ?filter=&skip=&take=
+    PROFILE: '/User/Profile',  // GET
+  },
+
+  // === Order Management (OrderController) ===
+  ORDER: {
+    MY_ORDERS: '/Order/MyOrders', // GET
   },
 
   // === Product (ProductController) ===
@@ -42,6 +52,7 @@ export const API_ENDPOINTS = {
 
   // === Admin (AdminController) ===
   ADMIN: {
+    BASE: '/Admin',
     APPROVE_SELLER: '/Admin/ApproveSellerApplication',  // POST
     APPROVE_PRODUCT: '/Admin/ApproveProduct',           // POST
   },

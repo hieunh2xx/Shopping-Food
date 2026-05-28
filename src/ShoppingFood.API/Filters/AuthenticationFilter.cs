@@ -2,11 +2,13 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using ShoppingFood.Core.Interfaces;
+using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Security;
 using ShoppingFood.Domain.Context;
 using ShoppingFood.Domain.Models;
@@ -37,9 +39,9 @@ namespace ShoppingFood.API.Filters
 
             // Bypass authentication for public endpoints
             if (path == "/" ||
-                path.Equals("/api/User/Login", StringComparison.OrdinalIgnoreCase) ||
-                path.Equals("/api/User/Register", StringComparison.OrdinalIgnoreCase) ||
-                path.Equals("/api/User/RegisterSeller", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/api/User/Login", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/api/User/Register", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/api/User/RefreshToken", StringComparison.OrdinalIgnoreCase) ||
                 path.StartsWith("/swagger", StringComparison.OrdinalIgnoreCase) ||
                 (context.HttpContext.Request.Method == "GET" && path.StartsWith("/api/Product", StringComparison.OrdinalIgnoreCase))  ||
                 (context.HttpContext.Request.Method == "GET" && path.StartsWith("/api/Restaurant", StringComparison.OrdinalIgnoreCase) &&
@@ -77,6 +79,44 @@ namespace ShoppingFood.API.Filters
 
             var userDto = _mapper.Map<UserDto>(user);
             context.HttpContext.User = new MyPrincipal(userDto);
+            var method = context.HttpContext.Request.Method;
+            var endpoint = await _dbContext.ApiEndpoints
+                .AsNoTracking()
+                .FirstOrDefaultAsync(e => e.Path.ToLower() == path.ToLower() && e.Method.ToUpper() == method.ToUpper());
+
+            if (endpoint != null)
+            {
+                if (!endpoint.IsPublished)
+                {
+                    context.Result = new ObjectResult(ApiResponse.Failure(403, "This API endpoint is currently unpublished.")) { StatusCode = 403 };
+                    return;
+                }
+
+                var userPerm = await _dbContext.UserPermissions
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(up => up.UserAccountId == user.Id && up.ApiEndpointId == endpoint.Id);
+                
+                if (userPerm != null)
+                {
+                    if (!userPerm.IsGranted)
+                    {
+                        context.Result = new ObjectResult(ApiResponse.Failure(403, "You do not have permission to access this endpoint.")) { StatusCode = 403 };
+                        return;
+                    }
+                }
+                else
+                {
+                    var rolePerm = await _dbContext.RolePermissions
+                        .AsNoTracking()
+                        .AnyAsync(rp => rp.Role == user.Profile!.Role && rp.ApiEndpointId == endpoint.Id);
+
+                    if (!rolePerm)
+                    {
+                        context.Result = new ObjectResult(ApiResponse.Failure(403, "Your role does not have permission to access this endpoint.")) { StatusCode = 403 };
+                        return;
+                    }
+                }
+            }
 
             // Phân quyền: CUD món ăn & topping chỉ dành cho Seller
             if ((path.Contains("/api/Product", StringComparison.OrdinalIgnoreCase) ||

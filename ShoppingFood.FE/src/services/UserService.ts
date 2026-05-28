@@ -1,4 +1,5 @@
 import { BaseService } from './base/BaseService';
+import { API_ENDPOINTS } from '../config/endpoints';
 import type { IUserDto, IRegisterRequest } from '../interfaces';
 
 /**
@@ -8,7 +9,7 @@ import type { IUserDto, IRegisterRequest } from '../interfaces';
  * GET /api/User?filter=&skip=&take= is handled by base getAll()
  */
 class UserService extends BaseService<IUserDto, IRegisterRequest> {
-  protected readonly endpoint = '/User';
+  protected readonly endpoint = API_ENDPOINTS.USER.BASE;
 }
 
 // Export singleton instance

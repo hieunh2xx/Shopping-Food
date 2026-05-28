@@ -1,7 +1,7 @@
 import { httpClient } from './base/HttpClient';
 import { BaseService } from './base/BaseService';
 import { API_ENDPOINTS } from '../config/endpoints';
-import type { IApiResponse, IUserDto, ILoginRequest, ILoginResponse, IRegisterRequest, IRegisterSellerRequest } from '../interfaces';
+import type { IApiResponse, IUserDto, ILoginRequest, ILoginGoogleRequest, ILoginMicrosoftRequest, ILoginResponse, IRegisterRequest, IRegisterSellerRequest } from '../interfaces';
 
 /**
  * Auth Service — handles authentication endpoints
@@ -12,12 +12,20 @@ import type { IApiResponse, IUserDto, ILoginRequest, ILoginResponse, IRegisterRe
 class AuthService extends BaseService<IUserDto, IRegisterRequest> {
   protected readonly endpoint = API_ENDPOINTS.USER.BASE;
 
-  /**
-   * POST /api/User/Login
-   * Authenticates user and returns JWT token
-   */
   async login(credentials: ILoginRequest): Promise<IApiResponse<ILoginResponse>> {
     return httpClient.post<IApiResponse<ILoginResponse>>(API_ENDPOINTS.AUTH.LOGIN, credentials);
+  }
+
+  async loginGoogle(credentials: ILoginGoogleRequest): Promise<IApiResponse<ILoginResponse>> {
+    return httpClient.post<IApiResponse<ILoginResponse>>(API_ENDPOINTS.AUTH.LOGIN_GOOGLE, credentials);
+  }
+
+  async loginMicrosoft(credentials: ILoginMicrosoftRequest): Promise<IApiResponse<ILoginResponse>> {
+    return httpClient.post<IApiResponse<ILoginResponse>>(API_ENDPOINTS.AUTH.LOGIN_MICROSOFT, credentials);
+  }
+
+  async refreshToken(token: string, refreshToken: string): Promise<IApiResponse<ILoginResponse>> {
+    return httpClient.post<IApiResponse<ILoginResponse>>('/User/RefreshToken', { token, refreshToken });
   }
 
   async register(data: IRegisterRequest): Promise<IApiResponse<IUserDto>> {
@@ -26,6 +34,14 @@ class AuthService extends BaseService<IUserDto, IRegisterRequest> {
 
   async registerSeller(data: IRegisterSellerRequest): Promise<IApiResponse<IUserDto>> {
     return httpClient.post<IApiResponse<IUserDto>>(API_ENDPOINTS.AUTH.REGISTER_SELLER, data);
+  }
+
+  async upgradeToMall(reason: string): Promise<IApiResponse<any>> {
+    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ROLE.UPGRADE_TO_MALL, { reason });
+  }
+
+  async getProfile(): Promise<IApiResponse<IUserDto>> {
+    return httpClient.get<IApiResponse<IUserDto>>(API_ENDPOINTS.USER.PROFILE);
   }
 }
 

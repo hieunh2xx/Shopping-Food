@@ -22,6 +22,44 @@ namespace ShoppingFood.Domain.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("ShoppingFood.Domain.Models.ApiEndpoint", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsPublished")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("Module")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("Path")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("API_ENDPOINT", (string)null);
+                });
+
             modelBuilder.Entity("ShoppingFood.Domain.Models.Cart", b =>
                 {
                     b.Property<Guid>("Id")
@@ -652,6 +690,32 @@ namespace ShoppingFood.Domain.Migrations
                     b.ToTable("RESTAURANT_PROFILE", (string)null);
                 });
 
+            modelBuilder.Entity("ShoppingFood.Domain.Models.RolePermission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ApiEndpointId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApiEndpointId");
+
+                    b.HasIndex("Role", "ApiEndpointId")
+                        .IsUnique();
+
+                    b.ToTable("ROLE_PERMISSION", (string)null);
+                });
+
             modelBuilder.Entity("ShoppingFood.Domain.Models.SellerApplication", b =>
                 {
                     b.Property<Guid>("Id")
@@ -697,6 +761,12 @@ namespace ShoppingFood.Domain.Migrations
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("nvarchar(max)")
+                        .HasDefaultValue("NewSeller");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -766,6 +836,12 @@ namespace ShoppingFood.Domain.Migrations
                         .HasMaxLength(15)
                         .HasColumnType("nvarchar(15)");
 
+                    b.Property<string>("RefreshToken")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("RefreshTokenExpiryTime")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -792,6 +868,34 @@ namespace ShoppingFood.Domain.Migrations
                         .HasFilter("[username] IS NOT NULL");
 
                     b.ToTable("USER_ACCOUNT", (string)null);
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.UserPermission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ApiEndpointId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsGranted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("UserAccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApiEndpointId");
+
+                    b.HasIndex("UserAccountId", "ApiEndpointId")
+                        .IsUnique();
+
+                    b.ToTable("USER_PERMISSION", (string)null);
                 });
 
             modelBuilder.Entity("ShoppingFood.Domain.Models.UserProfile", b =>
@@ -1066,6 +1170,17 @@ namespace ShoppingFood.Domain.Migrations
                     b.Navigation("SellerApplication");
                 });
 
+            modelBuilder.Entity("ShoppingFood.Domain.Models.RolePermission", b =>
+                {
+                    b.HasOne("ShoppingFood.Domain.Models.ApiEndpoint", "ApiEndpoint")
+                        .WithMany()
+                        .HasForeignKey("ApiEndpointId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ApiEndpoint");
+                });
+
             modelBuilder.Entity("ShoppingFood.Domain.Models.SellerApplication", b =>
                 {
                     b.HasOne("ShoppingFood.Domain.Models.UserProfile", "Reviewer")
@@ -1093,6 +1208,25 @@ namespace ShoppingFood.Domain.Migrations
                         .IsRequired();
 
                     b.Navigation("Restaurant");
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.UserPermission", b =>
+                {
+                    b.HasOne("ShoppingFood.Domain.Models.ApiEndpoint", "ApiEndpoint")
+                        .WithMany()
+                        .HasForeignKey("ApiEndpointId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ShoppingFood.Domain.Models.User", "UserAccount")
+                        .WithMany()
+                        .HasForeignKey("UserAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ApiEndpoint");
+
+                    b.Navigation("UserAccount");
                 });
 
             modelBuilder.Entity("ShoppingFood.Domain.Models.UserProfile", b =>

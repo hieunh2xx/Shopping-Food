@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using ShoppingFood.Domain.Enums;
 using ShoppingFood.Domain.Models;
 
 namespace ShoppingFood.Domain.Context
@@ -22,6 +23,9 @@ namespace ShoppingFood.Domain.Context
         public DbSet<Order> Orders { get; set; } = null!;
         public DbSet<OrderItem> OrderItems { get; set; } = null!;
         public DbSet<OtpRecord> OtpRecords { get; set; } = null!;
+        public DbSet<ApiEndpoint> ApiEndpoints { get; set; } = null!;
+        public DbSet<RolePermission> RolePermissions { get; set; } = null!;
+        public DbSet<UserPermission> UserPermissions { get; set; } = null!;
 
         public DbSet<Topping> Toppings { get; set; } = null!;
         public DbSet<ProductTopping> ProductToppings { get; set; } = null!;
@@ -77,6 +81,7 @@ namespace ShoppingFood.Domain.Context
                 entity.Property(e => e.BusinessLicenseUrl).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.ShopImageUrl).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.ContactInfo).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Type).HasConversion<string>().IsRequired().HasDefaultValue(ApplicationType.NewSeller);
                 entity.Property(e => e.Status).HasConversion<string>().IsRequired();
 
                 entity.HasOne(d => d.UserProfile)
@@ -407,6 +412,51 @@ namespace ShoppingFood.Domain.Context
                 .WithMany()
                 .HasForeignKey(d => d.RestaurantId)
                 .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // ApiEndpoint Entity
+            modelBuilder.Entity<ApiEndpoint>(entity =>
+            {
+                entity.ToTable("API_ENDPOINT");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Path).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.Method).IsRequired().HasMaxLength(10);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(150);
+                entity.Property(e => e.Module).HasMaxLength(100);
+                entity.Property(e => e.IsPublished).IsRequired().HasDefaultValue(true);
+            });
+
+            // RolePermission Entity
+            modelBuilder.Entity<RolePermission>(entity =>
+            {
+                entity.ToTable("ROLE_PERMISSION");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Role).HasConversion<string>().IsRequired();
+                entity.HasIndex(e => new { e.Role, e.ApiEndpointId }).IsUnique();
+
+                entity.HasOne(d => d.ApiEndpoint)
+                    .WithMany()
+                    .HasForeignKey(d => d.ApiEndpointId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // UserPermission Entity
+            modelBuilder.Entity<UserPermission>(entity =>
+            {
+                entity.ToTable("USER_PERMISSION");
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => new { e.UserAccountId, e.ApiEndpointId }).IsUnique();
+                entity.Property(e => e.IsGranted).IsRequired();
+
+                entity.HasOne(d => d.UserAccount)
+                    .WithMany()
+                    .HasForeignKey(d => d.UserAccountId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(d => d.ApiEndpoint)
+                    .WithMany()
+                    .HasForeignKey(d => d.ApiEndpointId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }

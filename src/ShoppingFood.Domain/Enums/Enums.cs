@@ -12,6 +12,7 @@ namespace ShoppingFood.Domain.Enums
     {
         Admin,
         Seller,
+        Mall,
         Customer
     }
 

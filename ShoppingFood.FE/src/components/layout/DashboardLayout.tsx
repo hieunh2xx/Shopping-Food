@@ -16,6 +16,7 @@ export interface DashboardLayoutProps {
   brandPath?: string;
   userRoleName: string;
   onLogout: () => void;
+  extraAction?: React.ReactNode;
 }
 
 export function DashboardLayout({
@@ -25,6 +26,7 @@ export function DashboardLayout({
   brandPath = '/',
   userRoleName,
   onLogout,
+  extraAction,
 }: DashboardLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user } = useAuth();
@@ -68,7 +70,6 @@ export function DashboardLayout({
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
           {navItems.map((item) => {
-            const isActive = location.pathname === item.path || (location.pathname.startsWith(item.path) && item.path !== '/');
             // Allow active highlight for exact match or nested paths, though exact match logic might need refinement depending on actual paths.
             // A simple exact match is safest for top-level navigation:
             const isExactMatch = location.pathname === item.path;
@@ -94,6 +95,11 @@ export function DashboardLayout({
 
         {/* Sidebar Footer */}
         <div className="p-4 border-t border-gray-200">
+          {extraAction && (
+            <div className="mb-2">
+              {extraAction}
+            </div>
+          )}
           <button 
             onClick={onLogout}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-red-600 hover:bg-red-50 transition-colors"

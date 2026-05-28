@@ -17,7 +17,9 @@ import {
   AdminPermissionsPage,
   SellerProductsPage,
   AdminUsersPage,
-  NotFoundPage
+  NotFoundPage,
+  ProfilePage,
+  OrdersPage
 } from '../pages';
 
 /**
@@ -37,7 +39,18 @@ export function AppRoutes() {
         <Route path={ROUTES.HOME} element={<HomePage />} />
         <Route path={ROUTES.PRODUCTS} element={<ProductsPage />} />
         <Route path={ROUTES.PRODUCT_DETAIL} element={<ProductDetailPage />} />
-
+        
+        {/* Protected Client Routes */}
+        <Route path={ROUTES.PROFILE} element={
+          <PrivateRoute allowedRoles={['Customer', 'Seller', 'Admin']}>
+            <ProfilePage />
+          </PrivateRoute>
+        } />
+        <Route path={ROUTES.ORDERS} element={
+          <PrivateRoute allowedRoles={['Customer', 'Seller', 'Admin']}>
+            <OrdersPage />
+          </PrivateRoute>
+        } />
       </Route>
 
       {/* Seller routes - protected with SellerLayout */}

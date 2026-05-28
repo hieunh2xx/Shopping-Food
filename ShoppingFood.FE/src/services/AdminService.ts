@@ -1,5 +1,6 @@
 import { httpClient } from './base/HttpClient';
 import { BaseService } from './base/BaseService';
+import { API_ENDPOINTS } from '../config/endpoints';
 import type { IApiResponse, IApproveApplicationRequest, IApproveProductRequest } from '../interfaces';
 
 /**
@@ -8,7 +9,7 @@ import type { IApiResponse, IApproveApplicationRequest, IApproveProductRequest }
  * Extends BaseService with approval actions.
  */
 class AdminService extends BaseService<unknown> {
-  protected readonly endpoint = '/Admin';
+  protected readonly endpoint = API_ENDPOINTS.ADMIN.BASE;
 
   /**
    * POST /api/Admin/ApproveSellerApplication

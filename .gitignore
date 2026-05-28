@@ -34,3 +34,6 @@ Thumbs.db
 .env.production
 .node_modules/
 dist/
+appsettings.json
+appsettings.Development.json
+appsettings.Production.json

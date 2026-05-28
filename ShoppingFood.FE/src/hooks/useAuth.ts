@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuthContext } from '../contexts/AuthContext';
 import { authService } from '../services';
 import type { ILoginRequest, IRegisterRequest, IRegisterSellerRequest, IUserDto } from '../interfaces';
+import { StorageUtil } from '../utils/storage';
 import toast from 'react-hot-toast';
 
 /**
@@ -19,19 +20,19 @@ export function useAuth() {
     try {
       const response = await authService.login(credentials);
       if (!response.error && response.data) {
-        // After login, we need to construct a minimal user object from login response
         const loginData = response.data;
         const userDto: IUserDto = {
           id: '',
           userName: loginData.username,
-          fullName: loginData.username,
+          fullName: loginData.fullName || loginData.username,
           role: loginData.role,
           status: 'Active',
           email: null,
           phone: null,
-          avatarUrl: null,
+          avatarUrl: loginData.avatarUrl || null,
           createdAt: new Date().toISOString(),
         };
+        StorageUtil.setRefreshToken(loginData.refreshToken);
         ctxLogin(loginData.token, userDto);
         toast.success('Đăng nhập thành công!');
         return true;
@@ -42,6 +43,80 @@ export function useAuth() {
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Đăng nhập thất bại';
+      setError(message);
+      toast.error(message);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loginGoogle = async (credential: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await authService.loginGoogle({ credential });
+      if (!response.error && response.data) {
+        const loginData = response.data;
+        const userDto: IUserDto = {
+          id: '',
+          userName: loginData.username,
+          fullName: loginData.fullName || loginData.username,
+          role: loginData.role,
+          status: 'Active',
+          email: null,
+          phone: null,
+          avatarUrl: loginData.avatarUrl || null,
+          createdAt: new Date().toISOString(),
+        };
+        StorageUtil.setRefreshToken(loginData.refreshToken);
+        ctxLogin(loginData.token, userDto);
+        toast.success('Đăng nhập Google thành công!');
+        return true;
+      } else {
+        setError(response.message);
+        toast.error(response.message || 'Đăng nhập Google thất bại');
+        return false;
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Đăng nhập Google thất bại';
+      setError(message);
+      toast.error(message);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loginMicrosoft = async (code: string, redirectUri: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await authService.loginMicrosoft({ code, redirectUri });
+      if (!response.error && response.data) {
+        const loginData = response.data;
+        const userDto: IUserDto = {
+          id: '',
+          userName: loginData.username,
+          fullName: loginData.fullName || loginData.username,
+          role: loginData.role,
+          status: 'Active',
+          email: null,
+          phone: null,
+          avatarUrl: loginData.avatarUrl || null,
+          createdAt: new Date().toISOString(),
+        };
+        StorageUtil.setRefreshToken(loginData.refreshToken);
+        ctxLogin(loginData.token, userDto);
+        toast.success('Đăng nhập Microsoft thành công');
+        return true;
+      } else {
+        setError(response.message);
+        toast.error(response.message || 'Đăng nhập Microsoft thất bại');
+        return false;
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Lỗi kết nối server';
       setError(message);
       toast.error(message);
       return false;
@@ -96,6 +171,29 @@ export function useAuth() {
     }
   };
 
+  const upgradeToMall = async (reason: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await authService.upgradeToMall(reason);
+      if (!response.error) {
+        toast.success(response.message || 'Yêu cầu lên Mall đã được gửi thành công.');
+        return true;
+      } else {
+        setError(response.message);
+        toast.error(response.message || 'Có lỗi xảy ra');
+        return false;
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Lỗi không xác định';
+      setError(message);
+      toast.error(message);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = () => {
     ctxLogout();
     toast.success('Đã đăng xuất');
@@ -107,8 +205,11 @@ export function useAuth() {
     isLoading: isLoading || ctxLoading,
     error,
     login,
+    loginGoogle,
+    loginMicrosoft,
     register,
     registerSeller,
+    upgradeToMall,
     logout,
   };
 }

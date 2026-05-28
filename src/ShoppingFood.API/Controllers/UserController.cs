@@ -1,8 +1,10 @@
 using System;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -11,6 +13,7 @@ using ShoppingFood.Application.Features.Users.Queries;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Security;
 using ShoppingFood.Domain.Context;
+using ShoppingFood.Dto.User;
 
 namespace ShoppingFood.API.Controllers
 {
@@ -40,6 +43,31 @@ namespace ShoppingFood.API.Controllers
             return Ok(response);
         }
 
+        [HttpPost("UpgradeToMall")]
+        public async Task<ActionResult<ApiResponse>> UpgradeToMall([FromBody] UpgradeToMallCommand command)
+        {
+            var response = await _mediator.Send(command);
+            if (response.Error)
+            {
+                return BadRequest(response);
+            }
+            return Ok(response);
+        }
+
+        [HttpGet("Profile")]
+        public async Task<IActionResult> GetProfile()
+        {
+            var username = userDto?.UserName;
+            if (string.IsNullOrEmpty(username))
+            {
+                return Unauthorized();
+            }
+
+            var query = new GetUserProfileQuery { Username = username };
+            var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
+        }
+
         [HttpGet]
         public async Task<ActionResult<ApiResponse>> Get([FromQuery] GetUserQuery query)
         {
@@ -48,7 +76,7 @@ namespace ShoppingFood.API.Controllers
         }
 
         [HttpPost("Login")]
-        public async Task<ActionResult<ApiResponse>> Login([FromBody] LoginRequest request)
+        public async Task<ActionResult<ApiResponse>> Login([FromBody] Login request)
         {
             var user = await _dbContext.Users
                 .Include(u => u.Profile)
@@ -71,13 +99,54 @@ namespace ShoppingFood.API.Controllers
             var audience = _configuration["JwtSettings:Audience"] ?? "ShoppingFoodClient";
 
             var token = TokenHelper.GenerateToken(user.UserName!, secretKey, issuer, audience);
+            var refreshToken = TokenHelper.GenerateRefreshToken();
+
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+            await _dbContext.SaveChangesAsync();
 
             return Ok(ApiResponse.Success(new
             {
                 Token = token,
+                RefreshToken = refreshToken,
                 Username = user.UserName,
-                Role = user.Profile?.Role.ToString()
+                FullName = user.Profile?.FullName,
+                Role = user.Profile?.Role.ToString(),
+                AvatarUrl = user.Profile?.AvatarUrl
             }, "Login successful"));
+        }
+
+        [HttpPost("LoginGoogle")]
+        public async Task<ActionResult<ApiResponse>> LoginGoogle([FromBody] LoginGoogleCommand command)
+        {
+            var response = await _mediator.Send(command);
+            if (response.Error)
+            {
+                return BadRequest(response);
+            }
+            return Ok(response);
+        }
+
+        [HttpPost("LoginMicrosoft")]
+        public async Task<ActionResult<ApiResponse>> LoginMicrosoft([FromBody] LoginMicrosoftCommand command)
+        {
+            var response = await _mediator.Send(command);
+            if (response.Error)
+            {
+                return BadRequest(response);
+            }
+            return Ok(response);
+        }
+
+        [HttpPost("RefreshToken")]
+        public async Task<ActionResult<ApiResponse>> RefreshToken([FromBody] RefreshTokenCommand command)
+        {
+            var response = await _mediator.Send(command);
+            if (response.Error)
+            {
+                return BadRequest(response);
+            }
+            return Ok(response);
         }
 
         private static string HashPassword(string password)
@@ -104,9 +173,5 @@ namespace ShoppingFood.API.Controllers
         }
     }
 
-    public class LoginRequest
-    {
-        public string UserName { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
-    }
+   
 }
