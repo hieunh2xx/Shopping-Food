@@ -1,10 +1,12 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, UploadCloud, CheckCircle2, ChevronRight, ChevronLeft } from 'lucide-react';
 import { Button, Input, DocumentViewerModal } from '../common';
 import { useAuth } from '../../hooks';
 import { ROUTES } from '../../routes/routeConfig';
 import toast from 'react-hot-toast';
+import { auth } from '../../config/firebase';
+import { RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult } from 'firebase/auth';
 
 interface RegisterFormProps {
   isSeller?: boolean;
@@ -16,6 +18,7 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
   
   // Multi-step State
   const [step, setStep] = useState(1);
+  const [isOtpSent, setIsOtpSent] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({
     userName: '',
@@ -30,11 +33,22 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
     businessLicenseUrl: '',
     shopImageUrl: '',
     contactInfo: '',
+    otpCode: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // File Upload State
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+
+  useEffect(() => {
+    // Initialize recaptcha if not already initialized
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-register-container', {
+        size: 'invisible'
+      });
+    }
+  }, []);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
 
@@ -113,12 +127,69 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
 
   const handleBack = () => setStep(1);
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  useEffect(() => {
+    if (isOtpSent && form.otpCode.length === 6 && !isLoading) {
+      handleSubmit();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.otpCode]);
+
+  const handleSubmit = async (e?: FormEvent) => {
+    if (e) e.preventDefault();
 
     if (isSeller) {
       if (!validateStep2()) return;
-      const success = await registerSeller({
+    } else {
+      if (!validateStep1()) return;
+    }
+
+    if (!isOtpSent) {
+      try {
+        if (!window.recaptchaVerifier) {
+          window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-register-container', {
+            size: 'invisible'
+          });
+        }
+        
+        let formattedPhone = form.phone;
+        if (formattedPhone.startsWith('0')) {
+          formattedPhone = '+84' + formattedPhone.substring(1);
+        } else if (!formattedPhone.startsWith('+')) {
+          formattedPhone = '+' + formattedPhone;
+        }
+
+        const result = await signInWithPhoneNumber(auth, formattedPhone, window.recaptchaVerifier);
+        setConfirmationResult(result);
+        setIsOtpSent(true);
+      } catch (error: any) {
+        console.error(error);
+        toast.error('Gửi OTP thất bại (Firebase)');
+      }
+      return;
+    }
+
+    if (!form.otpCode.trim()) {
+      setErrors({ ...errors, otpCode: 'Vui lòng nhập mã OTP' });
+      return;
+    }
+
+    if (!confirmationResult) {
+      toast.error('Không tìm thấy phiên xác thực OTP');
+      return;
+    }
+
+    let idToken = '';
+    try {
+      const result = await confirmationResult.confirm(form.otpCode);
+      idToken = await result.user.getIdToken();
+    } catch (error) {
+      console.error(error);
+      toast.error('Mã OTP không hợp lệ');
+      return;
+    }
+
+    if (isSeller) {
+      const result = await registerSeller({
         userName: form.userName,
         password: form.password,
         fullName: form.fullName,
@@ -129,19 +200,41 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
         businessLicenseUrl: form.businessLicenseUrl || 'pending',
         shopImageUrl: form.shopImageUrl || 'pending',
         contactInfo: form.contactInfo,
+        idToken: idToken,
       });
-      if (success) navigate(ROUTES.LOGIN);
+      if (result.success) {
+        navigate(ROUTES.LOGIN);
+      } else if (result.errors) {
+        const mappedErrors: Record<string, string> = {};
+        Object.keys(result.errors).forEach(key => {
+          const lowerKey = key.charAt(0).toLowerCase() + key.slice(1);
+          mappedErrors[lowerKey] = result.errors[key][0];
+        });
+        setErrors(mappedErrors);
+        if (mappedErrors.userName || mappedErrors.email || mappedErrors.phone || mappedErrors.password) {
+          setStep(1);
+        }
+      }
     } else {
-      if (!validateStep1()) return;
-      const success = await register({
+      const result = await register({
         userName: form.userName,
         password: form.password,
         fullName: form.fullName,
         email: form.email,
         phone: form.phone,
         role: 'Customer',
+        idToken: idToken,
       });
-      if (success) navigate(ROUTES.LOGIN);
+      if (result.success) {
+        navigate(ROUTES.LOGIN);
+      } else if (result.errors) {
+        const mappedErrors: Record<string, string> = {};
+        Object.keys(result.errors).forEach(key => {
+          const lowerKey = key.charAt(0).toLowerCase() + key.slice(1);
+          mappedErrors[lowerKey] = result.errors[key][0];
+        });
+        setErrors(mappedErrors);
+      }
     }
   };
 
@@ -247,6 +340,17 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
             />
           </div>
 
+          {!isSeller && isOtpSent && (
+            <Input
+              required
+              label="Mã OTP"
+              value={form.otpCode}
+              onChange={(e) => updateField('otpCode', e.target.value)}
+              error={errors.otpCode}
+              placeholder="Nhập mã OTP 6 số được gửi qua SMS"
+            />
+          )}
+
           {isSeller ? (
             <Button type="button" onClick={handleNext} className="w-full mt-6" size="lg">
               Tiếp tục
@@ -254,7 +358,7 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
             </Button>
           ) : (
             <Button type="submit" isLoading={isLoading} className="w-full mt-6 shadow-lg shadow-orange-500/25" size="lg">
-              Đăng ký tài khoản
+              {isOtpSent ? 'Xác nhận OTP và Đăng ký' : 'Gửi mã OTP'}
             </Button>
           )}
         </div>
@@ -353,13 +457,24 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
               )}
             </div>
 
+            {isOtpSent && (
+              <Input
+                required
+                label="Mã OTP"
+                value={form.otpCode}
+                onChange={(e) => updateField('otpCode', e.target.value)}
+                error={errors.otpCode}
+                placeholder="Nhập mã OTP 6 số được gửi qua SMS"
+              />
+            )}
+
             <div className="flex gap-4 pt-4">
               <Button type="button" variant="secondary" onClick={handleBack} className="w-1/3">
                 <ChevronLeft className="w-5 h-5 mr-2" />
                 Quay lại
               </Button>
               <Button type="submit" isLoading={isLoading} className="flex-1 shadow-lg shadow-orange-500/25">
-                Hoàn tất đăng ký
+                {isOtpSent ? 'Hoàn tất đăng ký' : 'Gửi mã OTP'}
               </Button>
             </div>
           </div>
@@ -423,6 +538,9 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
           </p>
         )}
       </form>
+
+      {/* Recaptcha Container for Firebase Phone Auth */}
+      <div id="recaptcha-register-container"></div>
 
       {/* Viewer Modal */}
       <DocumentViewerModal

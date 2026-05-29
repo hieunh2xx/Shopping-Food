@@ -13,5 +13,6 @@ namespace ShoppingFood.Application.Features.Users.Commands
         public string Phone { get; set; } = string.Empty;
         public UserRole Role { get; set; } = UserRole.Customer;
         public string? AvatarUrl { get; set; }
+        public string OtpCode { get; set; } = string.Empty;
     }
 }

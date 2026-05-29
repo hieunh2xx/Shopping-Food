@@ -3,7 +3,7 @@ import { ROUTES } from './routeConfig';
 import { PrivateRoute } from './PrivateRoute';
 
 // Layout
-import { MainLayout, AdminLayout, SellerLayout } from '../components/layout';
+import { MainLayout, AdminLayout, SellerLayout, UserLayout } from '../components/layout';
 
 // Pages
 import {
@@ -19,7 +19,8 @@ import {
   AdminUsersPage,
   NotFoundPage,
   ProfilePage,
-  OrdersPage
+  OrdersPage,
+  SellerApplyPage
 } from '../pages';
 
 /**
@@ -40,17 +41,24 @@ export function AppRoutes() {
         <Route path={ROUTES.PRODUCTS} element={<ProductsPage />} />
         <Route path={ROUTES.PRODUCT_DETAIL} element={<ProductDetailPage />} />
         
-        {/* Protected Client Routes */}
-        <Route path={ROUTES.PROFILE} element={
-          <PrivateRoute allowedRoles={['Customer', 'Seller', 'Admin']}>
-            <ProfilePage />
-          </PrivateRoute>
-        } />
-        <Route path={ROUTES.ORDERS} element={
-          <PrivateRoute allowedRoles={['Customer', 'Seller', 'Admin']}>
-            <OrdersPage />
-          </PrivateRoute>
-        } />
+        {/* Protected Client Routes inside UserLayout */}
+        <Route element={<UserLayout />}>
+          <Route path={ROUTES.PROFILE} element={
+            <PrivateRoute allowedRoles={['Customer', 'Seller', 'Admin', 'Mall']}>
+              <ProfilePage />
+            </PrivateRoute>
+          } />
+          <Route path={ROUTES.ORDERS} element={
+            <PrivateRoute allowedRoles={['Customer', 'Seller', 'Admin', 'Mall']}>
+              <OrdersPage />
+            </PrivateRoute>
+          } />
+          <Route path={ROUTES.SELLER_APPLY} element={
+            <PrivateRoute allowedRoles={['Customer']}>
+              <SellerApplyPage />
+            </PrivateRoute>
+          } />
+        </Route>
       </Route>
 
       {/* Seller routes - protected with SellerLayout */}

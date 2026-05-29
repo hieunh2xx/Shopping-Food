@@ -9,6 +9,8 @@ namespace ShoppingFood.Domain.Models
         public Guid UserAccountId { get; set; }
         public string FullName { get; set; } = string.Empty;
         public string? AvatarUrl { get; set; }
+        public string? Gender { get; set; }
+        public DateTime? DateOfBirth { get; set; }
         public UserRole Role { get; set; } = UserRole.Customer;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

@@ -10,6 +10,7 @@ export const ROUTES = {
   PRODUCTS: '/products',
   PRODUCT_DETAIL: '/products/:id',
   SELLER_DASHBOARD: '/seller',
+  SELLER_APPLY: '/seller/apply',
   SELLER_PRODUCTS: '/seller/products',
   SELLER_CATEGORIES: '/seller/categories',
   ADMIN_DASHBOARD: '/admin',

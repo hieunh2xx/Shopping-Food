@@ -42,6 +42,14 @@ namespace ShoppingFood.API.Filters
                 path.StartsWith("/api/User/Login", StringComparison.OrdinalIgnoreCase) ||
                 path.StartsWith("/api/User/Register", StringComparison.OrdinalIgnoreCase) ||
                 path.StartsWith("/api/User/RefreshToken", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/api/User/SendLoginOtp", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/api/User/VerifyLoginOtp", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/api/User/SendOtp", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/api/User/Logout", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/api/User/ForgotPassword", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/api/User/VerifyResetOtp", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/api/User/ResetPassword", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/api/User/VerifyUnlockAccount", StringComparison.OrdinalIgnoreCase) ||
                 path.StartsWith("/swagger", StringComparison.OrdinalIgnoreCase) ||
                 (context.HttpContext.Request.Method == "GET" && path.StartsWith("/api/Product", StringComparison.OrdinalIgnoreCase))  ||
                 (context.HttpContext.Request.Method == "GET" && path.StartsWith("/api/Restaurant", StringComparison.OrdinalIgnoreCase) &&

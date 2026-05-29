@@ -6,6 +6,7 @@ export { ProductDetailPage } from './ProductDetailPage';
 export { SellerDashboardPage } from './SellerDashboardPage';
 export { AdminDashboardPage } from './AdminDashboardPage';
 export { AdminPermissionsPage } from './admin/AdminPermissionsPage';
+export { SellerApplyPage } from './SellerApplyPage';
 export { SellerProductsPage } from './seller/SellerProductsPage';
 export { AdminUsersPage } from './admin/AdminUsersPage';
 export { ProfilePage } from './ProfilePage';

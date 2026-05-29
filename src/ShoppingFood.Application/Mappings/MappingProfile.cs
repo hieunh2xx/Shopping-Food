@@ -20,6 +20,8 @@ namespace ShoppingFood.Application.Mappings
                 .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.Profile != null ? src.Profile.FullName : string.Empty))
                 .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Profile != null ? src.Profile.Role.ToString() : string.Empty))
                 .ForMember(dest => dest.AvatarUrl, opt => opt.MapFrom(src => src.Profile != null ? src.Profile.AvatarUrl : null))
+                .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.Profile != null ? src.Profile.Gender : null))
+                .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(src => src.Profile != null ? src.Profile.DateOfBirth : null))
                 .ReverseMap();
 
             CreateMap<AddUserCommand, User>()

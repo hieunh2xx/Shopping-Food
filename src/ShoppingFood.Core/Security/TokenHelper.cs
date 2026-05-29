@@ -31,7 +31,7 @@ namespace ShoppingFood.Core.Security
             return usernameClaim.Value;
         }
 
-        public static string GenerateToken(string username, string secretKey, string issuer, string audience, int expiryMinutes = 60)
+        public static string GenerateToken(string username, string secretKey, string issuer, string audience, int expiryMinutes = 15)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(secretKey);
@@ -49,6 +49,11 @@ namespace ShoppingFood.Core.Security
             };
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
+        }
+
+        public static string GeneratePreAuthToken(string username, string secretKey, string issuer, string audience)
+        {
+            return GenerateToken(username, secretKey, issuer, audience, 10); // 10 minutes for PreAuth token
         }
 
         public static string GenerateRefreshToken()

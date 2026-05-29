@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -80,7 +81,7 @@ namespace ShoppingFood.API.Controllers
         {
             var user = await _dbContext.Users
                 .Include(u => u.Profile)
-                .FirstOrDefaultAsync(u => u.UserName == request.UserName);
+                .FirstOrDefaultAsync(u => u.UserName == request.UserName || u.Email == request.UserName);
 
             if (user == null)
             {
@@ -93,34 +94,114 @@ namespace ShoppingFood.API.Controllers
                 return Unauthorized(ApiResponse.Failure(401, "Invalid username or password"));
             }
 
+            if (user.Status == ShoppingFood.Domain.Enums.UserStatus.Blocked)
+            {
+                return Unauthorized(ApiResponse.Failure(403, "Tài khoản của bạn đã bị khóa bởi quản trị viên."));
+            }
+
+            if (user.Status == ShoppingFood.Domain.Enums.UserStatus.Inactive)
+            {
+                // Generate PreAuth Token (valid for 5 mins) for unlocking
+                var unlockPreAuthToken = ShoppingFood.Core.Security.TokenHelper.GeneratePreAuthToken(user.UserName!, _configuration["JwtSettings:Secret"] ?? "SuperSecretShoppingFoodKey1234567890", _configuration["JwtSettings:Issuer"] ?? "ShoppingFoodAPI", _configuration["JwtSettings:Audience"] ?? "ShoppingFoodClient");
+                
+                var methods = new System.Collections.Generic.List<string>();
+                if (!string.IsNullOrEmpty(user.Email)) methods.Add("email");
+                if (!string.IsNullOrEmpty(user.Phone)) methods.Add("phone");
+
+                return Ok(ApiResponse.Success(new { PreAuthToken = unlockPreAuthToken, AvailableMethods = methods }, "AccountLocked"));
+            }
+
+            // Cancel deletion if requested
+            if (user.DeleteRequestedAt.HasValue)
+            {
+                user.DeleteRequestedAt = null;
+                await _dbContext.SaveChangesAsync();
+            }
+
             // Get JWT configurations
             var secretKey = _configuration["JwtSettings:Secret"] ?? "SuperSecretShoppingFoodKey1234567890";
             var issuer = _configuration["JwtSettings:Issuer"] ?? "ShoppingFoodAPI";
             var audience = _configuration["JwtSettings:Audience"] ?? "ShoppingFoodClient";
 
-            var token = TokenHelper.GenerateToken(user.UserName!, secretKey, issuer, audience);
-            var refreshToken = TokenHelper.GenerateRefreshToken();
+            var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
-            user.RefreshToken = refreshToken;
-            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
-            await _dbContext.SaveChangesAsync();
+            var isTrusted = await _dbContext.TrustedDevices.AnyAsync(t => 
+                t.UserAccountId == user.Id && 
+                t.IpAddress == clientIp && 
+                t.ExpiresAt > DateTime.UtcNow);
 
-            var loginResponse = new LoginResponseDto
+            if (isTrusted)
             {
-                Token = token,
-                RefreshToken = refreshToken,
-                Username = user.UserName,
-                FullName = user.Profile?.FullName,
-                Role = user.Profile?.Role.ToString(),
-                AvatarUrl = user.Profile?.AvatarUrl
+                var token = TokenHelper.GenerateToken(user.UserName!, secretKey, issuer, audience);
+                var refreshToken = TokenHelper.GenerateRefreshToken();
+
+                user.RefreshToken = refreshToken;
+                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+                await _dbContext.SaveChangesAsync();
+
+                var loginResponse = new LoginResponseDto
+                {
+                    Token = token,
+                    Username = user.UserName,
+                    FullName = user.Profile?.FullName,
+                    Role = user.Profile?.Role.ToString(),
+                    AvatarUrl = user.Profile?.AvatarUrl
+                };
+
+                AppendRefreshTokenCookie(refreshToken);
+
+                return Ok(ApiResponse.Success(loginResponse, "Login successful"));
+            }
+
+            // Generate PreAuth Token (valid for 5 mins)
+            var preAuthToken = TokenHelper.GeneratePreAuthToken(user.UserName!, secretKey, issuer, audience);
+
+            var availableMethods = new System.Collections.Generic.List<string>();
+            if (!string.IsNullOrEmpty(user.Email)) availableMethods.Add("email");
+            if (!string.IsNullOrEmpty(user.Phone)) availableMethods.Add("phone");
+
+            var responseDto = new PreAuthResponseDto
+            {
+                PreAuthToken = preAuthToken,
+                AvailableMethods = availableMethods,
+                Username = user.UserName!
             };
 
-            AppendRefreshTokenCookie(refreshToken);
-            
-            // Remove RefreshToken from response body as it's now in cookie
-            loginResponse.RefreshToken = "";
+            return Ok(ApiResponse.Success(responseDto, "RequireOtp"));
+        }
 
-            return Ok(ApiResponse.Success(loginResponse, "Login successful"));
+        [HttpPost("SendLoginOtp")]
+        public async Task<ActionResult<ApiResponse>> SendLoginOtp([FromBody] SendLoginOtpRequest request)
+        {
+            var command = new SendLoginOtpCommand 
+            { 
+                PreAuthToken = request.PreAuthToken,
+                Method = request.Method,
+                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString()
+            };
+            var response = await _mediator.Send(command);
+            if (response.Error) return BadRequest(response);
+            return Ok(response);
+        }
+
+        [HttpPost("VerifyLoginOtp")]
+        public async Task<ActionResult<ApiResponse>> VerifyLoginOtp([FromBody] VerifyLoginOtpRequest request)
+        {
+            var command = new VerifyLoginOtpCommand 
+            { 
+                PreAuthToken = request.PreAuthToken,
+                OtpCode = request.OtpCode,
+                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString()
+            };
+            var response = await _mediator.Send(command);
+            if (response.Error) return BadRequest(response);
+
+            if (response.Data is LoginResponseDto loginResponse)
+            {
+                AppendRefreshTokenCookie(loginResponse.RefreshToken);
+                loginResponse.RefreshToken = "";
+            }
+            return Ok(response);
         }
 
         [HttpPost("LoginGoogle")]
@@ -131,6 +212,52 @@ namespace ShoppingFood.API.Controllers
             {
                 return BadRequest(response);
             }
+            if (response.Data is LoginResponseDto loginResponse)
+            {
+                AppendRefreshTokenCookie(loginResponse.RefreshToken);
+                loginResponse.RefreshToken = "";
+            }
+            return Ok(response);
+        }
+
+        [HttpPost("SendOtp")]
+        public async Task<ActionResult<ApiResponse>> SendOtp([FromBody] SendOtpRequest request)
+        {
+            var command = new SendOtpCommand 
+            { 
+                Phone = request.Phone,
+                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString()
+            };
+            var response = await _mediator.Send(command);
+            if (response.Error) return BadRequest(response);
+            return Ok(response);
+        }
+
+        [HttpPost("LoginByPhone")]
+        public async Task<ActionResult<ApiResponse>> LoginByPhone([FromBody] LoginByPhoneRequest request)
+        {
+            var command = new LoginByPhoneCommand 
+            { 
+                Phone = request.Phone,
+                OtpCode = request.OtpCode
+            };
+            var response = await _mediator.Send(command);
+            if (response.Error) return BadRequest(response);
+
+            if (response.Data is LoginResponseDto loginResponse)
+            {
+                AppendRefreshTokenCookie(loginResponse.RefreshToken);
+                loginResponse.RefreshToken = "";
+            }
+            return Ok(response);
+        }
+
+        [HttpPost("LoginFirebasePhone")]
+        public async Task<ActionResult<ApiResponse>> LoginFirebasePhone([FromBody] LoginFirebasePhoneCommand command)
+        {
+            var response = await _mediator.Send(command);
+            if (response.Error) return BadRequest(response);
+
             if (response.Data is LoginResponseDto loginResponse)
             {
                 AppendRefreshTokenCookie(loginResponse.RefreshToken);
@@ -184,6 +311,86 @@ namespace ShoppingFood.API.Controllers
             return Ok(ApiResponse.Success(null, "Logged out successfully"));
         }
 
+        [HttpPost("ForgotPassword")]
+        public async Task<ActionResult<ApiResponse>> ForgotPassword([FromBody] ForgotPasswordCommand command)
+        {
+            var response = await _mediator.Send(command);
+            if (response.Error) return BadRequest(response);
+            return Ok(response);
+        }
+
+        [HttpPost("VerifyResetOtp")]
+        public async Task<ActionResult<ApiResponse>> VerifyResetOtp([FromBody] VerifyResetOtpCommand command)
+        {
+            var response = await _mediator.Send(command);
+            if (response.Error) return BadRequest(response);
+            return Ok(response);
+        }
+
+        [HttpPost("ResetPassword")]
+        public async Task<ActionResult<ApiResponse>> ResetPassword([FromBody] ResetPasswordCommand command)
+        {
+            var response = await _mediator.Send(command);
+            if (response.Error) return BadRequest(response);
+            return Ok(response);
+        }
+
+        [HttpPost("ChangePassword")]
+        public async Task<ActionResult<ApiResponse>> ChangePassword([FromBody] ChangePasswordCommand command)
+        {
+            var response = await _mediator.Send(command);
+            if (response.Error) return BadRequest(response);
+            return Ok(response);
+        }
+
+        [HttpPost("UploadAvatar")]
+        public async Task<ActionResult<ApiResponse>> UploadAvatar([FromForm] UploadAvatarCommand command)
+        {
+            var response = await _mediator.Send(command);
+            if (response.Error)
+            {
+                return BadRequest(response);
+            }
+            return Ok(response);
+        }
+
+        [HttpPost("UploadImage")]
+        public async Task<ActionResult<ApiResponse>> UploadImage([FromForm] UploadImageCommand command)
+        {
+            var response = await _mediator.Send(command);
+            if (response.Error)
+            {
+                return BadRequest(response);
+            }
+            return Ok(response);
+        }
+
+        [HttpPut("UpdateProfile")]
+        public async Task<ActionResult<ApiResponse>> UpdateProfile([FromBody] UpdateProfileCommand command)
+        {
+            var response = await _mediator.Send(command);
+            if (response.Error) return BadRequest(response);
+            return Ok(response);
+        }
+
+        [HttpPost("RequestUpdateContact")]
+        public async Task<ActionResult<ApiResponse>> RequestUpdateContact([FromBody] RequestUpdateContactCommand command)
+        {
+            command.IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            var response = await _mediator.Send(command);
+            if (response.Error) return BadRequest(response);
+            return Ok(response);
+        }
+
+        [HttpPost("VerifyUpdateContact")]
+        public async Task<ActionResult<ApiResponse>> VerifyUpdateContact([FromBody] VerifyUpdateContactCommand command)
+        {
+            command.IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            var response = await _mediator.Send(command);
+            if (response.Error) return BadRequest(response);
+            return Ok(response);
+        }
+
         private void AppendRefreshTokenCookie(string refreshToken)
         {
             var cookieOptions = new Microsoft.AspNetCore.Http.CookieOptions
@@ -224,11 +431,115 @@ namespace ShoppingFood.API.Controllers
             return Ok(response);
         }
 
+        [HttpPost("ApplySeller")]
+        public async Task<ActionResult<ApiResponse>> ApplySeller([FromBody] ApplySellerCommand command)
+        {
+            var response = await _mediator.Send(command);
+            if (response.Error)
+            {
+                return BadRequest(response);
+            }
+            return Ok(response);
+        }
+
         [HttpPut("SellerApplication")]
         public async Task<ActionResult<ApiResponse>> UpdateSellerApplication([FromBody] UpdateSellerApplicationCommand command)
         {
             var response = await _mediator.Send(command);
             return Ok(response);
+        }
+
+        [HttpPost("LockAccount")]
+        [Authorize]
+        public async Task<ActionResult<ApiResponse>> LockAccount()
+        {
+            var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? Guid.Empty.ToString());
+            var user = await _dbContext.Users.FindAsync(userId);
+            if (user == null) return NotFound();
+
+            user.Status = ShoppingFood.Domain.Enums.UserStatus.Inactive;
+            
+            // Clear refresh token to force logout
+            user.RefreshToken = null;
+            user.RefreshTokenExpiryTime = null;
+            
+            await _dbContext.SaveChangesAsync();
+            
+            var cookieOptions = new Microsoft.AspNetCore.Http.CookieOptions
+            {
+                HttpOnly = true,
+                Expires = DateTime.UtcNow.AddDays(-1),
+                Secure = true,
+                SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None
+            };
+            Response.Cookies.Append("refreshToken", "", cookieOptions);
+
+            return Ok(ApiResponse.Success(null, "Đã khóa tài khoản bảo vệ thành công."));
+        }
+
+        [HttpPost("VerifyUnlockAccount")]
+        public async Task<ActionResult<ApiResponse>> VerifyUnlockAccount([FromBody] VerifyLoginOtpRequest request)
+        {
+            var command = new ShoppingFood.Application.Features.Users.Commands.VerifyLoginOtpCommand 
+            { 
+                PreAuthToken = request.PreAuthToken,
+                OtpCode = request.OtpCode,
+                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString()
+            };
+            var response = await _mediator.Send(command);
+            
+            // If OTP is valid, unlock the account
+            if (!response.Error)
+            {
+                // We need to extract the username from PreAuthToken
+                var username = ShoppingFood.Core.Security.TokenHelper.GetUsernameFromToken(request.PreAuthToken, _configuration);
+                if (!string.IsNullOrEmpty(username))
+                {
+                    var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.UserName == username);
+                    if (user != null && user.Status == ShoppingFood.Domain.Enums.UserStatus.Inactive)
+                    {
+                        user.Status = ShoppingFood.Domain.Enums.UserStatus.Active;
+                        await _dbContext.SaveChangesAsync();
+                    }
+                }
+
+                if (response.Data is ShoppingFood.Dto.User.LoginResponseDto loginResponse)
+                {
+                    AppendRefreshTokenCookie(loginResponse.RefreshToken);
+                    loginResponse.RefreshToken = "";
+                }
+            }
+
+            if (response.Error) return BadRequest(response);
+            return Ok(response);
+        }
+
+        [HttpPost("RequestDeletion")]
+        [Authorize]
+        public async Task<ActionResult<ApiResponse>> RequestDeletion()
+        {
+            var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? Guid.Empty.ToString());
+            var user = await _dbContext.Users.FindAsync(userId);
+            if (user == null) return NotFound();
+
+            user.DeleteRequestedAt = DateTime.UtcNow;
+            
+            // Clear refresh token to force logout
+            user.RefreshToken = null;
+            user.RefreshTokenExpiryTime = null;
+            
+            await _dbContext.SaveChangesAsync();
+            
+            var cookieOptions = new Microsoft.AspNetCore.Http.CookieOptions
+            {
+                HttpOnly = true,
+                Expires = DateTime.UtcNow.AddDays(-1),
+                Secure = true,
+                SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None
+            };
+            Response.Cookies.Append("refreshToken", "", cookieOptions);
+
+            return Ok(ApiResponse.Success(null, "Đã gửi yêu cầu xóa tài khoản. Dữ liệu sẽ bị xóa sau 30 ngày."));
         }
     }
 

@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Domain.Enums;
 using System;
@@ -23,5 +23,6 @@ namespace ShoppingFood.Application.Features.Users.Commands
         public string ShopImageUrl {  get; set; } = string.Empty;
         public string ContactInfo {  get; set; } = string.Empty;
         public UserRole Role { get; set; } = UserRole.Seller;
+        public string OtpCode { get; set; } = string.Empty;
     }
 }

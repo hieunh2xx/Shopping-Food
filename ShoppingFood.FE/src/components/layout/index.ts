@@ -4,3 +4,4 @@ export { Footer } from './Footer';
 export { CartDrawer } from './CartDrawer';
 export { AdminLayout } from './admin/AdminLayout';
 export { SellerLayout } from './seller/SellerLayout';
+export { UserLayout } from './UserLayout';

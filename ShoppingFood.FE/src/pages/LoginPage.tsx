@@ -67,7 +67,7 @@ export function LoginPage() {
             </p>
           </div>
 
-          <div className="bg-white/80 backdrop-blur-md border border-gray-200 rounded-3xl p-6 sm:p-8 shadow-sm">
+          <div className="bg-white/80  border border-gray-200 rounded-3xl p-6 sm:p-8 shadow-sm">
             <LoginForm />
           </div>
         </div>

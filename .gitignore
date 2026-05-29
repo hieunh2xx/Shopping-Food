@@ -20,16 +20,17 @@ TestResults/
 *.vspscc
 *.vssscc
 *.log
-
+firebase-adminsdk.json
 # EF Core & User Secrets
 appsettings.Development.json
-
+*.txt
 # OS generated files
 .DS_Store
 .DS_Store?
 ehthumbs.db
 Thumbs.db
 .env
+appsettings.json
 .env.development
 .env.production
 .node_modules/
@@ -37,3 +38,4 @@ dist/
 appsettings.json
 appsettings.Development.json
 appsettings.Production.json
+/Migrations

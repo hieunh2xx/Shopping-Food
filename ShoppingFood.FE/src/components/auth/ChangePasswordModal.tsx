@@ -1,0 +1,108 @@
+import { useState, type FormEvent } from 'react';
+import { X } from 'lucide-react';
+import { Button, Input } from '../common';
+import { authService } from '../../services/AuthService';
+import toast from 'react-hot-toast';
+
+interface ChangePasswordModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProps) {
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  if (!isOpen) return null;
+
+  const validate = () => {
+    const newErrors: Record<string, string> = {};
+    if (!oldPassword) newErrors.oldPassword = 'Vui lòng nhập mật khẩu hiện tại';
+    if (!newPassword) newErrors.newPassword = 'Vui lòng nhập mật khẩu mới';
+    else if (newPassword.length < 6) newErrors.newPassword = 'Mật khẩu phải từ 6 ký tự';
+    
+    if (newPassword !== confirmPassword) newErrors.confirmPassword = 'Mật khẩu xác nhận không khớp';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
+
+    setIsLoading(true);
+    try {
+      const response = await authService.changePassword({ oldPassword, newPassword });
+      if (!response.error) {
+        toast.success(response.message || 'Thay đổi mật khẩu thành công!');
+        handleClose();
+      } else {
+        toast.error(response.message || 'Có lỗi xảy ra');
+      }
+    } catch (error) {
+      toast.error('Có lỗi xảy ra');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleClose = () => {
+    setOldPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setErrors({});
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white rounded-2xl w-full max-w-md shadow-xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-4 border-b border-gray-100">
+          <h3 className="text-lg font-bold text-gray-900">Đổi mật khẩu</h3>
+          <button onClick={handleClose} className="p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <Input
+              label="Mật khẩu hiện tại"
+              type="password"
+              value={oldPassword}
+              onChange={(e) => setOldPassword(e.target.value)}
+              error={errors.oldPassword}
+              placeholder="Nhập mật khẩu hiện tại"
+            />
+            
+            <Input
+              label="Mật khẩu mới"
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              error={errors.newPassword}
+              placeholder="Nhập mật khẩu mới"
+            />
+
+            <Input
+              label="Xác nhận mật khẩu mới"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              error={errors.confirmPassword}
+              placeholder="Nhập lại mật khẩu mới"
+            />
+
+            <Button type="submit" isLoading={isLoading} className="w-full mt-2">
+              Đổi mật khẩu
+            </Button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -8,15 +8,19 @@ using ShoppingFood.Core.Base;
 using ShoppingFood.Dto.User;
 using ShoppingFood.Repository.Interfaces;
 
+using ShoppingFood.Domain.Context;
+
 namespace ShoppingFood.Application.Features.Users.Queries
 {
     public class GetUserProfileHandler : IRequestHandler<GetUserProfileQuery, ApiResponse>
     {
         private readonly IUserRepository _userRepository;
+        private readonly ShoppingFoodContext _dbContext;
 
-        public GetUserProfileHandler(IUserRepository userRepository)
+        public GetUserProfileHandler(IUserRepository userRepository, ShoppingFoodContext dbContext)
         {
             _userRepository = userRepository;
+            _dbContext = dbContext;
         }
 
         public async Task<ApiResponse> Handle(GetUserProfileQuery request, CancellationToken cancellationToken)
@@ -32,6 +36,25 @@ namespace ShoppingFood.Application.Features.Users.Queries
                 return ApiResponse.Failure(404, "User not found.");
             }
 
+            SellerInfoDto? sellerInfo = null;
+            if (user.Profile != null && (user.Profile.Role == ShoppingFood.Domain.Enums.UserRole.Seller || user.Profile.Role == ShoppingFood.Domain.Enums.UserRole.Mall))
+            {
+                var restaurant = await _dbContext.RestaurantProfiles
+                    .FirstOrDefaultAsync(r => r.OwnerId == user.Profile.Id, cancellationToken);
+                
+                if (restaurant != null)
+                {
+                    sellerInfo = new SellerInfoDto
+                    {
+                        RestaurantName = restaurant.RestaurantName,
+                        Address = restaurant.Address,
+                        AverageRating = restaurant.AverageRating,
+                        ReviewCount = restaurant.ReviewCount,
+                        LogoUrl = restaurant.LogoUrl
+                    };
+                }
+            }
+
             var userDto = new UserDto
             {
                 Id = user.Id,
@@ -40,8 +63,12 @@ namespace ShoppingFood.Application.Features.Users.Queries
                 Role = user.Profile?.Role.ToString() ?? "Customer",
                 Status = user.Status.ToString(),
                 Email = user.Email,
+                IsEmailActive = user.IsEmailActive,
                 Phone = user.Phone,
                 AvatarUrl = user.Profile?.AvatarUrl,
+                Gender = user.Profile?.Gender,
+                DateOfBirth = user.Profile?.DateOfBirth,
+                SellerInfo = sellerInfo,
                 CreatedAt = user.CreatedAt
             };
 

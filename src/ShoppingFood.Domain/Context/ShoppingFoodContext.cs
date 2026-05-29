@@ -35,6 +35,8 @@ namespace ShoppingFood.Domain.Context
         public DbSet<ProductReport> ProductReports { get; set; } = null!;
         public DbSet<Notification> Notifications { get; set; } = null!;
         public DbSet<FavoriteRestaurant> FavoriteRestaurants { get; set; } = null!;
+        public DbSet<UserAddress> UserAddresses { get; set; } = null!;
+        public DbSet<TrustedDevice> TrustedDevices { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -286,6 +288,7 @@ namespace ShoppingFood.Domain.Context
                 entity.Property(e => e.EmailOrPhone).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.OtpCode).IsRequired().HasMaxLength(6);
                 entity.Property(e => e.IpAddress).IsRequired().HasMaxLength(45);
+                entity.Property(e => e.IsUsed).IsRequired().HasDefaultValue(false);
             });
             // Topping Entity
             modelBuilder.Entity<Topping>(entity =>
@@ -458,6 +461,38 @@ namespace ShoppingFood.Domain.Context
                 entity.HasOne(d => d.ApiEndpoint)
                     .WithMany()
                     .HasForeignKey(d => d.ApiEndpointId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // TrustedDevice Entity
+            modelBuilder.Entity<TrustedDevice>(entity =>
+            {
+                entity.ToTable("TRUSTED_DEVICE");
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => new { e.UserAccountId, e.IpAddress }).IsUnique();
+                entity.Property(e => e.IpAddress).IsRequired().HasMaxLength(45);
+                entity.Property(e => e.TrustedAt).IsRequired();
+                entity.Property(e => e.ExpiresAt).IsRequired();
+
+                entity.HasOne(d => d.UserAccount)
+                    .WithMany()
+                    .HasForeignKey(d => d.UserAccountId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // UserAddress Entity
+            modelBuilder.Entity<UserAddress>(entity =>
+            {
+                entity.ToTable("USER_ADDRESS");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.ContactName).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.ContactPhone).IsRequired().HasMaxLength(15);
+                entity.Property(e => e.AddressLine).IsRequired().HasMaxLength(500);
+                entity.Property(e => e.IsDefault).IsRequired().HasDefaultValue(false);
+
+                entity.HasOne(d => d.UserAccount)
+                    .WithMany()
+                    .HasForeignKey(d => d.UserAccountId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
         }

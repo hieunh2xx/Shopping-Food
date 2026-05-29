@@ -8,9 +8,21 @@ export interface IUserDto {
   role: string;
   status: string;
   email: string | null;
+  isEmailActive?: boolean;
   phone: string | null;
   avatarUrl: string | null;
+  gender?: string | null;
+  dateOfBirth?: string | null;
   createdAt: string;
+  sellerInfo?: ISellerInfoDto | null;
+}
+
+export interface ISellerInfoDto {
+  restaurantName: string;
+  address: string;
+  averageRating: number;
+  reviewCount: number;
+  logoUrl?: string;
 }
 
 /**
@@ -42,17 +54,24 @@ export interface ILoginResponse {
   avatarUrl: string | null;
 }
 
+export interface IPreAuthResponse {
+  preAuthToken: string;
+  availableMethods: string[];
+  username: string;
+}
+
 /**
  * Mirrors backend AddUserCommand
  */
 export interface IRegisterRequest {
   userName: string;
-  password: string;
+  password?: string;
   fullName: string;
   email: string;
   phone: string;
   role: string;
   avatarUrl?: string;
+  idToken: string;
 }
 
 /**
@@ -72,7 +91,7 @@ export interface ISellerRegisterDto {
  */
 export interface IRegisterSellerRequest {
   userName: string;
-  password: string;
+  password?: string;
   fullName: string;
   email: string;
   phone: string;
@@ -81,4 +100,5 @@ export interface IRegisterSellerRequest {
   businessLicenseUrl: string;
   shopImageUrl: string;
   contactInfo: string;
+  idToken: string;
 }

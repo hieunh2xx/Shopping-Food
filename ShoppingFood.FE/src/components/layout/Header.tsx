@@ -61,9 +61,17 @@ export function Header() {
                   {/* User Menu */}
                   <div className="relative group">
                     <button className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-gray-100/50 transition-colors">
-                      <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
-                        <User className="w-4 h-4 text-orange-600" />
-                      </div>
+                      {user?.avatarUrl ? (
+                        <img 
+                          src={user.avatarUrl} 
+                          alt={user.fullName || user.userName} 
+                          className="w-8 h-8 rounded-full object-cover border border-orange-200"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
+                          <User className="w-4 h-4 text-orange-600" />
+                        </div>
+                      )}
                       <span className="hidden sm:block text-sm font-medium text-gray-700">
                         {user?.fullName || user?.userName}
                       </span>
@@ -85,6 +93,14 @@ export function Header() {
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600"
                         >
                           Quản lý cửa hàng
+                        </Link>
+                      )}
+                      {user?.role === 'Customer' && (
+                        <Link
+                          to={ROUTES.SELLER_APPLY}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600"
+                        >
+                          Đăng ký thành người bán
                         </Link>
                       )}
                       <Link

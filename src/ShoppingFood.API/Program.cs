@@ -65,6 +65,28 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Initialize Firebase Admin SDK
+try
+{
+    var firebaseKeyPath = builder.Configuration["FirebaseSettings:ServiceAccountKeyPath"];
+    if (!string.IsNullOrEmpty(firebaseKeyPath) && System.IO.File.Exists(firebaseKeyPath))
+    {
+        FirebaseAdmin.FirebaseApp.Create(new FirebaseAdmin.AppOptions()
+        {
+            Credential = Google.Apis.Auth.OAuth2.GoogleCredential.FromFile(firebaseKeyPath)
+        });
+        Console.WriteLine("Firebase Admin SDK initialized successfully.");
+    }
+    else
+    {
+        Console.WriteLine($"Firebase Admin SDK skipped. Service Account Key not found at: {firebaseKeyPath}");
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Failed to initialize Firebase Admin SDK: {ex.Message}");
+}
+
 var app = builder.Build();
 
 // Auto-create local SQL Server database at first startup for effortless execution

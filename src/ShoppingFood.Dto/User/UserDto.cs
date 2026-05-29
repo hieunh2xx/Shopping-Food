@@ -10,8 +10,21 @@ namespace ShoppingFood.Dto.User
         public string Role { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
         public string? Email { get; set; }
+        public bool IsEmailActive { get; set; }
         public string? Phone { get; set; }
         public string? AvatarUrl { get; set; }
+        public string? Gender { get; set; }
+        public DateTime? DateOfBirth { get; set; }
         public DateTime CreatedAt { get; set; }
+        public SellerInfoDto? SellerInfo { get; set; }
+    }
+
+    public class SellerInfoDto
+    {
+        public string RestaurantName { get; set; } = string.Empty;
+        public string Address { get; set; } = string.Empty;
+        public double AverageRating { get; set; }
+        public int ReviewCount { get; set; }
+        public string? LogoUrl { get; set; }
     }
 }
