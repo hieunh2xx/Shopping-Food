@@ -20,6 +20,7 @@ builder.Services.AddControllers(options =>
 // Add clean architecture layer service registrations
 builder.Services.AddRepositoryServices(builder.Configuration);
 builder.Services.AddApplicationServices();
+builder.Services.AddHttpContextAccessor();
 
 // Add API documentation via Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
@@ -52,6 +53,7 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
+
 
 // Configure CORS policy
 builder.Services.AddCors(options =>

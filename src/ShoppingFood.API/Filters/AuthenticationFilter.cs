@@ -36,9 +36,9 @@ namespace ShoppingFood.API.Filters
         public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
             var path = context.HttpContext.Request.Path.Value ?? string.Empty;
-
+            var method = context.HttpContext.Request.Method;
             // Bypass authentication for public endpoints
-            if (path == "/" ||
+            bool isBypassPath = path == "/" ||
                 path.StartsWith("/api/User/Login", StringComparison.OrdinalIgnoreCase) ||
                 path.StartsWith("/api/User/Register", StringComparison.OrdinalIgnoreCase) ||
                 path.StartsWith("/api/User/RefreshToken", StringComparison.OrdinalIgnoreCase) ||
@@ -51,10 +51,15 @@ namespace ShoppingFood.API.Filters
                 path.StartsWith("/api/User/ResetPassword", StringComparison.OrdinalIgnoreCase) ||
                 path.StartsWith("/api/User/VerifyUnlockAccount", StringComparison.OrdinalIgnoreCase) ||
                 path.StartsWith("/swagger", StringComparison.OrdinalIgnoreCase) ||
-                (context.HttpContext.Request.Method == "GET" && path.StartsWith("/api/Product", StringComparison.OrdinalIgnoreCase))  ||
-                (context.HttpContext.Request.Method == "GET" && path.StartsWith("/api/Restaurant", StringComparison.OrdinalIgnoreCase) &&
+                (method == "GET" && path.StartsWith("/api/Product", StringComparison.OrdinalIgnoreCase))  ||
+                (method == "GET" && path.StartsWith("/api/Restaurant", StringComparison.OrdinalIgnoreCase) &&
                 !path.Equals("/api/Restaurant/favorites", StringComparison.OrdinalIgnoreCase)) ||
-                (context.HttpContext.Request.Method == "GET" && path.StartsWith("/api/Admin/GlobalMenuCategory", StringComparison.OrdinalIgnoreCase)))
+                (method == "GET" && path.StartsWith("/api/Admin/GlobalMenuCategory", StringComparison.OrdinalIgnoreCase));
+
+            bool isGuestCartRequest = path.StartsWith("/api/Cart", StringComparison.OrdinalIgnoreCase) && 
+                                     !context.HttpContext.Request.Headers.ContainsKey("Authorization");
+
+            if (isBypassPath || isGuestCartRequest)
             {
                 await next();
                 return;
@@ -87,7 +92,7 @@ namespace ShoppingFood.API.Filters
 
             var userDto = _mapper.Map<UserDto>(user);
             context.HttpContext.User = new MyPrincipal(userDto);
-            var method = context.HttpContext.Request.Method;
+            
             var endpoint = await _dbContext.ApiEndpoints
                 .AsNoTracking()
                 .FirstOrDefaultAsync(e => e.Path.ToLower() == path.ToLower() && e.Method.ToUpper() == method.ToUpper());

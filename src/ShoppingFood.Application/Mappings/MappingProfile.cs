@@ -8,6 +8,7 @@ using ShoppingFood.Application.Features.Products.Commands;
 using ShoppingFood.Application.Features.Products.Menu.Commands;
 using ShoppingFood.Application.Features.Products.GlobalMenuCategories.Commands;
 using ShoppingFood.Dto.Restaurant;
+using ShoppingFood.Dto.Cart;
 
 namespace ShoppingFood.Application.Mappings
 {
@@ -109,6 +110,13 @@ namespace ShoppingFood.Application.Mappings
             CreateMap<ProductReview, ProductReviewDto>()
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.UserProfile != null ? src.UserProfile.FullName : string.Empty))
                 .ForMember(dest => dest.AvatarUrl, opt => opt.MapFrom(src => src.UserProfile != null ? src.UserProfile.AvatarUrl : null));
+
+            //CartItem and Cart mappings
+            CreateMap<Cart, CartDto>();
+            CreateMap<CartItem, CartItemDto>()
+                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product != null ? src.Product.ItemName : string.Empty))
+                .ForMember(dest => dest.ProductImageUrl, opt => opt.MapFrom(src => src.Product != null && src.Product.Images != null && src.Product.Images.Any() ? src.Product.Images.First().ImageUrl : null));
+                
         }
     }
 }
