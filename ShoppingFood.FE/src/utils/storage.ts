@@ -1,7 +1,6 @@
 import type { IUserDto } from '../interfaces';
 
 const TOKEN_KEY = 'sf_token';
-const REFRESH_TOKEN_KEY = 'sf_refresh_token';
 const USER_KEY = 'sf_user';
 
 /**
@@ -14,14 +13,6 @@ export class StorageUtil {
 
   static setToken(token: string): void {
     localStorage.setItem(TOKEN_KEY, token);
-  }
-
-  static getRefreshToken(): string | null {
-    return localStorage.getItem(REFRESH_TOKEN_KEY);
-  }
-
-  static setRefreshToken(token: string): void {
-    localStorage.setItem(REFRESH_TOKEN_KEY, token);
   }
 
   static getUser(): IUserDto | null {
@@ -40,7 +31,6 @@ export class StorageUtil {
 
   static clearAuth(): void {
     localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
   }
 

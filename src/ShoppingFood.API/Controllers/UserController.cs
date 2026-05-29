@@ -105,7 +105,7 @@ namespace ShoppingFood.API.Controllers
             user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
             await _dbContext.SaveChangesAsync();
 
-            return Ok(ApiResponse.Success(new
+            var loginResponse = new LoginResponseDto
             {
                 Token = token,
                 RefreshToken = refreshToken,
@@ -113,7 +113,14 @@ namespace ShoppingFood.API.Controllers
                 FullName = user.Profile?.FullName,
                 Role = user.Profile?.Role.ToString(),
                 AvatarUrl = user.Profile?.AvatarUrl
-            }, "Login successful"));
+            };
+
+            AppendRefreshTokenCookie(refreshToken);
+            
+            // Remove RefreshToken from response body as it's now in cookie
+            loginResponse.RefreshToken = "";
+
+            return Ok(ApiResponse.Success(loginResponse, "Login successful"));
         }
 
         [HttpPost("LoginGoogle")]
@@ -123,6 +130,11 @@ namespace ShoppingFood.API.Controllers
             if (response.Error)
             {
                 return BadRequest(response);
+            }
+            if (response.Data is LoginResponseDto loginResponse)
+            {
+                AppendRefreshTokenCookie(loginResponse.RefreshToken);
+                loginResponse.RefreshToken = "";
             }
             return Ok(response);
         }
@@ -135,18 +147,65 @@ namespace ShoppingFood.API.Controllers
             {
                 return BadRequest(response);
             }
+            if (response.Data is LoginResponseDto loginResponse)
+            {
+                AppendRefreshTokenCookie(loginResponse.RefreshToken);
+                loginResponse.RefreshToken = "";
+            }
             return Ok(response);
         }
 
         [HttpPost("RefreshToken")]
         public async Task<ActionResult<ApiResponse>> RefreshToken([FromBody] RefreshTokenCommand command)
         {
+            // Extract from cookie if missing from body
+            if (string.IsNullOrEmpty(command.RefreshToken) && Request.Cookies.TryGetValue("refreshToken", out var cookieToken))
+            {
+                command.RefreshToken = cookieToken;
+            }
+
             var response = await _mediator.Send(command);
             if (response.Error)
             {
                 return BadRequest(response);
             }
+            if (response.Data is LoginResponseDto loginResponse)
+            {
+                AppendRefreshTokenCookie(loginResponse.RefreshToken);
+                loginResponse.RefreshToken = "";
+            }
             return Ok(response);
+        }
+
+        [HttpPost("Logout")]
+        public IActionResult Logout()
+        {
+            ClearRefreshTokenCookie();
+            return Ok(ApiResponse.Success(null, "Logged out successfully"));
+        }
+
+        private void AppendRefreshTokenCookie(string refreshToken)
+        {
+            var cookieOptions = new Microsoft.AspNetCore.Http.CookieOptions
+            {
+                HttpOnly = true,
+                Expires = DateTime.UtcNow.AddDays(7),
+                Secure = true, // Must be true when SameSite=None
+                SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None
+            };
+            Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
+        }
+
+        private void ClearRefreshTokenCookie()
+        {
+            var cookieOptions = new Microsoft.AspNetCore.Http.CookieOptions
+            {
+                HttpOnly = true,
+                Expires = DateTime.UtcNow.AddDays(-1),
+                Secure = true,
+                SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None
+            };
+            Response.Cookies.Append("refreshToken", "", cookieOptions);
         }
 
         private static string HashPassword(string password)

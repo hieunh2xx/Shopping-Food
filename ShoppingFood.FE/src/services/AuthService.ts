@@ -24,8 +24,12 @@ class AuthService extends BaseService<IUserDto, IRegisterRequest> {
     return httpClient.post<IApiResponse<ILoginResponse>>(API_ENDPOINTS.AUTH.LOGIN_MICROSOFT, credentials);
   }
 
-  async refreshToken(token: string, refreshToken: string): Promise<IApiResponse<ILoginResponse>> {
-    return httpClient.post<IApiResponse<ILoginResponse>>('/User/RefreshToken', { token, refreshToken });
+  async refreshToken(token: string): Promise<IApiResponse<ILoginResponse>> {
+    return httpClient.post<IApiResponse<ILoginResponse>>('/User/RefreshToken', { token, refreshToken: "" });
+  }
+
+  async logout(): Promise<IApiResponse<any>> {
+    return httpClient.post<IApiResponse<any>>('/User/Logout');
   }
 
   async register(data: IRegisterRequest): Promise<IApiResponse<IUserDto>> {

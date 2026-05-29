@@ -21,6 +21,7 @@ class HttpClient {
     this.axiosInstance = axios.create({
       baseURL: ENV.API_BASE_URL,
       timeout: 30000,
+      withCredentials: true,
       headers: {
         'Content-Type': 'application/json',
       },
@@ -75,15 +76,13 @@ class HttpClient {
 
           try {
             const token = StorageUtil.getToken();
-            const refreshToken = StorageUtil.getRefreshToken();
-            if (!token || !refreshToken) {
-              throw new Error('No refresh token available');
+            if (!token) {
+              throw new Error('No access token available');
             }
 
-            const response = await authService.refreshToken(token, refreshToken);
+            const response = await authService.refreshToken(token);
             if (!response.error && response.data) {
               StorageUtil.setToken(response.data.token);
-              StorageUtil.setRefreshToken(response.data.refreshToken);
 
               // Update authorization header for current request
               originalRequest.headers.Authorization = `Bearer ${response.data.token}`;

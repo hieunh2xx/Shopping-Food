@@ -32,7 +32,6 @@ export function useAuth() {
           avatarUrl: loginData.avatarUrl || null,
           createdAt: new Date().toISOString(),
         };
-        StorageUtil.setRefreshToken(loginData.refreshToken);
         ctxLogin(loginData.token, userDto);
         toast.success('Đăng nhập thành công!');
         return true;
@@ -69,7 +68,6 @@ export function useAuth() {
           avatarUrl: loginData.avatarUrl || null,
           createdAt: new Date().toISOString(),
         };
-        StorageUtil.setRefreshToken(loginData.refreshToken);
         ctxLogin(loginData.token, userDto);
         toast.success('Đăng nhập Google thành công!');
         return true;
@@ -106,7 +104,6 @@ export function useAuth() {
           avatarUrl: loginData.avatarUrl || null,
           createdAt: new Date().toISOString(),
         };
-        StorageUtil.setRefreshToken(loginData.refreshToken);
         ctxLogin(loginData.token, userDto);
         toast.success('Đăng nhập Microsoft thành công');
         return true;
@@ -194,7 +191,12 @@ export function useAuth() {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await authService.logout();
+    } catch (e) {
+      console.warn("Logout request failed or network issue", e);
+    }
     ctxLogout();
     toast.success('Đã đăng xuất');
   };

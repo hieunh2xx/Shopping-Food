@@ -9,6 +9,7 @@ using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
 using ShoppingFood.Core.Security;
 using ShoppingFood.Repository.Interfaces;
+using ShoppingFood.Dto.User;
 
 namespace ShoppingFood.Application.Features.Users.Commands
 {
@@ -75,11 +76,11 @@ namespace ShoppingFood.Application.Features.Users.Commands
                 _userRepository.Update(user);
                 await _unitOfWork.SaveChangesAsync();
 
-                return ApiResponse.Success(new
+                return ApiResponse.Success(new LoginResponseDto
                 {
                     Token = newAccessToken,
                     RefreshToken = newRefreshToken,
-                    Username = user.UserName,
+                    Username = user.UserName!,
                     FullName = user.Profile?.FullName,
                     Role = user.Profile?.Role.ToString(),
                     AvatarUrl = user.Profile?.AvatarUrl
