@@ -125,12 +125,14 @@ namespace ShoppingFood.API.Controllers
 
             var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
+            var isAdmin = user.Profile?.Role == ShoppingFood.Domain.Enums.UserRole.Admin;
+
             var isTrusted = await _dbContext.TrustedDevices.AnyAsync(t => 
                 t.UserAccountId == user.Id && 
                 t.IpAddress == clientIp && 
                 t.ExpiresAt > DateTime.UtcNow);
 
-            if (isTrusted)
+            if (isTrusted || isAdmin)
             {
                 var token = TokenHelper.GenerateToken(user.UserName!, secretKey, issuer, audience);
                 var refreshToken = TokenHelper.GenerateRefreshToken();
