@@ -13,6 +13,7 @@ namespace ShoppingFood.Domain.Models
         public string DeliveryAddress { get; set; } = string.Empty;
         public string ContactName { get; set; } = string.Empty;
         public string ContactPhone { get; set; } = string.Empty;
+        public string? Note { get; set; }
         public OrderStatus Status { get; set; } = OrderStatus.Pending;
         public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.COD;
         public string IpAddress { get; set; } = string.Empty;

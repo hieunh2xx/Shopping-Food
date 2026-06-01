@@ -56,8 +56,12 @@ namespace ShoppingFood.API.Filters
                 !path.Equals("/api/Restaurant/favorites", StringComparison.OrdinalIgnoreCase)) ||
                 (method == "GET" && path.StartsWith("/api/Admin/GlobalMenuCategory", StringComparison.OrdinalIgnoreCase));
 
-            bool isGuestCartRequest = path.StartsWith("/api/Cart", StringComparison.OrdinalIgnoreCase) && 
-                                     !context.HttpContext.Request.Headers.ContainsKey("Authorization");
+            bool isGuestCartRequest = (path.StartsWith("/api/Cart", StringComparison.OrdinalIgnoreCase) ||
+                                       path.StartsWith("/api/Order/checkout", StringComparison.OrdinalIgnoreCase) ||
+                                       path.StartsWith("/api/Order/update", StringComparison.OrdinalIgnoreCase) ||
+                                       path.StartsWith("/api/Order/cancel", StringComparison.OrdinalIgnoreCase) ||
+                                       path.StartsWith("/api/Order/details", StringComparison.OrdinalIgnoreCase)) &&
+                                      !context.HttpContext.Request.Headers.ContainsKey("Authorization");
 
             if (isBypassPath || isGuestCartRequest)
             {

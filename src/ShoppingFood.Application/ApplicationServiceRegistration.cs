@@ -3,7 +3,7 @@ using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using ShoppingFood.Core.Behaviors;
-
+using AutoMapper;
 namespace ShoppingFood.Application
 {
     public static class ApplicationServiceRegistration

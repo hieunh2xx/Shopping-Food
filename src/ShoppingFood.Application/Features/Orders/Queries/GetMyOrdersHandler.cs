@@ -32,7 +32,10 @@ namespace ShoppingFood.Application.Features.Orders.Queries
 
             var orders = await _orderRepository.GetAsync(
                 predicate: o => o.UserAccountId == user.Id,
-                orderBy: q => q.OrderByDescending(o => o.CreatedAt)
+                orderBy: q => q.OrderByDescending(o => o.CreatedAt),
+                skip: request.Skip,
+                take: request.Take,
+                disableTracking: true
             );
 
             var orderDtos = orders.Select(o => new OrderSummaryDto

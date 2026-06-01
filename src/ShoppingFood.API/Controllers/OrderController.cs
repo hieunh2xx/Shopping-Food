@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ShoppingFood.Application.Features.Orders.Commands;
 using ShoppingFood.Application.Features.Orders.Queries;
 
 namespace ShoppingFood.API.Controllers
@@ -14,7 +15,7 @@ namespace ShoppingFood.API.Controllers
         }
 
         [HttpGet("MyOrders")]
-        public async Task<IActionResult> GetMyOrders()
+        public async Task<IActionResult> GetMyOrders([FromQuery] GetMyOrdersQuery query)
         {
             var username = userDto?.UserName;
             if (string.IsNullOrEmpty(username))
@@ -22,8 +23,63 @@ namespace ShoppingFood.API.Controllers
                 return Unauthorized();
             }
 
-            var query = new GetMyOrdersQuery { Username = username };
+            query.Username = username;
+            query.CurrentUserId = userDto.Id;
+
             var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpGet("details/{id}")]
+        public async Task<IActionResult> GetOrderDetails(Guid id)
+        {
+            var query = new GetOrderDetailsQuery { OrderId = id };
+            if (userDto != null)
+            {
+                query.CurrentUserId = userDto.Id;
+            }
+            var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpPost("checkout")]
+        public async Task<IActionResult> Checkout([FromBody] CheckoutCommand command)
+        {
+
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpPut("update")]
+        public async Task<IActionResult> UpdateOrder([FromBody] UpdateOrderCommand command)
+        {
+            if (userDto != null)
+            {
+                command.CurrentUserId = userDto.Id;
+            }
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpPut("cancel")]
+        public async Task<IActionResult> CancelOrder([FromBody] CancelOrderCommand command)
+        {
+            if (userDto != null)
+            {
+                command.CurrentUserId = userDto.Id;
+            }
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpPost("reorder")]
+        public async Task<IActionResult> Reorder([FromBody] ReorderCommand command)
+        {
+            if (userDto != null)
+            {
+                command.CurrentUserId = userDto.Id;
+            }
+            var response = await _mediator.Send(command);
             return StatusCode(response.Code, response);
         }
     }
