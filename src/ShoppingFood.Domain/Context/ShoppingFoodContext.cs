@@ -46,9 +46,18 @@ namespace ShoppingFood.Domain.Context
             {
                 entity.ToTable("USER_ACCOUNT");
                 entity.HasKey(e => e.Id);
-                entity.HasIndex(e => e.UserName).IsUnique().HasFilter("[username] IS NOT NULL");
-                entity.HasIndex(e => e.Phone).IsUnique().HasFilter("[phone] IS NOT NULL");
-                entity.HasIndex(e => e.Email).IsUnique().HasFilter("[email] IS NOT NULL");
+                
+                var userNameIndex = entity.HasIndex(e => e.UserName).IsUnique();
+                var phoneIndex = entity.HasIndex(e => e.Phone).IsUnique();
+                var emailIndex = entity.HasIndex(e => e.Email).IsUnique();
+
+                if (Database.ProviderName != "Microsoft.EntityFrameworkCore.Sqlite")
+                {
+                    userNameIndex.HasFilter("[username] IS NOT NULL");
+                    phoneIndex.HasFilter("[phone] IS NOT NULL");
+                    emailIndex.HasFilter("[email] IS NOT NULL");
+                }
+
                 entity.Property(e => e.PasswordHash).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.UserName).HasMaxLength(50);
                 entity.Property(e => e.Phone).HasMaxLength(15);
@@ -204,8 +213,15 @@ namespace ShoppingFood.Domain.Context
             {
                 entity.ToTable("CART");
                 entity.HasKey(e => e.Id);
-                entity.HasIndex(e => e.UserAccountId).IsUnique().HasFilter("[user_account_id] IS NOT NULL");
-                entity.HasIndex(e => e.GuestUserId).IsUnique().HasFilter("[guest_user_id] IS NOT NULL");
+                
+                var userAccountIndex = entity.HasIndex(e => e.UserAccountId).IsUnique();
+                var guestUserIndex = entity.HasIndex(e => e.GuestUserId).IsUnique();
+
+                if (Database.ProviderName != "Microsoft.EntityFrameworkCore.Sqlite")
+                {
+                    userAccountIndex.HasFilter("[user_account_id] IS NOT NULL");
+                    guestUserIndex.HasFilter("[guest_user_id] IS NOT NULL");
+                }
 
                 entity.HasOne(d => d.UserAccount)
                     .WithOne()

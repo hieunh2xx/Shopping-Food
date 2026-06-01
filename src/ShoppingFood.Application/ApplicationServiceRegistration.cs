@@ -13,7 +13,7 @@ namespace ShoppingFood.Application
             var assembly = Assembly.GetExecutingAssembly();
 
             // Auto-register AutoMapper
-            services.AddAutoMapper(assembly);
+            services.AddAutoMapper(cfg => cfg.AddMaps(typeof(ApplicationServiceRegistration).Assembly));
 
             // Auto-register Validators
             services.AddValidatorsFromAssembly(assembly);
