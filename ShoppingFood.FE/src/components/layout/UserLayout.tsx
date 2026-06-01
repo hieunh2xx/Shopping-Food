@@ -7,8 +7,8 @@ export function UserLayout() {
   const { user } = useAuth();
 
   const navItems = [
-    { name: 'Hồ sơ cá nhân', path: ROUTES.PROFILE, icon: <User className="w-5 h-5" /> },
-    { name: 'Đơn hàng của tôi', path: ROUTES.ORDERS, icon: <ShoppingBag className="w-5 h-5" /> },
+    { name: 'Hồ sơ cá nhân', path: ROUTES.PROFILE as string, icon: <User className="w-5 h-5" /> },
+    { name: 'Đơn hàng của tôi', path: ROUTES.ORDERS as string, icon: <ShoppingBag className="w-5 h-5" /> },
   ];
 
   if (user?.role === 'Customer') {
