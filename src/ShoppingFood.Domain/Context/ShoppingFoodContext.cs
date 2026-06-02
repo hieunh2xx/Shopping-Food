@@ -265,6 +265,7 @@ namespace ShoppingFood.Domain.Context
                 entity.Property(e => e.PaymentMethod).HasConversion<string>().IsRequired();
                 entity.Property(e => e.IpAddress).IsRequired().HasMaxLength(45);
                 entity.Property(e => e.Note).HasMaxLength(500);
+                entity.Property(e => e.RejectReason).HasMaxLength(500);
 
                 entity.HasOne(d => d.UserAccount)
                     .WithMany()

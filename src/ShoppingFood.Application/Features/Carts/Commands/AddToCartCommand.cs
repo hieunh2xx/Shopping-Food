@@ -13,5 +13,6 @@ namespace ShoppingFood.Application.Features.Carts.Commands
         public Guid ProductId { get; set; }
         public int Quantity { get; set; }
         public Guid? GuestUserId { get; set; }
+        public bool ClearCartIfConflict { get; set; } = false;
     }
 }

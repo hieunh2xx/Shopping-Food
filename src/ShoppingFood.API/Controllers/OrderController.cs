@@ -82,5 +82,27 @@ namespace ShoppingFood.API.Controllers
             var response = await _mediator.Send(command);
             return StatusCode(response.Code, response);
         }
+
+        [HttpPost("accept")]
+        public async Task<IActionResult> AcceptOrder([FromBody] AcceptOrderCommand command)
+        {
+            if(userDto != null)
+            {
+                command.CurrentUserId = userDto.Id;
+            }
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpPost("reject")]
+        public async Task<IActionResult> RejectOrder([FromBody] RejectOrderCommand command)
+        {
+            if(userDto != null)
+            {
+                command.CurrentUserId = userDto.Id;
+            }
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
     }
 }

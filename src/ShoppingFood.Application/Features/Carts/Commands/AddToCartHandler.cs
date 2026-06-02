@@ -65,6 +65,13 @@ namespace ShoppingFood.Application.Features.Carts.Commands
 
                 var cart = await GetOrCreateCartAsync(request.CurrentUserId, guestUserId);
 
+                var conflictResult = await ValidateRestaurantConflictAsync(cart, product, request.ClearCartIfConflict);
+                if (conflictResult != null)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    return conflictResult;
+                }
+
                 await AddOrUpdateCartItemAsync(cart.Id, product, request.Quantity);
 
                 await _unitOfWork.SaveChangesAsync();
@@ -81,6 +88,37 @@ namespace ShoppingFood.Application.Features.Carts.Commands
                 await _unitOfWork.LogErrorAsync("AddToCartHandler.Handle", ex);
                 return ApiResponse.Failure(400, $"An error occurred: {ex.Message}");
             }
+        }
+
+        private async Task<ApiResponse> ValidateRestaurantConflictAsync(Cart cart, Product product, bool clearCartIfConflict)
+        {
+            var existingCartItems = await _cartItemRepository.GetAsync(
+                predicate: i => i.CartId == cart.Id,
+                include: q => q.Include(i => i.Product),
+                disableTracking: false
+                );
+
+            if (existingCartItems.Any())
+            {
+                var existingRestaurantId = existingCartItems.First().Product!.RestaurantId;
+                if (existingRestaurantId != product.RestaurantId)
+                {
+                    if (clearCartIfConflict) 
+                        await ClearCartItemAsync(existingCartItems);
+                    else 
+                        return ApiResponse.Failure(409, "The item you selected is not from the same store as the items already in your cart. Would you like to empty your cart and add this new item?");
+                }
+            }
+            return null;
+        }
+
+        private async Task ClearCartItemAsync(IEnumerable<CartItem> Items)
+        {
+            foreach (var item in Items)
+            {
+                _cartItemRepository.Delete(item);
+            }
+            await _unitOfWork.SaveChangesAsync();
         }
 
         private async Task<CartItem?> GetCartItemAsync(Guid cartId, Guid productId)
