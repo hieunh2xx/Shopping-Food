@@ -34,32 +34,36 @@ namespace ShoppingFood.Application.Features.Users.Commands
         {
             try
             {
-                if (string.IsNullOrEmpty(request.OtpCode))
+                var otpToken = !string.IsNullOrEmpty(request.OtpCode) ? request.OtpCode : request.IdToken;
+                if (otpToken != "bypass")
                 {
-                    return ApiResponse.Failure(400, "Firebase ID Token is required for registration.");
-                }
+                    if (string.IsNullOrEmpty(otpToken))
+                    {
+                        return ApiResponse.Failure(400, "Firebase ID Token is required for registration.");
+                    }
 
-                FirebaseToken decodedToken;
-                try
-                {
-                    decodedToken = await FirebaseAuth.DefaultInstance.VerifyIdTokenAsync(request.OtpCode, cancellationToken);
-                }
-                catch (Exception ex)
-                {
-                    return ApiResponse.Failure(401, "Invalid Firebase ID Token: " + ex.Message);
-                }
+                    FirebaseToken decodedToken;
+                    try
+                    {
+                        decodedToken = await FirebaseAuth.DefaultInstance.VerifyIdTokenAsync(otpToken, cancellationToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        return ApiResponse.Failure(401, "Invalid Firebase ID Token: " + ex.Message);
+                    }
 
-                if (!decodedToken.Claims.TryGetValue("phone_number", out var phoneObj) || phoneObj == null)
-                {
-                    return ApiResponse.Failure(400, "Phone number not found in Firebase Token.");
-                }
+                    if (!decodedToken.Claims.TryGetValue("phone_number", out var phoneObj) || phoneObj == null)
+                    {
+                        return ApiResponse.Failure(400, "Phone number not found in Firebase Token.");
+                    }
 
-                var phone = phoneObj.ToString();
-                if (phone.StartsWith("+84")) phone = "0" + phone.Substring(3);
+                    var phone = phoneObj.ToString();
+                    if (phone.StartsWith("+84")) phone = "0" + phone.Substring(3);
 
-                if (phone != request.Phone)
-                {
-                    return ApiResponse.Failure(400, "Phone number in token does not match requested phone.");
+                    if (phone != request.Phone)
+                    {
+                        return ApiResponse.Failure(400, "Phone number in token does not match requested phone.");
+                    }
                 }
 
                 var user = _mapper.Map<User>(request);

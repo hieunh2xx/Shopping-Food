@@ -24,5 +24,6 @@ namespace ShoppingFood.Application.Features.Users.Commands
         public string ContactInfo {  get; set; } = string.Empty;
         public UserRole Role { get; set; } = UserRole.Seller;
         public string OtpCode { get; set; } = string.Empty;
+        public string IdToken { get; set; } = string.Empty;
     }
 }

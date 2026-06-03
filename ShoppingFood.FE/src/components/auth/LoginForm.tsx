@@ -224,11 +224,12 @@ export function LoginForm() {
               Gửi mã qua Email
             </Button>
           )}
-          {availableMethods.includes('phone') && (
+          {/* Hide phone OTP verification method option */}
+          {/* availableMethods.includes('phone') && (
             <Button type="button" variant="secondary" onClick={() => handleSendOtp('phone')} isLoading={isLoading} className="w-full">
               Gửi mã qua SMS
             </Button>
-          )}
+          ) */}
           {availableMethods.length === 0 && (
             <p className="text-sm text-red-500 text-center">Tài khoản này chưa cập nhật Email hay Số điện thoại.</p>
           )}
@@ -267,6 +268,8 @@ export function LoginForm() {
     <>
       <form onSubmit={loginMethod === 'standard' ? handleLoginSubmit : handlePhoneLoginSubmit} className="space-y-5 animate-in fade-in duration-300">
         
+        {/* Hide phone login option tab selector */}
+        {/*
         <div className="flex justify-center mb-6">
           <div className="inline-flex bg-gray-100 p-1 rounded-lg">
             <button
@@ -285,6 +288,7 @@ export function LoginForm() {
             </button>
           </div>
         </div>
+        */}
 
         {loginMethod === 'standard' ? (
           <>
