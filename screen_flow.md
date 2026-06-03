@@ -70,8 +70,8 @@ flowchart TD
     ProductsPage -->|Mở giỏ hàng| CartDrawer
     
     %% Checkout Interaction
-    CartDrawer -->|Thanh toán (Chưa Logged in)| LoginPage
-    CartDrawer -->|Thanh toán (Đã Logged in)| CheckoutPage["🛒 Checkout Page (/checkout - Dự kiến)"]
+    CartDrawer -->|Thanh toán - Chưa Logged in| LoginPage
+    CartDrawer -->|Thanh toán - Đã Logged in| CheckoutPage["🛒 Checkout Page (/checkout - Dự kiến)"]
 
     %% Auth Flows
     LoginPage -->|Chưa có tài khoản| RegisterPage
