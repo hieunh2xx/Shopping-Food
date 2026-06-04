@@ -50,6 +50,12 @@ namespace ShoppingFood.API.Controllers
             return StatusCode(response.Code, response);
         }
 
+        [HttpPost("checkout/sent-otp")]
+        public async Task<IActionResult> SendCheckoutOtp([FromBody]  SendCheckoutOtpCommand command)
+        {
+            var respone = await _mediator.Send(command);
+            return StatusCode(respone.Code, respone);
+        }
         [HttpPut("update")]
         public async Task<IActionResult> UpdateOrder([FromBody] UpdateOrderCommand command)
         {

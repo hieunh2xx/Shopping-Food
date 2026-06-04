@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Identity.Client;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
 using ShoppingFood.Domain.Context;
@@ -12,6 +13,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Net.WebRequestMethods;
 
 namespace ShoppingFood.Application.Features.Orders.Commands
 {
@@ -21,6 +23,8 @@ namespace ShoppingFood.Application.Features.Orders.Commands
         private readonly ICartItemRepository _cartItemRepository;
         private readonly IOrderRepository _orderRepository;
         private readonly IRestaurantProfileRepository _restaurantProfileRepository;
+        private readonly IOtpRecordRepository _otpRecordRepository;
+        private readonly IGuestUserRepository _guestUserRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ShoppingFoodContext _dbContext;
         private readonly IHttpContextAccessor _httpContextAccessor;
@@ -32,6 +36,8 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             ICartItemRepository cartItemRepository,
             IOrderRepository orderRepository,
             IRestaurantProfileRepository restaurantProfileRepository,
+            IOtpRecordRepository otpRecordRepository,
+            IGuestUserRepository guestUserRepository,
             IUnitOfWork unitOfWork,
             ShoppingFoodContext dbContext,
             IHttpContextAccessor httpContextAccessor
@@ -41,6 +47,8 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             _cartItemRepository = cartItemRepository;
             _orderRepository = orderRepository;
             _restaurantProfileRepository = restaurantProfileRepository;
+            _otpRecordRepository = otpRecordRepository;
+            _guestUserRepository = guestUserRepository;
             _unitOfWork = unitOfWork;
             _dbContext = dbContext;
             _httpContextAccessor = httpContextAccessor;
@@ -52,6 +60,68 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             {
                 if(!request.CurrentUserId.HasValue && !request.GuestUserId.HasValue)
                     return ApiResponse.Failure(401, "Unauthorized.");
+
+                var clientIp = GetClientIpAddress();
+
+                if (!request.CurrentUserId.HasValue)
+                {
+                    var isLocked = await _otpRecordRepository.ExistsAsync(
+                        o => o.IpAddress == clientIp &&
+                        o.RetriesCount >= 3 &&
+                        o.CreatedAt >= DateTime.UtcNow.AddMinutes(-15)
+                        );
+                    if (isLocked)
+                        return ApiResponse.Failure(403, "Checkout is temporarily locked for 15 minutes due to too many failed OTP attempts.");
+                }
+
+                var guestOrdersCount = await _orderRepository.GetCountAsync(
+                    predicate: o => o.IpAddress == clientIp &&
+                               o.GuestUserId != null &&
+                               o.CreatedAt >= DateTime.UtcNow.AddDays(-1)
+                    );
+                if (guestOrdersCount >= 3)
+                    return ApiResponse.Failure(429, "Rate limit exceeded. Maximum of 3 guest orders allowed per 24 hours.");
+
+                var otpRecords = await _otpRecordRepository.GetAsync(
+                    predicate: o => o.EmailOrPhone == request.ContactEmail && !o.IsUsed,
+                    orderBy: q => q.OrderByDescending(o => o.CreatedAt),
+                    disableTracking: false
+                    );
+                var otpRecord = otpRecords.FirstOrDefault();
+
+                if (otpRecord == null)
+                    return ApiResponse.Failure(400, "Invalid OTP. Please request a new OTP.");
+
+                if (otpRecord.ExpiryTime < DateTime.UtcNow)
+                    return ApiResponse.Failure(400, "OTP has expired. Please request a new OTP.");
+
+                if(otpRecord.OtpCode != request.OtpCode)
+                {
+                    otpRecord.RetriesCount++;
+                    _otpRecordRepository.Update(otpRecord);
+                    await _unitOfWork.SaveChangesAsync();
+                    if(otpRecord.RetriesCount >= 3)
+                    {
+                        await transaction.CommitAsync(cancellationToken);
+                        return ApiResponse.Failure(403, "Invalid OTP.You have exceeded 3 retries.Checkout is temporarily locked for 15 minutes.");
+                    }
+                    await transaction.CommitAsync(cancellationToken);
+                    return ApiResponse.Failure(400, $"Invalid OTP. You have {3 - otpRecord.RetriesCount} retries remaining.");
+                }
+
+                otpRecord.IsUsed = true;
+                _otpRecordRepository.Update(otpRecord);
+
+                var guestUser = await _guestUserRepository.GetByIdAsync(request.GuestUserId.Value);
+                if( guestUser != null )
+                {
+                    guestUser.FullName = request.ContactName;
+                    guestUser.Phone = request.ContactPhone;
+                    guestUser.Email = request.ContactEmail;
+                    guestUser.DeliveryAddress = request.DeliveryAddress;
+                    guestUser.IpAddress = clientIp;
+                    _guestUserRepository.Update(guestUser);
+                }
 
                 var cart = await GetCartWithItemsAsync(request.CurrentUserId, request.GuestUserId);
                 if (cart == null || !cart.Items.Any())

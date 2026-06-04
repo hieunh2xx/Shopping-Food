@@ -203,6 +203,16 @@ namespace ShoppingFood.API.Filters
                 }
             }
 
+            if ((path.Equals("/api/Order/accept", StringComparison.OrdinalIgnoreCase) ||
+                 path.Equals("/api/Order/reject", StringComparison.OrdinalIgnoreCase)) &&
+                context.HttpContext.Request.Method == "POST")
+            {
+                if (user.Profile?.Role != UserRole.Seller)
+                {
+                    throw new UnauthorizedAccessException("Only the seller has the right to perform this operation.");
+                }
+            }
+            
             // Inject CurrentUserId into Commands/Queries
             foreach (var arg in context.ActionArguments.Values)
             {
