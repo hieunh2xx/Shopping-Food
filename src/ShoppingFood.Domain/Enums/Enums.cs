@@ -55,6 +55,7 @@ namespace ShoppingFood.Domain.Enums
         Pending,
         Confirmed,
         Preparing,
+        WaitingForDriver,
         Shipping,
         Delivered,
         Cancelled

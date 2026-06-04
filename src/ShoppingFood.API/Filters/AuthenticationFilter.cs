@@ -204,7 +204,9 @@ namespace ShoppingFood.API.Filters
             }
 
             if ((path.Equals("/api/Order/accept", StringComparison.OrdinalIgnoreCase) ||
-                 path.Equals("/api/Order/reject", StringComparison.OrdinalIgnoreCase)) &&
+                 path.Equals("/api/Order/reject", StringComparison.OrdinalIgnoreCase) ||
+                 path.Equals("/api/Order/prepare", StringComparison.OrdinalIgnoreCase) ||
+                 path.Equals("/api/Order/waiting-for-driver", StringComparison.OrdinalIgnoreCase)) &&
                 context.HttpContext.Request.Method == "POST")
             {
                 if (user.Profile?.Role != UserRole.Seller)

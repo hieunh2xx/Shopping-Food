@@ -110,5 +110,26 @@ namespace ShoppingFood.API.Controllers
             var response = await _mediator.Send(command);
             return StatusCode(response.Code, response);
         }
+
+        [HttpPost("prepare")]
+        public async Task<IActionResult> PrepareOrder([FromBody]  PrepareOrderCommand command)
+        {
+            if(userDto != null)
+            {
+                command.CurrentUserId= userDto.Id;
+            }
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
+        [HttpPost("waiting-for-drive")]
+        public async Task<IActionResult> WaitingForDriverOrder([FromBody] WaitingDriverOrderCommand command)
+        {
+            if (userDto != null)
+            {
+                command.CurrentUserId = userDto.Id;
+            }
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
     }
 }
