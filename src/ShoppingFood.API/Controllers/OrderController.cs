@@ -121,6 +121,7 @@ namespace ShoppingFood.API.Controllers
             var response = await _mediator.Send(command);
             return StatusCode(response.Code, response);
         }
+
         [HttpPost("waiting-for-drive")]
         public async Task<IActionResult> WaitingForDriverOrder([FromBody] WaitingDriverOrderCommand command)
         {
@@ -130,6 +131,16 @@ namespace ShoppingFood.API.Controllers
             }
             var response = await _mediator.Send(command);
             return StatusCode(response.Code, response);
+        }
+        [HttpPost("seller-cancel")]
+        public async Task<IActionResult> SellerCancelOrder([FromBody]  SellerCancelOrderCommand command)
+        {
+            if(userDto!= null)
+            {
+                command.CurrentUserId = userDto.Id;
+            }
+            var respone = await _mediator.Send(command);
+            return StatusCode(respone.Code, respone);
         }
     }
 }

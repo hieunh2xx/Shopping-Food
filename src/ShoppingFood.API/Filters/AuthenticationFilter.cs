@@ -41,6 +41,7 @@ namespace ShoppingFood.API.Filters
             bool isBypassPath = path == "/" ||
                 path.StartsWith("/api/User/Login", StringComparison.OrdinalIgnoreCase) ||
                 path.StartsWith("/api/User/Register", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/api/User/RegisterShipper", StringComparison.OrdinalIgnoreCase) ||
                 path.StartsWith("/api/User/RefreshToken", StringComparison.OrdinalIgnoreCase) ||
                 path.StartsWith("/api/User/SendLoginOtp", StringComparison.OrdinalIgnoreCase) ||
                 path.StartsWith("/api/User/VerifyLoginOtp", StringComparison.OrdinalIgnoreCase) ||
@@ -206,7 +207,8 @@ namespace ShoppingFood.API.Filters
             if ((path.Equals("/api/Order/accept", StringComparison.OrdinalIgnoreCase) ||
                  path.Equals("/api/Order/reject", StringComparison.OrdinalIgnoreCase) ||
                  path.Equals("/api/Order/prepare", StringComparison.OrdinalIgnoreCase) ||
-                 path.Equals("/api/Order/waiting-for-driver", StringComparison.OrdinalIgnoreCase)) &&
+                 path.Equals("/api/Order/waiting-for-driver", StringComparison.OrdinalIgnoreCase) ||
+                 path.Equals("/api/Order/seller-cancel", StringComparison.OrdinalIgnoreCase))  &&
                 context.HttpContext.Request.Method == "POST")
             {
                 if (user.Profile?.Role != UserRole.Seller)

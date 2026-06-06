@@ -37,6 +37,7 @@ namespace ShoppingFood.Domain.Context
         public DbSet<FavoriteRestaurant> FavoriteRestaurants { get; set; } = null!;
         public DbSet<UserAddress> UserAddresses { get; set; } = null!;
         public DbSet<TrustedDevice> TrustedDevices { get; set; } = null!;
+        public DbSet<ShipperApplication> ShipperApplications { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -512,6 +513,30 @@ namespace ShoppingFood.Domain.Context
                     .WithMany()
                     .HasForeignKey(d => d.UserAccountId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<ShipperApplication>(entity =>
+            {
+                entity.ToTable("SHIPPER_APPLICATION");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.IdentityCardNumber).IsRequired().HasMaxLength(20);
+                entity.Property(e => e.IdentityCardFrontUrl).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.IdentityCardBackUrl).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.VehicleType).HasConversion<string>().IsRequired();
+                entity.Property(e => e.VehiclePlateNumber).IsRequired().HasMaxLength(20);
+                entity.Property(e => e.DriverLicenseUrl).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.VehicleRegistrationUrl).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.Status).HasConversion<string>().IsRequired();
+
+                entity.HasOne(d => d.UserProfile)
+                      .WithMany()
+                      .HasForeignKey(d => d.UserProfileId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(d => d.Reviewer)
+                    .WithMany()
+                    .HasForeignKey(d => d.ReviewedBy)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
         }
     }

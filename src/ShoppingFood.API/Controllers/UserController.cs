@@ -23,7 +23,7 @@ namespace ShoppingFood.API.Controllers
         private readonly IConfiguration _configuration;
         private readonly ShoppingFoodContext _dbContext;
 
-        public UserController(IMediator mediator, IConfiguration configuration, ShoppingFoodContext dbContext) 
+        public UserController(IMediator mediator, IConfiguration configuration, ShoppingFoodContext dbContext)
             : base(mediator)
         {
             _configuration = configuration;
@@ -39,6 +39,13 @@ namespace ShoppingFood.API.Controllers
 
         [HttpPost("RegisterSeller")]
         public async Task<ActionResult<ApiResponse>> RegisterSeller([FromBody] AddSellerCommand command)
+        {
+            var response = await _mediator.Send(command);
+            return Ok(response);
+        }
+
+        [HttpPost("register-shipper")]
+        public async Task<ActionResult<ApiResponse>> RegisterShipper([FromBody] RegisterShipperCommand command)
         {
             var response = await _mediator.Send(command);
             return Ok(response);
@@ -103,7 +110,7 @@ namespace ShoppingFood.API.Controllers
             {
                 // Generate PreAuth Token (valid for 5 mins) for unlocking
                 var unlockPreAuthToken = ShoppingFood.Core.Security.TokenHelper.GeneratePreAuthToken(user.UserName!, _configuration["JwtSettings:Secret"] ?? "SuperSecretShoppingFoodKey1234567890", _configuration["JwtSettings:Issuer"] ?? "ShoppingFoodAPI", _configuration["JwtSettings:Audience"] ?? "ShoppingFoodClient");
-                
+
                 var methods = new System.Collections.Generic.List<string>();
                 if (!string.IsNullOrEmpty(user.Email)) methods.Add("email");
                 if (!string.IsNullOrEmpty(user.Phone)) methods.Add("phone");
@@ -127,9 +134,9 @@ namespace ShoppingFood.API.Controllers
 
             var isAdmin = user.Profile?.Role == ShoppingFood.Domain.Enums.UserRole.Admin;
 
-            var isTrusted = await _dbContext.TrustedDevices.AnyAsync(t => 
-                t.UserAccountId == user.Id && 
-                t.IpAddress == clientIp && 
+            var isTrusted = await _dbContext.TrustedDevices.AnyAsync(t =>
+                t.UserAccountId == user.Id &&
+                t.IpAddress == clientIp &&
                 t.ExpiresAt > DateTime.UtcNow);
 
             if (isTrusted || isAdmin)
@@ -175,8 +182,8 @@ namespace ShoppingFood.API.Controllers
         [HttpPost("SendLoginOtp")]
         public async Task<ActionResult<ApiResponse>> SendLoginOtp([FromBody] SendLoginOtpRequest request)
         {
-            var command = new SendLoginOtpCommand 
-            { 
+            var command = new SendLoginOtpCommand
+            {
                 PreAuthToken = request.PreAuthToken,
                 Method = request.Method,
                 IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString()
@@ -189,8 +196,8 @@ namespace ShoppingFood.API.Controllers
         [HttpPost("VerifyLoginOtp")]
         public async Task<ActionResult<ApiResponse>> VerifyLoginOtp([FromBody] VerifyLoginOtpRequest request)
         {
-            var command = new VerifyLoginOtpCommand 
-            { 
+            var command = new VerifyLoginOtpCommand
+            {
                 PreAuthToken = request.PreAuthToken,
                 OtpCode = request.OtpCode,
                 IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString()
@@ -225,8 +232,8 @@ namespace ShoppingFood.API.Controllers
         [HttpPost("SendOtp")]
         public async Task<ActionResult<ApiResponse>> SendOtp([FromBody] SendOtpRequest request)
         {
-            var command = new SendOtpCommand 
-            { 
+            var command = new SendOtpCommand
+            {
                 Phone = request.Phone,
                 IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString()
             };
@@ -238,8 +245,8 @@ namespace ShoppingFood.API.Controllers
         [HttpPost("LoginByPhone")]
         public async Task<ActionResult<ApiResponse>> LoginByPhone([FromBody] LoginByPhoneRequest request)
         {
-            var command = new LoginByPhoneCommand 
-            { 
+            var command = new LoginByPhoneCommand
+            {
                 Phone = request.Phone,
                 OtpCode = request.OtpCode
             };
@@ -460,13 +467,13 @@ namespace ShoppingFood.API.Controllers
             if (user == null) return NotFound();
 
             user.Status = ShoppingFood.Domain.Enums.UserStatus.Inactive;
-            
+
             // Clear refresh token to force logout
             user.RefreshToken = null;
             user.RefreshTokenExpiryTime = null;
-            
+
             await _dbContext.SaveChangesAsync();
-            
+
             var cookieOptions = new Microsoft.AspNetCore.Http.CookieOptions
             {
                 HttpOnly = true,
@@ -482,14 +489,14 @@ namespace ShoppingFood.API.Controllers
         [HttpPost("VerifyUnlockAccount")]
         public async Task<ActionResult<ApiResponse>> VerifyUnlockAccount([FromBody] VerifyLoginOtpRequest request)
         {
-            var command = new ShoppingFood.Application.Features.Users.Commands.VerifyLoginOtpCommand 
-            { 
+            var command = new ShoppingFood.Application.Features.Users.Commands.VerifyLoginOtpCommand
+            {
                 PreAuthToken = request.PreAuthToken,
                 OtpCode = request.OtpCode,
                 IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString()
             };
             var response = await _mediator.Send(command);
-            
+
             // If OTP is valid, unlock the account
             if (!response.Error)
             {
@@ -525,13 +532,13 @@ namespace ShoppingFood.API.Controllers
             if (user == null) return NotFound();
 
             user.DeleteRequestedAt = DateTime.UtcNow;
-            
+
             // Clear refresh token to force logout
             user.RefreshToken = null;
             user.RefreshTokenExpiryTime = null;
-            
+
             await _dbContext.SaveChangesAsync();
-            
+
             var cookieOptions = new Microsoft.AspNetCore.Http.CookieOptions
             {
                 HttpOnly = true,
@@ -543,7 +550,7 @@ namespace ShoppingFood.API.Controllers
 
             return Ok(ApiResponse.Success(null, "Đã gửi yêu cầu xóa tài khoản. Dữ liệu sẽ bị xóa sau 30 ngày."));
         }
-    }
 
-   
+        
+    }
 }

@@ -13,7 +13,8 @@ namespace ShoppingFood.Domain.Enums
         Admin,
         Seller,
         Mall,
-        Customer
+        Customer,
+        Shipper
     }
 
     public enum SellerApplicationStatus
@@ -68,5 +69,11 @@ namespace ShoppingFood.Domain.Enums
         EWallet
     }
 
+    public enum VehicleType
+    {
+        Motorcycle,
+        ElectricMotorbike,
+        Car
+    }
     
 }

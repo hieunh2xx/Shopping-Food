@@ -116,7 +116,17 @@ namespace ShoppingFood.Application.Mappings
             CreateMap<CartItem, CartItemDto>()
                 .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product != null ? src.Product.ItemName : string.Empty))
                 .ForMember(dest => dest.ProductImageUrl, opt => opt.MapFrom(src => src.Product != null && src.Product.Images != null && src.Product.Images.Any() ? src.Product.Images.First().ImageUrl : null));
-                
+
+            //ShipperApplication mappings
+            CreateMap<RegisterShipperCommand, User>()
+                .ForMember(dest => dest.PasswordHash, opt => opt.Ignore());
+
+            CreateMap<RegisterShipperCommand, UserProfile>()
+                .ForMember(dest => dest.Role, opt => opt.Ignore());
+
+            CreateMap<RegisterShipperCommand, ShipperApplication>()
+                .ForMember(dest => dest.Status, opt => opt.Ignore());
+
         }
     }
 }

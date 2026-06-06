@@ -806,6 +806,77 @@ namespace ShoppingFood.Domain.Migrations
                     b.ToTable("SELLER_APPLICATION", (string)null);
                 });
 
+            modelBuilder.Entity("ShoppingFood.Domain.Models.ShipperApplication", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DriverLicenseUrl")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("IdentityCardNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("IdentityCartBackUrl")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("IdentityCartFrontUrl")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ReviewedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserProfileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("VehiclePlateNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("VehicleRegistrationUrl")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("VehicleType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReviewedBy");
+
+                    b.HasIndex("UserProfileId");
+
+                    b.ToTable("SHIPPER_APPLICATION", (string)null);
+                });
+
             modelBuilder.Entity("ShoppingFood.Domain.Models.Topping", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1281,6 +1352,24 @@ namespace ShoppingFood.Domain.Migrations
                 });
 
             modelBuilder.Entity("ShoppingFood.Domain.Models.SellerApplication", b =>
+                {
+                    b.HasOne("ShoppingFood.Domain.Models.UserProfile", "Reviewer")
+                        .WithMany()
+                        .HasForeignKey("ReviewedBy")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ShoppingFood.Domain.Models.UserProfile", "UserProfile")
+                        .WithMany()
+                        .HasForeignKey("UserProfileId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Reviewer");
+
+                    b.Navigation("UserProfile");
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.ShipperApplication", b =>
                 {
                     b.HasOne("ShoppingFood.Domain.Models.UserProfile", "Reviewer")
                         .WithMany()
