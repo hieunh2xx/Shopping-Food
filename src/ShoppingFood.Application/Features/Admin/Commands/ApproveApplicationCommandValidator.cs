@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ShoppingFood.Application.Features.Admin
+namespace ShoppingFood.Application.Features.Admin.Commands
 {
     public class ApproveApplicationCommandValidator : AbstractValidator<ApproveApplicationCommand>
     {

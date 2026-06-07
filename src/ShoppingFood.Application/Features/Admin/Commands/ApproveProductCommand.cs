@@ -2,7 +2,7 @@ using MediatR;
 using ShoppingFood.Core.Base;
 using System;
 
-namespace ShoppingFood.Application.Features.Admin
+namespace ShoppingFood.Application.Features.Admin.Commands
 {
     public class ApproveProductCommand : BaseCommand, IRequest<ApiResponse>
     {

@@ -14,7 +14,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ShoppingFood.Application.Features.Admin
+namespace ShoppingFood.Application.Features.Admin.Commands
 {
     public class ApproveApplicationHandler : IRequestHandler<ApproveApplicationCommand, ApiResponse>
     {

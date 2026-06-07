@@ -1,6 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using ShoppingFood.Application.Features.Admin;
+using ShoppingFood.Application.Features.Admin.Commands;
 using ShoppingFood.Application.Features.Products.GlobalMenuCategories.Commands;
 using ShoppingFood.Application.Features.Products.GlobalMenuCategories.Queries;
 using ShoppingFood.Core.Base;
@@ -22,6 +22,13 @@ namespace ShoppingFood.API.Controllers
 
         [HttpPost("ApproveProduct")]
         public async Task<ActionResult<ApiResponse>> ApproveProduct([FromBody] ApproveProductCommand command)
+        {
+            var response = await _mediator.Send(command);
+            return Ok(response);
+        }
+
+        [HttpPost("approve-shipper-application")]
+        public async Task<ActionResult<ApiResponse>> ApproveShipperApplication([FromBody] ApproveShipperApplicationCommand command)
         {
             var response = await _mediator.Send(command);
             return Ok(response);

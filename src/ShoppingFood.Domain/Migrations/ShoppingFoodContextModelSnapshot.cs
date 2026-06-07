@@ -820,20 +820,20 @@ namespace ShoppingFood.Domain.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
+                    b.Property<string>("IdentityCardBackUrl")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("IdentityCardFrontUrl")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
                     b.Property<string>("IdentityCardNumber")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("IdentityCartBackUrl")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("IdentityCartFrontUrl")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("RejectionReason")
                         .HasColumnType("nvarchar(max)");
@@ -875,6 +875,74 @@ namespace ShoppingFood.Domain.Migrations
                     b.HasIndex("UserProfileId");
 
                     b.ToTable("SHIPPER_APPLICATION", (string)null);
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.ShipperProfile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsOnline")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("float");
+
+                    b.Property<double>("Rating")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("float")
+                        .HasDefaultValue(5.0);
+
+                    b.Property<double>("ReputationScore")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("float")
+                        .HasDefaultValue(100.0);
+
+                    b.Property<Guid>("ShipperApplicationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserProfileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("VehiclePlateNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("VehicleType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("WalletBalance")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(12,2)")
+                        .HasDefaultValue(0m);
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ShipperApplicationId")
+                        .IsUnique();
+
+                    b.HasIndex("UserProfileId")
+                        .IsUnique();
+
+                    b.ToTable("SHIPPER_PROFILE", (string)null);
                 });
 
             modelBuilder.Entity("ShoppingFood.Domain.Models.Topping", b =>
@@ -1383,6 +1451,25 @@ namespace ShoppingFood.Domain.Migrations
                         .IsRequired();
 
                     b.Navigation("Reviewer");
+
+                    b.Navigation("UserProfile");
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.ShipperProfile", b =>
+                {
+                    b.HasOne("ShoppingFood.Domain.Models.ShipperApplication", "ShipperApplication")
+                        .WithOne()
+                        .HasForeignKey("ShoppingFood.Domain.Models.ShipperProfile", "ShipperApplicationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ShoppingFood.Domain.Models.UserProfile", "UserProfile")
+                        .WithOne()
+                        .HasForeignKey("ShoppingFood.Domain.Models.ShipperProfile", "UserProfileId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ShipperApplication");
 
                     b.Navigation("UserProfile");
                 });

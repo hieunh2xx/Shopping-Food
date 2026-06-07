@@ -38,6 +38,7 @@ namespace ShoppingFood.Domain.Context
         public DbSet<UserAddress> UserAddresses { get; set; } = null!;
         public DbSet<TrustedDevice> TrustedDevices { get; set; } = null!;
         public DbSet<ShipperApplication> ShipperApplications { get; set; } = null!;
+        public DbSet<ShipperProfile> ShipperProfiles { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -527,7 +528,7 @@ namespace ShoppingFood.Domain.Context
                 entity.Property(e => e.DriverLicenseUrl).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.VehicleRegistrationUrl).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.Status).HasConversion<string>().IsRequired();
-
+                
                 entity.HasOne(d => d.UserProfile)
                       .WithMany()
                       .HasForeignKey(d => d.UserProfileId)
@@ -537,6 +538,29 @@ namespace ShoppingFood.Domain.Context
                     .WithMany()
                     .HasForeignKey(d => d.ReviewedBy)
                     .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<ShipperProfile>(entity =>
+            {
+                entity.ToTable("SHIPPER_PROFILE");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.VehiclePlateNumber).IsRequired().HasMaxLength(20);
+                entity.Property(e => e.VehicleType).HasConversion<string>().IsRequired();
+                entity.Property(e => e.IsOnline).IsRequired().HasDefaultValue(false);
+                entity.Property(e => e.Status).HasConversion<string>().IsRequired();
+                entity.Property(e => e.WalletBalance).HasColumnType("decimal(12,2)").IsRequired().HasDefaultValue(0);
+                entity.Property(e => e.ReputationScore).IsRequired().HasDefaultValue(100);
+                entity.Property(e => e.Rating).IsRequired().HasDefaultValue(5.0);
+
+                entity.HasOne(d => d.UserProfile)
+                .WithOne()
+                .HasForeignKey<ShipperProfile>(d => d.UserProfileId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(d => d.ShipperApplication)
+                .WithOne()
+                .HasForeignKey<ShipperProfile>(d => d.ShipperApplicationId)
+                .OnDelete(DeleteBehavior.Restrict);
             });
         }
     }

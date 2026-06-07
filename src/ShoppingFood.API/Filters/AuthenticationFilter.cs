@@ -182,6 +182,14 @@ namespace ShoppingFood.API.Filters
                 }
             }
 
+            if (path.Contains("/api/Shipper", StringComparison.OrdinalIgnoreCase))
+            {
+                if (user.Profile?.Role != UserRole.Shipper)
+                {
+                    throw new UnauthorizedAccessException("Only shippers have the right to perform this operation.");
+                }
+            }
+
             if ((path.Contains("/api/Restaurant/Favorite", StringComparison.OrdinalIgnoreCase) ||
                  path.Contains("/api/Restaurant/Favorites", StringComparison.OrdinalIgnoreCase)))
             {

@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace ShoppingFood.Application.Features.Admin
+namespace ShoppingFood.Application.Features.Admin.Commands
 {
     public class ApproveProductCommandValidator : AbstractValidator<ApproveProductCommand>
     {
