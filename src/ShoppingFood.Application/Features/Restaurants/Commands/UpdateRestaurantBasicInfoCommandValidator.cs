@@ -19,6 +19,14 @@ namespace ShoppingFood.Application.Features.Restaurants.Commands
 
             RuleFor(p => p.BannerUrl)
                 .MaximumLength(255).WithMessage("{PropertyName} must not exceed 255 characters.");
+
+            RuleFor(p => p.Latitude)
+                .NotEmpty().WithMessage("{PropertyName} is required.")
+                .InclusiveBetween(-90.0, 90.0).WithMessage("Latitude must be between -90 and 90.");
+
+            RuleFor(p => p.Longitude)
+                .NotEmpty().WithMessage("{PropertyName} is required.")
+                .InclusiveBetween(-180.0, 180.0).WithMessage("Longitude must be between -180 and 180.");
         }
     }
 }

@@ -57,6 +57,8 @@ namespace ShoppingFood.Application.Features.Restaurants.Commands
             restaurant.Phone = request.Phone;
             restaurant.LogoUrl = request.LogoUrl;
             restaurant.BannerUrl = request.BannerUrl;
+            restaurant.Latitude = request.Latitude;
+            restaurant.Longitude = request.Longitude;
         }
 
         private async Task<RestaurantProfile?> GetRestaurantByOwnerIdAsync(Guid userId)

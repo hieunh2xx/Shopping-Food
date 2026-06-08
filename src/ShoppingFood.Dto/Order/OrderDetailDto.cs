@@ -11,6 +11,7 @@ namespace ShoppingFood.Dto.Order
         public Guid Id { get; set; }
         public Guid? UserAccountId { get; set; }
         public Guid? GuestUserId { get; set; }
+        public Guid? ShipperId { get; set; }
         public decimal TotalAmount { get; set; }
         public string DeliveryAddress { get; set; } = string.Empty;
         public string ContactName { get; set; } = string.Empty;

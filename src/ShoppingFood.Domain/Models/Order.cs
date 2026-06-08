@@ -9,6 +9,7 @@ namespace ShoppingFood.Domain.Models
         public Guid Id { get; set; }
         public Guid? UserAccountId { get; set; }
         public Guid? GuestUserId { get; set; }
+        public Guid? ShipperId { get; set; }
         public decimal TotalAmount { get; set; }
         public string DeliveryAddress { get; set; } = string.Empty;
         public string ContactName { get; set; } = string.Empty;
@@ -24,6 +25,7 @@ namespace ShoppingFood.Domain.Models
         // Navigation properties
         public virtual User? UserAccount { get; set; }
         public virtual GuestUser? GuestUser { get; set; }
+        public virtual ShipperProfile? Shipper { get; set; }
         public virtual ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
     }
 }

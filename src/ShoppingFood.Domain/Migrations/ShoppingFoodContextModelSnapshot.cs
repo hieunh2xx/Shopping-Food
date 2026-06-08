@@ -323,6 +323,9 @@ namespace ShoppingFood.Domain.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<Guid?>("ShipperId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -339,6 +342,8 @@ namespace ShoppingFood.Domain.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("GuestUserId");
+
+                    b.HasIndex("ShipperId");
 
                     b.HasIndex("UserAccountId");
 
@@ -1256,12 +1261,19 @@ namespace ShoppingFood.Domain.Migrations
                         .HasForeignKey("GuestUserId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("ShoppingFood.Domain.Models.ShipperProfile", "Shipper")
+                        .WithMany()
+                        .HasForeignKey("ShipperId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("ShoppingFood.Domain.Models.User", "UserAccount")
                         .WithMany()
                         .HasForeignKey("UserAccountId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("GuestUser");
+
+                    b.Navigation("Shipper");
 
                     b.Navigation("UserAccount");
                 });

@@ -9,6 +9,7 @@ using ShoppingFood.Application.Features.Products.Menu.Commands;
 using ShoppingFood.Application.Features.Products.GlobalMenuCategories.Commands;
 using ShoppingFood.Dto.Restaurant;
 using ShoppingFood.Dto.Cart;
+using ShoppingFood.Dto.Order;
 
 namespace ShoppingFood.Application.Mappings
 {
@@ -126,6 +127,17 @@ namespace ShoppingFood.Application.Mappings
 
             CreateMap<RegisterShipperCommand, ShipperApplication>()
                 .ForMember(dest => dest.Status, opt => opt.Ignore());
+
+            CreateMap<Order, ProposedDeliveryOfferDto>()
+                .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.RestaurantName, opt => opt.MapFrom(src => src.Items.FirstOrDefault() != null && src.Items.FirstOrDefault().Product != null && src.Items.FirstOrDefault().Product.Restaurant != null ? src.Items.FirstOrDefault().Product.Restaurant.RestaurantName : string.Empty))
+                .ForMember(dest => dest.RestaurantAddress, opt => opt.MapFrom(src => src.Items.FirstOrDefault() != null && src.Items.FirstOrDefault().Product != null && src.Items.FirstOrDefault().Product.Restaurant != null ? src.Items.FirstOrDefault().Product.Restaurant.Address : string.Empty))
+                .ForMember(dest => dest.RestaurantPhone, opt => opt.MapFrom(src => src.Items.FirstOrDefault() != null && src.Items.FirstOrDefault().Product != null && src.Items.FirstOrDefault().Product.Restaurant != null ? src.Items.FirstOrDefault().Product.Restaurant.Phone : string.Empty))
+                .ForMember(dest => dest.RestaurantLatitude, opt => opt.MapFrom(src => src.Items.FirstOrDefault() != null && src.Items.FirstOrDefault().Product != null && src.Items.FirstOrDefault().Product.Restaurant != null ? src.Items.FirstOrDefault().Product.Restaurant.Latitude : null))
+                .ForMember(dest => dest.RestaurantLongitude, opt => opt.MapFrom(src => src.Items.FirstOrDefault() != null && src.Items.FirstOrDefault().Product != null && src.Items.FirstOrDefault().Product.Restaurant != null ? src.Items.FirstOrDefault().Product.Restaurant.Longitude : null))
+                .ForMember(dest => dest.DistanceInKm, opt => opt.Ignore())
+                .ForMember(dest => dest.ShippingFee, opt => opt.Ignore())
+                .ForMember(dest => dest.CountdownSeconds, opt => opt.MapFrom(src => 30));
 
         }
     }

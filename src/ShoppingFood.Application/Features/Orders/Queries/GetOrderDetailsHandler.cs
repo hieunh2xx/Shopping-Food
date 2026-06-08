@@ -65,6 +65,7 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                 Id = order.Id,
                 UserAccountId = order.UserAccountId,
                 GuestUserId = order.GuestUserId,
+                ShipperId = order.ShipperId,
                 TotalAmount = order.TotalAmount,
                 DeliveryAddress = order.DeliveryAddress,
                 ContactName = order.ContactName,

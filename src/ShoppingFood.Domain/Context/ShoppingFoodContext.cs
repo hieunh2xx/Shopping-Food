@@ -278,6 +278,11 @@ namespace ShoppingFood.Domain.Context
                     .WithMany()
                     .HasForeignKey(d => d.GuestUserId)
                     .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(d => d.Shipper)
+                      .WithMany()
+                      .HasForeignKey(d => d.ShipperId)
+                      .OnDelete(DeleteBehavior.Restrict);
             });
 
             // OrderItem Entity
