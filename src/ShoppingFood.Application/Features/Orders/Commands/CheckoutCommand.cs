@@ -19,5 +19,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
         public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.COD;
         public string? Note { get; set; }
         public Guid? GuestUserId { get; set; }
+        public double? DeliveryLatitude { get; set; }
+        public double? DeliveryLongitude { get; set; }
     }
 }

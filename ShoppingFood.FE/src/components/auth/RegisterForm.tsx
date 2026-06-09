@@ -15,7 +15,7 @@ interface RegisterFormProps {
 export function RegisterForm({ isSeller = false }: RegisterFormProps) {
   const navigate = useNavigate();
   const { register, registerSeller, isLoading } = useAuth();
-  
+
   // Multi-step State
   const [step, setStep] = useState(1);
   const [isOtpSent, setIsOtpSent] = useState(false);
@@ -65,7 +65,7 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
     const objectUrl = URL.createObjectURL(file);
     setPreviewUrl(objectUrl);
     setForm(prev => ({ ...prev, businessLicenseUrl: file.name }));
-    
+
     if (errors.businessLicenseUrl) {
       setErrors(prev => {
         const next = { ...prev };
@@ -131,7 +131,7 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
     if (isOtpSent && form.otpCode.length === 6 && !isLoading) {
       handleSubmit();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.otpCode]);
 
   const handleSubmit = async (e?: FormEvent) => {
@@ -207,10 +207,10 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
               </div>
               <span className="text-xs font-semibold">Tài khoản</span>
             </div>
-            
+
             <div className="flex-1 h-[2px] bg-gray-200 absolute top-4 left-1/4 right-1/4 -z-0">
-              <div 
-                className="h-full bg-orange-600 transition-all duration-300" 
+              <div
+                className="h-full bg-orange-600 transition-all duration-300"
                 style={{ width: step === 2 ? '100%' : '0%' }}
               />
             </div>
@@ -226,7 +226,7 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        
+
         {/* STEP 1: ACCOUNT INFO */}
         <div className={`space-y-4 transition-all duration-300 ${step === 1 ? 'block' : 'hidden'}`}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -353,9 +353,9 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
                       <p className="text-xs text-gray-500 mb-4">Hỗ trợ: PDF, DOC, DOCX, PNG, JPG (Tối đa 5MB)</p>
                       <label className="cursor-pointer inline-flex items-center justify-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
                         Chọn File
-                        <input 
-                          type="file" 
-                          className="hidden" 
+                        <input
+                          type="file"
+                          className="hidden"
                           accept=".pdf,.doc,.docx,image/png,image/jpeg"
                           onChange={handleFileChange}
                         />
@@ -373,8 +373,8 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
                         </div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        <button 
-                          type="button" 
+                        <button
+                          type="button"
                           onClick={() => setIsViewerOpen(true)}
                           className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex items-center gap-1 text-sm font-medium"
                         >
@@ -383,9 +383,9 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
                         </button>
                         <label className="cursor-pointer p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors text-sm font-medium">
                           Đổi file
-                          <input 
-                            type="file" 
-                            className="hidden" 
+                          <input
+                            type="file"
+                            className="hidden"
                             accept=".pdf,.doc,.docx,image/png,image/jpeg"
                             onChange={handleFileChange}
                           />

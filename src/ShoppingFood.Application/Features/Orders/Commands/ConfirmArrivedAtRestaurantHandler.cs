@@ -102,7 +102,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             var profiles = await _shipperProfileRepository.GetAsync(
                 predicate: p => p.UserProfileId == userProfile.Id && p.Status == UserStatus.Active,
                 include: q => q.Include(p => p.UserProfile),
-                disableTracking: true
+                disableTracking: false
                 );
 
             return profiles.FirstOrDefault();

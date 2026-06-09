@@ -65,6 +65,11 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 if (!request.VerificationCode.Equals(expectedCode, StringComparison.OrdinalIgnoreCase))
                     return ApiResponse.Failure(400, "Invalid verification code. Please check the code with merchant.");
 
+                shipperProfile.Latitude = request.Latitude;
+                shipperProfile.Longitude = request.Longitude;
+                shipperProfile.UpdatedAt = DateTime.UtcNow;
+                _shipperProfileRepository.Update(shipperProfile);
+
                 AddPickedUpNotification(order, shipperProfile.UserProfile.FullName);
 
                 await _unitOfWork.SaveChangesAsync();

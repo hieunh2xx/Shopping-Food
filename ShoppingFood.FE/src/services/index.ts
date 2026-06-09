@@ -5,3 +5,8 @@ export { userService } from './UserService';
 export { productService } from './ProductService';
 export { menuCategoryService } from './MenuCategoryService';
 export { adminService } from './AdminService';
+export { shipperService } from './ShipperService';
+export { cartService } from './CartService';
+export { restaurantService } from './RestaurantService';
+export { toppingService } from './ToppingService';
+export { userAddressService } from './UserAddressService';

@@ -58,6 +58,14 @@ class ProductService extends BaseService<IProductDto, IAddProductRequest, IUpdat
       data
     );
   }
+
+  async reportProduct(data: { productId: string; reason: string; detail?: string }): Promise<IApiResponse<any>> {
+    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.PRODUCT.REPORT, data);
+  }
+
+  async reviewProduct(data: { productId: string; rating: number; comment?: string }): Promise<IApiResponse<any>> {
+    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.PRODUCT.REVIEW, data);
+  }
 }
 
 // Export singleton instance

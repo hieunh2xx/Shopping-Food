@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using ShoppingFood.Core.Base;
 using System;
 using System.Collections.Generic;
@@ -11,5 +11,7 @@ namespace ShoppingFood.Application.Features.Orders.Queries
     public class GetProposedDeliveryOfferQuery : BaseQuery, IRequest<ApiResponse>
     {
         public Guid OrderId { get; set; }
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
     }
 }

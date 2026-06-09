@@ -19,6 +19,8 @@ namespace ShoppingFood.Domain.Models
         public OrderStatus Status { get; set; } = OrderStatus.Pending;
         public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.COD;
         public string IpAddress { get; set; } = string.Empty;
+        public double? DeliveryLatitude { get; set; }
+        public double? DeliveryLongitude { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

@@ -19,6 +19,8 @@ namespace ShoppingFood.Dto.Order
         public string? Note { get; set; }
         public string Status { get; set; } = string.Empty;
         public string PaymentMethod { get; set; } = string.Empty;
+        public double? DeliveryLatitude { get; set; }
+        public double? DeliveryLongitude { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
         public List<OrderItemDto> Items { get; set; } = new List<OrderItemDto>();

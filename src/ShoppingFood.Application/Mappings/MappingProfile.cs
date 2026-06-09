@@ -139,6 +139,21 @@ namespace ShoppingFood.Application.Mappings
                 .ForMember(dest => dest.ShippingFee, opt => opt.Ignore())
                 .ForMember(dest => dest.CountdownSeconds, opt => opt.MapFrom(src => 30));
 
+            CreateMap<Order, DeliveryRouteDto>()
+                .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.ContactName))
+                .ForMember(dest => dest.CustomerAddress, opt => opt.MapFrom(src => src.DeliveryAddress))
+                .ForMember(dest => dest.CustomerPhone, opt => opt.MapFrom(src => src.ContactPhone))
+                .ForMember(dest => dest.CustomerLatitude, opt => opt.MapFrom(src => src.DeliveryLatitude))
+                .ForMember(dest => dest.CustomerLongitude, opt => opt.MapFrom(src => src.DeliveryLongitude))
+                .ForMember(dest => dest.RestaurantName, opt => opt.MapFrom(src => src.Items.FirstOrDefault() != null && src.Items.FirstOrDefault().Product != null && src.Items.FirstOrDefault().Product.Restaurant != null ? src.Items.FirstOrDefault().Product.Restaurant.RestaurantName : string.Empty))
+                .ForMember(dest => dest.RestaurantAddress, opt => opt.MapFrom(src => src.Items.FirstOrDefault() != null && src.Items.FirstOrDefault().Product != null && src.Items.FirstOrDefault().Product.Restaurant != null ? src.Items.FirstOrDefault().Product.Restaurant.Address : string.Empty))
+                .ForMember(dest => dest.RestaurantLatitude, opt => opt.MapFrom(src => src.Items.FirstOrDefault() != null && src.Items.FirstOrDefault().Product != null && src.Items.FirstOrDefault().Product.Restaurant != null ? src.Items.FirstOrDefault().Product.Restaurant.Latitude : null))
+                .ForMember(dest => dest.RestaurantLongitude, opt => opt.MapFrom(src => src.Items.FirstOrDefault() != null && src.Items.FirstOrDefault().Product != null && src.Items.FirstOrDefault().Product.Restaurant != null ? src.Items.FirstOrDefault().Product.Restaurant.Longitude : null))
+                .ForMember(dest => dest.ShipperLatitude, opt => opt.Ignore())
+                .ForMember(dest => dest.ShipperLongitude, opt => opt.Ignore())
+                .ForMember(dest => dest.GoogleMapNavigationUrl, opt => opt.Ignore());
+
         }
     }
 }

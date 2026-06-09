@@ -26,6 +26,32 @@ class AdminService extends BaseService<unknown> {
   async approveProduct(data: IApproveProductRequest): Promise<IApiResponse<void>> {
     return httpClient.post<IApiResponse<void>>(`${this.endpoint}/ApproveProduct`, data);
   }
+
+  async approveShipperApplication(data: { applicationId: string; isApproved: boolean; rejectionReason?: string }): Promise<IApiResponse<any>> {
+    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ADMIN.APPROVE_SHIPPER, data);
+  }
+
+  async getGlobalMenuCategories(showHidden: boolean = false): Promise<IApiResponse<any>> {
+    return httpClient.get<IApiResponse<any>>(API_ENDPOINTS.ADMIN.GLOBAL_MENU_CATEGORY, {
+      params: { showHidden },
+    });
+  }
+
+  async createGlobalMenuCategory(data: { name: string; description?: string; imageUrl?: string; sortOrder: number }): Promise<IApiResponse<any>> {
+    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ADMIN.GLOBAL_MENU_CATEGORY, data);
+  }
+
+  async updateGlobalMenuCategory(id: string, data: { name: string; description?: string; imageUrl?: string; sortOrder: number }): Promise<IApiResponse<any>> {
+    return httpClient.put<IApiResponse<any>>(API_ENDPOINTS.ADMIN.GLOBAL_MENU_CATEGORY_BY_ID(id), { id, ...data });
+  }
+
+  async deleteGlobalMenuCategory(id: string): Promise<IApiResponse<any>> {
+    return httpClient.delete<IApiResponse<any>>(API_ENDPOINTS.ADMIN.GLOBAL_MENU_CATEGORY_BY_ID(id));
+  }
+
+  async toggleGlobalMenuCategoryVisibility(id: string): Promise<IApiResponse<any>> {
+    return httpClient.patch<IApiResponse<any>>(API_ENDPOINTS.ADMIN.GLOBAL_MENU_CATEGORY_VISIBILITY(id));
+  }
 }
 
 // Export singleton instance

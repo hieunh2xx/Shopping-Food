@@ -69,58 +69,55 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                         o => o.IpAddress == clientIp &&
                         o.RetriesCount >= 3 &&
                         o.CreatedAt >= DateTime.UtcNow.AddMinutes(-15)
-                        );
+                    );
                     if (isLocked)
-                        return ApiResponse.Failure(403, "Checkout is temporarily locked for 15 minutes due to too many failed OTP attempts.");
-                }
+                        return ApiResponse.Failure(403, "Checkout is temporarily locked due to too many failed OTP attempts.");
 
-                var guestOrdersCount = await _orderRepository.GetCountAsync(
-                    predicate: o => o.IpAddress == clientIp &&
-                               o.GuestUserId != null &&
-                               o.CreatedAt >= DateTime.UtcNow.AddDays(-1)
+                    var guestOrdersCount = await _orderRepository.GetCountAsync(
+                        predicate: o => o.IpAddress == clientIp && o.GuestUserId != null && o.CreatedAt >= DateTime.UtcNow.AddDays(-1)
                     );
-                if (guestOrdersCount >= 3)
-                    return ApiResponse.Failure(429, "Rate limit exceeded. Maximum of 3 guest orders allowed per 24 hours.");
+                    if (guestOrdersCount >= 3)
+                        return ApiResponse.Failure(429, "Rate limit exceeded. Maximum of 3 guest orders allowed per 24 hours.");
 
-                var otpRecords = await _otpRecordRepository.GetAsync(
-                    predicate: o => o.EmailOrPhone == request.ContactEmail && !o.IsUsed,
-                    orderBy: q => q.OrderByDescending(o => o.CreatedAt),
-                    disableTracking: false
+                    var otpRecords = await _otpRecordRepository.GetAsync(
+                        predicate: o => o.EmailOrPhone == request.ContactEmail && !o.IsUsed,
+                        orderBy: q => q.OrderByDescending(o => o.CreatedAt),
+                        disableTracking: false
                     );
-                var otpRecord = otpRecords.FirstOrDefault();
-
-                if (otpRecord == null)
-                    return ApiResponse.Failure(400, "Invalid OTP. Please request a new OTP.");
-
-                if (otpRecord.ExpiryTime < DateTime.UtcNow)
-                    return ApiResponse.Failure(400, "OTP has expired. Please request a new OTP.");
-
-                if(otpRecord.OtpCode != request.OtpCode)
-                {
-                    otpRecord.RetriesCount++;
-                    _otpRecordRepository.Update(otpRecord);
-                    await _unitOfWork.SaveChangesAsync();
-                    if(otpRecord.RetriesCount >= 3)
+                    var otpRecord = otpRecords.FirstOrDefault();
+                    if (otpRecord == null)
+                        return ApiResponse.Failure(400, "Invalid OTP.");
+                    if (otpRecord.ExpiryTime < DateTime.UtcNow)
+                        return ApiResponse.Failure(400, "OTP has expired.");
+                    if (otpRecord.OtpCode != request.OtpCode)
                     {
+                        otpRecord.RetriesCount++;
+                        _otpRecordRepository.Update(otpRecord);
+                        await _unitOfWork.SaveChangesAsync();
+                        if (otpRecord.RetriesCount >= 3)
+                        {
+                            await transaction.CommitAsync(cancellationToken);
+                            return ApiResponse.Failure(403, "Invalid OTP. Checkout temporarily locked.");
+                        }
                         await transaction.CommitAsync(cancellationToken);
-                        return ApiResponse.Failure(403, "Invalid OTP.You have exceeded 3 retries.Checkout is temporarily locked for 15 minutes.");
+                        return ApiResponse.Failure(400, $"Invalid OTP. You have {3 - otpRecord.RetriesCount} retries remaining.");
                     }
-                    await transaction.CommitAsync(cancellationToken);
-                    return ApiResponse.Failure(400, $"Invalid OTP. You have {3 - otpRecord.RetriesCount} retries remaining.");
-                }
+                    otpRecord.IsUsed = true;
+                    _otpRecordRepository.Update(otpRecord);
 
-                otpRecord.IsUsed = true;
-                _otpRecordRepository.Update(otpRecord);
-
-                var guestUser = await _guestUserRepository.GetByIdAsync(request.GuestUserId.Value);
-                if( guestUser != null )
-                {
-                    guestUser.FullName = request.ContactName;
-                    guestUser.Phone = request.ContactPhone;
-                    guestUser.Email = request.ContactEmail;
-                    guestUser.DeliveryAddress = request.DeliveryAddress;
-                    guestUser.IpAddress = clientIp;
-                    _guestUserRepository.Update(guestUser);
+                    if (request.GuestUserId.HasValue)
+                    {
+                        var guestUser = await _guestUserRepository.GetByIdAsync(request.GuestUserId.Value);
+                        if (guestUser != null)
+                        {
+                            guestUser.FullName = request.ContactName;
+                            guestUser.Phone = request.ContactPhone;
+                            guestUser.Email = request.ContactEmail;
+                            guestUser.DeliveryAddress = request.DeliveryAddress;
+                            guestUser.IpAddress = clientIp;
+                            _guestUserRepository.Update(guestUser);
+                        }
+                    }
                 }
 
                 var cart = await GetCartWithItemsAsync(request.CurrentUserId, request.GuestUserId);
@@ -225,6 +222,8 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 Note = request.Note,
                 Status = OrderStatus.Pending,
                 IpAddress = GetClientIpAddress(),
+                DeliveryLatitude = request.DeliveryLatitude,
+                DeliveryLongitude = request.DeliveryLongitude,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };

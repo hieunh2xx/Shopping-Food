@@ -10,7 +10,8 @@ namespace ShoppingFood.Domain.Models
         public string ContactPhone { get; set; } = string.Empty;
         public string AddressLine { get; set; } = string.Empty;
         public bool IsDefault { get; set; } = false;
-
+        public double? Latitude { get; set; }
+        public double? Longitude { get; set; }
         public virtual User? UserAccount { get; set; }
     }
 }

@@ -74,7 +74,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 await _unitOfWork.SaveChangesAsync();
 
                 await CreateAndSendOtpAsync(request.Email, clientIp);
-                transaction.CommitAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
                 return ApiResponse.Success(null, "OTP send succcessfully to email");
             }
             catch (Exception ex) 

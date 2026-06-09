@@ -12,5 +12,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
     {
         public Guid OrderId { get; set; }
         public string VerificationCode { get; set; } = string.Empty;
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
     }
 }

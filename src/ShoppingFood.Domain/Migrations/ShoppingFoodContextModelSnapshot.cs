@@ -303,6 +303,12 @@ namespace ShoppingFood.Domain.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<double?>("DeliveryLatitude")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("DeliveryLongitude")
+                        .HasColumnType("float");
+
                     b.Property<Guid?>("GuestUserId")
                         .HasColumnType("uniqueidentifier");
 
@@ -1096,6 +1102,12 @@ namespace ShoppingFood.Domain.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
                         .HasDefaultValue(false);
+
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("float");
 
                     b.Property<Guid>("UserAccountId")
                         .HasColumnType("uniqueidentifier");

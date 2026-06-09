@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
@@ -60,6 +60,11 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                 var restaurant = firstItem?.Product?.Restaurant;
                 if (restaurant == null)
                     return ApiResponse.Failure(400, "Cannot determine restaurant information for this order.");
+
+                shipperProfile.Latitude = request.Latitude;
+                shipperProfile.Longitude = request.Longitude;
+                shipperProfile.UpdatedAt = DateTime.UtcNow;
+                _shipperProfileRepository.Update(shipperProfile);
 
                 double distance = CalculateDistanceBetweenShipperAndRestaurant(shipperProfile, restaurant);
 

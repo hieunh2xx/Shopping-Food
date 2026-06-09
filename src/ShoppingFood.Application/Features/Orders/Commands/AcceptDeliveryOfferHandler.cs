@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace ShoppingFood.Application.Features.Orders.Commands
 {
-    public class AcceptDeliveryOfferHandler : IRequestHandler<AcceptDeliverOfferCommand, ApiResponse>
+    public class AcceptDeliveryOfferHandler : IRequestHandler<AcceptDeliveryOfferCommand, ApiResponse>
     {
         private readonly IOrderRepository _orderRepository;
         private readonly IShipperProfileRepository _shipperProfileRepository;
@@ -35,7 +35,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<ApiResponse> Handle(AcceptDeliverOfferCommand request, CancellationToken cancellationToken)
+        public async Task<ApiResponse> Handle(AcceptDeliveryOfferCommand request, CancellationToken cancellationToken)
         {
             try
             {
@@ -61,6 +61,11 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     return ApiResponse.Failure(400, $"The order is not in waiting for driver status. Current status: {order.Status}");
 
                 AssignOrderToShipper(order, shipperProfile.Id);
+
+                shipperProfile.Latitude = request.Latitude;
+                shipperProfile.Longitude = request.Longitude;
+                shipperProfile.UpdatedAt = DateTime.UtcNow;
+                _shipperProfileRepository.Update(shipperProfile);
 
                 AddNotificationForCustomer(order, shipperProfile.UserProfile.FullName);
 

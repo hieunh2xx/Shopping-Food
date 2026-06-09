@@ -28,6 +28,13 @@ namespace ShoppingFood.Application.Features.Orders.Commands
 
             RuleFor(x => x.OtpCode)
                 .NotEmpty().When(x => !x.CurrentUserId.HasValue).WithMessage("{PropertyName} is required.");
+
+            RuleFor(x => x.DeliveryLatitude)
+                .InclusiveBetween(-90.0, 90.0).When(x => x.DeliveryLatitude.HasValue)
+                .WithMessage("Latitude must be between -90 and 90.");
+            RuleFor(x => x.DeliveryLongitude)
+                .InclusiveBetween(-180.0, 180.0).When(x => x.DeliveryLongitude.HasValue)
+                .WithMessage("Longitude must be between -180 and 180.");
         }
     }
 }

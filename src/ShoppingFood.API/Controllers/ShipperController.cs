@@ -34,13 +34,13 @@ namespace ShoppingFood.API.Controllers
         }
 
         [HttpPost("accept-offer")]
-        public async Task<ActionResult<ApiResponse>> AcceptOffer([FromBody] AcceptDeliverOfferCommand command)
+        public async Task<ActionResult<ApiResponse>> AcceptOffer([FromBody] AcceptDeliveryOfferCommand command)
         {
             var respone = await _mediator.Send(command);
             return Ok(respone);
         }
 
-        [HttpPost("confirm-arrived")]
+        [HttpPost("confirm-arrived")]  
         public async Task<ActionResult<ApiResponse>> ConfirmArrived([FromBody] ConfirmArrivedAtRestaurantCommand command)
         {
             if (userDto != null)
@@ -59,6 +59,29 @@ namespace ShoppingFood.API.Controllers
                 command.CurrentUserId = userDto.Id;
             }
             var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpPost("location")]
+        public async Task<ActionResult<ApiResponse>> UpdateLocation([FromBody] UpdateShipperLocationCommand command)
+        {
+            if (userDto != null)
+            {
+                command.CurrentUserId = userDto.Id;
+            }
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpGet("delivery-route/{orderId}")]
+        public async Task<ActionResult<ApiResponse>> GetDeliveryRoute(Guid orderId)
+        {
+            var query = new GetDeliveryRouteQuery { OrderId = orderId };
+            if (userDto != null)
+            {
+                query.CurrentUserId = userDto.Id;
+            }
+            var response = await _mediator.Send(query);
             return StatusCode(response.Code, response);
         }
 

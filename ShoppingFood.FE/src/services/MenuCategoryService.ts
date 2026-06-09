@@ -1,6 +1,7 @@
 import { BaseService } from './base/BaseService';
+import { httpClient } from './base/HttpClient';
 import { API_ENDPOINTS } from '../config/endpoints';
-import type { IMenuCategoryDto, IAddMenuCategoryRequest, IUpdateMenuCategoryRequest } from '../interfaces';
+import type { IApiResponse, IMenuCategoryDto, IAddMenuCategoryRequest, IUpdateMenuCategoryRequest } from '../interfaces';
 
 /**
  * Menu Category Service — handles menu category endpoints
@@ -10,6 +11,10 @@ import type { IMenuCategoryDto, IAddMenuCategoryRequest, IUpdateMenuCategoryRequ
  */
 class MenuCategoryService extends BaseService<IMenuCategoryDto, IAddMenuCategoryRequest, IUpdateMenuCategoryRequest> {
   protected readonly endpoint = API_ENDPOINTS.MENU_CATEGORY.BASE;
+
+  override async update(id: string, data: IUpdateMenuCategoryRequest): Promise<IApiResponse<IMenuCategoryDto>> {
+    return httpClient.put<IApiResponse<IMenuCategoryDto>>(this.endpoint, { id, ...data });
+  }
 }
 
 // Export singleton instance

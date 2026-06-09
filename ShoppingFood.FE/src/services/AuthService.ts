@@ -56,8 +56,20 @@ class AuthService extends BaseService<IUserDto, IRegisterRequest> {
     return httpClient.post<IApiResponse<IUserDto>>(API_ENDPOINTS.AUTH.REGISTER_SELLER, data);
   }
 
+  async registerShipper(data: any): Promise<IApiResponse<any>> {
+    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.USER.REGISTER_SHIPPER, data);
+  }
+
   async applySeller(data: { businessName: string, businessAddress: string, contactInfo: string, businessLicenseUrl: string, shopImageUrl: string }): Promise<IApiResponse<any>> {
     return httpClient.post<IApiResponse<any>>('/User/ApplySeller', data);
+  }
+
+  async getSellerApplicationStatus(): Promise<IApiResponse<any>> {
+    return httpClient.get<IApiResponse<any>>(API_ENDPOINTS.USER.SELLER_APPLICATION_STATUS);
+  }
+
+  async updateSellerApplication(data: { id: string; businessName: string; businessAddress: string; businessLicenseUrl: string; shopImageUrl: string; contactInfo: string }): Promise<IApiResponse<any>> {
+    return httpClient.put<IApiResponse<any>>(API_ENDPOINTS.USER.UPDATE_SELLER_APPLICATION, data);
   }
 
   async upgradeToMall(reason: string): Promise<IApiResponse<any>> {
@@ -68,20 +80,20 @@ class AuthService extends BaseService<IUserDto, IRegisterRequest> {
     return httpClient.get<IApiResponse<IUserDto>>(API_ENDPOINTS.USER.PROFILE);
   }
 
-  async uploadAvatar(file: File): Promise<IApiResponse<{avatarUrl: string}>> {
+  async uploadAvatar(file: File): Promise<IApiResponse<{ avatarUrl: string }>> {
     const formData = new FormData();
     formData.append('file', file);
-    return httpClient.post<IApiResponse<{avatarUrl: string}>>('/User/UploadAvatar', formData, {
+    return httpClient.post<IApiResponse<{ avatarUrl: string }>>('/User/UploadAvatar', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
   }
 
-  async uploadImage(file: File): Promise<IApiResponse<{imageUrl: string}>> {
+  async uploadImage(file: File): Promise<IApiResponse<{ imageUrl: string }>> {
     const formData = new FormData();
     formData.append('file', file);
-    return httpClient.post<IApiResponse<{imageUrl: string}>>('/User/UploadImage', formData, {
+    return httpClient.post<IApiResponse<{ imageUrl: string }>>('/User/UploadImage', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
