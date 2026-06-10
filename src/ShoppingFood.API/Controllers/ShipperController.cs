@@ -123,5 +123,28 @@ namespace ShoppingFood.API.Controllers
             return StatusCode(response.Code, response);
         }
 
+        [HttpGet("schedule-area")]
+        public async Task<ActionResult<ApiResponse>> GetScheduleAndArea()
+        {
+            var query = new GetShipperScheduleAndAreaQuery();
+            if (userDto != null)
+            {
+                query.CurrentUserId = userDto.Id;
+            }
+            var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpPut("schedule-area")]
+        public async Task<ActionResult<ApiResponse>> UpdateScheduleAndArea([FromBody] UpdateShipperScheduleAndAreaCommand command)
+        {
+            if (userDto != null)
+            {
+                command.CurrentUserId = userDto.Id;
+            }
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
+
     }
 }

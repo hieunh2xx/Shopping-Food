@@ -561,6 +561,14 @@ namespace ShoppingFood.Domain.Context
                 entity.Property(e => e.WalletBalance).HasColumnType("decimal(12,2)").IsRequired().HasDefaultValue(0);
                 entity.Property(e => e.ReputationScore).IsRequired().HasDefaultValue(100);
                 entity.Property(e => e.Rating).IsRequired().HasDefaultValue(5.0);
+                entity.Property(e => e.OperatingLatitude);
+                entity.Property(e => e.OperatingLongitude);
+                entity.Property(e => e.OperatingRadiusKm);
+                entity.Property(e => e.WorkingSchedule).HasMaxLength(2000);
+                entity.Property(e => e.OperatingLatitude);
+                entity.Property(e => e.OperatingLongitude);
+                entity.Property(e => e.OperatingRadiusKm);
+                entity.Property(e => e.WorkingSchedule).HasMaxLength(2000);
 
                 entity.HasOne(d => d.UserProfile)
                 .WithOne()

@@ -90,6 +90,7 @@ export const API_ENDPOINTS = {
     CONFIRM_FAILED: '/Shipper/confirm-failed', //POST
     LOCATION: '/Shipper/location', // POST
     INCOME_REPORT: '/Shipper/income-report',
+    SCHEDULE_AREA: 'Shipper/schedule-area',
     DELIVERY_ROUTE: (orderId: string) => `/Shipper/delivery-route/${orderId}`, // GET
   },
 

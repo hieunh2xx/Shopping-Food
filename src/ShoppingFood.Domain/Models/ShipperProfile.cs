@@ -21,6 +21,10 @@ namespace ShoppingFood.Domain.Models
         public decimal WalletBalance { get; set; } = 0;
         public double ReputationScore { get; set; } = 100;
         public double Rating { get; set; } = 5.0;
+        public double? OperatingLatitude { get; set; }
+        public double? OperatingLongitude { get; set; }
+        public double? OperatingRadiusKm { get; set; }
+        public string? WorkingSchedule { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

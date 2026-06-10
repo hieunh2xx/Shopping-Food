@@ -12,6 +12,7 @@ import type {
   IConfirmDeliveryFailedRequest,
   IConfirmDeliverySuccessRequest
 } from '../interfaces';
+import type { IShipperIncomeReportDto, IShipperScheduleAndAreaDto, IUpdateShipperScheduleAndAreaRequest } from '../interfaces/IShipper';
 
 class ShipperService {
   async toggleOnline(data: IToggleShipperOnlineRequest): Promise<IApiResponse<any>> {
@@ -48,6 +49,21 @@ class ShipperService {
 
   async confirmFailed(data: IConfirmDeliveryFailedRequest): Promise<IApiResponse<any>> {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.SHIPPER.CONFIRM_FAILED, data);
+  }
+
+  async getIncomeReport(startDate?: string, endDate?: string): Promise<IApiResponse<IShipperIncomeReportDto>>{
+    const params = new URLSearchParams();
+    if(startDate) params.append('startDate', startDate);
+    if(endDate) params.append('endDate', endDate);
+    return httpClient.get<IApiResponse<IShipperIncomeReportDto>>(`${API_ENDPOINTS.SHIPPER.INCOME_REPORT}?${params.toString()}`)
+  }
+
+  async getScheduleAndArea(): Promise<IApiResponse<IShipperScheduleAndAreaDto>>{
+    return httpClient.get<IApiResponse<IShipperScheduleAndAreaDto>>(API_ENDPOINTS.SHIPPER.SCHEDULE_AREA)
+  }
+
+  async updateScheduleAndArea(data: IUpdateShipperScheduleAndAreaRequest): Promise<IApiResponse<any>> {
+    return httpClient.put<IApiResponse<any>>(API_ENDPOINTS.SHIPPER.SCHEDULE_AREA, data);
   }
 }
 

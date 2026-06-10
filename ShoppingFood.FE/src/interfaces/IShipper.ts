@@ -89,3 +89,23 @@ export interface IShipperIncomeReportDto {
   totalIncome: number;
   dailyReports: IDailyIncomeReportDto[];
 }
+
+export interface IWorkingScheduleItemDto{
+  dayOfWeek: number;
+  from: string;
+  to: string;
+}
+
+export interface IShipperScheduleAndAreaDto{
+  operatingLatitude: number | null;
+  operatingLongitude: number | null;
+  operatingRadiusKm: number | null;
+  workingSchedule: IWorkingScheduleItemDto[];
+}
+
+export interface IUpdateShipperScheduleAndAreaRequest{
+  operatingLatitude?: number;
+  operatingLongitude?: number;
+  operatingRadiusKm?: number;
+  workingSchedule: IWorkingScheduleItemDto[];
+}

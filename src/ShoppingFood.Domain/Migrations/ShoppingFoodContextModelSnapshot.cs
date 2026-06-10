@@ -916,6 +916,15 @@ namespace ShoppingFood.Domain.Migrations
                     b.Property<double?>("Longitude")
                         .HasColumnType("float");
 
+                    b.Property<double?>("OperatingLatitude")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("OperatingLongitude")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("OperatingRadiusKm")
+                        .HasColumnType("float");
+
                     b.Property<double>("Rating")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("float")
@@ -952,6 +961,10 @@ namespace ShoppingFood.Domain.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("decimal(12,2)")
                         .HasDefaultValue(0m);
+
+                    b.Property<string>("WorkingSchedule")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
 
                     b.HasKey("Id");
 
