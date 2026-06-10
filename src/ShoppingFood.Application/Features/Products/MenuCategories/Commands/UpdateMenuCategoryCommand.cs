@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using ShoppingFood.Core.Base;
 using System;
 using System.Collections.Generic;
@@ -12,6 +12,7 @@ namespace ShoppingFood.Application.Features.Products.Menu.Commands
     {
         public Guid Id { get; set; }
         public string Title { get; set; } = string.Empty;
+        public string? Description { get; set; }
         public int SortOrder { get; set; }
     }
 }

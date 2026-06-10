@@ -54,8 +54,9 @@ export interface IAddProductRequest {
   price: number;
   categoryId: string;
   stockStatus?: string;
-  images?: string[];
-  primaryImageIndex?: number;
+  imageUrls?: string[];
+  toppingIds?: string[];
+  sizes?: IProductSizeDto[];
 }
 
 /**
@@ -67,6 +68,9 @@ export interface IUpdateProductRequest {
   description?: string;
   price?: number;
   categoryId?: string;
+  imageUrls?: string[];
+  toppingIds?: string[];
+  sizes?: IProductSizeDto[];
 }
 
 /**

@@ -128,9 +128,9 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 if (stockValidationResult != null)
                     return stockValidationResult;
 
-                var totalAmount = await CalculateTotalAmountAsync(cart.Items);
+                var (totalAmount, shippingFee) = await CalculateTotalAmountAsync(cart.Items);
 
-                var order = CreateOrderEntity(request, totalAmount);
+                var order = CreateOrderEntity(request, totalAmount, shippingFee);
                 PopulateOrderItems(order, cart.Items);
 
                 _orderRepository.Add(order);
@@ -185,29 +185,32 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             return null;
         }
 
-        private async Task<decimal> CalculateTotalAmountAsync(IEnumerable<CartItem> items)
+        private async Task<(decimal TotalAmount, decimal ShippingFee)> CalculateTotalAmountAsync(IEnumerable<CartItem> items)
         {
             var itemsList = items.ToList();
 
             decimal itemsTotal = itemsList.Sum(i => i.PriceAtAdded * i.Quantity);
 
             var restaurantIds = itemsList.Select(i => i.Product.RestaurantId).Distinct().ToList();
+
             decimal shippingFeeTotal = 0;
 
             foreach (var restaurantId in restaurantIds)
             {
                 bool hasFreeshipProduct = itemsList.Any(i => i.Product!.RestaurantId == restaurantId && i.Product.IsFreeship);
+
                 if (hasFreeshipProduct)
                     continue;
 
                 var restaurant = await _restaurantProfileRepository.GetByIdAsync(restaurantId);
+
                 if (restaurant != null)
                     shippingFeeTotal += restaurant.ShippingFee;
             }
-            return itemsTotal + shippingFeeTotal;
+            return (itemsTotal + shippingFeeTotal, shippingFeeTotal);
         }
 
-        private Order CreateOrderEntity(CheckoutCommand request, decimal totalAmount)
+        private Order CreateOrderEntity(CheckoutCommand request, decimal totalAmount, decimal shippingFee)
         {
             return new Order
             {
@@ -215,6 +218,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 UserAccountId = request.CurrentUserId,
                 GuestUserId = request.CurrentUserId.HasValue ? null : request.GuestUserId,
                 TotalAmount = totalAmount,
+                ShippingFee = shippingFee,
                 DeliveryAddress = request.DeliveryAddress,
                 ContactName = request.ContactName,
                 ContactPhone = request.ContactPhone,

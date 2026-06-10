@@ -5,6 +5,19 @@ export type { IMenuCategoryDto, IAddMenuCategoryRequest, IUpdateMenuCategoryRequ
 export type { IApproveApplicationRequest, IApproveProductRequest } from './IAdmin';
 export type { IAuthState, IAuthContext } from './IAuth';
 export type { ICartItem, ICartState, ICartContext } from './ICart';
-export type { IDeliveryRouteDto, IProposedDeliveryOfferDto, IToggleShipperOnlineRequest, IAcceptDeliveryOfferRequest, IConfirmArrivedRequest, IConfirmPickedUpRequest, IUpdateShipperLocationRequest } from './IShipper';
+export type { IDeliveryRouteDto, IProposedDeliveryOfferDto, IToggleShipperOnlineRequest, IAcceptDeliveryOfferRequest, IConfirmArrivedRequest, IConfirmPickedUpRequest, IUpdateShipperLocationRequest, IConfirmDeliveryFailedRequest, IConfirmDeliverySuccessRequest } from './IShipper';
 export type { IRestaurantProfileDto, IUpdateRestaurantBasicInfo, IUpdateRestaurantOperatingHours, IUpdateRestaurantStatus, IUpdateRestaurantDeliveryRadius, IUpdateRestaurantShippingFee } from './IRestaurant';
 export type { IToppingDto, ICreateToppingRequest, IUpdateToppingRequest } from './ITopping';
+export type {
+  IOrderSummary,
+  ISendCheckoutOtpRequest,
+  ICheckoutRequest,
+  IUpdateOrderRequest,
+  ICancelOrderRequest,
+  IReorderRequest,
+  IAcceptOrderRequest,
+  IRejectOrderRequest,
+  IPrepareOrderRequest,
+  IWaitingDriverOrderRequest,
+  ISellerCancelOrderRequest
+} from './IOrder';

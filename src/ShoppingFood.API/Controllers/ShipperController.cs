@@ -85,5 +85,43 @@ namespace ShoppingFood.API.Controllers
             return StatusCode(response.Code, response);
         }
 
+        [HttpPost("confirm-delivered")]
+        public async Task<ActionResult<ApiResponse>> ConfirmDelivered([FromBody] ConfirmDeliverySuccessCommand command)
+        {
+            if (userDto != null)
+            {
+                command.CurrentUserId = userDto.Id;
+            }
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpPost("confirm-failed")]
+        public async Task<ActionResult<ApiResponse>> ConfirmFailed([FromBody] ConfirmDeliveryFailedCommand command)
+        {
+            if (userDto != null)
+            {
+                command.CurrentUserId = userDto.Id;
+            }
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpGet("income-report")]
+        public async Task<ActionResult<ApiResponse>> GetIncomeReport([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
+        {
+            var query = new GetShipperIncomeReportQuery
+            {
+                StartDate = startDate,
+                EndDate = endDate
+            };
+            if (userDto != null)
+            {
+                query.CurrentUserId = userDto.Id;
+            }
+            var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
+        }
+
     }
 }

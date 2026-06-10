@@ -11,11 +11,13 @@ namespace ShoppingFood.Domain.Models
         public Guid? GuestUserId { get; set; }
         public Guid? ShipperId { get; set; }
         public decimal TotalAmount { get; set; }
+        public decimal ShippingFee { get; set; } = 0;
         public string DeliveryAddress { get; set; } = string.Empty;
         public string ContactName { get; set; } = string.Empty;
         public string ContactPhone { get; set; } = string.Empty;
         public string? Note { get; set; }
         public string? RejectReason { get; set; }
+        public string? DeliveryProofImageUrl { get; set; }
         public OrderStatus Status { get; set; } = OrderStatus.Pending;
         public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.COD;
         public string IpAddress { get; set; } = string.Empty;

@@ -8,7 +8,9 @@ import type {
   IAcceptDeliveryOfferRequest, 
   IConfirmArrivedRequest, 
   IConfirmPickedUpRequest, 
-  IUpdateShipperLocationRequest 
+  IUpdateShipperLocationRequest,
+  IConfirmDeliveryFailedRequest,
+  IConfirmDeliverySuccessRequest
 } from '../interfaces';
 
 class ShipperService {
@@ -38,6 +40,14 @@ class ShipperService {
 
   async getDeliveryRoute(orderId: string): Promise<IApiResponse<IDeliveryRouteDto>> {
     return httpClient.get<IApiResponse<IDeliveryRouteDto>>(API_ENDPOINTS.SHIPPER.DELIVERY_ROUTE(orderId));
+  }
+
+  async confirmDelivered(data: IConfirmDeliverySuccessRequest) : Promise<IApiResponse<any>>{
+    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.SHIPPER.CONFIRM_DELIVERED, data);
+  }
+
+  async confirmFailed(data: IConfirmDeliveryFailedRequest): Promise<IApiResponse<any>> {
+    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.SHIPPER.CONFIRM_FAILED, data);
   }
 }
 

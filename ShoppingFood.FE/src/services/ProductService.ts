@@ -59,7 +59,7 @@ class ProductService extends BaseService<IProductDto, IAddProductRequest, IUpdat
     );
   }
 
-  async reportProduct(data: { productId: string; reason: string; detail?: string }): Promise<IApiResponse<any>> {
+  async reportProduct(data: { productId: string; reason: string; description?: string }): Promise<IApiResponse<any>> {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.PRODUCT.REPORT, data);
   }
 

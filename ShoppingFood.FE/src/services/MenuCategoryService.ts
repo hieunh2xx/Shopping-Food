@@ -13,7 +13,7 @@ class MenuCategoryService extends BaseService<IMenuCategoryDto, IAddMenuCategory
   protected readonly endpoint = API_ENDPOINTS.MENU_CATEGORY.BASE;
 
   override async update(id: string, data: IUpdateMenuCategoryRequest): Promise<IApiResponse<IMenuCategoryDto>> {
-    return httpClient.put<IApiResponse<IMenuCategoryDto>>(this.endpoint, { id, ...data });
+    return httpClient.put<IApiResponse<IMenuCategoryDto>>(this.endpoint, { ...data, id });
   }
 }
 

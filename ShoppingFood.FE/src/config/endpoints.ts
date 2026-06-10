@@ -86,7 +86,10 @@ export const API_ENDPOINTS = {
     ACCEPT_OFFER: '/Shipper/accept-offer', // POST
     CONFIRM_ARRIVED: '/Shipper/confirm-arrived', // POST
     CONFIRM_PICKED_UP: '/Shipper/confirm-picked-up', // POST
+    CONFIRM_DELIVERED: '/Shipper/confirm-delivered', // POST
+    CONFIRM_FAILED: '/Shipper/confirm-failed', //POST
     LOCATION: '/Shipper/location', // POST
+    INCOME_REPORT: '/Shipper/income-report',
     DELIVERY_ROUTE: (orderId: string) => `/Shipper/delivery-route/${orderId}`, // GET
   },
 

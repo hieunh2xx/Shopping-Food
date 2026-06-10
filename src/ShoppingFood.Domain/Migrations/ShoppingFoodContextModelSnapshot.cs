@@ -309,6 +309,9 @@ namespace ShoppingFood.Domain.Migrations
                     b.Property<double?>("DeliveryLongitude")
                         .HasColumnType("float");
 
+                    b.Property<string>("DeliveryProofImageUrl")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<Guid?>("GuestUserId")
                         .HasColumnType("uniqueidentifier");
 
@@ -331,6 +334,11 @@ namespace ShoppingFood.Domain.Migrations
 
                     b.Property<Guid?>("ShipperId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("ShippingFee")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(12,2)")
+                        .HasDefaultValue(0m);
 
                     b.Property<string>("Status")
                         .IsRequired()

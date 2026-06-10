@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { orderService, type IOrderSummary } from '../services/OrderService';
+import { orderService } from '../services/OrderService';
+import type { IOrderSummary } from '../interfaces';
 import toast from 'react-hot-toast';
 import { PackageOpen } from 'lucide-react';
 

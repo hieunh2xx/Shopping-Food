@@ -1,14 +1,19 @@
 import { httpClient } from './base/HttpClient';
 import { API_ENDPOINTS } from '../config/endpoints';
 import type { IApiResponse } from '../interfaces/IApiResponse';
-
-export interface IOrderSummary {
-  id: string;
-  totalAmount: number;
-  status: string;
-  paymentMethod: string;
-  createdAt: string;
-}
+import type {
+  IOrderSummary,
+  ISendCheckoutOtpRequest,
+  ICheckoutRequest,
+  IUpdateOrderRequest,
+  ICancelOrderRequest,
+  IReorderRequest,
+  IAcceptOrderRequest,
+  IRejectOrderRequest,
+  IPrepareOrderRequest,
+  IWaitingDriverOrderRequest,
+  ISellerCancelOrderRequest
+} from '../interfaces';
 
 class OrderService {
   /**
@@ -22,45 +27,46 @@ class OrderService {
     return httpClient.get<IApiResponse<any>>(API_ENDPOINTS.ORDER.DETAILS(id));
   }
 
-  public async checkout(data: any): Promise<IApiResponse<any>> {
+  public async checkout(data: ICheckoutRequest): Promise<IApiResponse<any>> {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ORDER.CHECKOUT, data);
   }
 
-  public async sendCheckoutOtp(data: { contactEmail: string }): Promise<IApiResponse<any>> {
+  public async sendCheckoutOtp(data: ISendCheckoutOtpRequest): Promise<IApiResponse<any>> {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ORDER.CHECKOUT_SEND_OTP, data);
   }
 
-  public async updateOrder(data: { id: string; deliveryAddress?: string; contactName?: string; contactPhone?: string; note?: string }): Promise<IApiResponse<any>> {
+  public async updateOrder(data: IUpdateOrderRequest): Promise<IApiResponse<any>> {
     return httpClient.put<IApiResponse<any>>(API_ENDPOINTS.ORDER.UPDATE, data);
   }
 
-  public async cancelOrder(data: { orderId: string; cancellationReason?: string }): Promise<IApiResponse<any>> {
+  public async cancelOrder(data: ICancelOrderRequest): Promise<IApiResponse<any>> {
     return httpClient.put<IApiResponse<any>>(API_ENDPOINTS.ORDER.CANCEL, data);
   }
 
-  public async reorder(data: { orderId: string }): Promise<IApiResponse<any>> {
+  public async reorder(data: IReorderRequest): Promise<IApiResponse<any>> {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ORDER.REORDER, data);
   }
 
-  public async acceptOrder(data: { orderId: string }): Promise<IApiResponse<any>> {
+  public async acceptOrder(data: IAcceptOrderRequest): Promise<IApiResponse<any>> {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ORDER.ACCEPT, data);
   }
 
-  public async rejectOrder(data: { orderId: string; rejectionReason: string }): Promise<IApiResponse<any>> {
+  public async rejectOrder(data: IRejectOrderRequest): Promise<IApiResponse<any>> {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ORDER.REJECT, data);
   }
 
-  public async prepareOrder(data: { orderId: string }): Promise<IApiResponse<any>> {
+  public async prepareOrder(data: IPrepareOrderRequest): Promise<IApiResponse<any>> {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ORDER.PREPARE, data);
   }
 
-  public async waitingForDriver(data: { orderId: string }): Promise<IApiResponse<any>> {
+  public async waitingForDriver(data: IWaitingDriverOrderRequest): Promise<IApiResponse<any>> {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ORDER.WAITING_DRIVER, data);
   }
 
-  public async sellerCancelOrder(data: { orderId: string; cancellationReason: string }): Promise<IApiResponse<any>> {
+  public async sellerCancelOrder(data: ISellerCancelOrderRequest): Promise<IApiResponse<any>> {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ORDER.SELLER_CANCEL, data);
   }
 }
 
 export const orderService = new OrderService();
+export default orderService;

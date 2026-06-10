@@ -31,23 +31,61 @@ export interface IProposedDeliveryOfferDto {
   countdownSeconds: number;
 }
 
+
 export interface IToggleShipperOnlineRequest {
   isOnline: boolean;
 }
 
 export interface IAcceptDeliveryOfferRequest {
   orderId: string;
+  latitude: number;
+  longitude: number;
 }
 
 export interface IConfirmArrivedRequest {
   orderId: string;
+  latitude: number;
+  longitude: number;
 }
 
 export interface IConfirmPickedUpRequest {
   orderId: string;
+  verificationCode: string;
+  latitude: number;
+  longitude: number;
 }
 
 export interface IUpdateShipperLocationRequest {
   latitude: number;
   longitude: number;
+}
+
+export interface IConfirmDeliverySuccessRequest{
+  orderId: string;
+  latitude: number;
+  longitude: number;
+  deliveryProofImageUrl?: string;
+}
+
+export interface IConfirmDeliveryFailedRequest {
+  orderId: string;
+  reason: string;
+  latitude: number;
+  longitude: number;
+}
+
+export interface IDailyIncomeReportDto {
+  date: string;
+  completedOrdersCount: number;
+  shippingFees: number;
+  bonus: number;
+  totalIncome: number;
+}
+
+export interface IShipperIncomeReportDto {
+  completedOrdersCount: number;
+  totalShippingFees: number;
+  totalBonuses: number;
+  totalIncome: number;
+  dailyReports: IDailyIncomeReportDto[];
 }

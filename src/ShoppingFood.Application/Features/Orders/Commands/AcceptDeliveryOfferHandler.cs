@@ -50,6 +50,10 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 if (!shipperProfile.IsOnline)
                     return ApiResponse.Failure(400, "Drivers must switch to online status to receive orders.");
 
+                var hasActiveDelivery = await _orderRepository.ExistsAsync(o => o.ShipperId == shipperProfile.Id && o.Status == OrderStatus.Shipping);
+                if (hasActiveDelivery)
+                    return ApiResponse.Failure(400, "You have an order being delivered. Please complete the current order before receiving a new one.");
+
                 var order = await GetOrderWithDetailAsync(request.OrderId);
                 if (order == null)
                     return ApiResponse.Failure(404, "Order not found.");
