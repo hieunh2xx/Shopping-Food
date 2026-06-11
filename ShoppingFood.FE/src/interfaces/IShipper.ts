@@ -109,3 +109,8 @@ export interface IUpdateShipperScheduleAndAreaRequest{
   operatingRadiusKm?: number;
   workingSchedule: IWorkingScheduleItemDto[];
 }
+
+export interface IRejectDeliveryOfferRequest{
+  orderId: string;
+  isExpired?: boolean;
+}

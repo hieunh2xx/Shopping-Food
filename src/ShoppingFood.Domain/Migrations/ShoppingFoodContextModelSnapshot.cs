@@ -364,6 +364,37 @@ namespace ShoppingFood.Domain.Migrations
                     b.ToTable("ORDER", (string)null);
                 });
 
+            modelBuilder.Entity("ShoppingFood.Domain.Models.OrderDeliveryProposal", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiredAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ShipperId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("ShipperId");
+
+                    b.ToTable("ORDER_DELIVERY_PROPOSAL", (string)null);
+                });
+
             modelBuilder.Entity("ShoppingFood.Domain.Models.OrderItem", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1309,6 +1340,25 @@ namespace ShoppingFood.Domain.Migrations
                     b.Navigation("Shipper");
 
                     b.Navigation("UserAccount");
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.OrderDeliveryProposal", b =>
+                {
+                    b.HasOne("ShoppingFood.Domain.Models.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ShoppingFood.Domain.Models.ShipperProfile", "Shipper")
+                        .WithMany()
+                        .HasForeignKey("ShipperId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+
+                    b.Navigation("Shipper");
                 });
 
             modelBuilder.Entity("ShoppingFood.Domain.Models.OrderItem", b =>

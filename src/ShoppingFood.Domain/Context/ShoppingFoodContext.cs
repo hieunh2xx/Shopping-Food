@@ -39,6 +39,7 @@ namespace ShoppingFood.Domain.Context
         public DbSet<TrustedDevice> TrustedDevices { get; set; } = null!;
         public DbSet<ShipperApplication> ShipperApplications { get; set; } = null!;
         public DbSet<ShipperProfile> ShipperProfiles { get; set; } = null!;
+        public DbSet<OrderDeliveryProposal> OrderDeliveryProposals { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -579,6 +580,23 @@ namespace ShoppingFood.Domain.Context
                 .WithOne()
                 .HasForeignKey<ShipperProfile>(d => d.ShipperApplicationId)
                 .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<OrderDeliveryProposal>(entity =>
+            {
+                entity.ToTable("ORDER_DELIVERY_PROPOSAL");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Status).HasConversion<string>().IsRequired();
+
+                entity.HasOne(d => d.Shipper)
+                    .WithMany()
+                    .HasForeignKey(d => d.ShipperId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(d => d.Order)
+                    .WithMany()
+                    .HasForeignKey(d => d.OrderId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }

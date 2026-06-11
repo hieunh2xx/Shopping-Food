@@ -91,6 +91,8 @@ export const API_ENDPOINTS = {
     LOCATION: '/Shipper/location', // POST
     INCOME_REPORT: '/Shipper/income-report',
     SCHEDULE_AREA: 'Shipper/schedule-area',
+    AVAILABLE_OFFERS: '/Shipper/available-offers',
+    REJECT_OFFER: '/Shipper/reject-offers',
     DELIVERY_ROUTE: (orderId: string) => `/Shipper/delivery-route/${orderId}`, // GET
   },
 

@@ -146,5 +146,32 @@ namespace ShoppingFood.API.Controllers
             return StatusCode(response.Code, response);
         }
 
+        [HttpGet("available-offers")]
+        public async Task<ActionResult<ApiResponse>> GetAvailableOffers([FromQuery] double latitude, [FromQuery] double longitude)
+        {
+            var query = new GetAvailableOrdersForShipperQuery
+            {
+                Latitude = latitude,
+                Longitude = longitude
+            };
+            if (userDto != null)
+            {
+                query.CurrentUserId = userDto.Id;
+            }
+            var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpPost("reject-offer")]
+        public async Task<ActionResult<ApiResponse>> RejectOffer([FromBody] RejectDeliveryOfferCommand command)
+        {
+            if (userDto != null)
+            {
+                command.CurrentUserId = userDto.Id;
+            }
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
+
     }
 }

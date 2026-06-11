@@ -12,7 +12,7 @@ import type {
   IConfirmDeliveryFailedRequest,
   IConfirmDeliverySuccessRequest
 } from '../interfaces';
-import type { IShipperIncomeReportDto, IShipperScheduleAndAreaDto, IUpdateShipperScheduleAndAreaRequest } from '../interfaces/IShipper';
+import type { IRejectDeliveryOfferRequest, IShipperIncomeReportDto, IShipperScheduleAndAreaDto, IUpdateShipperScheduleAndAreaRequest } from '../interfaces/IShipper';
 
 class ShipperService {
   async toggleOnline(data: IToggleShipperOnlineRequest): Promise<IApiResponse<any>> {
@@ -64,6 +64,14 @@ class ShipperService {
 
   async updateScheduleAndArea(data: IUpdateShipperScheduleAndAreaRequest): Promise<IApiResponse<any>> {
     return httpClient.put<IApiResponse<any>>(API_ENDPOINTS.SHIPPER.SCHEDULE_AREA, data);
+  }
+
+  async getAvailableOffers(latitude: number, longitude: number): Promise<IApiResponse<IProposedDeliveryOfferDto[]>>{
+    return httpClient.get<IApiResponse<IProposedDeliveryOfferDto[]>>(`${API_ENDPOINTS.SHIPPER.AVAILABLE_OFFERS}?latitude=${latitude}&longitude=${longitude}`);
+  }
+
+  async rejectOffer(data: IRejectDeliveryOfferRequest): Promise<IApiResponse<any>>{
+    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.SHIPPER.REJECT_OFFER, data);
   }
 }
 

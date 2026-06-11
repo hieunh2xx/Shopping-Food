@@ -76,4 +76,10 @@ namespace ShoppingFood.Domain.Enums
         Car
     }
     
+    public enum ProposalStatus
+    {
+        Accepted,
+        Rejected,
+        Expired
+    }
 }

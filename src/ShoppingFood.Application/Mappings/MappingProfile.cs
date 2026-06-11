@@ -137,7 +137,7 @@ namespace ShoppingFood.Application.Mappings
                 .ForMember(dest => dest.RestaurantLongitude, opt => opt.MapFrom(src => src.Items.FirstOrDefault() != null && src.Items.FirstOrDefault().Product != null && src.Items.FirstOrDefault().Product.Restaurant != null ? src.Items.FirstOrDefault().Product.Restaurant.Longitude : null))
                 .ForMember(dest => dest.DistanceInKm, opt => opt.Ignore())
                 .ForMember(dest => dest.ShippingFee, opt => opt.Ignore())
-                .ForMember(dest => dest.CountdownSeconds, opt => opt.MapFrom(src => 30));
+                .ForMember(dest => dest.CountdownSeconds, opt => opt.MapFrom(src => 60));
 
             CreateMap<Order, DeliveryRouteDto>()
                 .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => src.Id))

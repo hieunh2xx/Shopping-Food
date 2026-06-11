@@ -4,6 +4,7 @@ using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
 using ShoppingFood.Domain.Enums;
 using ShoppingFood.Domain.Models;
+using ShoppingFood.Dto.Order;
 using ShoppingFood.Repository.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -19,6 +20,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
         private readonly IShipperProfileRepository _shipperProfileRepository;
         private readonly IUserRepository _userRepository;
         private readonly INotificationRepository _notificationRepository;
+        private readonly IOrderDeliveryProposalRepository _orderDeliveryProposalRepository;
         private readonly IUnitOfWork _unitOfWork;
 
         public AcceptDeliveryOfferHandler(
@@ -26,12 +28,14 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             IShipperProfileRepository shipperProfileRepository,
             IUserRepository userRepository,
             INotificationRepository notificationRepository,
+            IOrderDeliveryProposalRepository orderDeliveryProposalRepository,
             IUnitOfWork unitOfWork)
         {
             _orderRepository = orderRepository;
             _shipperProfileRepository = shipperProfileRepository;
             _userRepository = userRepository;
             _notificationRepository = notificationRepository;
+            _orderDeliveryProposalRepository = orderDeliveryProposalRepository;
             _unitOfWork = unitOfWork;
         }
 
@@ -73,6 +77,28 @@ namespace ShoppingFood.Application.Features.Orders.Commands
 
                 AddNotificationForCustomer(order, shipperProfile.UserProfile.FullName);
 
+                var existingProposal = (await _orderDeliveryProposalRepository.GetAsync(
+                    predicate: p => p.ShipperId == shipperProfile.Id && p.OrderId == order.Id
+                    )).FirstOrDefault();
+
+                if (existingProposal == null)
+                {
+                    var proposal = new OrderDeliveryProposal
+                    {
+                        Id = Guid.NewGuid(),
+                        ShipperId = shipperProfile.Id,
+                        OrderId = order.Id,
+                        Status = ProposalStatus.Accepted,
+                        CreatedAt = DateTime.UtcNow,
+                        ExpiredAt = DateTime.UtcNow
+                    };
+                    _orderDeliveryProposalRepository.Add(proposal);
+                }
+                else
+                {
+                    existingProposal.Status = ProposalStatus.Accepted;
+                    _orderDeliveryProposalRepository.Update(existingProposal);
+                }
                 await _unitOfWork.SaveChangesAsync();
 
                 return ApiResponse.Success(new { order.Id, Status = order.Status.ToString() }, "Successfully received the single delivery proposal.");
