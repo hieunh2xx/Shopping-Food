@@ -53,8 +53,8 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                 if (order.ShipperId.HasValue)
                     return ApiResponse.Failure(400, "This order has already been accepted by another driver.");
 
-                if (order.Status != OrderStatus.WaitingForDriver)
-                    return ApiResponse.Failure(400, $"The order is not in waiting for driver status. Current status: {order.Status}.");
+                if (order.Status != OrderStatus.WaitingForShipper)
+                    return ApiResponse.Failure(400, $"The order is not in waiting for shipper status. Current status: {order.Status}.");
 
                 var firstItem = order.Items?.FirstOrDefault();
                 var restaurant = firstItem?.Product?.Restaurant;

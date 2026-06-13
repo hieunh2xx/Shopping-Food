@@ -122,8 +122,8 @@ namespace ShoppingFood.API.Controllers
             return StatusCode(response.Code, response);
         }
 
-        [HttpPost("waiting-for-drive")]
-        public async Task<IActionResult> WaitingForDriverOrder([FromBody] WaitingDriverOrderCommand command)
+        [HttpPost("waiting-for-shipper")]
+        public async Task<IActionResult> WaitingForShipperOrder([FromBody] WaitingShipperOrderCommand command)
         {
             if (userDto != null)
             {

@@ -11,7 +11,7 @@ import type {
   IAcceptOrderRequest,
   IRejectOrderRequest,
   IPrepareOrderRequest,
-  IWaitingDriverOrderRequest,
+  IWaitingShipperOrderRequest,
   ISellerCancelOrderRequest
 } from '../interfaces';
 
@@ -59,8 +59,8 @@ class OrderService {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ORDER.PREPARE, data);
   }
 
-  public async waitingForDriver(data: IWaitingDriverOrderRequest): Promise<IApiResponse<any>> {
-    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ORDER.WAITING_DRIVER, data);
+  public async waitingForShipper(data: IWaitingShipperOrderRequest): Promise<IApiResponse<any>> {
+    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ORDER.WAITING_SHIPPER, data);
   }
 
   public async sellerCancelOrder(data: ISellerCancelOrderRequest): Promise<IApiResponse<any>> {

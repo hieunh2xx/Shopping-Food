@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
@@ -13,13 +13,13 @@ using System.Threading.Tasks;
 
 namespace ShoppingFood.Application.Features.Orders.Commands
 {
-    public class WaitingDriverOrderHandler : IRequestHandler<WaitingDriverOrderCommand, ApiResponse>
+    public class WaitingShipperOrderHandler : IRequestHandler<WaitingShipperOrderCommand, ApiResponse>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IOrderRepository _orderRepository;
         private readonly IRestaurantProfileRepository _restaurantProfileRepository;
 
-        public WaitingDriverOrderHandler(
+        public WaitingShipperOrderHandler(
             IOrderRepository orderRepository, 
             IRestaurantProfileRepository restaurantProfileRepository,
             IUnitOfWork unitOfWork
@@ -29,7 +29,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             _restaurantProfileRepository = restaurantProfileRepository;
             _unitOfWork = unitOfWork;
         }
-        public async Task<ApiResponse> Handle(WaitingDriverOrderCommand request, CancellationToken cancellationToken)
+        public async Task<ApiResponse> Handle(WaitingShipperOrderCommand request, CancellationToken cancellationToken)
         {
             try
             {
@@ -46,7 +46,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     return ApiResponse.Failure(404, "Order not found");
 
                 if (order.Status != OrderStatus.Preparing)
-                    return ApiResponse.Failure(400, "Only preparing orders can be updated to preparing.");
+                    return ApiResponse.Failure(400, "Only preparing orders can be updated to waiting for shipper.");
 
                 var sellerRestaurants = await _restaurantProfileRepository.GetAsync(
                     predicate: r => r.Owner.UserAccountId == request.CurrentUserId.Value,
@@ -61,17 +61,17 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 if (!isAuthorized)
                     return ApiResponse.Failure(403, "This order contains dishes that are not from your restaurant.");
 
-                order.Status = OrderStatus.WaitingForDriver;
+                order.Status = OrderStatus.WaitingForShipper;
                 order.UpdatedAt = DateTime.UtcNow;
 
                 _orderRepository.Update(order);
                 await _unitOfWork.SaveChangesAsync();
 
-                return ApiResponse.Success(null, "Order status updated to Preparing successfully.");
+                return ApiResponse.Success(null, "Order status updated to Waiting for Shipper successfully.");
             }
             catch (Exception ex)
             {
-                await _unitOfWork.LogErrorAsync("PrepareOrderHandler.Handle", ex);
+                await _unitOfWork.LogErrorAsync("WaitingShipperOrderHandler.Handle", ex);
                 return ApiResponse.Failure(400, $"An error occurred: {ex.Message}");
             }
         }

@@ -215,7 +215,7 @@ namespace ShoppingFood.API.Filters
             if ((path.Equals("/api/Order/accept", StringComparison.OrdinalIgnoreCase) ||
                  path.Equals("/api/Order/reject", StringComparison.OrdinalIgnoreCase) ||
                  path.Equals("/api/Order/prepare", StringComparison.OrdinalIgnoreCase) ||
-                 path.Equals("/api/Order/waiting-for-driver", StringComparison.OrdinalIgnoreCase) ||
+                 path.Equals("/api/Order/waiting-for-shipper", StringComparison.OrdinalIgnoreCase) ||
                  path.Equals("/api/Order/seller-cancel", StringComparison.OrdinalIgnoreCase))  &&
                 context.HttpContext.Request.Method == "POST")
             {
@@ -225,6 +225,13 @@ namespace ShoppingFood.API.Filters
                 }
             }
             
+            if(path.Contains("/api/Coordinator/", StringComparison.OrdinalIgnoreCase))
+            {
+                if(user.Profile?.Role != UserRole.Admin && user.Profile?.Role != UserRole.Coordinator)
+                {
+                    throw new UnauthorizedAccessException("Only the admin/coordinator have the right to perform this operation");
+                }
+            }
             // Inject CurrentUserId into Commands/Queries
             foreach (var arg in context.ActionArguments.Values)
             {

@@ -38,7 +38,7 @@ export const API_ENDPOINTS = {
     ACCEPT: '/Order/accept', // POST
     REJECT: '/Order/reject', // POST
     PREPARE: '/Order/prepare', // POST
-    WAITING_DRIVER: '/Order/waiting-for-drive', // POST
+    WAITING_SHIPPER: '/Order/waiting-for-shipper', // POST
     SELLER_CANCEL: '/Order/seller-cancel', // POST
   },
 
@@ -121,4 +121,10 @@ export const API_ENDPOINTS = {
     BY_RESTAURANT: (restaurantId: string) => `/Topping/restaurant/${restaurantId}`,
     BY_ID: (id: string) => `/Topping/${id}`,
   },
+
+  COORDINATOR:{
+    BASE: '/Coordinator',
+    ORDERS: '/Coordinator/orders',
+  },
 } as const;
+

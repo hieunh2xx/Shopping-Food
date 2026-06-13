@@ -18,6 +18,7 @@ export type {
   IAcceptOrderRequest,
   IRejectOrderRequest,
   IPrepareOrderRequest,
-  IWaitingDriverOrderRequest,
+  IWaitingShipperOrderRequest,
   ISellerCancelOrderRequest
 } from './IOrder';
+export type {IDispatchOrder, IDispatchOrderItem} from './ICoordinatoor';

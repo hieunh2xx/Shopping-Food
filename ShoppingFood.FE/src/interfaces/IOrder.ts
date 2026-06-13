@@ -58,7 +58,7 @@ export interface IPrepareOrderRequest {
   orderId: string;
 }
 
-export interface IWaitingDriverOrderRequest {
+export interface IWaitingShipperOrderRequest {
   orderId: string;
 }
 

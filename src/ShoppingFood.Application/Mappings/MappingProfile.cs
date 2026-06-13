@@ -10,6 +10,7 @@ using ShoppingFood.Application.Features.Products.GlobalMenuCategories.Commands;
 using ShoppingFood.Dto.Restaurant;
 using ShoppingFood.Dto.Cart;
 using ShoppingFood.Dto.Order;
+using ShoppingFood.Dto.Coordinator;
 
 namespace ShoppingFood.Application.Mappings
 {
@@ -154,6 +155,20 @@ namespace ShoppingFood.Application.Mappings
                 .ForMember(dest => dest.ShipperLongitude, opt => opt.Ignore())
                 .ForMember(dest => dest.GoogleMapNavigationUrl, opt => opt.Ignore());
 
+            CreateMap<Order, DispatchOrderDto>()
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+                .ForMember(dest => dest.PaymentMethod, opt => opt.MapFrom(src => src.PaymentMethod.ToString()))
+                .ForMember(dest => dest.RestaurantName, opt => opt.MapFrom(src => src.Items.FirstOrDefault() != null &&
+                            src.Items.FirstOrDefault().Product != null && src.Items.FirstOrDefault().Product.Restaurant != null ?
+                            src.Items.FirstOrDefault().Product.Restaurant.RestaurantName : "N/A"))
+                .ForMember(dest => dest.RestaurantAddress, opt => opt.MapFrom(src => src.Items.FirstOrDefault() != null &&
+                            src.Items.FirstOrDefault().Product != null && src.Items.FirstOrDefault().Product.Restaurant != null ?
+                            src.Items.FirstOrDefault().Product.Restaurant.Address : "N/A"))
+                .ForMember(dest => dest.ShipperName, opt => opt.MapFrom(src => src.Shipper != null && src.Shipper.UserProfile != null ? src.Shipper.UserProfile.FullName : null))
+                .ForMember(dest => dest.ShipperPhone, opt => opt.MapFrom(src => src.Shipper != null && src.Shipper.UserProfile != null && src.Shipper.UserProfile.UserAccount != null ? src.Shipper.UserProfile.UserAccount.Phone : null))
+                .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.Items));
+
+            CreateMap<OrderItem, DispatchOrderItemDto>();
         }
     }
 }

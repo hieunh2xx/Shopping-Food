@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
@@ -56,7 +56,7 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                     )).Select(p => p.OrderId).ToList();
 
                 var orders = await _orderRepository.GetAsync(
-                    predicate: o => o.Status == OrderStatus.WaitingForDriver &&
+                    predicate: o => o.Status == OrderStatus.WaitingForShipper &&
                                !o.ShipperId.HasValue &&
                                !excludeOrderIds.Contains(o.Id),
                     include: q => q.Include(o => o.Items).ThenInclude(i => i.Product).ThenInclude(r => r.Restaurant),

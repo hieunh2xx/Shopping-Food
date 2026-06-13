@@ -14,7 +14,8 @@ namespace ShoppingFood.Domain.Enums
         Seller,
         Mall,
         Customer,
-        Shipper
+        Shipper,
+        Coordinator
     }
 
     public enum SellerApplicationStatus
@@ -56,7 +57,7 @@ namespace ShoppingFood.Domain.Enums
         Pending,
         Confirmed,
         Preparing,
-        WaitingForDriver,
+        WaitingForShipper,
         Shipping,
         Delivered,
         Cancelled

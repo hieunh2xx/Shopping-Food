@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
@@ -44,9 +44,9 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 if (order == null)
                     return ApiResponse.Failure(404, "Order not found");
 
-                var allowedStatuses = new[] { OrderStatus.Confirmed, OrderStatus.Preparing, OrderStatus.WaitingForDriver };
+                var allowedStatuses = new[] { OrderStatus.Confirmed, OrderStatus.Preparing, OrderStatus.WaitingForShipper };
                 if (!allowedStatuses.Contains(order.Status))
-                    return ApiResponse.Failure(400, "Only orders that are Confirmed, Preparing, or Waiting for Driver can be cancelled due to incident.");
+                    return ApiResponse.Failure(400, "Only orders that are Confirmed, Preparing, or Waiting for Shipper can be cancelled due to incident.");
 
                 var sellerRestaurant = await _restaurantProfileRepository.GetAsync(
                     predicate: r => r.Owner.UserAccountId == request.CurrentUserId.Value,

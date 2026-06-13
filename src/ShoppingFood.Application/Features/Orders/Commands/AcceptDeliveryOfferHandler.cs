@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
@@ -65,8 +65,8 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 if (order.ShipperId.HasValue)
                     return ApiResponse.Failure(400, "This order has been accepted by another driver.");
 
-                if (order.Status != OrderStatus.WaitingForDriver)
-                    return ApiResponse.Failure(400, $"The order is not in waiting for driver status. Current status: {order.Status}");
+                if (order.Status != OrderStatus.WaitingForShipper)
+                    return ApiResponse.Failure(400, $"The order is not in waiting for shipper status. Current status: {order.Status}");
 
                 AssignOrderToShipper(order, shipperProfile.Id);
 
