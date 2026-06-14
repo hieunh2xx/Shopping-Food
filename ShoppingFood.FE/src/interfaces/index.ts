@@ -21,4 +21,4 @@ export type {
   IWaitingShipperOrderRequest,
   ISellerCancelOrderRequest
 } from './IOrder';
-export type {IDispatchOrder, IDispatchOrderItem} from './ICoordinatoor';
+export type {IDispatchOrder, IDispatchOrderItem, ISuggestedShipper} from './ICoordinatoor';

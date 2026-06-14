@@ -125,6 +125,7 @@ export const API_ENDPOINTS = {
   COORDINATOR:{
     BASE: '/Coordinator',
     ORDERS: '/Coordinator/orders',
+    SUGGESTED_SHIPPERS: (orderId: string) => `/Coordinator/order/${orderId}/suggested-shippers`,
   },
 } as const;
 

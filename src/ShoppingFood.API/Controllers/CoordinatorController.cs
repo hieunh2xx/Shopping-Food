@@ -28,5 +28,22 @@ namespace ShoppingFood.API.Controllers
             var response = await _mediator.Send(query);
             return StatusCode(response.Code, response);
         }
+
+        [HttpGet("orders/{orderId}/suggested-shippers")]
+        public async Task<ActionResult> GetSuggestedShippers(Guid orderId)
+        {
+            var query = new GetSuggestedShippersQuery
+            {
+                OrderId = orderId
+            };
+
+            if(userDto != null)
+            {
+                query.CurrentUserId = userDto.Id;
+            }
+
+            var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
+        }
     }
 }

@@ -24,3 +24,16 @@ export interface IDispatchOrder{
     shipperPhone: string;
     items: IDispatchOrderItem[];
 }
+
+export interface ISuggestedShipper{
+    shipperId: string;
+    fullName: string;
+    phone: string;
+    vehicleType: string;
+    vehiclePlateNumber: string;
+    latitude?: number;
+    longitude?: number;
+    distanceInKm: number;
+    reputationScore: number;
+    rating: number;
+}

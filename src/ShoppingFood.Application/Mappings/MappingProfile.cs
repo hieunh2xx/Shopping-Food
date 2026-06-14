@@ -169,6 +169,13 @@ namespace ShoppingFood.Application.Mappings
                 .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.Items));
 
             CreateMap<OrderItem, DispatchOrderItemDto>();
+
+            CreateMap<ShipperProfile, SuggestedShipperDto>()
+                .ForMember(dest => dest.ShipperId, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.UserProfile.FullName))
+                .ForMember(dest => dest.Phone, opt => opt.MapFrom(src => src.UserProfile.UserAccount.Phone ?? string.Empty))
+                .ForMember(dest => dest.VehicleType, opt => opt.MapFrom(src => src.VehicleType.ToString()))
+                .ForMember(dest => dest.DistanceInKm, otp => otp.Ignore());
         }
     }
 }

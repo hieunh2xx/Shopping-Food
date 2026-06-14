@@ -1,6 +1,6 @@
 import { httpClient } from "./base/HttpClient"; 
 import { API_ENDPOINTS } from "../config/endpoints";
-import type { IApiResponse, IDispatchOrder } from "../interfaces";
+import type { ISuggestedShipper, IApiResponse, IDispatchOrder } from "../interfaces";
 
 export const CoordinatorServỉce = {
     getDispatchBoard: (status?: string, skip = 0, take = 50) => {
@@ -10,5 +10,9 @@ export const CoordinatorServỉce = {
         params.append('take', take.toString());
 
         return httpClient.get<IApiResponse<IDispatchOrder[]>>(`${API_ENDPOINTS.COORDINATOR.ORDERS}?${params.toString()}`);
-    }
+    },
+
+    getSuggestedShippers: (orderId: string) => {
+        return httpClient.get<IApiResponse<ISuggestedShipper[]>>(API_ENDPOINTS.COORDINATOR.SUGGESTED_SHIPPERS(orderId));
+    },
 };
