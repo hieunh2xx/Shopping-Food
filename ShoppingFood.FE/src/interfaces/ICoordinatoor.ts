@@ -37,3 +37,19 @@ export interface ISuggestedShipper{
     reputationScore: number;
     rating: number;
 }
+
+export interface ISendProposalRequest{
+    orderId: string;
+    shipperId: string;
+}
+
+export interface IForceAssignRequest{
+    orderId: string;
+    shipperId: string;
+}
+
+export interface IResolveIncidentRequest{
+    resolutionType: 'CustomerFault' | 'ShipperFault' | 'ForceCancelNoPenalty';
+    notes: string;
+    penaltyScore?: number;
+}

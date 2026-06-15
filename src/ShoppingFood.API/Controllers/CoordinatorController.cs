@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using ShoppingFood.Application.Features.Coordinator.Commands;
 using ShoppingFood.Application.Features.Coordinator.Queries;
 
 namespace ShoppingFood.API.Controllers
@@ -43,6 +44,43 @@ namespace ShoppingFood.API.Controllers
             }
 
             var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpPost("proposals")]
+        public async Task<IActionResult> SendProposal([FromBody] SendProposalCommand command)
+        {
+            if(userDto != null)
+            {
+                command.CurrentUserId = userDto.Id;
+            }
+
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpPost("orders/force-assign")]
+        public async Task<IActionResult> ForceAssign([FromBody] ForceAssignCommand command)
+        {
+            if(userDto != null)
+            {
+                command.CurrentUserId = userDto.Id;
+            }
+
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpPost("orders/{orderId}/resolve-incident")]
+        public async Task<IActionResult> ResolveIncident(Guid orderId, [FromBody] ResolveIncidentCommand command)
+        {
+            command.OrderId = orderId;
+            if(userDto != null)
+            {
+                command.CurrentUserId = userDto.Id;
+            }
+            
+            var response = await _mediator.Send(command);
             return StatusCode(response.Code, response);
         }
     }
