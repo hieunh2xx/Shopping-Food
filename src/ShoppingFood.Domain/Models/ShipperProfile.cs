@@ -25,6 +25,8 @@ namespace ShoppingFood.Domain.Models
         public double? OperatingLongitude { get; set; }
         public double? OperatingRadiusKm { get; set; }
         public string? WorkingSchedule { get; set; }
+        public DateTime? SuspendedUntil { get; set; }
+        public string? SuspendedReason { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

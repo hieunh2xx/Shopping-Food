@@ -11,5 +11,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Queries
     public class GetDispatchBoardQuery : BaseQuery, IRequest<ApiResponse>
     {
         public string? Status { get; set; }
+        public bool? IsEscalated { get; set; }
+        
     }
 }

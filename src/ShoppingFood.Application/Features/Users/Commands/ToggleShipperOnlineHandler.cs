@@ -52,6 +52,21 @@ namespace ShoppingFood.Application.Features.Users.Commands
                 if (shipperProfile == null)
                     return ApiResponse.Failure(404, "Shipper profile not found.");
 
+                if (shipperProfile.SuspendedUntil.HasValue)
+                {
+                    if (shipperProfile.SuspendedUntil.Value <= DateTime.UtcNow)
+                    {
+                        shipperProfile.SuspendedUntil = null;
+                        shipperProfile.SuspendedReason = null;
+                        _shipperProfileRepository.Update(shipperProfile);
+                    }
+                    else
+                    {
+                        var remainingTime = Math.Max(0, Math.Round((shipperProfile.SuspendedUntil.Value - DateTime.UtcNow).TotalMinutes));
+                        return ApiResponse.Failure(403, $"Your account is temporarily suspended from accepting orders. Time remaining: {remainingTime} minutes. Reason: {shipperProfile.SuspendedReason}");
+                    }
+                }
+
                 shipperProfile.IsOnline = request.IsOnline;
                 shipperProfile.UpdatedAt = DateTime.UtcNow;
 

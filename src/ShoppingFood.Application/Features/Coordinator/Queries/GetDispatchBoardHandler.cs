@@ -19,15 +19,18 @@ namespace ShoppingFood.Application.Features.Coordinator.Queries
     {
         private readonly IOrderRepository _orderRepository;
         private readonly IUserRepository _userRepository;
+        private readonly IOrderDeliveryProposalRepository _orderDeliveryProposalRepository;
         private readonly IMapper _mapper;
 
         public GetDispatchBoardHandler(
             IOrderRepository orderRepository, 
             IUserRepository userRepository,
+            IOrderDeliveryProposalRepository orderDeliveryProposalRepository,
             IMapper mapper)
         {
             _orderRepository = orderRepository;
             _userRepository = userRepository;
+            _orderDeliveryProposalRepository = orderDeliveryProposalRepository;
             _mapper = mapper;
         }
 
@@ -50,7 +53,16 @@ namespace ShoppingFood.Application.Features.Coordinator.Queries
                 var todayUtc = DateTime.UtcNow.Date;
                 Expression<Func<Order, bool>> predicate = o => o.CreatedAt >= todayUtc;
 
-                if (!string.IsNullOrWhiteSpace(request.Status))
+                if(request.IsEscalated == true)
+                {
+                    var escalatedProposalOrderIds = await GetEscalatedProposalOrderIdsAsync();
+                    var timeLimit = DateTime.UtcNow.AddMinutes(-15);
+
+                    predicate = o => o.CreatedAt >= todayUtc && ((o.Status == OrderStatus.WaitingForShipper && o.UpdatedAt <= timeLimit) ||
+                                    escalatedProposalOrderIds.Contains(o.Id));
+                }
+
+                else if (!string.IsNullOrWhiteSpace(request.Status))
                 {
                     if(Enum.TryParse<OrderStatus>(request.Status, true, out var parsedStatus))
                     {
@@ -93,6 +105,21 @@ namespace ShoppingFood.Application.Features.Coordinator.Queries
             {
                 return ApiResponse.Failure(500, $"An error occurred: {ex.Message}");
             }
+        }
+
+        private async Task<List<Guid>> GetEscalatedProposalOrderIdsAsync()
+        {
+            var proposals = await _orderDeliveryProposalRepository.GetAsync(
+                predicate: p => p.Status == ProposalStatus.Rejected || p.Status == ProposalStatus.Expired,
+                disableTracking: true
+                );
+
+
+            return proposals
+                .GroupBy(p => p.OrderId)
+                .Where(g => g.Count() >= 3)
+                .Select(g => g.Key)
+                .ToList();
         }
     }
 }

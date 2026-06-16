@@ -53,3 +53,30 @@ export interface IResolveIncidentRequest{
     notes: string;
     penaltyScore?: number;
 }
+
+export interface IReleaseOrderRequest{
+    newShipperId?: string;
+    reason: string;
+}
+
+export interface IMonitorShipperDto {
+  shipperId: string;
+  fullName: string;
+  phone: string;
+  vehicleType: string;
+  vehiclePlateNumber: string;
+  latitude?: number;
+  longitude?: number;
+  isOnline: boolean;
+  status: string;
+  reputationScore: number;
+  rating: number;
+  isBusy: boolean;
+  completedOrdersCount: number;
+}
+
+export interface ISuspendShipperRequest {
+  durationMinutes: number;
+  reason: string;
+}
+

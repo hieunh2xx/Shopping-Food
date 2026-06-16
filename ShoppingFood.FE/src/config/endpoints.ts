@@ -129,6 +129,9 @@ export const API_ENDPOINTS = {
     SEND_PROPOSAL: '/Coordinator/proposals',
     FORCE_ASSIGN: '/Coordinator/orders/force-assign',
     RESOLVE_INCIDENT: (orderId: string) => `/Coordinator/orders/${orderId}/resolve-incident`,
+    RELEASE_ORDER: (orderId: string) => `/Coordinator/orders/${orderId}/release`,
+    MONITOR_SHIPPERS: '/Coordinator/shippers/monitoring',
+    SUSPEND_SHIPPER: (shipperId: string) => `/Coordinator/shippers/${shipperId}/suspend`, 
   },
 } as const;
 

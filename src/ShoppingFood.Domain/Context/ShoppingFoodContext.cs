@@ -570,6 +570,8 @@ namespace ShoppingFood.Domain.Context
                 entity.Property(e => e.OperatingLongitude);
                 entity.Property(e => e.OperatingRadiusKm);
                 entity.Property(e => e.WorkingSchedule).HasMaxLength(2000);
+                entity.Property(e => e.SuspendedUntil);
+                entity.Property(e => e.SuspendedReason).HasMaxLength(500);
 
                 entity.HasOne(d => d.UserProfile)
                 .WithOne()
