@@ -10,3 +10,6 @@ export { cartService } from './CartService';
 export { restaurantService } from './RestaurantService';
 export { toppingService } from './ToppingService';
 export { userAddressService } from './UserAddressService';
+export { discountService } from './DiscountService';
+export { orderService } from './OrderService';
+export { coordinatorServỉce } from './CoordinatorService';

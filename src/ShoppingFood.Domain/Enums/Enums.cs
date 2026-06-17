@@ -84,4 +84,47 @@ namespace ShoppingFood.Domain.Enums
         Rejected,
         Expired
     }
+    
+    public enum DiscountType
+    {
+        Percentage,
+        FixedAmount,
+        FreeShipping
+    }
+
+    public enum DiscountStatus
+    {
+        Active,
+        Inactive,
+        Cancelled
+    }
+
+    public enum MemberTier
+    {
+        Bronze,
+        Silver,
+        Gold,
+        Diamond
+    }
+
+    public enum PointTransactionType
+    {
+        EarnFromOrder,
+        RedeemVoucher,
+        AdminAdjustment
+    }
+
+    public enum FlashSaleStatus
+    {
+        Pending,
+        Active,
+        Ended
+    }
+
+    public enum FlashSaleProductStatus
+    {
+        Pending,
+        Approved,
+        Rejected
+    }
 }

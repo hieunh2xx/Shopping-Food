@@ -40,6 +40,14 @@ namespace ShoppingFood.Domain.Context
         public DbSet<ShipperApplication> ShipperApplications { get; set; } = null!;
         public DbSet<ShipperProfile> ShipperProfiles { get; set; } = null!;
         public DbSet<OrderDeliveryProposal> OrderDeliveryProposals { get; set; } = null!;
+        public DbSet<Discount> Discounts { get; set; } = null!;
+        public DbSet<CustomerDiscount> CustomerDiscounts { get; set; } = null!;
+        public DbSet<LoyaltyPoint> LoyaltyPoints { get; set; } = null!;
+        public DbSet<LoyaltyPointHistory> LoyaltyPointHistories { get; set; } = null!;
+        public DbSet<PointGiftConfig> PointGiftConfigs { get; set; } = null!;
+        public DbSet<BuyXGetYPromotion> BuyOneGetOnePrograms { get; set; } = null!;
+        public DbSet<FlashSale> FlashSales { get; set; } = null!;
+        public DbSet<FlashSaleProduct> FlashSaleProducts { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -599,6 +607,149 @@ namespace ShoppingFood.Domain.Context
                     .WithMany()
                     .HasForeignKey(d => d.OrderId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<Discount>(entity =>
+            {
+                entity.ToTable("DISCOUNT");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Code).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.Description).HasMaxLength(1000);
+                entity.Property(e => e.Type).HasConversion<string>().IsRequired();
+                entity.Property(e => e.Value).HasColumnType("decimal(18,2)").IsRequired();
+                entity.Property(e => e.MaxDiscountAmount).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.MinOrderAmount).HasColumnType("decimal(18,2)").IsRequired().HasDefaultValue(0);
+                entity.Property(e => e.Status).HasConversion<string>().IsRequired();
+                entity.Property(e => e.IsDeleted).IsRequired().HasDefaultValue(false);
+
+                entity.HasOne(d => d.Restaurant)
+                    .WithMany()
+                    .HasForeignKey(d => d.RestaurantId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasQueryFilter(d => !d.IsDeleted);
+            });
+
+            modelBuilder.Entity<CustomerDiscount>(entity =>
+            {
+                entity.ToTable("CUSTOMER_DISCOUNT");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.UsageCount).IsRequired().HasDefaultValue(0);
+
+                entity.HasOne(d => d.UserAccount)
+                    .WithMany()
+                    .HasForeignKey(d => d.UserAccountId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(d => d.Discount)
+                    .WithMany()
+                    .HasForeignKey(d => d.DiscountId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasQueryFilter(cd => !cd.Discount.IsDeleted);
+            });
+
+            modelBuilder.Entity<LoyaltyPoint>(entity =>
+            {
+                entity.ToTable("LOYALTY_POINT");
+                entity.HasKey(e => e.UserAccountId);
+                entity.Property(e => e.PointsBalance).IsRequired().HasDefaultValue(0);
+                entity.Property(e => e.TotalEarnedPoints).IsRequired().HasDefaultValue(0);
+                entity.Property(e => e.Tier).HasConversion<string>().IsRequired();
+
+                entity.HasOne(d => d.UserAccount)
+                    .WithOne()
+                    .HasForeignKey<LoyaltyPoint>(d => d.UserAccountId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<LoyaltyPointHistory>(entity =>
+            {
+                entity.ToTable("LOYALTY_POINT_HISTORY");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Points).IsRequired();
+                entity.Property(e => e.TransactionType).HasConversion<string>().IsRequired();
+                entity.Property(e => e.Description).IsRequired().HasMaxLength(500);
+
+                entity.HasOne(d => d.UserAccount)
+                    .WithMany()
+                    .HasForeignKey(d => d.UserAccountId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<PointGiftConfig>(entity =>
+            {
+                entity.ToTable("POINT_GIFT_CONFIG");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.PointRequired).IsRequired();
+                entity.Property(e => e.IsActive).IsRequired().HasDefaultValue(true);
+                entity.Property(e => e.IsDeleted).IsRequired().HasDefaultValue(false);
+
+                entity.HasOne(d => d.Discount)
+                    .WithMany()
+                    .HasForeignKey(d => d.DiscountId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasQueryFilter(p => !p.IsDeleted && !p.Discount.IsDeleted);
+            });
+
+            modelBuilder.Entity<BuyXGetYPromotion>(entity =>
+            {
+                entity.ToTable("BUY_X_GET_Y_PROMOTION");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.BuyQuantity).IsRequired().HasDefaultValue(1);
+                entity.Property(e => e.GiftQuantity).IsRequired().HasDefaultValue(1);
+                entity.Property(e => e.IsActive).IsRequired().HasDefaultValue(true);
+
+                entity.HasOne(d => d.Restaurant)
+                    .WithMany()
+                    .HasForeignKey(d => d.RestaurantId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(d => d.TriggerProduct)
+                    .WithMany()
+                    .HasForeignKey(d => d.TriggerProductId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(d => d.GiftProduct)
+                    .WithMany()
+                    .HasForeignKey(d => d.GiftProductId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<FlashSale>(entity =>
+            {
+                entity.ToTable("FLASH_SALE");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.Status).HasConversion<string>().IsRequired();
+                entity.Property(e => e.IsDeleted).IsRequired().HasDefaultValue(false);
+
+                entity.HasQueryFilter(d => !d.IsDeleted);
+            });
+
+            modelBuilder.Entity<FlashSaleProduct>(entity =>
+            {
+                entity.ToTable("FLASH_SALE_PRODUCT");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.FlashSalePrice).HasColumnType("decimal(18,2)").IsRequired();
+                entity.Property(e => e.QuantityLimit).IsRequired();
+                entity.Property(e => e.SoldQuantity).IsRequired().HasDefaultValue(0);
+                entity.Property(e => e.Status).HasConversion<string>().IsRequired();
+                entity.Property(e => e.RejectReason).HasMaxLength(500);
+
+                entity.HasOne(e => e.FlashSale)
+                    .WithMany()
+                    .HasForeignKey(d => d.FlashSaleId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Product)
+                    .WithMany()
+                    .HasForeignKey(d => d.ProductId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasQueryFilter(fsp => !fsp.FlashSale.IsDeleted);
             });
         }
     }

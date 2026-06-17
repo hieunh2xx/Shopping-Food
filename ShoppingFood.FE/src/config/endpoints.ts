@@ -133,5 +133,11 @@ export const API_ENDPOINTS = {
     MONITOR_SHIPPERS: '/Coordinator/shippers/monitoring',
     SUSPEND_SHIPPER: (shipperId: string) => `/Coordinator/shippers/${shipperId}/suspend`, 
   },
+
+  DISCOUNT: {
+    BASE: '/Discount',
+    CREATE: '/Discount',
+    SAVE: '/Discount/save',
+  },
 } as const;
 

@@ -60,6 +60,56 @@ namespace ShoppingFood.Domain.Migrations
                     b.ToTable("API_ENDPOINT", (string)null);
                 });
 
+            modelBuilder.Entity("ShoppingFood.Domain.Models.BuyXGetYPromotion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("BuyQuantity")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("GiftProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("GiftQuantity")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<Guid>("RestaurantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("TriggerProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GiftProductId");
+
+                    b.HasIndex("RestaurantId");
+
+                    b.HasIndex("TriggerProductId");
+
+                    b.ToTable("BUY_X_GET_Y_PROMOTION", (string)null);
+                });
+
             modelBuilder.Entity("ShoppingFood.Domain.Models.Cart", b =>
                 {
                     b.Property<Guid>("Id")
@@ -121,6 +171,116 @@ namespace ShoppingFood.Domain.Migrations
                     b.ToTable("CART_ITEM", (string)null);
                 });
 
+            modelBuilder.Entity("ShoppingFood.Domain.Models.CustomerDiscount", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DiscountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("SavedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UsageCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<Guid>("UserAccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DiscountId");
+
+                    b.HasIndex("UserAccountId");
+
+                    b.ToTable("CUSTOMER_DISCOUNT", (string)null);
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.Discount", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<decimal?>("MaxDiscountAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("MaxUsagePerUser")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("MinOrderAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(18,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("RestaurantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UsedCount")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Value")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RestaurantId");
+
+                    b.ToTable("DISCOUNT", (string)null);
+                });
+
             modelBuilder.Entity("ShoppingFood.Domain.Models.FavoriteRestaurant", b =>
                 {
                     b.Property<Guid>("UserProfileId")
@@ -137,6 +297,86 @@ namespace ShoppingFood.Domain.Migrations
                     b.HasIndex("RestaurantId");
 
                     b.ToTable("FAVORITE_RESTAURANT", (string)null);
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.FlashSale", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("FLASH_SALE", (string)null);
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.FlashSaleProduct", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("FlashSaleId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("FlashSalePrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("QuantityLimit")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RejectReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("SoldQuantity")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FlashSaleId");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("FLASH_SALE_PRODUCT", (string)null);
                 });
 
             modelBuilder.Entity("ShoppingFood.Domain.Models.GlobalMenuCategory", b =>
@@ -209,6 +449,64 @@ namespace ShoppingFood.Domain.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("GUEST_USER", (string)null);
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.LoyaltyPoint", b =>
+                {
+                    b.Property<Guid>("UserAccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("PointsBalance")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("Tier")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TotalEarnedPoints")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("UserAccountId");
+
+                    b.ToTable("LOYALTY_POINT", (string)null);
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.LoyaltyPointHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TransactionType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("UserAccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserAccountId");
+
+                    b.ToTable("LOYALTY_POINT_HISTORY", (string)null);
                 });
 
             modelBuilder.Entity("ShoppingFood.Domain.Models.MenuCategory", b =>
@@ -468,6 +766,41 @@ namespace ShoppingFood.Domain.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("OTP_RECORD", (string)null);
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.PointGiftConfig", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("DiscountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<int>("PointRequired")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DiscountId");
+
+                    b.ToTable("POINT_GIFT_CONFIG", (string)null);
                 });
 
             modelBuilder.Entity("ShoppingFood.Domain.Models.Product", b =>
@@ -1248,6 +1581,33 @@ namespace ShoppingFood.Domain.Migrations
                     b.ToTable("USER_PROFILE", (string)null);
                 });
 
+            modelBuilder.Entity("ShoppingFood.Domain.Models.BuyXGetYPromotion", b =>
+                {
+                    b.HasOne("ShoppingFood.Domain.Models.Product", "GiftProduct")
+                        .WithMany()
+                        .HasForeignKey("GiftProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ShoppingFood.Domain.Models.RestaurantProfile", "Restaurant")
+                        .WithMany()
+                        .HasForeignKey("RestaurantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ShoppingFood.Domain.Models.Product", "TriggerProduct")
+                        .WithMany()
+                        .HasForeignKey("TriggerProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("GiftProduct");
+
+                    b.Navigation("Restaurant");
+
+                    b.Navigation("TriggerProduct");
+                });
+
             modelBuilder.Entity("ShoppingFood.Domain.Models.Cart", b =>
                 {
                     b.HasOne("ShoppingFood.Domain.Models.GuestUser", "GuestUser")
@@ -1284,6 +1644,35 @@ namespace ShoppingFood.Domain.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("ShoppingFood.Domain.Models.CustomerDiscount", b =>
+                {
+                    b.HasOne("ShoppingFood.Domain.Models.Discount", "Discount")
+                        .WithMany()
+                        .HasForeignKey("DiscountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ShoppingFood.Domain.Models.User", "UserAccount")
+                        .WithMany()
+                        .HasForeignKey("UserAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Discount");
+
+                    b.Navigation("UserAccount");
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.Discount", b =>
+                {
+                    b.HasOne("ShoppingFood.Domain.Models.RestaurantProfile", "Restaurant")
+                        .WithMany()
+                        .HasForeignKey("RestaurantId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Restaurant");
+                });
+
             modelBuilder.Entity("ShoppingFood.Domain.Models.FavoriteRestaurant", b =>
                 {
                     b.HasOne("ShoppingFood.Domain.Models.RestaurantProfile", "RestaurantProfile")
@@ -1301,6 +1690,47 @@ namespace ShoppingFood.Domain.Migrations
                     b.Navigation("RestaurantProfile");
 
                     b.Navigation("UserProfile");
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.FlashSaleProduct", b =>
+                {
+                    b.HasOne("ShoppingFood.Domain.Models.FlashSale", "FlashSale")
+                        .WithMany()
+                        .HasForeignKey("FlashSaleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ShoppingFood.Domain.Models.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("FlashSale");
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.LoyaltyPoint", b =>
+                {
+                    b.HasOne("ShoppingFood.Domain.Models.User", "UserAccount")
+                        .WithOne()
+                        .HasForeignKey("ShoppingFood.Domain.Models.LoyaltyPoint", "UserAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("UserAccount");
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.LoyaltyPointHistory", b =>
+                {
+                    b.HasOne("ShoppingFood.Domain.Models.User", "UserAccount")
+                        .WithMany()
+                        .HasForeignKey("UserAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("UserAccount");
                 });
 
             modelBuilder.Entity("ShoppingFood.Domain.Models.MenuCategory", b =>
@@ -1384,6 +1814,17 @@ namespace ShoppingFood.Domain.Migrations
                     b.Navigation("Order");
 
                     b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.PointGiftConfig", b =>
+                {
+                    b.HasOne("ShoppingFood.Domain.Models.Discount", "Discount")
+                        .WithMany()
+                        .HasForeignKey("DiscountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Discount");
                 });
 
             modelBuilder.Entity("ShoppingFood.Domain.Models.Product", b =>

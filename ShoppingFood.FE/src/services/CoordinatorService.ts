@@ -4,7 +4,7 @@ import type { ISuggestedShipper, IApiResponse, IDispatchOrder, ISendProposalRequ
 import { data } from "react-router-dom";
 
 
-export const CoordinatorServỉce = {
+export const coordinatorServỉce = {
     getDispatchBoard: (status?: string, skip = 0, take = 50, isEscalated?: boolean) => {
         const params = new URLSearchParams();
         if(status) params.append('status', status);

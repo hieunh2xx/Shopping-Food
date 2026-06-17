@@ -1,16 +1,18 @@
-using System.Linq;
 using AutoMapper;
-using ShoppingFood.Domain.Models;
-using ShoppingFood.Dto.User;
-using ShoppingFood.Dto.Product;
-using ShoppingFood.Application.Features.Users.Commands;
+using ShoppingFood.Application.Features.Discounts.Commands;
 using ShoppingFood.Application.Features.Products.Commands;
-using ShoppingFood.Application.Features.Products.Menu.Commands;
 using ShoppingFood.Application.Features.Products.GlobalMenuCategories.Commands;
-using ShoppingFood.Dto.Restaurant;
+using ShoppingFood.Application.Features.Products.Menu.Commands;
+using ShoppingFood.Application.Features.Users.Commands;
+using ShoppingFood.Domain.Models;
 using ShoppingFood.Dto.Cart;
-using ShoppingFood.Dto.Order;
 using ShoppingFood.Dto.Coordinator;
+using ShoppingFood.Dto.Discount;
+using ShoppingFood.Dto.Order;
+using ShoppingFood.Dto.Product;
+using ShoppingFood.Dto.Restaurant;
+using ShoppingFood.Dto.User;
+using System.Linq;
 
 namespace ShoppingFood.Application.Mappings
 {
@@ -185,6 +187,12 @@ namespace ShoppingFood.Application.Mappings
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
                 .ForMember(dest => dest.IsBusy, opt => opt.Ignore())
                 .ForMember(dest => dest.CompletedOrderCount, opt => opt.Ignore());
+
+            CreateMap<CreateDiscountCommand, Discount>();
+            CreateMap<Discount, DiscountDto>()
+                .ForMember(dest => dest.RestaurantName, opt => opt.MapFrom(src => src.Restaurant != null ? src.Restaurant.RestaurantName : "Hệ thống"))
+                .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type.ToString()))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
         }
     }
 }
