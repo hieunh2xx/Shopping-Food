@@ -37,3 +37,39 @@ export interface IDiscountDto {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface IGetDiscountsParams{
+  restaurantId?: string;
+  cartAmount?: number;
+  filter?: string;
+  skip?: number;
+  take?: number;
+}
+
+export interface IUpdateDiscountRequest {
+  title: string;
+  description?: string;
+  value: number;
+  maxDiscountAmount?: number;
+  minOrderAmount: number;
+  startDate: string;
+  endDate: string;
+  quantity: number;
+  maxUsagePerUser: number;
+  status: string; 
+}
+
+export interface IApplyDiscountRequest {
+  code: string;
+  restaurantId?: string;
+  cartAmount: number;
+}
+
+export interface IApplyDiscountResponse {
+  discountId: string;
+  code: string;
+  type: string;
+  discountAmount: number;
+  finalAmount: number;
+}
+

@@ -20,6 +20,7 @@ export interface ICheckoutRequest {
   contactPhone: string;
   contactEmail: string;
   otpCode: string;
+  discountCode?: string;
   paymentMethod: 'COD' | 'CreditCard' | 'EWallet';
   note?: string;
   guestUserId?: string;

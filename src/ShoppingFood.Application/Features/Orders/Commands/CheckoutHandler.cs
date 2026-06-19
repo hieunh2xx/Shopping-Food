@@ -25,6 +25,8 @@ namespace ShoppingFood.Application.Features.Orders.Commands
         private readonly IRestaurantProfileRepository _restaurantProfileRepository;
         private readonly IOtpRecordRepository _otpRecordRepository;
         private readonly IGuestUserRepository _guestUserRepository;
+        private readonly IDiscountRepository _discountRepository;
+        private readonly ICustomerDiscountRepository _customerDiscountRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ShoppingFoodContext _dbContext;
         private readonly IHttpContextAccessor _httpContextAccessor;
@@ -38,6 +40,8 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             IRestaurantProfileRepository restaurantProfileRepository,
             IOtpRecordRepository otpRecordRepository,
             IGuestUserRepository guestUserRepository,
+            IDiscountRepository discountRepository,
+            ICustomerDiscountRepository customerDiscountRepository,
             IUnitOfWork unitOfWork,
             ShoppingFoodContext dbContext,
             IHttpContextAccessor httpContextAccessor
@@ -49,6 +53,8 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             _restaurantProfileRepository = restaurantProfileRepository;
             _otpRecordRepository = otpRecordRepository;
             _guestUserRepository = guestUserRepository;
+            _discountRepository = discountRepository;
+            _customerDiscountRepository = customerDiscountRepository;
             _unitOfWork = unitOfWork;
             _dbContext = dbContext;
             _httpContextAccessor = httpContextAccessor;
@@ -129,6 +135,13 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     return stockValidationResult;
 
                 var (totalAmount, shippingFee) = await CalculateTotalAmountAsync(cart.Items);
+                decimal itemsTotal = cart.Items.Sum(i => i.PriceAtAdded * i.Quantity);
+                var (discountAmount, error) = await ApplyDiscountAsync(request, cart, itemsTotal);
+                if (error != null)
+                {
+                    return ApiResponse.Failure(400, error);
+                }
+                totalAmount = Math.Max(0, totalAmount - discountAmount);
 
                 var order = CreateOrderEntity(request, totalAmount, shippingFee);
                 PopulateOrderItems(order, cart.Items);
@@ -149,6 +162,90 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 await _unitOfWork.LogErrorAsync("CheckoutHandler.Handle", ex);
                 return ApiResponse.Failure(400, $"An error occurred: {ex.Message}");
             }
+        }
+
+        private async Task<(decimal DiscountAmount, string? ErrorMessage)> ApplyDiscountAsync(CheckoutCommand request, Cart cart, decimal itemsTotal)
+        {
+            if (string.IsNullOrWhiteSpace(request.DiscountCode)) return (0, null);
+
+            Guid? cartRestaurantId = cart.Items.FirstOrDefault()?.Product?.RestaurantId;
+
+            var discounts = await _discountRepository.GetAsync(
+                predicate: d => d.Code.ToUpper() == request.DiscountCode.ToUpper() &&
+                                (d.RestaurantId == null || d.RestaurantId == cartRestaurantId) &&
+                                !d.IsDeleted,
+                disableTracking: false
+                );
+            var discount = discounts.FirstOrDefault(d => d.RestaurantId == cartRestaurantId)
+                            ?? discounts.FirstOrDefault(d => d.RestaurantId == null);
+            if(discount == null) return (0, "Discount code not found.");
+
+            if (discount.Status != DiscountStatus.Active) return (0, "This discount code is inactive or cancelled.");
+
+            var now = DateTime.UtcNow;
+            if (now < discount.StartDate || now > discount.EndDate) return (0, "This discount code is expired or not active yet.");
+
+            if (discount.UsedCount >= discount.Quantity)
+                return (0, "This discount code has run out of usage.");
+
+            if (itemsTotal < discount.MinOrderAmount)
+                return (0, $"Minimum order amount of {discount.MinOrderAmount} is required to use this code.");
+
+            if (request.CurrentUserId.HasValue)
+            {
+                var customerDiscounts = await _customerDiscountRepository.GetAsync(
+                    predicate: cd => cd.UserAccountId == request.CurrentUserId.Value && cd.DiscountId == discount.Id,
+                    disableTracking: false
+                    );
+                var customerDiscount = customerDiscounts.FirstOrDefault();
+
+                if (customerDiscount != null && customerDiscount.UsageCount >= discount.MaxUsagePerUser)
+                    return (0, "You have reached the maximum usage limit for this discount code.");
+
+                if(customerDiscount != null)
+                {
+                    customerDiscount.UsageCount++;
+                    customerDiscount.UpdatedAt = now;
+                    _customerDiscountRepository.Update(customerDiscount);
+                }
+                else
+                {
+                    var newCd = new CustomerDiscount
+                    {
+                        Id = Guid.NewGuid(),
+                        UserAccountId = request.CurrentUserId.Value,
+                        DiscountId = discount.Id,
+                        UsageCount = 1,
+                        SavedAt = now,
+                        UpdatedAt = now
+                    };
+                    _customerDiscountRepository.Add(newCd);
+                }
+            }
+            decimal discountAmount = CalculateTotalAmount(discount, itemsTotal);
+
+            discount.UsedCount++;
+            discount.UpdatedAt = now;
+            _discountRepository.Update(discount);
+
+            return (discountAmount, null);
+        }
+
+        private decimal CalculateTotalAmount(Discount discount, decimal cartAmount)
+        {
+            decimal discountAmount = 0;
+            if(discount.Type == DiscountType.Percentage)
+            {
+                discountAmount = cartAmount * (discount.Value / 100);
+                if (discount.MaxDiscountAmount.HasValue && discountAmount > discount.MaxDiscountAmount.Value)
+                    discountAmount = discount.MaxDiscountAmount.Value;
+            }
+            else if(discount.Type == DiscountType.FixedAmount)
+            {
+                discountAmount = discount.Value;
+                if (discountAmount > cartAmount) discountAmount = cartAmount;
+            }
+            return discountAmount;
         }
 
         private async Task<Cart?> GetCartWithItemsAsync(Guid? userId, Guid? guestUserId)

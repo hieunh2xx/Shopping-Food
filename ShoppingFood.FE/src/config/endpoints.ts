@@ -138,6 +138,8 @@ export const API_ENDPOINTS = {
     BASE: '/Discount',
     CREATE: '/Discount',
     SAVE: '/Discount/save',
+    BY_ID: (id: string) => `/Discount/${id}`,
+    APPLY: '/Discount/apply',
   },
 } as const;
 

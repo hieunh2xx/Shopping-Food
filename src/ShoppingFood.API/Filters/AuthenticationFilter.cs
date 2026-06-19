@@ -61,8 +61,9 @@ namespace ShoppingFood.API.Filters
                                        path.StartsWith("/api/Order/checkout", StringComparison.OrdinalIgnoreCase) ||
                                        path.StartsWith("/api/Order/update", StringComparison.OrdinalIgnoreCase) ||
                                        path.StartsWith("/api/Order/cancel", StringComparison.OrdinalIgnoreCase) ||
-                                       path.StartsWith("/api/Order/details", StringComparison.OrdinalIgnoreCase)) ||
-                                       (method == "GET" && path.StartsWith("/api/Discount", StringComparison.OrdinalIgnoreCase)) &&
+                                       path.StartsWith("/api/Order/details", StringComparison.OrdinalIgnoreCase) ||
+                                       path.StartsWith("/api/Discount/apply", StringComparison.OrdinalIgnoreCase) ||
+                                       (method == "GET" && path.StartsWith("/api/Discount", StringComparison.OrdinalIgnoreCase))) &&
                                       !context.HttpContext.Request.Headers.ContainsKey("Authorization");
 
             if (isBypassPath || isGuestCartRequest)
@@ -234,14 +235,15 @@ namespace ShoppingFood.API.Filters
                 }
             }
 
-            if(path.StartsWith("/api/Discount", StringComparison.OrdinalIgnoreCase) &&
+            if (path.StartsWith("/api/Discount", StringComparison.OrdinalIgnoreCase) &&
                 !path.Equals("/api/Discount/save", StringComparison.OrdinalIgnoreCase) &&
-                (method == "POST") ||
-                (method == "PUT") ||
-                (method == "DELETE") ||
-                (method == "PATCH"))
+                !path.Equals("/api/Discount/apply", StringComparison.OrdinalIgnoreCase) &&
+                (method == "POST" ||
+                 method == "PUT" ||
+                 method == "DELETE" ||
+                 method == "PATCH"))
             {
-                if(user.Profile?.Role != UserRole.Admin &&
+                if (user.Profile?.Role != UserRole.Admin &&
                     user.Profile?.Role != UserRole.Seller &&
                     user.Profile?.Role != UserRole.Mall)
                 {
