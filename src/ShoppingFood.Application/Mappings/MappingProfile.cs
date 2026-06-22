@@ -10,6 +10,7 @@ using ShoppingFood.Dto.Coordinator;
 using ShoppingFood.Dto.Discount;
 using ShoppingFood.Dto.Order;
 using ShoppingFood.Dto.Product;
+using ShoppingFood.Dto.Promotion;
 using ShoppingFood.Dto.Restaurant;
 using ShoppingFood.Dto.User;
 using System.Linq;
@@ -193,6 +194,10 @@ namespace ShoppingFood.Application.Mappings
                 .ForMember(dest => dest.RestaurantName, opt => opt.MapFrom(src => src.Restaurant != null ? src.Restaurant.RestaurantName : "Hệ thống"))
                 .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type.ToString()))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
+
+            CreateMap<BuyXGetYPromotion, BuyXGetYPromotionDto>()
+                .ForMember(dest => dest.TriggerProductName, opt => opt.MapFrom(src => src.TriggerProduct != null ? src.TriggerProduct.ItemName : string.Empty))
+                .ForMember(dest => dest.GiftProductName, opt => opt.MapFrom(src => src.GiftProduct != null ? src.GiftProduct.ItemName : string.Empty));
         }
     }
 }

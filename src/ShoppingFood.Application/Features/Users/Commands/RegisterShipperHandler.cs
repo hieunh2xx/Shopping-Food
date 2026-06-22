@@ -95,7 +95,7 @@ namespace ShoppingFood.Application.Features.Users.Commands
             var application = _mapper.Map<ShipperApplication>(request);
             application.Id = Guid.NewGuid();
             application.UserProfileId = userProfileId;
-            application.Status = SellerApplicationStatus.Pending;
+            application.Status = ApplicationStatus.Pending;
             application.CreatedAt = DateTime.UtcNow;
             application.UpdatedAt = DateTime.UtcNow;
             return application;

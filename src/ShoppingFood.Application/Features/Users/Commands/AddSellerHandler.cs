@@ -143,7 +143,7 @@ namespace ShoppingFood.Application.Features.Users.Commands
                 BusinessLicenseUrl = request.BusinessLicenseUrl,
                 ShopImageUrl = request.ShopImageUrl,
                 ContactInfo = request.ContactInfo,
-                Status = SellerApplicationStatus.Pending,
+                Status = ApplicationStatus.Pending,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };

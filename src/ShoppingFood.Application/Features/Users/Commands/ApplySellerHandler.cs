@@ -49,7 +49,7 @@ namespace ShoppingFood.Application.Features.Users.Commands
 
                 // Check if an application already exists
                 var existingApps = await _sellerApplicationRepository.GetAsync(
-                    a => a.UserProfileId == userProfile.Id && a.Type == ApplicationType.NewSeller && a.Status == SellerApplicationStatus.Pending
+                    a => a.UserProfileId == userProfile.Id && a.Type == ApplicationType.NewSeller && a.Status == ApplicationStatus.Pending
                 );
                 
                 if (existingApps.Any())
@@ -64,7 +64,7 @@ namespace ShoppingFood.Application.Features.Users.Commands
                     BusinessLicenseUrl = request.BusinessLicenseUrl,
                     ShopImageUrl = request.ShopImageUrl,
                     ContactInfo = request.ContactInfo,
-                    Status = SellerApplicationStatus.Pending,
+                    Status = ApplicationStatus.Pending,
                     Type = ApplicationType.NewSeller,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow

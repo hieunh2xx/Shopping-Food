@@ -141,5 +141,12 @@ export const API_ENDPOINTS = {
     BY_ID: (id: string) => `/Discount/${id}`,
     APPLY: '/Discount/apply',
   },
+
+  PROMOTION: {
+    BASE: '/Promotion',
+    CREATE: '/Promotion',
+    UPDATE: (id: string) => `/Promotion/${id}`,
+    DELETE: (id: string) => `/Promotion/${id}`,
+  },
 } as const;
 

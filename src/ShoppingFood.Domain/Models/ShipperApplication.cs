@@ -18,7 +18,7 @@ namespace ShoppingFood.Domain.Models
         public string VehiclePlateNumber { get; set;} = string.Empty;
         public string DriverLicenseUrl { get; set;} = string.Empty;
         public string VehicleRegistrationUrl { get; set;} = string.Empty;
-        public SellerApplicationStatus Status { get; set; } = SellerApplicationStatus.Pending;
+        public ApplicationStatus Status { get; set; } = ApplicationStatus.Pending;
         public Guid? ReviewedBy { get; set;}
         public DateTime? ReviewedAt { get; set;}
         public string? RejectionReason { get; set;} = string.Empty;

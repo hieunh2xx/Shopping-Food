@@ -61,7 +61,7 @@ namespace ShoppingFood.Application.Features.Users.Commands
                 }
 
                 // Check if they already have a pending upgrade
-                var existingApps = await _sellerApplicationRepository.GetAsync(a => a.UserProfileId == user.Profile.Id && a.Type == ApplicationType.UpgradeToMall && a.Status == SellerApplicationStatus.Pending);
+                var existingApps = await _sellerApplicationRepository.GetAsync(a => a.UserProfileId == user.Profile.Id && a.Type == ApplicationType.UpgradeToMall && a.Status == ApplicationStatus.Pending);
                 if (existingApps.Any())
                 {
                     return ApiResponse.Failure(400, "You already have a pending Mall upgrade application.");
@@ -75,7 +75,7 @@ namespace ShoppingFood.Application.Features.Users.Commands
                     BusinessAddress = restaurant.Address,
                     ContactInfo = restaurant.Phone,
                     Type = ApplicationType.UpgradeToMall,
-                    Status = SellerApplicationStatus.Pending,
+                    Status = ApplicationStatus.Pending,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 };

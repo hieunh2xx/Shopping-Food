@@ -18,7 +18,7 @@ namespace ShoppingFood.Domain.Enums
         Coordinator
     }
 
-    public enum SellerApplicationStatus
+    public enum ApplicationStatus
     {
         Pending,
         Approved,

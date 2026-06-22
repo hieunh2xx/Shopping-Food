@@ -13,3 +13,4 @@ export { userAddressService } from './UserAddressService';
 export { discountService } from './DiscountService';
 export { orderService } from './OrderService';
 export { coordinatorService } from './CoordinatorService';
+export { promotionService } from './PromotionService';

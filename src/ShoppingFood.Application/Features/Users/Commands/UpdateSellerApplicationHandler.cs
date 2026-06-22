@@ -46,7 +46,7 @@ namespace ShoppingFood.Application.Features.Users.Commands
                 if (application.UserProfileId != userProfile.Id)
                     return ApiResponse.Failure(403, "Forbidden. You do not own this application.");
 
-                if (application.Status == SellerApplicationStatus.Approved)
+                if (application.Status == ApplicationStatus.Approved)
                     return ApiResponse.Failure(400, $"Cannot update application. Current status is {application.Status}.");
 
                 UpdateApplicationEntity(application, request);
@@ -70,7 +70,7 @@ namespace ShoppingFood.Application.Features.Users.Commands
             application.BusinessLicenseUrl = request.BusinessLicenseUrl;
             application.ShopImageUrl = request.ShopImageUrl;
             application.ContactInfo = request.ContactInfo;
-            application.Status = SellerApplicationStatus.Pending;
+            application.Status = ApplicationStatus.Pending;
             application.RejectionReason = null;
             application.UpdatedAt = DateTime.UtcNow;
         }

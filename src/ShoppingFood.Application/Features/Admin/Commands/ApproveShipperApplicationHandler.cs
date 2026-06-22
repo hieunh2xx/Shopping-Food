@@ -57,7 +57,7 @@ namespace ShoppingFood.Application.Features.Admin.Commands
                 if (application == null)
                     return ApiResponse.Failure(404, "Application not found");
 
-                if (application.Status != SellerApplicationStatus.Pending)
+                if (application.Status != ApplicationStatus.Pending)
                     return ApiResponse.Failure(400, $"Shipper application is already processed. Current status: {application.Status}");
 
                 if (request.IsApproved)
@@ -108,7 +108,7 @@ namespace ShoppingFood.Application.Features.Admin.Commands
 
         private void ApproveApplication(ShipperApplication application, Guid adminProfileId)
         {
-            application.Status = SellerApplicationStatus.Approved;
+            application.Status = ApplicationStatus.Approved;
             if(application.UserProfile != null)
             {
                 application.UserProfile.Role = UserRole.Shipper;
@@ -142,7 +142,7 @@ namespace ShoppingFood.Application.Features.Admin.Commands
 
         private void RejectApplication(ShipperApplication application,string rejectionReason ,Guid adminProfileId)
         {
-            application.Status = SellerApplicationStatus.Rejected;
+            application.Status = ApplicationStatus.Rejected;
             application.RejectionReason = rejectionReason;
             SetReviewMetaData(application, adminProfileId);
         }

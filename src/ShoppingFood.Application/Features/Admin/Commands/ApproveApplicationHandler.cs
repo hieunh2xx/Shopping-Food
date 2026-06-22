@@ -69,12 +69,12 @@ namespace ShoppingFood.Application.Features.Admin.Commands
                 if (application == null)
                     return ApiResponse.Failure(404, $"Seller application with Id: '{request.ApplicationId}' was not found.");
 
-                if (application.Status != SellerApplicationStatus.Pending)
+                if (application.Status != ApplicationStatus.Pending)
                     return ApiResponse.Failure(400, $"Seller application is already processed. Current status: {application.Status}");
 
                 if (request.IsApproved)
                 {
-                    application.Status = SellerApplicationStatus.Approved;
+                    application.Status = ApplicationStatus.Approved;
                     
                     if (application.UserProfile != null)
                     {
@@ -98,7 +98,7 @@ namespace ShoppingFood.Application.Features.Admin.Commands
                 }
                 else
                 {
-                    application.Status = SellerApplicationStatus.Rejected;
+                    application.Status = ApplicationStatus.Rejected;
                     application.RejectionReason = request.RejectionReason;
                 }
 
