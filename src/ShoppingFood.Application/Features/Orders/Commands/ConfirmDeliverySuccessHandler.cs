@@ -19,6 +19,8 @@ namespace ShoppingFood.Application.Features.Orders.Commands
         private readonly IShipperProfileRepository _shipperProfileRepository;
         private readonly INotificationRepository _notificationRepository;
         private readonly IUserRepository _userRepository;
+        private readonly ILoyaltyPointRepository _loyaltyPointRepository;
+        private readonly ILoyaltyPointHistoryRepository _loyaltyPointHistoryRepository;
         private readonly IUnitOfWork _unitOfWork;
 
         public ConfirmDeliverySuccessHandler(
@@ -26,12 +28,16 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             IShipperProfileRepository shipperProfileRepository,
             INotificationRepository notificationRepository,
             IUserRepository userRepository,
+            ILoyaltyPointRepository loyaltyPointRepository, 
+            ILoyaltyPointHistoryRepository loyaltyPointHistoryRepository,
             IUnitOfWork unitOfWork)
         {
             _orderRepository = orderRepository;
             _shipperProfileRepository = shipperProfileRepository;
             _notificationRepository = notificationRepository;
             _userRepository = userRepository;
+            _loyaltyPointRepository = loyaltyPointRepository;
+            _loyaltyPointHistoryRepository = loyaltyPointHistoryRepository;
             _unitOfWork = unitOfWork;
         }
 
@@ -64,6 +70,9 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 order.UpdatedAt = DateTime.UtcNow;
                 _orderRepository.Update(order);
 
+                if (order.UserAccountId.HasValue)
+                    await AccumulateLoyaltyPointsAsync(order);
+
                 shipperProfile.Latitude = request.Latitude;
                 shipperProfile.Longitude = request.Longitude;
                 shipperProfile.UpdatedAt = DateTime.UtcNow;
@@ -79,6 +88,72 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 await _unitOfWork.LogErrorAsync("ConfirmDeliverySuccessHandler.Handle", ex);
                 return ApiResponse.Failure(400, $"An error occurred: {ex.Message}");
             }
+        }
+
+        private async Task AccumulateLoyaltyPointsAsync(Order order)
+        {
+            if (!order.UserAccountId.HasValue) return;
+
+            var userId = order.UserAccountId.Value;
+            var pointEarned = (int)(order.TotalAmount / 10000); // 10k = 1 điểm
+
+            if(pointEarned <= 0) return;
+
+            var loyaltyPoints = (await _loyaltyPointRepository.GetAsync(
+                predicate: lp => lp.UserAccountId == userId,
+                disableTracking: false
+                )).FirstOrDefault();
+
+            if(loyaltyPoints == null)
+            {
+                loyaltyPoints = new LoyaltyPoint
+                {
+                    UserAccountId = userId,
+                    PointsBalance = 0,
+                    TotalEarnedPoints = 0,
+                    Tier = MemberTier.Bronze,
+                    UpdatedAt = DateTime.UtcNow,
+                };
+                _loyaltyPointRepository.Add(loyaltyPoints);
+            }
+
+            loyaltyPoints.PointsBalance += pointEarned;
+            loyaltyPoints.TotalEarnedPoints += pointEarned;
+            loyaltyPoints.UpdatedAt = DateTime.UtcNow;
+            loyaltyPoints.Tier = DetermineMemberTier(loyaltyPoints.TotalEarnedPoints);
+
+            _loyaltyPointRepository.Update(loyaltyPoints);
+
+            var history = new LoyaltyPointHistory
+            {
+                Id = Guid.NewGuid(),
+                UserAccountId = userId,
+                Points = pointEarned,
+                TransactionType = PointTransactionType.EarnFromOrder,
+                Description = $"Tích lũy {pointEarned} điểm thưởng từ đơn hàng #{order.Id}",
+                CreatedAt = DateTime.UtcNow
+            };
+            _loyaltyPointHistoryRepository.Add(history);
+
+            var notification = new Notification
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                Title = "Tích lũy điểm thưởng thành công",
+                Message = $"Chúc mừng! Bạn đã tích lũy thành công {pointEarned} điểm thưởng từ đơn hàng #{order.Id}. Hạng thành viên hiện tại: {loyaltyPoints.Tier.ToString()}.",
+                NotificationType = null,
+                IsRead = false,
+                CreateAt = DateTime.UtcNow
+            };
+            _notificationRepository.Add(notification);
+        }
+
+        private MemberTier DetermineMemberTier(int totalEarnedPoints)
+        {
+            if (totalEarnedPoints >= 1000) return MemberTier.Diamond;
+            if(totalEarnedPoints >= 500) return MemberTier.Gold;
+            if(totalEarnedPoints >= 100) return MemberTier.Silver;
+            return MemberTier.Bronze;
         }
 
         private async Task<ShipperProfile?> GetActiveShipperProfileAsync(Guid userId)

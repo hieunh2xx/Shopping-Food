@@ -14,3 +14,4 @@ export { discountService } from './DiscountService';
 export { orderService } from './OrderService';
 export { coordinatorService } from './CoordinatorService';
 export { promotionService } from './PromotionService';
+export { loyaltyPointService } from './LoyaltyPointService';

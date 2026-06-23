@@ -33,7 +33,7 @@ namespace ShoppingFood.API.Controllers
         [HttpGet("details/{id}")]
         public async Task<IActionResult> GetOrderDetails(Guid id)
         {
-            var query = new GetOrderDetailsQuery { OrderId = id };
+            var query = new GetOrderDetailQuery { OrderId = id };
             if (userDto != null)
             {
                 query.CurrentUserId = userDto.Id;

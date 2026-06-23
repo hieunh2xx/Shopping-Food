@@ -21,6 +21,7 @@ export type {
   IWaitingShipperOrderRequest,
   ISellerCancelOrderRequest
 } from './IOrder';
-export type {IDispatchOrder, IDispatchOrderItem, ISuggestedShipper, ISendProposalRequest, IForceAssignRequest, IResolveIncidentRequest, IReleaseOrderRequest, IMonitorShipperDto, ISuspendShipperRequest} from './ICoordinatoor';
-export type {ICreateDiscountRequest, ISaveDiscountRequest, IDiscountDto, IGetDiscountsParams, IUpdateDiscountRequest, IApplyDiscountRequest, IApplyDiscountResponse} from './IDiscount';
-export type {IBuyXGetYPromotionDto, ICreatePromotionRequest, IGetPromotionsParams, IUpdatePromotionRequest} from './IPromotion'
+export type { IDispatchOrder, IDispatchOrderItem, ISuggestedShipper, ISendProposalRequest, IForceAssignRequest, IResolveIncidentRequest, IReleaseOrderRequest, IMonitorShipperDto, ISuspendShipperRequest } from './ICoordinatoor';
+export type { ICreateDiscountRequest, ISaveDiscountRequest, IDiscountDto, IGetDiscountsParams, IUpdateDiscountRequest, IApplyDiscountRequest, IApplyDiscountResponse } from './IDiscount';
+export type { IBuyXGetYPromotionDto, ICreatePromotionRequest, IGetPromotionsParams, IUpdatePromotionRequest } from './IPromotion'
+export * from './ILoyaltyPoint';

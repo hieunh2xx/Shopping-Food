@@ -12,7 +12,7 @@ export const API_ENDPOINTS = {
     LOGIN_GOOGLE: '/User/LoginGoogle',
     LOGIN_MICROSOFT: '/User/LoginMicrosoft',
   },
-  ROLE:{
+  ROLE: {
     UPGRADE_TO_MALL: '/User/UpgradeToMall',
   },
   // === User Management (UserController) ===
@@ -122,7 +122,7 @@ export const API_ENDPOINTS = {
     BY_ID: (id: string) => `/Topping/${id}`,
   },
 
-  COORDINATOR:{
+  COORDINATOR: {
     BASE: '/Coordinator',
     ORDERS: '/Coordinator/orders',
     SUGGESTED_SHIPPERS: (orderId: string) => `/Coordinator/orders/${orderId}/suggested-shippers`,
@@ -131,7 +131,7 @@ export const API_ENDPOINTS = {
     RESOLVE_INCIDENT: (orderId: string) => `/Coordinator/orders/${orderId}/resolve-incident`,
     RELEASE_ORDER: (orderId: string) => `/Coordinator/orders/${orderId}/release`,
     MONITOR_SHIPPERS: '/Coordinator/shippers/monitoring',
-    SUSPEND_SHIPPER: (shipperId: string) => `/Coordinator/shippers/${shipperId}/suspend`, 
+    SUSPEND_SHIPPER: (shipperId: string) => `/Coordinator/shippers/${shipperId}/suspend`,
   },
 
   DISCOUNT: {
@@ -148,5 +148,10 @@ export const API_ENDPOINTS = {
     UPDATE: (id: string) => `/Promotion/${id}`,
     DELETE: (id: string) => `/Promotion/${id}`,
   },
+
+  LOYALTY_POINT: {
+    BASE: '/LoyaltyPoint',
+  },
+
 } as const;
 

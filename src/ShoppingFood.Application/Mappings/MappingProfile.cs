@@ -8,6 +8,7 @@ using ShoppingFood.Domain.Models;
 using ShoppingFood.Dto.Cart;
 using ShoppingFood.Dto.Coordinator;
 using ShoppingFood.Dto.Discount;
+using ShoppingFood.Dto.LoyaltyPoint;
 using ShoppingFood.Dto.Order;
 using ShoppingFood.Dto.Product;
 using ShoppingFood.Dto.Promotion;
@@ -198,6 +199,13 @@ namespace ShoppingFood.Application.Mappings
             CreateMap<BuyXGetYPromotion, BuyXGetYPromotionDto>()
                 .ForMember(dest => dest.TriggerProductName, opt => opt.MapFrom(src => src.TriggerProduct != null ? src.TriggerProduct.ItemName : string.Empty))
                 .ForMember(dest => dest.GiftProductName, opt => opt.MapFrom(src => src.GiftProduct != null ? src.GiftProduct.ItemName : string.Empty));
+
+            CreateMap<LoyaltyPoint, LoyaltyPointDto>()
+                .ForMember(dest => dest.Tier, opt => opt.MapFrom(src => src.Tier.ToString()))
+                .ForMember(dest => dest.History, opt => opt.Ignore());
+
+            CreateMap<LoyaltyPointHistory, LoyaltyPointHistoryDto>()
+                .ForMember(dest => dest.TransactionType, opt => opt.MapFrom(src => src.TransactionType.ToString()));
         }
     }
 }
