@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
 using ShoppingFood.Repository.Interfaces;
@@ -6,20 +6,20 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ShoppingFood.Application.Features.Products.Queries
+namespace ShoppingFood.Application.Features.Products.Commands
 {
-    public class DeleteProductHandler : IRequestHandler<DeleteProductQuery, ApiResponse>
+    public class DeleteProductCommandHandler : IRequestHandler<DeleteProductCommand, ApiResponse>
     {
         private readonly IProductRepository _productRepository;
         private readonly IUnitOfWork _unitOfWork;
 
-        public DeleteProductHandler(IProductRepository productRepository, IUnitOfWork unitOfWork)
+        public DeleteProductCommandHandler(IProductRepository productRepository, IUnitOfWork unitOfWork)
         {
             _productRepository = productRepository;
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<ApiResponse> Handle(DeleteProductQuery request, CancellationToken cancellationToken)
+        public async Task<ApiResponse> Handle(DeleteProductCommand request, CancellationToken cancellationToken)
         {
             try
             {
@@ -35,7 +35,7 @@ namespace ShoppingFood.Application.Features.Products.Queries
             }
             catch (Exception ex)
             {
-                await _unitOfWork.LogErrorAsync("DeleteProductHandler.Handle", ex);
+                await _unitOfWork.LogErrorAsync("DeleteProductCommandHandler.Handle", ex);
                 return ApiResponse.Failure(400, $"An error occurred: {ex.Message}");
             }
         }

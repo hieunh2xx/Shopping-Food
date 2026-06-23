@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,7 +10,8 @@ namespace ShoppingFood.Dto.Cart
     {
         public Guid Id { get; set; }
         public Guid? UserAccountId { get; set; }
+        public Guid? GuestUserId { get; set; }
         public List<CartItemDto> Items { get; set; } = new List<CartItemDto>();
-        public decimal TotalCartPrice => Items.Sum(i => i.TotalPrice);
+        public decimal TotalAmount => Items.Sum(i => i.TotalPrice);
     }
 }

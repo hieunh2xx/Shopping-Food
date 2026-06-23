@@ -8,7 +8,7 @@ using AutoMapper;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore.Query;
 using Moq;
-using ShoppingFood.Application.Features.Carts.Queries;
+using ShoppingFood.Application.Features.Carts.Commands;
 using ShoppingFood.Core.Interfaces;
 using ShoppingFood.Domain.Models;
 using ShoppingFood.Dto.Cart;
@@ -17,22 +17,22 @@ using Xunit;
 
 namespace ShoppingFood.Tests.Features.Carts
 {
-    public class ClearCartQueryHandlerTests
+    public class ClearCartCommandHandlerTests
     {
         private readonly Mock<ICartRepository> _cartRepositoryMock;
         private readonly Mock<ICartItemRepository> _cartItemRepositoryMock;
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
         private readonly Mock<IMapper> _mapperMock;
-        private readonly ClearCartQueryHandler _handler;
+        private readonly ClearCartCommandHandler _handler;
 
-        public ClearCartQueryHandlerTests()
+        public ClearCartCommandHandlerTests()
         {
             _cartRepositoryMock = new Mock<ICartRepository>();
             _cartItemRepositoryMock = new Mock<ICartItemRepository>();
             _unitOfWorkMock = new Mock<IUnitOfWork>();
             _mapperMock = new Mock<IMapper>();
 
-            _handler = new ClearCartQueryHandler(
+            _handler = new ClearCartCommandHandler(
                 _cartRepositoryMock.Object,
                 _cartItemRepositoryMock.Object,
                 _unitOfWorkMock.Object,
@@ -44,14 +44,14 @@ namespace ShoppingFood.Tests.Features.Carts
         public async Task Handle_Unauthorized_NeitherUserNorGuestProvided_Returns401()
         {
             // Arrange
-            var query = new ClearCartQuery
+            var command = new ClearCartCommand
             {
                 CurrentUserId = null,
                 GuestUserId = null
             };
 
             // Act
-            var result = await _handler.Handle(query, CancellationToken.None);
+            var result = await _handler.Handle(command, CancellationToken.None);
 
             // Assert
             result.Code.Should().Be(401);
@@ -62,7 +62,7 @@ namespace ShoppingFood.Tests.Features.Carts
         public async Task Handle_CartNotFound_Returns404()
         {
             // Arrange
-            var query = new ClearCartQuery
+            var command = new ClearCartCommand
             {
                 CurrentUserId = Guid.NewGuid()
             };
@@ -79,7 +79,7 @@ namespace ShoppingFood.Tests.Features.Carts
                 .ReturnsAsync(new List<Cart>().AsReadOnly());
 
             // Act
-            var result = await _handler.Handle(query, CancellationToken.None);
+            var result = await _handler.Handle(command, CancellationToken.None);
 
             // Assert
             result.Code.Should().Be(404);
@@ -91,7 +91,7 @@ namespace ShoppingFood.Tests.Features.Carts
         {
             // Arrange
             var cartId = Guid.NewGuid();
-            var query = new ClearCartQuery
+            var command = new ClearCartCommand
             {
                 CurrentUserId = Guid.NewGuid()
             };
@@ -139,7 +139,7 @@ namespace ShoppingFood.Tests.Features.Carts
             _mapperMock.Setup(m => m.Map<CartDto>(It.IsAny<Cart>())).Returns(cartDto);
 
             // Act
-            var result = await _handler.Handle(query, CancellationToken.None);
+            var result = await _handler.Handle(command, CancellationToken.None);
 
             // Assert
             result.Code.Should().Be(200);
@@ -152,7 +152,7 @@ namespace ShoppingFood.Tests.Features.Carts
         public async Task Handle_ExceptionThrown_Returns400WithErrorMessage()
         {
             // Arrange
-            var query = new ClearCartQuery
+            var command = new ClearCartCommand
             {
                 CurrentUserId = Guid.NewGuid()
             };
@@ -169,7 +169,7 @@ namespace ShoppingFood.Tests.Features.Carts
                 .ThrowsAsync(new Exception("Clearing cart failed."));
 
             // Act
-            var result = await _handler.Handle(query, CancellationToken.None);
+            var result = await _handler.Handle(command, CancellationToken.None);
 
             // Assert
             result.Code.Should().Be(400);

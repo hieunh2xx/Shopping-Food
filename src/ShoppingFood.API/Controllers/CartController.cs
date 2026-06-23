@@ -33,16 +33,16 @@ namespace ShoppingFood.API.Controllers
         }
 
         [HttpDelete]
-        public async Task<IActionResult> RemoveCartItem([FromQuery] RemoveCartItemQuery query)
+        public async Task<IActionResult> RemoveCartItem([FromQuery] RemoveCartItemCommand command)
         {
-            var response = await _mediator.Send(query);
+            var response = await _mediator.Send(command);
             return Ok(response);
         }
 
         [HttpDelete("clear")]
-        public async Task<IActionResult> ClearCart([FromQuery] ClearCartQuery query)
+        public async Task<IActionResult> ClearCart([FromQuery] ClearCartCommand command)
         {
-            var response = await _mediator.Send(query);
+            var response = await _mediator.Send(command);
             return Ok(response);
         }
     }

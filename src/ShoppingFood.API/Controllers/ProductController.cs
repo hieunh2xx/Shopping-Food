@@ -32,7 +32,7 @@ namespace ShoppingFood.API.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult<ApiResponse>> Delete(Guid id)
         {
-            var response = await _mediator.Send(new DeleteProductQuery(id));
+            var response = await _mediator.Send(new DeleteProductCommand(id));
             return Ok(response);
         }
         [HttpPatch("StockStatus/{id}")]

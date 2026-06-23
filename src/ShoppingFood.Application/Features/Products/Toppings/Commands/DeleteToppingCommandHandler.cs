@@ -8,20 +8,20 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ShoppingFood.Application.Features.Products.Toppings.Queries
+namespace ShoppingFood.Application.Features.Products.Toppings.Commands
 {
-    public class DeleteToppingHandler : IRequestHandler<DeleteToppingQuery, ApiResponse>
+    public class DeleteToppingCommandHandler : IRequestHandler<DeleteToppingCommand, ApiResponse>
     {
         private readonly IToppingRepository _toppingRepository;
         private readonly IUnitOfWork _unitOfWork;
 
-        public DeleteToppingHandler(IToppingRepository toppingRepository, IUnitOfWork unitOfWork)
+        public DeleteToppingCommandHandler(IToppingRepository toppingRepository, IUnitOfWork unitOfWork)
         {
             _toppingRepository = toppingRepository;
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<ApiResponse> Handle(DeleteToppingQuery request, CancellationToken cancellationToken)
+        public async Task<ApiResponse> Handle(DeleteToppingCommand request, CancellationToken cancellationToken)
         {
             try
             {
@@ -37,7 +37,6 @@ namespace ShoppingFood.Application.Features.Products.Toppings.Queries
                     return ApiResponse.Failure(404, "Topping not found.");
                 }
 
-             
                 topping.ProductToppings.Clear();
 
                 _toppingRepository.Delete(topping);
@@ -47,7 +46,7 @@ namespace ShoppingFood.Application.Features.Products.Toppings.Queries
             }
             catch (Exception ex)
             {
-                await _unitOfWork.LogErrorAsync("DeleteToppingHandler.Handle", ex);
+                await _unitOfWork.LogErrorAsync("DeleteToppingCommandHandler.Handle", ex);
                 return ApiResponse.Failure(400, $"An error occurred: {ex.Message}");
             }
         }

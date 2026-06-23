@@ -1,10 +1,10 @@
 using FluentValidation;
 
-namespace ShoppingFood.Application.Features.Carts.Queries
+namespace ShoppingFood.Application.Features.Carts.Commands
 {
-    public class RemoveCartItemQueryValidator : AbstractValidator<RemoveCartItemQuery>
+    public class RemoveCartItemCommandValidator : AbstractValidator<RemoveCartItemCommand>
     {
-        public RemoveCartItemQueryValidator()
+        public RemoveCartItemCommandValidator()
         {
             RuleFor(p => p.ProductId)
                 .NotEmpty().WithMessage("{PropertyName} is required.")

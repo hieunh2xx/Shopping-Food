@@ -12,16 +12,16 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ShoppingFood.Application.Features.Carts.Queries
+namespace ShoppingFood.Application.Features.Carts.Commands
 {
-    public class ClearCartQueryHandler : IRequestHandler<ClearCartQuery, ApiResponse>
+    public class ClearCartCommandHandler : IRequestHandler<ClearCartCommand, ApiResponse>
     {
         private readonly ICartRepository _cartRepository;
         private readonly ICartItemRepository _cartItemRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public ClearCartQueryHandler(
+        public ClearCartCommandHandler(
             ICartRepository cartRepository,
             ICartItemRepository cartItemRepository,
             IUnitOfWork unitOfWork,
@@ -33,7 +33,7 @@ namespace ShoppingFood.Application.Features.Carts.Queries
             _mapper = mapper;
         }
 
-        public async Task<ApiResponse> Handle(ClearCartQuery request, CancellationToken cancellationToken)
+        public async Task<ApiResponse> Handle(ClearCartCommand request, CancellationToken cancellationToken)
         {
             try
             {
@@ -68,7 +68,7 @@ namespace ShoppingFood.Application.Features.Carts.Queries
             }
             catch (Exception ex)
             {
-                await _unitOfWork.LogErrorAsync("ClearCartQueryHandler.Handle", ex);
+                await _unitOfWork.LogErrorAsync("ClearCartCommandHandler.Handle", ex);
                 return ApiResponse.Failure(400, $"An error occurred: {ex.Message}");
             }
         }

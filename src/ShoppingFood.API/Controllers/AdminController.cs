@@ -59,7 +59,7 @@ namespace ShoppingFood.API.Controllers
         [HttpDelete("GlobalMenuCategory/{id}")]
         public async Task<ActionResult<ApiResponse>> DeleteGlobalMenuCategory(Guid id)
         {
-            var response = await _mediator.Send(new DeleteGlobalMenuCategoryQuery { Id = id });
+            var response = await _mediator.Send(new DeleteGlobalMenuCategoryCommand { Id = id });
             return Ok(response);
         }
 

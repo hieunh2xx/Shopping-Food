@@ -1,26 +1,25 @@
-﻿using MediatR;
+using MediatR;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
 using ShoppingFood.Repository.Interfaces;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
-namespace ShoppingFood.Application.Features.Products.GlobalMenuCategories.Queries
+namespace ShoppingFood.Application.Features.Products.GlobalMenuCategories.Commands
 {
-    public class DeleteGlobalMenuCategoryHandler : IRequestHandler<DeleteGlobalMenuCategoryQuery, ApiResponse>
+    public class DeleteGlobalMenuCategoryCommandHandler : IRequestHandler<DeleteGlobalMenuCategoryCommand, ApiResponse>
     {
         private readonly IGlobalMenuCategoryRepository _globalMenuCategoryRepository;
         private readonly IUnitOfWork _unitOfWork;
 
-        public DeleteGlobalMenuCategoryHandler(IGlobalMenuCategoryRepository globalMenuCategoryRepository, IUnitOfWork unitOfWork)
+        public DeleteGlobalMenuCategoryCommandHandler(IGlobalMenuCategoryRepository globalMenuCategoryRepository, IUnitOfWork unitOfWork)
         {
             _globalMenuCategoryRepository = globalMenuCategoryRepository;
             _unitOfWork = unitOfWork;
         }
-        public async Task<ApiResponse> Handle(DeleteGlobalMenuCategoryQuery request, CancellationToken cancellationToken)
+
+        public async Task<ApiResponse> Handle(DeleteGlobalMenuCategoryCommand request, CancellationToken cancellationToken)
         {
             try
             {
@@ -37,7 +36,7 @@ namespace ShoppingFood.Application.Features.Products.GlobalMenuCategories.Querie
             }
             catch (Exception ex)
             {
-                await _unitOfWork.LogErrorAsync("DeleteGlobalMenuCategoryHandler.Handle", ex);
+                await _unitOfWork.LogErrorAsync("DeleteGlobalMenuCategoryCommandHandler.Handle", ex);
                 return ApiResponse.Failure(400, $"An error occurred: {ex.Message}");
             }
         }

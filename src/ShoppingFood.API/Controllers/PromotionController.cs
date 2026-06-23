@@ -32,7 +32,7 @@ namespace ShoppingFood.API.Controllers
             var response = await _mediator.Send(command);
             return Ok(response);
         }
-        [HttpPut("{id}")]
+        [HttpPost("{id}")]
         public async Task<ActionResult<ApiResponse>> Update(Guid id, [FromBody] UpdatePromotionCommand command)
         {
             command.Id = id;
