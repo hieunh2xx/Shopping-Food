@@ -15,3 +15,7 @@ export interface ILoyaltyPointDto {
     updatedAt: string;
     history: ILoyaltyPointHistoryDto[];
 }
+
+export interface IRedeemPointGiftRequest{
+    pointGiftConfigId: string;
+}

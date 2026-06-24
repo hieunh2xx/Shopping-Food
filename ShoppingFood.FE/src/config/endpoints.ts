@@ -76,6 +76,8 @@ export const API_ENDPOINTS = {
     GLOBAL_MENU_CATEGORY: '/Admin/GlobalMenuCategory',   // GET, POST
     GLOBAL_MENU_CATEGORY_BY_ID: (id: string) => `/Admin/GlobalMenuCategory/${id}`, // PUT, DELETE
     GLOBAL_MENU_CATEGORY_VISIBILITY: (id: string) => `/Admin/GlobalMenuCategory/Visibility/${id}`, // PATCH
+    POINT_GIFT_CONFIG: '/Admin/point-gift-config',
+    POINT_GIFT_CONFIG_BY_ID: (id: string) => `/Admin/point-gift-config/${id}`,
   },
 
   // === Shipper (ShipperController) ===
@@ -151,7 +153,8 @@ export const API_ENDPOINTS = {
 
   LOYALTY_POINT: {
     BASE: '/LoyaltyPoint',
+    GIFTS: '/LoyaltyPoint/gifts',
+    REDEEM: '/LoyaltyPoint/redeem'
   },
 
 } as const;
-

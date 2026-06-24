@@ -25,3 +25,4 @@ export type { IDispatchOrder, IDispatchOrderItem, ISuggestedShipper, ISendPropos
 export type { ICreateDiscountRequest, ISaveDiscountRequest, IDiscountDto, IGetDiscountsParams, IUpdateDiscountRequest, IApplyDiscountRequest, IApplyDiscountResponse } from './IDiscount';
 export type { IBuyXGetYPromotionDto, ICreatePromotionRequest, IGetPromotionsParams, IUpdatePromotionRequest } from './IPromotion'
 export * from './ILoyaltyPoint';
+export * from './IPointGiftConfig';

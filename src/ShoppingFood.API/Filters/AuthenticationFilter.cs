@@ -39,23 +39,32 @@ namespace ShoppingFood.API.Filters
             var method = context.HttpContext.Request.Method;
             // Bypass authentication for public endpoints
             bool isBypassPath = path == "/" ||
-                path.StartsWith("/api/User/Login", StringComparison.OrdinalIgnoreCase) ||
-                path.StartsWith("/api/User/Register", StringComparison.OrdinalIgnoreCase) ||
-                path.StartsWith("/api/User/RegisterShipper", StringComparison.OrdinalIgnoreCase) ||
-                path.StartsWith("/api/User/RefreshToken", StringComparison.OrdinalIgnoreCase) ||
-                path.StartsWith("/api/User/SendLoginOtp", StringComparison.OrdinalIgnoreCase) ||
-                path.StartsWith("/api/User/VerifyLoginOtp", StringComparison.OrdinalIgnoreCase) ||
-                path.StartsWith("/api/User/SendOtp", StringComparison.OrdinalIgnoreCase) ||
-                path.StartsWith("/api/User/Logout", StringComparison.OrdinalIgnoreCase) ||
-                path.StartsWith("/api/User/ForgotPassword", StringComparison.OrdinalIgnoreCase) ||
-                path.StartsWith("/api/User/VerifyResetOtp", StringComparison.OrdinalIgnoreCase) ||
-                path.StartsWith("/api/User/ResetPassword", StringComparison.OrdinalIgnoreCase) ||
-                path.StartsWith("/api/User/VerifyUnlockAccount", StringComparison.OrdinalIgnoreCase) ||
-                path.StartsWith("/swagger", StringComparison.OrdinalIgnoreCase) ||
-                (method == "GET" && path.StartsWith("/api/Product", StringComparison.OrdinalIgnoreCase)) ||
-                (method == "GET" && path.StartsWith("/api/Restaurant", StringComparison.OrdinalIgnoreCase) &&
-                !path.Equals("/api/Restaurant/favorites", StringComparison.OrdinalIgnoreCase)) ||
-                (method == "GET" && path.StartsWith("/api/Admin/GlobalMenuCategory", StringComparison.OrdinalIgnoreCase));
+                                path.StartsWith("/api/User/Login", StringComparison.OrdinalIgnoreCase) ||
+                                path.StartsWith("/api/User/Register", StringComparison.OrdinalIgnoreCase) ||
+                                path.StartsWith("/api/User/RegisterShipper", StringComparison.OrdinalIgnoreCase) ||
+                                path.StartsWith("/api/User/RefreshToken", StringComparison.OrdinalIgnoreCase) ||
+                                path.StartsWith("/api/User/SendLoginOtp", StringComparison.OrdinalIgnoreCase) ||
+                                path.StartsWith("/api/User/VerifyLoginOtp", StringComparison.OrdinalIgnoreCase) ||
+                                path.StartsWith("/api/User/SendOtp", StringComparison.OrdinalIgnoreCase) ||
+                                path.StartsWith("/api/User/Logout", StringComparison.OrdinalIgnoreCase) ||
+                                path.StartsWith("/api/User/ForgotPassword", StringComparison.OrdinalIgnoreCase) ||
+                                path.StartsWith("/api/User/VerifyResetOtp", StringComparison.OrdinalIgnoreCase) ||
+                                path.StartsWith("/api/User/ResetPassword", StringComparison.OrdinalIgnoreCase) ||
+                                path.StartsWith("/api/User/VerifyUnlockAccount", StringComparison.OrdinalIgnoreCase) ||
+                                path.StartsWith("/swagger", StringComparison.OrdinalIgnoreCase) ||
+
+                                (method == "GET" &&
+                                    path.StartsWith("/api/Product", StringComparison.OrdinalIgnoreCase)) ||
+
+                                (method == "GET" &&
+                                    path.StartsWith("/api/Restaurant", StringComparison.OrdinalIgnoreCase) &&
+                                    !path.Equals("/api/Restaurant/favorites", StringComparison.OrdinalIgnoreCase)) ||
+
+                                (method == "GET" &&
+                                    path.StartsWith("/api/Admin/GlobalMenuCategory", StringComparison.OrdinalIgnoreCase)) ||
+
+                                (method == "GET" &&
+                                    path.Equals("/api/LoyaltyPoint/gifts", StringComparison.OrdinalIgnoreCase));
 
             bool isGuestCartRequest = (path.StartsWith("/api/Cart", StringComparison.OrdinalIgnoreCase) ||
                                        path.StartsWith("/api/Order/checkout", StringComparison.OrdinalIgnoreCase) ||

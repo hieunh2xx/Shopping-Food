@@ -15,3 +15,4 @@ export { orderService } from './OrderService';
 export { coordinatorService } from './CoordinatorService';
 export { promotionService } from './PromotionService';
 export { loyaltyPointService } from './LoyaltyPointService';
+export {pointGiftConfigService} from './PointGiftConfigService'

@@ -1,6 +1,8 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using ShoppingFood.Application.Features.Admin.Commands;
+using ShoppingFood.Application.Features.LoyaltyPoints.Commands;
+using ShoppingFood.Application.Features.LoyaltyPoints.Queries;
 using ShoppingFood.Application.Features.Products.GlobalMenuCategories.Commands;
 using ShoppingFood.Application.Features.Products.GlobalMenuCategories.Queries;
 using ShoppingFood.Core.Base;
@@ -67,6 +69,40 @@ namespace ShoppingFood.API.Controllers
         public async Task<ActionResult<ApiResponse>> ToggleGlobalMenuCategoryVisibility(Guid id)
         {
             var response = await _mediator.Send(new ToggleGlobalMenuCategoryVisibilityCommand { Id = id });
+            return Ok(response);
+        }
+
+        [HttpGet("point-gift-config")]
+        public async Task<ActionResult<ApiResponse>> GetPointGiftConfig([FromQuery] bool? isActiveOnly)
+        {
+            var response = await _mediator.Send(new GetPointGiftConfigsQuery { IsActiveOnly = isActiveOnly });
+            return Ok(response);
+        }
+
+        [HttpPost("point-gift-config")]
+        public async Task<ActionResult<ApiResponse>> CreatePointGiftConfig([FromBody] CreatePointGiftConfigCommand command)
+        {
+            var response = await _mediator.Send(command);
+            return Ok(response);
+        }
+
+        [HttpPut("point-gift-config/{id}")]
+        public async Task<ActionResult<ApiResponse>> UpdatePointGiftConfig(Guid id, [FromBody] UpdatePointGiftConfigCommand command)
+        {
+            command.Id = id;
+            var response = await _mediator.Send(command);
+            return Ok(response);
+        }
+
+        [HttpDelete("PointGiftConfig/{id}")]
+        public async Task<ActionResult<ApiResponse>> DeletePointGiftConfig(Guid id)
+        {
+            var command = new DeletePointGiftConfigCommand { Id = id };
+            if (userDto != null)
+            {
+                command.CurrentUserId = userDto.Id;
+            }
+            var response = await _mediator.Send(command);
             return Ok(response);
         }
     }

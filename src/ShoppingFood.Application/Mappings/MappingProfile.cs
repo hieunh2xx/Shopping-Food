@@ -206,6 +206,14 @@ namespace ShoppingFood.Application.Mappings
 
             CreateMap<LoyaltyPointHistory, LoyaltyPointHistoryDto>()
                 .ForMember(dest => dest.TransactionType, opt => opt.MapFrom(src => src.TransactionType.ToString()));
+
+            CreateMap<PointGiftConfig, PointGiftConfigDto>()
+                .ForMember(dest => dest.DiscountCode, opt => opt.MapFrom(src => src.Discount != null ? src.Discount.Code : string.Empty))
+                .ForMember(dest => dest.DiscountTitle, opt => opt.MapFrom(src => src.Discount != null ? src.Discount.Title : string.Empty))
+                .ForMember(dest => dest.DiscountType, opt => opt.MapFrom(src => src.Discount != null ? src.Discount.Type.ToString() : string.Empty))
+                .ForMember(dest => dest.DiscountValue, opt => opt.MapFrom(src => src.Discount != null ? src.Discount.Value : 0))
+                .ForMember(dest => dest.MinOrderAmount, opt => opt.MapFrom(src => src.Discount != null ? src.Discount.MinOrderAmount : 0));
+
         }
     }
 }
