@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, ChevronRight, ChevronLeft, ChefHat, Bike, User, Lock, Phone, Mail, CreditCard, FileText, CheckCircle2, UploadCloud } from 'lucide-react';
+import { Eye, EyeOff, ChevronRight, ChevronLeft, ChefHat, CheckCircle2, UploadCloud } from 'lucide-react';
 import { Button, Input } from '../components/common';
 import { authService } from '../services/AuthService';
 import { toast } from 'react-hot-toast';
