@@ -54,9 +54,16 @@ export function ProfilePage() {
       return;
     }
 
+    const extension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
+    if (!allowedExtensions.includes(extension)) {
+      toast.error('Chỉ cho phép tải lên các tệp ảnh (.jpg, .jpeg, .png, .webp).');
+      return;
+    }
+
     setIsUploading(true);
     const toastId = toast.loading('Đang tải ảnh lên...');
-    
+
     try {
       const res = await authService.uploadAvatar(file);
       if (!res.error && res.data) {
@@ -131,7 +138,7 @@ export function ProfilePage() {
 
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
         <div className="flex items-center gap-6 mb-8">
-          <div 
+          <div
             className="w-24 h-24 rounded-full bg-gray-200 overflow-hidden relative group cursor-pointer border-2 border-transparent hover:border-blue-500 transition-all"
             onClick={() => !isUploading && fileInputRef.current?.click()}
           >
@@ -140,7 +147,7 @@ export function ProfilePage() {
                 <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               </div>
             )}
-            
+
             <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
               <Camera className="w-8 h-8 text-white" />
             </div>
@@ -152,13 +159,13 @@ export function ProfilePage() {
                 {(profile.fullName || profile.userName).charAt(0)}
               </div>
             )}
-            
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              onChange={handleFileChange} 
-              accept="image/*" 
-              className="hidden" 
+
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept="image/*"
+              className="hidden"
             />
           </div>
           <div>
@@ -168,16 +175,16 @@ export function ProfilePage() {
         </div>
 
         <div className="space-y-4">
-          <Input 
-            label="Tên đăng nhập" 
-            value={profile.userName} 
-            disabled 
+          <Input
+            label="Tên đăng nhập"
+            value={profile.userName}
+            disabled
             className="bg-gray-50"
           />
-          <Input 
-            label="Họ và tên" 
-            value={profile.fullName || ''} 
-            disabled 
+          <Input
+            label="Họ và tên"
+            value={profile.fullName || ''}
+            disabled
             className="bg-gray-50"
           />
           <div className="space-y-1">
@@ -194,9 +201,9 @@ export function ProfilePage() {
               </button>
             </div>
             <div className="relative">
-              <input 
-                value={profile.email || 'Chưa cập nhật'} 
-                disabled 
+              <input
+                value={profile.email || 'Chưa cập nhật'}
+                disabled
                 className="w-full px-4 py-2 border border-gray-200 rounded-xl bg-gray-50 text-gray-500 focus:outline-none pr-32"
               />
               <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
@@ -214,22 +221,22 @@ export function ProfilePage() {
               </div>
             </div>
           </div>
-          <Input 
-            label="Số điện thoại" 
-            value={profile.phone || 'Chưa cập nhật'} 
-            disabled 
+          <Input
+            label="Số điện thoại"
+            value={profile.phone || 'Chưa cập nhật'}
+            disabled
             className="bg-gray-50"
           />
-          <Input 
-            label="Giới tính" 
-            value={profile.gender === 'Male' ? 'Nam' : profile.gender === 'Female' ? 'Nữ' : profile.gender === 'Other' ? 'Khác' : 'Chưa cập nhật'} 
-            disabled 
+          <Input
+            label="Giới tính"
+            value={profile.gender === 'Male' ? 'Nam' : profile.gender === 'Female' ? 'Nữ' : profile.gender === 'Other' ? 'Khác' : 'Chưa cập nhật'}
+            disabled
             className="bg-gray-50"
           />
-          <Input 
-            label="Ngày sinh" 
-            value={profile.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString('vi-VN') : 'Chưa cập nhật'} 
-            disabled 
+          <Input
+            label="Ngày sinh"
+            value={profile.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString('vi-VN') : 'Chưa cập nhật'}
+            disabled
             className="bg-gray-50"
           />
         </div>
@@ -240,7 +247,7 @@ export function ProfilePage() {
               <Store className="w-6 h-6 text-orange-500" />
               Thông tin Cửa hàng
             </h3>
-            
+
             <div className="flex items-start gap-6">
               {profile.sellerInfo.logoUrl ? (
                 <img src={profile.sellerInfo.logoUrl} alt="Logo" className="w-20 h-20 rounded-xl object-cover border border-gray-200" />
@@ -287,14 +294,14 @@ export function ProfilePage() {
           Khu vực nguy hiểm (DANGER ZONE)
         </h3>
         <div className="flex flex-col sm:flex-row gap-4">
-          <button 
+          <button
             onClick={handleLockAccount}
             className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-yellow-500 text-yellow-600 font-medium hover:bg-yellow-50 transition-colors"
           >
             <Lock className="w-5 h-5" />
             Khóa tài khoản khẩn cấp
           </button>
-          <button 
+          <button
             onClick={handleRequestDeletion}
             className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-red-500 text-red-600 font-medium hover:bg-red-50 transition-colors"
           >
@@ -303,19 +310,19 @@ export function ProfilePage() {
           </button>
         </div>
       </div>
-      
-      <ChangePasswordModal 
+
+      <ChangePasswordModal
         isOpen={isChangePasswordOpen}
         onClose={() => setIsChangePasswordOpen(false)}
       />
-      
+
       <UpdateProfileModal
         isOpen={isUpdateProfileOpen}
         onClose={() => setIsUpdateProfileOpen(false)}
         profile={profile}
         onSuccess={fetchProfile}
       />
-      
+
       <ChangeContactModal
         isOpen={isChangeContactOpen}
         onClose={() => setIsChangeContactOpen(false)}

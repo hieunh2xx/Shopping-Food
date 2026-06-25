@@ -18,13 +18,36 @@ export function SellerApplyPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!businessLicenseFile) {
       toast.error('Vui lòng tải lên giấy phép kinh doanh');
       return;
     }
     if (!shopImageFile) {
       toast.error('Vui lòng tải lên logo/ảnh đại diện cửa hàng');
+      return;
+    }
+
+    const allowedLicenseExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.pdf', '.doc', '.docx'];
+    const allowedImageExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
+
+    const licenseExt = businessLicenseFile.name.substring(businessLicenseFile.name.lastIndexOf('.')).toLowerCase();
+    if (!allowedLicenseExtensions.includes(licenseExt)) {
+      toast.error('Giấy phép kinh doanh phải là tệp ảnh hoặc tài liệu (.jpg, .jpeg, .png, .webp, .pdf, .doc, .docx).');
+      return;
+    }
+    if (businessLicenseFile.size > 5 * 1024 * 1024) {
+      toast.error('Giấy phép kinh doanh không được vượt quá 5MB');
+      return;
+    }
+
+    const shopExt = shopImageFile.name.substring(shopImageFile.name.lastIndexOf('.')).toLowerCase();
+    if (!allowedImageExtensions.includes(shopExt)) {
+      toast.error('Logo/ảnh đại diện cửa hàng phải là tệp ảnh (.jpg, .jpeg, .png, .webp).');
+      return;
+    }
+    if (shopImageFile.size > 5 * 1024 * 1024) {
+      toast.error('Logo/ảnh đại diện cửa hàng không được vượt quá 5MB');
       return;
     }
 
@@ -129,7 +152,7 @@ export function SellerApplyPage() {
               </div>
               <input
                 type="file"
-                accept="image/*,.pdf"
+                accept="image/*,.pdf,.doc,.docx"
                 required
                 onChange={e => setBusinessLicenseFile(e.target.files?.[0] || null)}
                 className="pl-10 block w-full rounded-xl border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 bg-gray-50 border p-2 text-sm file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"

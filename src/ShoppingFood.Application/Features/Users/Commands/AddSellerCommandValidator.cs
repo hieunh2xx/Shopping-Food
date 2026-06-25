@@ -42,16 +42,28 @@ namespace ShoppingFood.Application.Features.Users.Commands
                 .NotEmpty().WithMessage("{PropertyName} is required.");
 
             RuleFor(p => p.BusinessLicenseUrl)
-                .NotEmpty().WithMessage("{PropertyName} is required.")
-                .MaximumLength(255).WithMessage("{PropertyName} must not exceed 255 characters.");
-
-            RuleFor(p => p.ShopImageUrl)
-                .NotEmpty().WithMessage("{PropertyName} is required.")
-                .MaximumLength(255).WithMessage("{PropertyName} must not exceed 255 characters.");
-
-            RuleFor(p => p.ContactInfo)
-                .NotEmpty().WithMessage("{PropertyName} is required.")
-                .MaximumLength(100).WithMessage("{PropertyName} must not exceed 100 characters.");
-        }
+                 .NotEmpty().WithMessage("{PropertyName} is required.")
+                 .MaximumLength(255).WithMessage("{PropertyName} must not exceed 255 characters.")
+                 .Must(url => HasValidExtension(url, ".jpg", ".jpeg", ".png", ".webp", ".pdf", ".doc", ".docx"))
+                 .WithMessage("BusinessLicenseUrl must point to a valid image or document file (.jpg, .jpeg, .png, .webp, .pdf, .doc, .docx).");
+ 
+             RuleFor(p => p.ShopImageUrl)
+                 .NotEmpty().WithMessage("{PropertyName} is required.")
+                 .MaximumLength(255).WithMessage("{PropertyName} must not exceed 255 characters.")
+                 .Must(url => HasValidExtension(url, ".jpg", ".jpeg", ".png", ".webp"))
+                 .WithMessage("ShopImageUrl must point to a valid image file (.jpg, .jpeg, .png, .webp).");
+ 
+             RuleFor(p => p.ContactInfo)
+                 .NotEmpty().WithMessage("{PropertyName} is required.")
+                 .MaximumLength(100).WithMessage("{PropertyName} must not exceed 100 characters.");
+         }
+ 
+         private bool HasValidExtension(string url, params string[] allowedExtensions)
+         {
+             if (string.IsNullOrEmpty(url)) return false;
+             var cleanUrl = url.Split('?')[0];
+             var extension = System.IO.Path.GetExtension(cleanUrl).ToLower();
+             return System.Linq.Enumerable.Contains(allowedExtensions, extension);
+         }
     }
 }

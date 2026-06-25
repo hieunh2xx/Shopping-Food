@@ -61,6 +61,13 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
       return;
     }
 
+    const extension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+    const allowedExtensions = ['.pdf', '.doc', '.docx', '.png', '.jpg', '.jpeg'];
+    if (!allowedExtensions.includes(extension)) {
+      toast.error('Chỉ chấp nhận các định dạng file .pdf, .doc, .docx, .png, .jpg, .jpeg');
+      return;
+    }
+
     setSelectedFile(file);
     const objectUrl = URL.createObjectURL(file);
     setPreviewUrl(objectUrl);
