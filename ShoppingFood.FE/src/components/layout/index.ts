@@ -5,3 +5,4 @@ export { CartDrawer } from './CartDrawer';
 export { AdminLayout } from './admin/AdminLayout';
 export { SellerLayout } from './seller/SellerLayout';
 export { UserLayout } from './UserLayout';
+export { ShipperLayout } from './shipper/ShipperLayout';

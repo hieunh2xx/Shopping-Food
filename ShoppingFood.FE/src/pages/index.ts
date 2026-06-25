@@ -13,3 +13,7 @@ export { ProfilePage } from './ProfilePage';
 export { OrdersPage } from './OrdersPage';
 export { NotFoundPage } from './NotFoundPage';
 export { ShipperApplyPage } from './ShipperApplyPage';
+export { ShipperDashboard } from './shipper/ShipperDashboard';
+export { ShipperHistoryPage } from './shipper/ShipperHistoryPage';
+export { ShipperIncomePage } from './shipper/ShipperIncomePage';
+export { ShipperProfilePage } from './shipper/ShipperProfilePage';

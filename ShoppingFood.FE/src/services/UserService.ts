@@ -1,6 +1,7 @@
+import { httpClient } from './base/HttpClient';
 import { BaseService } from './base/BaseService';
 import { API_ENDPOINTS } from '../config/endpoints';
-import type { IUserDto, IRegisterRequest } from '../interfaces';
+import type { IUserDto, IRegisterRequest, IChangePasswordRequest, IApiResponse } from '../interfaces';
 
 /**
  * User Service — handles user management endpoints
@@ -10,6 +11,10 @@ import type { IUserDto, IRegisterRequest } from '../interfaces';
  */
 class UserService extends BaseService<IUserDto, IRegisterRequest> {
   protected readonly endpoint = API_ENDPOINTS.USER.BASE;
+
+  async changePassword(data: IChangePasswordRequest): Promise<IApiResponse<any>> {
+    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.USER.CHANGE_PASSWORD, data);
+  }
 }
 
 // Export singleton instance

@@ -95,6 +95,14 @@ export function Header() {
                           Quản lý cửa hàng
                         </Link>
                       )}
+                      {user?.role === 'Shipper' && (
+                        <Link
+                          to={ROUTES.SHIPPER_DASHBOARD}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600"
+                        >
+                          Kênh tài xế
+                        </Link>
+                      )}
                       {user?.role === 'Customer' && (
                         <Link
                           to={ROUTES.SELLER_APPLY}

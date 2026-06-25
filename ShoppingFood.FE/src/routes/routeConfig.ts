@@ -19,6 +19,10 @@ export const ROUTES = {
   ADMIN_PRODUCTS: '/admin/products',
   PROFILE: '/profile',
   ORDERS: '/orders',
+  SHIPPER_DASHBOARD: '/shipper',
+  SHIPPER_HISTORY: '/shipper/history',
+  SHIPPER_INCOME: '/shipper/income',
+  SHIPPER_PROFILE: '/shipper/profile',
 } as const;
 
 /**

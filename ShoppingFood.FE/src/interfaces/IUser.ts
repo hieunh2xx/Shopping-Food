@@ -102,3 +102,9 @@ export interface IRegisterSellerRequest {
   contactInfo: string;
   idToken: string;
 }
+
+export interface IChangePasswordRequest {
+  oldPassword?: string;
+  newPassword?: string;
+}
+

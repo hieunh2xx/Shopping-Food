@@ -347,6 +347,11 @@ namespace ShoppingFood.API.Controllers
         [HttpPost("ChangePassword")]
         public async Task<ActionResult<ApiResponse>> ChangePassword([FromBody] ChangePasswordCommand command)
         {
+            if (userDto == null)
+            {
+                return Unauthorized(ApiResponse.Failure(401, "Vui lòng đăng nhập để thực hiện chức năng này."));
+            }
+            command.CurrentUserId = userDto.Id;
             var response = await _mediator.Send(command);
             if (response.Error) return BadRequest(response);
             return Ok(response);

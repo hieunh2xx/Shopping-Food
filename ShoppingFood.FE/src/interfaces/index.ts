@@ -1,5 +1,5 @@
 export type { IApiResponse, IQueryParams } from './IApiResponse';
-export type { IUserDto, ILoginRequest, ILoginGoogleRequest, ILoginMicrosoftRequest, ILoginResponse, IRegisterRequest, ISellerRegisterDto, IRegisterSellerRequest } from './IUser';
+export type { IUserDto, ILoginRequest, ILoginGoogleRequest, ILoginMicrosoftRequest, ILoginResponse, IRegisterRequest, ISellerRegisterDto, IRegisterSellerRequest, IChangePasswordRequest } from './IUser';
 export type { IProductDto, IProductToppingDto, IProductSizeDto, IAddProductRequest, IUpdateProductRequest, IUpdateStockStatusRequest, IToggleVisibilityRequest, IUpdateAvailabilityRequest, ISearchProductQuery } from './IProduct';
 export type { IMenuCategoryDto, IAddMenuCategoryRequest, IUpdateMenuCategoryRequest } from './IMenuCategory';
 export type { IApproveApplicationRequest, IApproveProductRequest } from './IAdmin';

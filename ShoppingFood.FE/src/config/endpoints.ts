@@ -23,6 +23,7 @@ export const API_ENDPOINTS = {
     REGISTER_SHIPPER: '/User/register-shipper',
     SELLER_APPLICATION_STATUS: '/User/SellerApplication/Status',
     UPDATE_SELLER_APPLICATION: '/User/SellerApplication',
+    CHANGE_PASSWORD: '/User/ChangePassword',
   },
 
   // === Order Management (OrderController) ===

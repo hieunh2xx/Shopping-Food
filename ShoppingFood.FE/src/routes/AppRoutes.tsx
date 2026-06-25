@@ -3,7 +3,7 @@ import { ROUTES } from './routeConfig';
 import { PrivateRoute } from './PrivateRoute';
 
 // Layout
-import { MainLayout, AdminLayout, SellerLayout, UserLayout } from '../components/layout';
+import { MainLayout, AdminLayout, SellerLayout, UserLayout, ShipperLayout } from '../components/layout';
 
 // Pages
 import {
@@ -21,7 +21,11 @@ import {
   ProfilePage,
   OrdersPage,
   SellerApplyPage,
-  ShipperApplyPage
+  ShipperApplyPage,
+  ShipperDashboard,
+  ShipperHistoryPage,
+  ShipperIncomePage,
+  ShipperProfilePage
 } from '../pages';
 
 /**
@@ -92,6 +96,21 @@ export function AppRoutes() {
         <Route path="permissions" element={<AdminPermissionsPage />} />
         <Route path="approvals" element={<div className="p-8"><h2 className="text-2xl font-bold">Duyệt đối tác</h2><p className="mt-4 text-gray-500">Đang phát triển...</p></div>} />
         <Route path="settings" element={<div className="p-8"><h2 className="text-2xl font-bold">Cấu hình hệ thống</h2><p className="mt-4 text-gray-500">Đang phát triển...</p></div>} />
+      </Route>
+
+      {/* Shipper routes - protected with ShipperLayout */}
+      <Route
+        path={ROUTES.SHIPPER_DASHBOARD}
+        element={
+          <PrivateRoute allowedRoles={['Shipper']}>
+            <ShipperLayout />
+          </PrivateRoute>
+        }
+      >
+        <Route index element={<ShipperDashboard />} />
+        <Route path="history" element={<ShipperHistoryPage />} />
+        <Route path="income" element={<ShipperIncomePage />} />
+        <Route path="profile" element={<ShipperProfilePage />} />
       </Route>
 
       {/* 404 */}
