@@ -1,4 +1,5 @@
-﻿using FirebaseAdmin.Auth;
+using FirebaseAdmin.Auth;
+using ShoppingFood.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
@@ -101,7 +102,7 @@ namespace ShoppingFood.Application.Features.LoyaltyPoints.Commands
                 UserId = userId,
                 Title = "Đổi voucher thành công",
                 Message = $"Chúc mừng! Bạn đã đổi thành công {pointRequired} điểm tích lũy lấy mã giảm giá: {discount.Title} ({discount.Code}). Hãy kiểm tra kho lưu trữ voucher của bạn ngay!",
-                NotificationType = null,
+                NotificationType = NotificationType.Loyalty,
                 IsRead = false,
                 CreateAt = now
             };

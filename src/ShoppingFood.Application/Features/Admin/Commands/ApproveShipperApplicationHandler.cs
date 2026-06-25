@@ -165,7 +165,7 @@ namespace ShoppingFood.Application.Features.Admin.Commands
                     Title = isApproved ? "Yêu cầu đăng ký tài xế đã được duyệt" : "Yêu cầu đăng ký tài xế bị từ chối",
                     Message = isApproved ? "Chúc mừng! Đơn đăng ký trở thành đối tác tài xế của bạn đã được phê duyệt thành công. Vui lòng đăng nhập lại để bắt đầu nhận đơn." :
                                            $"Đơn đăng ký trở thành đối tác tài xế của bạn đã bị từ chối. Lý do {application.RejectionReason}.",
-                    NotificationType = null,
+                    NotificationType = NotificationType.System,
                     IsRead = false,
                     CreateAt = DateTime.UtcNow
                 };

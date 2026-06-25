@@ -194,6 +194,14 @@ namespace ShoppingFood.API.Filters
                 }
             }
 
+            if ((path.Equals("/api/LoyaltyPoint/evaluate-tiers", StringComparison.OrdinalIgnoreCase) ||
+                 path.Equals("/api/LoyaltyPoint/adjust-user-tier", StringComparison.OrdinalIgnoreCase) ||
+                 (path.Equals("/api/LoyaltyPoint/tier-configs", StringComparison.OrdinalIgnoreCase) && method != "GET")) &&
+                user.Profile?.Role != UserRole.Admin)
+            {
+                throw new UnauthorizedAccessException("Only the admin has the right to perform this operation.");
+            }
+
             if (path.Contains("/api/Shipper", StringComparison.OrdinalIgnoreCase))
             {
                 if (user.Profile?.Role != UserRole.Shipper)

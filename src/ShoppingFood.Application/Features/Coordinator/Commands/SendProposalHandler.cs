@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
@@ -145,7 +145,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
                 UserId = shipperUserAccountId,
                 Title = "Đề xuất giao hàng mới",
                 Message = $"Bạn nhận được đề xuất giao đơn hàng mã '{order.Id}'. Vui lòng phản hồi trong vòng 60 giây.",
-                NotificationType = null,
+                NotificationType = NotificationType.Delivery,
                 IsRead = false,
                 CreateAt = DateTime.UtcNow
             };

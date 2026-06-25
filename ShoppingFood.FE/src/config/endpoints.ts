@@ -154,7 +154,11 @@ export const API_ENDPOINTS = {
   LOYALTY_POINT: {
     BASE: '/LoyaltyPoint',
     GIFTS: '/LoyaltyPoint/gifts',
-    REDEEM: '/LoyaltyPoint/redeem'
+    REDEEM: '/LoyaltyPoint/redeem',
+    EVALUATE_TIERS: '/LoyaltyPoint/evaluate-tiers',
+    TIER_CONFIGS: '/LoyaltyPoint/tier-configs',
+    ADJUST_USER_TIER: '/LoyaltyPoint/adjust-user-tier',
   },
 
 } as const;
+

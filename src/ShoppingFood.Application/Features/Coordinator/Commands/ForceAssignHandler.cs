@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
@@ -182,7 +182,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
                 UserId = shipper.UserProfile.UserAccountId,
                 Title = "Đơn hàng gán bắt buộc",
                 Message = $"Bạn được gán trực tiếp đơn hàng mã '{order.Id}' từ Điều phối viên.",
-                NotificationType = null,
+                NotificationType = NotificationType.Delivery,
                 IsRead = false,
                 CreateAt = DateTime.UtcNow,
             };
@@ -196,7 +196,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
                     UserId = order.UserAccountId.Value,
                     Title = "Đơn hàng đang được giao",
                     Message = $"Tài xế '{shipper.UserProfile.FullName}' đã nhận vận chuyển đơn hàng mã '{order.Id}' của bạn.",
-                    NotificationType = null,
+                    NotificationType = NotificationType.Delivery,
                     IsRead = false,
                     CreateAt = DateTime.UtcNow
                 };

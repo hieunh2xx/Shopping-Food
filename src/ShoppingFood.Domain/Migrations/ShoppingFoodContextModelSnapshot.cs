@@ -509,6 +509,50 @@ namespace ShoppingFood.Domain.Migrations
                     b.ToTable("LOYALTY_POINT_HISTORY", (string)null);
                 });
 
+            modelBuilder.Entity("ShoppingFood.Domain.Models.MemberTierConfig", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("MinPoints")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Tier")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("MEMBER_TIER_CONFIG", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("e2546c1f-17c4-4911-8990-7b3b3a795edb"),
+                            CreatedAt = new DateTime(2026, 6, 25, 9, 31, 19, 863, DateTimeKind.Utc).AddTicks(7699),
+                            MinPoints = 100,
+                            Tier = "Silver"
+                        },
+                        new
+                        {
+                            Id = new Guid("860a3d3f-895a-49cb-8d7c-d7c37cdbe94b"),
+                            CreatedAt = new DateTime(2026, 6, 25, 9, 31, 19, 863, DateTimeKind.Utc).AddTicks(7704),
+                            MinPoints = 500,
+                            Tier = "Gold"
+                        },
+                        new
+                        {
+                            Id = new Guid("8fd40f75-290f-499d-af02-fecd2d1b28a4"),
+                            CreatedAt = new DateTime(2026, 6, 25, 9, 31, 19, 863, DateTimeKind.Utc).AddTicks(7705),
+                            MinPoints = 1000,
+                            Tier = "Diamond"
+                        });
+                });
+
             modelBuilder.Entity("ShoppingFood.Domain.Models.MenuCategory", b =>
                 {
                     b.Property<Guid>("Id")

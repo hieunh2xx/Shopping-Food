@@ -19,3 +19,10 @@ export interface ILoyaltyPointDto {
 export interface IRedeemPointGiftRequest{
     pointGiftConfigId: string;
 }
+
+export interface IMemberTierConfig {
+    id: string;
+    tier: string;
+    minPoints: number;
+    updatedAt: string;
+}

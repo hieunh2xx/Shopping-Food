@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+using AutoMapper;
+using ShoppingFood.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
@@ -149,7 +150,7 @@ namespace ShoppingFood.Application.Features.Products.Commands
                     UserId = ownerUserAccountId.Value,
                     Title = "Món ăn nhận được đánh giá mới",
                     Message = $"Món ăn '{product.ItemName}' của bạn vừa nhận được đánh giá {rating} sao từ khách hành '{customerProfile.FullName}'.",
-                    NotificationType = "Review",
+                    NotificationType = NotificationType.Review,
                     IsRead = false,
                     CreateAt = DateTime.UtcNow
                 };

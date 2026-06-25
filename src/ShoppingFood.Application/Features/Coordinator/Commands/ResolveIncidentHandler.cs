@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
@@ -150,7 +150,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
                 UserId = shipper.UserProfile.UserAccountId,
                 Title = "Kết quả phân giải sự cố đơn hàng",
                 Message = message,
-                NotificationType = null,
+                NotificationType = NotificationType.Order,
                 IsRead = false,
                 CreateAt = DateTime.UtcNow
             };

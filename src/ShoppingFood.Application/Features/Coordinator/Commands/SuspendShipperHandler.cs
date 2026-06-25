@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
@@ -102,7 +102,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
                 UserId = shipper.Id,
                 Title = "Tài khoản bị tạm đình chỉ nhận đơn",
                 Message = $"Tài khoản hoạt động shipper của bạn đã bị tạm dừng nhận đề xuất giao đơn trong {durationMinutes} phút. Lý do : {reason}",
-                NotificationType = null,
+                NotificationType = NotificationType.System,
                 IsRead = false,
                 CreateAt = DateTime.UtcNow,
             };

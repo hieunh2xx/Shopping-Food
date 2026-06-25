@@ -21,6 +21,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
         private readonly IUserRepository _userRepository;
         private readonly ILoyaltyPointRepository _loyaltyPointRepository;
         private readonly ILoyaltyPointHistoryRepository _loyaltyPointHistoryRepository;
+        private readonly IMemberTierConfigRepository _memberTierConfigRepository;
         private readonly IUnitOfWork _unitOfWork;
 
         public ConfirmDeliverySuccessHandler(
@@ -30,6 +31,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             IUserRepository userRepository,
             ILoyaltyPointRepository loyaltyPointRepository, 
             ILoyaltyPointHistoryRepository loyaltyPointHistoryRepository,
+            IMemberTierConfigRepository memberTierConfigRepository,
             IUnitOfWork unitOfWork)
         {
             _orderRepository = orderRepository;
@@ -38,6 +40,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             _userRepository = userRepository;
             _loyaltyPointRepository = loyaltyPointRepository;
             _loyaltyPointHistoryRepository = loyaltyPointHistoryRepository;
+            _memberTierConfigRepository = memberTierConfigRepository;
             _unitOfWork = unitOfWork;
         }
 
@@ -97,14 +100,15 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             var userId = order.UserAccountId.Value;
             var pointEarned = (int)(order.TotalAmount / 10000); // 10k = 1 điểm
 
-            if(pointEarned <= 0) return;
+            if (pointEarned <= 0) return;
 
             var loyaltyPoints = (await _loyaltyPointRepository.GetAsync(
                 predicate: lp => lp.UserAccountId == userId,
                 disableTracking: false
-                )).FirstOrDefault();
+            )).FirstOrDefault();
 
-            if(loyaltyPoints == null)
+            bool isNew = false;
+            if (loyaltyPoints == null)
             {
                 loyaltyPoints = new LoyaltyPoint
                 {
@@ -114,15 +118,24 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     Tier = MemberTier.Bronze,
                     UpdatedAt = DateTime.UtcNow,
                 };
-                _loyaltyPointRepository.Add(loyaltyPoints);
+                isNew = true;
             }
 
             loyaltyPoints.PointsBalance += pointEarned;
             loyaltyPoints.TotalEarnedPoints += pointEarned;
             loyaltyPoints.UpdatedAt = DateTime.UtcNow;
-            loyaltyPoints.Tier = DetermineMemberTier(loyaltyPoints.TotalEarnedPoints);
 
-            _loyaltyPointRepository.Update(loyaltyPoints);
+            var tierConfigs = await _memberTierConfigRepository.GetAllAsync();
+            loyaltyPoints.Tier = DetermineMemberTier(loyaltyPoints.TotalEarnedPoints, tierConfigs.ToList());
+
+            if (isNew)
+            {
+                _loyaltyPointRepository.Add(loyaltyPoints);
+            }
+            else
+            {
+                _loyaltyPointRepository.Update(loyaltyPoints);
+            }
 
             var history = new LoyaltyPointHistory
             {
@@ -141,20 +154,25 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 UserId = userId,
                 Title = "Tích lũy điểm thưởng thành công",
                 Message = $"Chúc mừng! Bạn đã tích lũy thành công {pointEarned} điểm thưởng từ đơn hàng #{order.Id}. Hạng thành viên hiện tại: {loyaltyPoints.Tier.ToString()}.",
-                NotificationType = null,
+                NotificationType = NotificationType.Loyalty,
                 IsRead = false,
                 CreateAt = DateTime.UtcNow
             };
             _notificationRepository.Add(notification);
         }
 
-        private MemberTier DetermineMemberTier(int totalEarnedPoints)
+        private MemberTier DetermineMemberTier(int totalEarnedPoints, List<MemberTierConfig> tiers)
         {
-            if (totalEarnedPoints >= 1000) return MemberTier.Diamond;
-            if(totalEarnedPoints >= 500) return MemberTier.Gold;
-            if(totalEarnedPoints >= 100) return MemberTier.Silver;
+            var diamondMin = tiers.FirstOrDefault(c => c.Tier == MemberTier.Diamond)?.MinPoints ?? 1000;
+            var goldMin = tiers.FirstOrDefault(c => c.Tier == MemberTier.Gold)?.MinPoints ?? 500;
+            var silverMin = tiers.FirstOrDefault(c => c.Tier == MemberTier.Silver)?.MinPoints ?? 100;
+
+            if (totalEarnedPoints >= diamondMin) return MemberTier.Diamond;
+            if (totalEarnedPoints >= goldMin) return MemberTier.Gold;
+            if (totalEarnedPoints >= silverMin) return MemberTier.Silver;
             return MemberTier.Bronze;
         }
+
 
         private async Task<ShipperProfile?> GetActiveShipperProfileAsync(Guid userId)
         {
@@ -194,7 +212,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     UserId = order.UserAccountId.Value,
                     Title = "Giao hàng thành công",
                     Message = $"Đơn hàng của bạn đã được giao thành công bởi tài xế '{shipperName}'. Chúc bạn ngon miệng!",
-                    NotificationType = null,
+                    NotificationType = NotificationType.Delivery,
                     IsRead = false,
                     CreateAt = DateTime.UtcNow
                 };

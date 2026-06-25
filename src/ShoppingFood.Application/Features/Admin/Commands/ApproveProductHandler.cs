@@ -150,7 +150,7 @@ namespace ShoppingFood.Application.Features.Admin.Commands
                     Message = isApproved
                         ? $"Sản phẩm '{product.ItemName}' của cửa hàng '{product.Restaurant?.RestaurantName}' đã được phê duyệt."
                         : $"Sản phẩm '{product.ItemName}' của cửa hàng '{product.Restaurant?.RestaurantName}' đã bị từ chối.",
-                    NotificationType = null,
+                    NotificationType = NotificationType.System,
                     IsRead = false,
                     CreateAt = DateTime.UtcNow
                 };

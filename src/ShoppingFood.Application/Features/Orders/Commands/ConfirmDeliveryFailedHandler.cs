@@ -118,7 +118,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     UserId = order.UserAccountId.Value,
                     Title = "Giao hàng không thành công",
                     Message = $"Đơn hàng của bạn không được giao thành công bởi tài xế '{shipperName}'. Lý do: {reason}.",
-                    NotificationType = null,
+                    NotificationType = NotificationType.Delivery,
                     IsRead = false,
                     CreateAt = DateTime.UtcNow
                 };

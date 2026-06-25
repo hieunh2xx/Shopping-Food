@@ -127,4 +127,13 @@ namespace ShoppingFood.Domain.Enums
         Approved,
         Rejected
     }
+
+    public enum NotificationType
+    {
+        System,
+        Order,
+        Delivery,
+        Loyalty,
+        Review
+    }
 }

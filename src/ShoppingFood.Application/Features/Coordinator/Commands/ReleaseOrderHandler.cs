@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
@@ -121,7 +121,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
                     UserId = oldShipper.UserProfile.UserAccountId,
                     Title = "Đơn hàng đã được chuyển giao",
                     Message = $"Đơn hàng mã '{order.Id}' của bạn đã bị chuyển cho tài xế khác. Lý do: {reason}",
-                    NotificationType = "OrderReassigned",
+                    NotificationType = NotificationType.Delivery,
                     IsRead = false,
                     CreateAt = DateTime.UtcNow
                 };
@@ -133,7 +133,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
                 UserId = newShipper.UserProfile.UserAccountId,
                 Title = "Bạn có đơn hàng mới",
                 Message = $"Bạn được gán trực tiếp đơn hàng mã '{order.Id}' từ Điều phối viên.",
-                NotificationType = "OrderAssigned",
+                NotificationType = NotificationType.Delivery,
                 IsRead = false,
                 CreateAt = DateTime.UtcNow
             };
@@ -146,7 +146,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
                     UserId = order.UserAccountId.Value,
                     Title = "Đơn hàng thay đổi tài xế",
                     Message = $"Đơn hàng mã '{order.Id}' của bạn đã được chuyển giao cho tài xế mới: '{newShipper.UserProfile.FullName}'.",
-                    NotificationType = "OrderReassigning",
+                    NotificationType = NotificationType.Delivery,
                     IsRead = false,
                     CreateAt = DateTime.UtcNow
                 };
@@ -263,7 +263,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
                     UserId = shipper.UserProfile.UserAccountId,
                     Title = "Thu hồi đơn hàng",
                     Message = $"Đơn hàng mã '{order.Id}' của bạn đã bị thu hồi bởi Điều phối viên. Lý do: {reason}",
-                    NotificationType = null,
+                    NotificationType = NotificationType.Delivery,
                     IsRead = false,
                     CreateAt = DateTime.UtcNow
                 };
@@ -278,7 +278,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
                     UserId = order.UserAccountId.Value,
                     Title = "Đơn hàng đang được điều phối lại",
                     Message = $"Đơn hàng mã '{order.Id}' của bạn đang được tìm kiếm tài xế mới.",
-                    NotificationType = null,
+                    NotificationType = NotificationType.Delivery,
                     IsRead = false,
                     CreateAt = DateTime.UtcNow
                 };

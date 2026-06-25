@@ -48,6 +48,7 @@ namespace ShoppingFood.Domain.Context
         public DbSet<BuyXGetYPromotion> BuyOneGetOnePrograms { get; set; } = null!;
         public DbSet<FlashSale> FlashSales { get; set; } = null!;
         public DbSet<FlashSaleProduct> FlashSaleProducts { get; set; } = null!;
+        public DbSet<MemberTierConfig> MemberTierConfigs { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -430,7 +431,7 @@ namespace ShoppingFood.Domain.Context
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Title).IsRequired().HasMaxLength(150);
                 entity.Property(e => e.Message).IsRequired().HasMaxLength(500);
-                entity.Property(e => e.NotificationType).IsRequired(false);
+                entity.Property(e => e.NotificationType).HasConversion<string>().IsRequired(false);
                 entity.Property(e => e.IsRead).IsRequired();
                 entity.Property(e => e.CreateAt);
 
@@ -750,6 +751,17 @@ namespace ShoppingFood.Domain.Context
                     .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasQueryFilter(fsp => !fsp.FlashSale.IsDeleted);
+            });
+
+            modelBuilder.Entity<MemberTierConfig>(entity =>
+            {
+                entity.ToTable("MEMBER_TIER_CONFIG");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Tier).HasConversion<string>().IsRequired();
+
+                entity.HasData(new MemberTierConfig { Id = Guid.NewGuid(), Tier = MemberTier.Silver, MinPoints = 100, CreatedAt = DateTime.UtcNow },
+                               new MemberTierConfig { Id = Guid.NewGuid(), Tier = MemberTier.Gold, MinPoints = 500, CreatedAt = DateTime.UtcNow },
+                               new MemberTierConfig { Id = Guid.NewGuid(), Tier = MemberTier.Diamond, MinPoints = 1000, CreatedAt = DateTime.UtcNow });
             });
         }
     }

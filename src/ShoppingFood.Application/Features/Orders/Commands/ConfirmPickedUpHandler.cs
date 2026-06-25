@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
@@ -117,7 +117,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     UserId = order.UserAccountId.Value,
                     Title = "Đơn hàng đang trên đường giao",
                     Message = $"Tài xế '{shipperName}' đã lấy đồ ăn thành công và đang trên đường giao tới địa chỉ của bạn.",
-                    NotificationType = null,
+                    NotificationType = NotificationType.Delivery,
                     IsRead = false,
                     CreateAt = DateTime.UtcNow
 

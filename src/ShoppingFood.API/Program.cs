@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using ShoppingFood.API.Filters;
+using ShoppingFood.API.Workers;
 using ShoppingFood.Application;
 using ShoppingFood.Core.Middlewares;
 using ShoppingFood.Domain.Context;
@@ -21,6 +22,8 @@ builder.Services.AddControllers(options =>
 builder.Services.AddRepositoryServices(builder.Configuration);
 builder.Services.AddApplicationServices();
 builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddHostedService<MemberTierEvaluationWorker>();
 
 // Add API documentation via Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();

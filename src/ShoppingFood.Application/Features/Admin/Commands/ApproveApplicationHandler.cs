@@ -188,7 +188,7 @@ namespace ShoppingFood.Application.Features.Admin.Commands
                     Message = isApproved
                         ? $"Đơn đăng ký đối tác cửa hàng '{application.BusinessName}' của bạn đã được phê duyệt."
                         : $"Đơn đăng ký đối tác cửa hàng '{application.BusinessName}' của bạn đã bị từ chối. Lý do: {application.RejectionReason}.",
-                    NotificationType = null,
+                    NotificationType = NotificationType.System,
                     IsRead = false,
                     CreateAt = DateTime.UtcNow
                 };
