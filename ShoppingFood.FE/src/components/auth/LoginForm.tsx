@@ -18,7 +18,7 @@ export function LoginForm() {
   const { login, sendLoginOtp, verifyLoginOtp, verifyUnlockAccount, loginGoogle, loginMicrosoft, loginFirebasePhone, isLoading } = useAuth();
   
   // Step 1: Login
-  const [loginMethod, setLoginMethod] = useState<'standard' | 'phone'>('standard');
+  const [loginMethod] = useState<'standard' | 'phone'>('standard');
   const [userName, setUserName] = useState('');
   const [password, setPassword] = useState('');
   const [loginPhone, setLoginPhone] = useState('');
@@ -64,6 +64,26 @@ export function LoginForm() {
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleRedirectByRole = (role?: string) => {
+    switch (role) {
+      case 'Admin':
+        navigate(ROUTES.ADMIN_DASHBOARD);
+        break;
+      case 'Seller':
+        navigate(ROUTES.SELLER_DASHBOARD);
+        break;
+      case 'Shipper':
+      case 'Coordinator':
+        navigate(ROUTES.ORDERS);
+        break;
+      case 'Customer':
+      case 'Mall':
+      default:
+        navigate(ROUTES.HOME);
+        break;
+    }
+  };
+
   const handleLoginSubmit = async (e?: FormEvent) => {
     if (e) e.preventDefault();
     if (!validateLogin()) return;
@@ -76,7 +96,7 @@ export function LoginForm() {
         setIsLocked(result.isLocked || false);
         setStep(2);
       } else {
-        navigate(ROUTES.HOME);
+        handleRedirectByRole(result.role);
       }
     }
   };
@@ -126,15 +146,15 @@ export function LoginForm() {
     if (e) e.preventDefault();
     if (otpCode.length < 6) return;
     
-    let success = false;
+    let result;
     if (isLocked) {
-      success = await verifyUnlockAccount(preAuthToken, otpCode);
+      result = await verifyUnlockAccount(preAuthToken, otpCode);
     } else {
-      success = await verifyLoginOtp(preAuthToken, otpCode);
+      result = await verifyLoginOtp(preAuthToken, otpCode);
     }
     
-    if (success) {
-      navigate(ROUTES.HOME);
+    if (result.success) {
+      handleRedirectByRole(result.role);
     }
   };
 
@@ -151,9 +171,9 @@ export function LoginForm() {
       const result = await confirmationResult.confirm(otpCode);
       const idToken = await result.user.getIdToken();
       
-      const success = await loginFirebasePhone(idToken);
-      if (success) {
-        navigate(ROUTES.HOME);
+      const res = await loginFirebasePhone(idToken);
+      if (res.success) {
+        handleRedirectByRole(res.role);
       }
     } catch (error) {
       console.error(error);
@@ -163,9 +183,9 @@ export function LoginForm() {
 
   const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
     if (credentialResponse.credential) {
-      const success = await loginGoogle(credentialResponse.credential);
-      if (success) {
-        navigate(ROUTES.HOME);
+      const res = await loginGoogle(credentialResponse.credential);
+      if (res.success) {
+        handleRedirectByRole(res.role);
       }
     }
   };
@@ -180,9 +200,9 @@ export function LoginForm() {
       if (event.data?.type !== 'microsoft-auth-code') return;
       if (!event.data?.code) return;
 
-      const success = await loginMicrosoft(event.data.code, MS_REDIRECT_URI);
-      if (success) {
-        navigate(ROUTES.HOME);
+      const res = await loginMicrosoft(event.data.code, MS_REDIRECT_URI);
+      if (res.success) {
+        handleRedirectByRole(res.role);
       }
     };
 

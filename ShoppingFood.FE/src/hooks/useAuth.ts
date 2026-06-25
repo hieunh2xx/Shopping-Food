@@ -39,7 +39,7 @@ export function useAuth() {
         };
         ctxLogin(loginData.token, userDto);
         toast.success('Đăng nhập thành công!');
-        return { success: true, requireOtp: false };
+        return { success: true, requireOtp: false, role: loginData.role };
       } else {
         setError(response.message);
         toast.error(response.message || 'Đăng nhập thất bại');
@@ -75,17 +75,17 @@ export function useAuth() {
         };
         ctxLogin(loginData.token, userDto);
         toast.success('Đăng nhập Google thành công!');
-        return true;
+        return { success: true, role: loginData.role };
       } else {
         setError(response.message);
         toast.error(response.message || 'Đăng nhập Google thất bại');
-        return false;
+        return { success: false };
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Đăng nhập Google thất bại';
       setError(message);
       toast.error(message);
-      return false;
+      return { success: false };
     } finally {
       setIsLoading(false);
     }
@@ -111,17 +111,17 @@ export function useAuth() {
         };
         ctxLogin(loginData.token, userDto);
         toast.success('Đăng nhập Microsoft thành công');
-        return true;
+        return { success: true, role: loginData.role };
       } else {
         setError(response.message);
         toast.error(response.message || 'Đăng nhập Microsoft thất bại');
-        return false;
+        return { success: false };
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Lỗi kết nối server';
       setError(message);
       toast.error(message);
-      return false;
+      return { success: false };
     } finally {
       setIsLoading(false);
     }
@@ -147,17 +147,17 @@ export function useAuth() {
         };
         ctxLogin(loginData.token, userDto);
         toast.success('Đăng nhập bằng số điện thoại thành công!');
-        return true;
+        return { success: true, role: loginData.role };
       } else {
         setError(response.message);
         toast.error(response.message || 'Đăng nhập thất bại');
-        return false;
+        return { success: false };
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Lỗi kết nối server';
       setError(message);
       toast.error(message);
-      return false;
+      return { success: false };
     } finally {
       setIsLoading(false);
     }
@@ -287,17 +287,17 @@ export function useAuth() {
         };
         ctxLogin(loginData.token, userDto);
         toast.success('Đăng nhập thành công!');
-        return true;
+        return { success: true, role: loginData.role };
       } else {
         setError(response.message);
         toast.error(response.message || 'Xác thực OTP thất bại');
-        return false;
+        return { success: false };
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Xác thực OTP thất bại';
       setError(message);
       toast.error(message);
-      return false;
+      return { success: false };
     } finally {
       setIsLoading(false);
     }
@@ -323,17 +323,17 @@ export function useAuth() {
         };
         ctxLogin(loginData.token, userDto);
         toast.success('Mở khóa và đăng nhập thành công!');
-        return true;
+        return { success: true, role: loginData.role };
       } else {
         setError(response.message);
         toast.error(response.message || 'Xác thực OTP mở khóa thất bại');
-        return false;
+        return { success: false };
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Xác thực OTP mở khóa thất bại';
       setError(message);
       toast.error(message);
-      return false;
+      return { success: false };
     } finally {
       setIsLoading(false);
     }

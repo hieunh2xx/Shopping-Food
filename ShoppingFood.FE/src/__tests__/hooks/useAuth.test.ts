@@ -61,7 +61,7 @@ describe('useAuth Hook', () => {
       loginResult = await result.current.login({ userName: 'testuser', password: 'password' });
     });
 
-    expect(loginResult).toEqual({ success: true, requireOtp: false });
+    expect(loginResult).toEqual({ success: true, requireOtp: false, role: 'Customer' });
     expect(mockCtxLogin).toHaveBeenCalledWith('mock-token', expect.objectContaining({
       userName: 'testuser',
       role: 'Customer',

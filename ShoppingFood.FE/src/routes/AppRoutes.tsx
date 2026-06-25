@@ -46,12 +46,12 @@ export function AppRoutes() {
         {/* Protected Client Routes inside UserLayout */}
         <Route element={<UserLayout />}>
           <Route path={ROUTES.PROFILE} element={
-            <PrivateRoute allowedRoles={['Customer', 'Seller', 'Admin', 'Mall']}>
+            <PrivateRoute allowedRoles={['Customer', 'Seller', 'Admin', 'Mall', 'Shipper', 'Coordinator']}>
               <ProfilePage />
             </PrivateRoute>
           } />
           <Route path={ROUTES.ORDERS} element={
-            <PrivateRoute allowedRoles={['Customer', 'Seller', 'Admin', 'Mall']}>
+            <PrivateRoute allowedRoles={['Customer', 'Seller', 'Admin', 'Mall', 'Shipper', 'Coordinator']}>
               <OrdersPage />
             </PrivateRoute>
           } />
