@@ -12,3 +12,4 @@ export { AdminUsersPage } from './admin/AdminUsersPage';
 export { ProfilePage } from './ProfilePage';
 export { OrdersPage } from './OrdersPage';
 export { NotFoundPage } from './NotFoundPage';
+export { ShipperApplyPage } from './ShipperApplyPage';

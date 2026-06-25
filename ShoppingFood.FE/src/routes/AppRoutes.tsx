@@ -20,7 +20,8 @@ import {
   NotFoundPage,
   ProfilePage,
   OrdersPage,
-  SellerApplyPage
+  SellerApplyPage,
+  ShipperApplyPage
 } from '../pages';
 
 /**
@@ -34,6 +35,7 @@ export function AppRoutes() {
       <Route path={ROUTES.LOGIN} element={<LoginPage />} />
       <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
       <Route path={ROUTES.REGISTER_SELLER} element={<RegisterPage isSeller />} />
+      <Route path={ROUTES.REGISTER_SHIPPER} element={<ShipperApplyPage />} />
 
       {/* Routes with layout */}
       <Route element={<MainLayout />}>

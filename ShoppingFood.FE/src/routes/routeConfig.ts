@@ -7,6 +7,7 @@ export const ROUTES = {
   LOGIN: '/login',
   REGISTER: '/register',
   REGISTER_SELLER: '/register/seller',
+  REGISTER_SHIPPER: '/register/shipper',
   PRODUCTS: '/products',
   PRODUCT_DETAIL: '/products/:id',
   SELLER_DASHBOARD: '/seller',

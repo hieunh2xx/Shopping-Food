@@ -53,9 +53,9 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <a href="#" className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                <Link to={ROUTES.REGISTER_SHIPPER} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
                   Trở thành tài xế
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
