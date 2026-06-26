@@ -46,6 +46,7 @@ namespace ShoppingFood.Application.Features.Users.Queries
                 {
                     sellerInfo = new SellerInfoDto
                     {
+                        RestaurantId = restaurant.Id,
                         RestaurantName = restaurant.RestaurantName,
                         Address = restaurant.Address,
                         AverageRating = restaurant.AverageRating,

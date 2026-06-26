@@ -1,14 +1,14 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
-using ShoppingFood.Domain.Context;
+using ShoppingFood.Domain.Enums;
 using ShoppingFood.Domain.Models;
 using ShoppingFood.Dto.Order;
 using ShoppingFood.Repository.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ShoppingFood.Application.Features.Orders.Queries
@@ -16,10 +16,20 @@ namespace ShoppingFood.Application.Features.Orders.Queries
     public class GetOrderDetailHandler : IRequestHandler<GetOrderDetailQuery, ApiResponse>
     {
         private readonly IOrderRepository _orderRepository;
+        private readonly IUserRepository _userRepository;
+        private readonly IRestaurantProfileRepository _restaurantProfileRepository;
+        private readonly IShipperProfileRepository _shipperProfileRepository;
 
-        public GetOrderDetailHandler(IOrderRepository orderRepository)
+        public GetOrderDetailHandler(
+            IOrderRepository orderRepository,
+            IUserRepository userRepository,
+            IRestaurantProfileRepository restaurantProfileRepository,
+            IShipperProfileRepository shipperProfileRepository)
         {
             _orderRepository = orderRepository;
+            _userRepository = userRepository;
+            _restaurantProfileRepository = restaurantProfileRepository;
+            _shipperProfileRepository = shipperProfileRepository;
         }
 
         public async Task<ApiResponse> Handle(GetOrderDetailQuery request, CancellationToken cancellationToken)
@@ -28,27 +38,88 @@ namespace ShoppingFood.Application.Features.Orders.Queries
             {
                 var orders = await _orderRepository.GetAsync(
                     predicate: o => o.Id == request.OrderId,
-                    include: q => q.Include(o => o.Items),
+                    include: q => q.Include(o => o.Items).ThenInclude(i => i.Product),
                     disableTracking: true
-                    );
+                );
 
                 var order = orders.FirstOrDefault();
-                if(order == null)
+                if (order == null)
                     return ApiResponse.Failure(404, "Order not found");
 
                 if (order.UserAccountId.HasValue)
                 {
-                    if(!request.CurrentUserId.HasValue || order.UserAccountId.Value != request.CurrentUserId.Value)
+                    if (!request.CurrentUserId.HasValue)
+                    {
+                        return ApiResponse.Failure(401, "Unauthorized");
+                    }
+
+                    var isAuthorized = await IsUserAuthorizedForOrder(order, request.CurrentUserId.Value);
+                    if (!isAuthorized)
+                    {
                         return ApiResponse.Failure(403, "You do not have permission to view this order");
+                    }
                 }
 
                 var dto = MapToOrderDetailDto(order);
                 return ApiResponse.Success(dto, "Order details retrieved successfully");
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
                 return ApiResponse.Failure(400, $"An error occurred: {ex.Message}");
             }
+        }
+
+        private async Task<bool> IsUserAuthorizedForOrder(Order order, Guid currentUserId)
+        {
+            // 1. Is Customer?
+            if (order.UserAccountId.HasValue && order.UserAccountId.Value == currentUserId)
+                return true;
+
+            // Get user with Profile
+            var userList = await _userRepository.GetAsync(
+                predicate: u => u.Id == currentUserId,
+                include: q => q.Include(u => u.Profile),
+                disableTracking: true
+            );
+            var user = userList.FirstOrDefault();
+            if (user == null || user.Profile == null)
+                return false;
+
+            var role = user.Profile.Role;
+
+            // 2. Is Admin or Coordinator?
+            if (role == UserRole.Admin || role == UserRole.Coordinator)
+                return true;
+
+            // 3. Is Seller?
+            if (role == UserRole.Seller || role == UserRole.Mall)
+            {
+                var sellerRestaurants = await _restaurantProfileRepository.GetAsync(
+                    predicate: r => r.Owner.UserAccountId == currentUserId,
+                    disableTracking: true
+                );
+                var restaurant = sellerRestaurants.FirstOrDefault();
+                if (restaurant != null && order.Items.Any(i => i.Product != null && i.Product.RestaurantId == restaurant.Id))
+                {
+                    return true;
+                }
+            }
+
+            // 4. Is Shipper?
+            if (role == UserRole.Shipper)
+            {
+                var shipperList = await _shipperProfileRepository.GetAsync(
+                    predicate: s => s.UserProfile.UserAccountId == currentUserId,
+                    disableTracking: true
+                );
+                var shipper = shipperList.FirstOrDefault();
+                if (shipper != null && order.ShipperId.HasValue && order.ShipperId.Value == shipper.Id)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private OrderDetailDto MapToOrderDetailDto(Order order)

@@ -8,6 +8,8 @@ export { AdminDashboardPage } from './AdminDashboardPage';
 export { AdminPermissionsPage } from './admin/AdminPermissionsPage';
 export { SellerApplyPage } from './SellerApplyPage';
 export { SellerProductsPage } from './seller/SellerProductsPage';
+export { SellerOrdersPage } from './seller/SellerOrdersPage';
+export { SellerSettingsPage } from './seller/SellerSettingsPage';
 export { AdminUsersPage } from './admin/AdminUsersPage';
 export { ProfilePage } from './ProfilePage';
 export { OrdersPage } from './OrdersPage';

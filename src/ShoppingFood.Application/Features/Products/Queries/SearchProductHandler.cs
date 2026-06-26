@@ -69,11 +69,17 @@ namespace ShoppingFood.Application.Features.Products.Queries
             Expression<Func<Product, bool>> predicate = p =>
                 (p.Status == ProductStatus.Approved || (userProfileId != null && p.Restaurant.OwnerId == userProfileId)) &&
                 (!hasFilter || (
-                    p.ItemName.ToLower().Contains(filter!) ||
-                    (p.Description != null && p.Description.ToLower().Contains(filter!)) ||
-                    p.Category.Title.ToLower().Contains(filter!) ||
-                    p.Restaurant.RestaurantName.ToLower().Contains(filter!)
+                    request.RestaurantId.HasValue
+                        // Seller context: only search product name and description
+                        ? (p.ItemName.ToLower().Contains(filter!) ||
+                           (p.Description != null && p.Description.ToLower().Contains(filter!)))
+                        // Customer context: search across all fields
+                        : (p.ItemName.ToLower().Contains(filter!) ||
+                           (p.Description != null && p.Description.ToLower().Contains(filter!)) ||
+                           p.Category.Title.ToLower().Contains(filter!) ||
+                           p.Restaurant.RestaurantName.ToLower().Contains(filter!))
                 )) &&
+                (!request.CategoryId.HasValue || p.CategoryId == request.CategoryId.Value) &&
                 (!request.MinPrice.HasValue || p.Price >= request.MinPrice.Value) &&
                 (!request.MaxPrice.HasValue || p.Price <= request.MaxPrice.Value) &&
                 (!request.RestaurantId.HasValue || p.RestaurantId == request.RestaurantId.Value) &&

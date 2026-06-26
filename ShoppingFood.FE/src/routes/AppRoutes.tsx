@@ -16,6 +16,8 @@ import {
   AdminDashboardPage,
   AdminPermissionsPage,
   SellerProductsPage,
+  SellerOrdersPage,
+  SellerSettingsPage,
   AdminUsersPage,
   NotFoundPage,
   ProfilePage,
@@ -71,15 +73,15 @@ export function AppRoutes() {
       <Route
         path={ROUTES.SELLER_DASHBOARD}
         element={
-          <PrivateRoute allowedRoles={['Seller']}>
+          <PrivateRoute allowedRoles={['Seller', 'Mall']}>
             <SellerLayout />
           </PrivateRoute>
         }
       >
         <Route index element={<SellerDashboardPage />} />
         <Route path="products" element={<SellerProductsPage />} />
-        <Route path="orders" element={<div className="p-8"><h2 className="text-2xl font-bold">Quản lý đơn hàng</h2><p className="mt-4 text-gray-500">Đang phát triển...</p></div>} />
-        <Route path="settings" element={<div className="p-8"><h2 className="text-2xl font-bold">Cấu hình cửa hàng</h2><p className="mt-4 text-gray-500">Đang phát triển...</p></div>} />
+        <Route path="orders" element={<SellerOrdersPage />} />
+        <Route path="settings" element={<SellerSettingsPage />} />
       </Route>
 
       {/* Admin routes - protected with AdminLayout */}

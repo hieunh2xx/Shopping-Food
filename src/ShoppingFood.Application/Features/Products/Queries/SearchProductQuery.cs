@@ -9,6 +9,7 @@ namespace ShoppingFood.Application.Features.Products.Queries
         public decimal? MinPrice { get; set; }
         public decimal? MaxPrice { get; set; }
         public Guid? RestaurantId { get; set; }
+        public Guid? CategoryId { get; set; }
         public string? SortBy { get; set; }
         public double? MinRating { get; set; }
         public bool? IsFreeship { get; set; }

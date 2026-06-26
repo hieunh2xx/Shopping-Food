@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using ShoppingFood.Application.Features.Restaurants.Commands;
 using ShoppingFood.Application.Features.Restaurants.Queries;
@@ -17,6 +17,22 @@ namespace ShoppingFood.API.Controllers
         {
             var respone = await _mediator.Send(new GetRestaurantDetailQuery(id));
             return Ok(respone);
+        }
+
+        [HttpGet("DashboardStats")]
+        public async Task<ActionResult<ApiResponse>> GetDashboardStats([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
+        {
+            var query = new GetRestaurantDashboardStatsQuery
+            {
+                StartDate = startDate,
+                EndDate = endDate
+            };
+            if (userDto != null)
+            {
+                query.CurrentUserId = userDto.Id;
+            }
+            var response = await _mediator.Send(query);
+            return Ok(response);
         }
 
         [HttpGet("Favorites")]

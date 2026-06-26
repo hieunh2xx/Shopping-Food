@@ -11,7 +11,7 @@ export function ProductSearch({ onSearch }: ProductSearchProps) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     onSearch({
-      keyword: formData.get('keyword') as string,
+      filter: formData.get('keyword') as string,
     });
   };
 

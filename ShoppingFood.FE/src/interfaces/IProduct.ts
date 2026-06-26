@@ -102,11 +102,14 @@ export interface IUpdateAvailabilityRequest {
  * Search product query
  */
 export interface ISearchProductQuery {
-  keyword?: string;
-  category?: string;
+  filter?: string;
   minPrice?: number;
   maxPrice?: number;
   restaurantId?: string;
+  categoryId?: string;
   skip?: number;
   take?: number;
+  sortBy?: string;
+  minRating?: number;
+  isFreeship?: boolean;
 }

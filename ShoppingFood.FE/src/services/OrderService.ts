@@ -23,6 +23,13 @@ class OrderService {
     return httpClient.get<IApiResponse<IOrderSummary[]>>(API_ENDPOINTS.ORDER.MY_ORDERS);
   }
 
+  /**
+   * Get orders for the restaurant owned by the current seller
+   */
+  public async getRestaurantOrders(params?: { status?: string; skip?: number; take?: number }): Promise<IApiResponse<any[]>> {
+    return httpClient.get<IApiResponse<any[]>>(API_ENDPOINTS.ORDER.RESTAURANT_ORDERS, { params });
+  }
+
   public async getOrderDetails(id: string): Promise<IApiResponse<any>> {
     return httpClient.get<IApiResponse<any>>(API_ENDPOINTS.ORDER.DETAILS(id));
   }

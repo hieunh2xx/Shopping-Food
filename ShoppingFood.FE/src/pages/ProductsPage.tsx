@@ -27,16 +27,17 @@ export function ProductsPage() {
     const formData = new FormData(e.currentTarget);
     setSearchQuery((prev) => ({
       ...prev,
-      keyword: formData.get('keyword') as string,
+      filter: formData.get('keyword') as string,
       skip: 0,
     }));
   };
 
   const handleCategoryChange = (categoryId: string) => {
     setActiveCategory(categoryId);
+    const cat = categories.find(c => c.id === categoryId);
     setSearchQuery((prev) => ({
       ...prev,
-      category: categoryId === 'all' ? undefined : categoryId,
+      filter: categoryId === 'all' ? undefined : cat?.title,
       skip: 0,
     }));
   };

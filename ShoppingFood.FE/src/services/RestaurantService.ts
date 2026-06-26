@@ -15,6 +15,10 @@ class RestaurantService {
     return httpClient.get<IApiResponse<IRestaurantProfileDto>>(API_ENDPOINTS.RESTAURANT.BY_ID(id));
   }
 
+  async getDashboardStats(params?: { startDate?: string; endDate?: string }): Promise<IApiResponse<any>> {
+    return httpClient.get<IApiResponse<any>>(API_ENDPOINTS.RESTAURANT.DASHBOARD_STATS, { params });
+  }
+
   async getFavorites(params?: { skip?: number; take?: number }): Promise<IApiResponse<IRestaurantProfileDto[]>> {
     return httpClient.get<IApiResponse<IRestaurantProfileDto[]>>(API_ENDPOINTS.RESTAURANT.FAVORITES, {
       params,

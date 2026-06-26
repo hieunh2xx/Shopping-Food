@@ -12,6 +12,10 @@ import type { IApiResponse, IMenuCategoryDto, IAddMenuCategoryRequest, IUpdateMe
 class MenuCategoryService extends BaseService<IMenuCategoryDto, IAddMenuCategoryRequest, IUpdateMenuCategoryRequest> {
   protected readonly endpoint = API_ENDPOINTS.MENU_CATEGORY.BASE;
 
+  async getByRestaurant(restaurantId: string): Promise<IApiResponse<IMenuCategoryDto[]>> {
+    return httpClient.get<IApiResponse<IMenuCategoryDto[]>>(API_ENDPOINTS.MENU_CATEGORY.BY_RESTAURANT(restaurantId));
+  }
+
   override async update(id: string, data: IUpdateMenuCategoryRequest): Promise<IApiResponse<IMenuCategoryDto>> {
     return httpClient.put<IApiResponse<IMenuCategoryDto>>(this.endpoint, { ...data, id });
   }

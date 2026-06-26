@@ -30,6 +30,7 @@ export const API_ENDPOINTS = {
   ORDER: {
     BASE: '/Order',
     MY_ORDERS: '/Order/MyOrders', // GET
+    RESTAURANT_ORDERS: '/Order/RestaurantOrders', // GET
     DETAILS: (id: string) => `/Order/details/${id}`, // GET
     CHECKOUT: '/Order/checkout', // POST
     CHECKOUT_SEND_OTP: '/Order/checkout/sent-otp', // POST
@@ -66,6 +67,7 @@ export const API_ENDPOINTS = {
     BASE: '/MenuCategory',
     CREATE: '/MenuCategory',   // POST
     UPDATE: '/MenuCategory',   // PUT
+    BY_RESTAURANT: (restaurantId: string) => `/MenuCategory/${restaurantId}`, // GET
   },
 
   // === Admin (AdminController) ===
@@ -109,6 +111,7 @@ export const API_ENDPOINTS = {
   RESTAURANT: {
     BASE: '/Restaurant',
     BY_ID: (id: string) => `/Restaurant/${id}`,
+    DASHBOARD_STATS: '/Restaurant/DashboardStats',
     FAVORITES: '/Restaurant/Favorites',
     TOGGLE_FAVORITE: (id: string) => `/Restaurant/${id}/Favorite`,
     UPDATE_BASIC_INFO: '/Restaurant/basic-info',
