@@ -21,6 +21,10 @@ namespace ShoppingFood.Dto.Restaurant
         public double AverageRating { get; set; }
         public int ReviewCount { get; set; }
         public DateTime CreatedAt { get; set; }
+        public string? OpeningTime { get; set; }
+        public string? ClosingTime { get; set; }
+        public double? MaxDeliveryRadiusKm { get; set; }
+        public decimal ShippingFee { get; set; }
 
         public List<ProductDto> Products { get; set; } = new List<ProductDto>();
     }

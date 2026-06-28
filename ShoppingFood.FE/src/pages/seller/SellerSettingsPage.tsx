@@ -7,9 +7,7 @@ import toast from 'react-hot-toast';
 import { 
   Store, 
   Clock, 
-  MapPin, 
   Navigation, 
-  DollarSign, 
   Activity, 
   Save, 
   Info,
@@ -26,7 +24,8 @@ export function SellerSettingsPage() {
     restaurantName: '',
     address: '',
     phone: '',
-    email: ''
+    email: '',
+    logoUrl: ''
   });
 
   const [operatingHours, setOperatingHours] = useState({
@@ -49,30 +48,35 @@ export function SellerSettingsPage() {
       if (!res.error && res.data) {
         setProfile(res.data);
         const seller = res.data.sellerInfo;
-        if (seller) {
-          setBasicInfo({
-            restaurantName: seller.restaurantName || '',
-            address: seller.address || '',
-            phone: seller.phone || '',
-            email: seller.email || ''
-          });
+        if (seller?.restaurantId) {
+          const restRes = await restaurantService.getDetail(seller.restaurantId);
+          if (!restRes.error && restRes.data) {
+            const rest = restRes.data;
+            setBasicInfo({
+              restaurantName: rest.restaurantName || '',
+              address: rest.address || '',
+              phone: rest.phone || '',
+              email: rest.email || '',
+              logoUrl: rest.logoUrl || ''
+            });
 
-          // Format TimeSpan (e.g., "08:00:00" -> "08:00")
-          const formatTime = (timeStr?: string) => {
-            if (!timeStr) return '08:00';
-            const parts = timeStr.split(':');
-            if (parts.length >= 2) return `${parts[0]}:${parts[1]}`;
-            return '08:00';
-          };
+            // Format TimeSpan (e.g., "08:00:00" -> "08:00")
+            const formatTime = (timeStr?: string) => {
+              if (!timeStr) return '08:00';
+              const parts = timeStr.split(':');
+              if (parts.length >= 2) return `${parts[0]}:${parts[1]}`;
+              return '08:00';
+            };
 
-          setOperatingHours({
-            openingTime: formatTime(seller.openingTime),
-            closingTime: formatTime(seller.closingTime)
-          });
+            setOperatingHours({
+              openingTime: formatTime((rest as any).openingTime),
+              closingTime: formatTime((rest as any).closingTime)
+            });
 
-          setStatus((seller.status === 'Active' ? 'Active' : 'Inactive') as 'Active' | 'Inactive');
-          setDeliveryRadius(seller.maxDeliveryRadiusKm || 5);
-          setShippingFee(seller.shippingFee || 0);
+            setStatus((rest.status === 'Active' ? 'Active' : 'Inactive') as 'Active' | 'Inactive');
+            setDeliveryRadius((rest as any).maxDeliveryRadiusKm || 5);
+            setShippingFee((rest as any).shippingFee || 0);
+          }
         }
       } else {
         toast.error(res.message || 'Lỗi khi tải thông tin cá nhân');
@@ -94,7 +98,13 @@ export function SellerSettingsPage() {
     setIsSaving(true);
     const toastId = toast.loading('Đang cập nhật thông tin cửa hàng...');
     try {
-      const res = await restaurantService.updateBasicInfo(basicInfo);
+      const res = await restaurantService.updateBasicInfo({
+        restaurantName: basicInfo.restaurantName,
+        phone: basicInfo.phone,
+        logoUrl: basicInfo.logoUrl || undefined,
+        latitude: 0,
+        longitude: 0,
+      });
       if (!res.error) {
         toast.success('Đã cập nhật thông tin thành công!', { id: toastId });
         fetchProfile();
@@ -113,10 +123,10 @@ export function SellerSettingsPage() {
     setIsSaving(true);
     const toastId = toast.loading('Đang cập nhật giờ hoạt động...');
     try {
-      // API expects TimeSpan formatted string like "hh:mm:ss"
+      // BE expects "HH:mm" format (e.g. "08:00")
       const res = await restaurantService.updateOperatingHours({
-        openingTime: `${operatingHours.openingTime}:00`,
-        closingTime: `${operatingHours.closingTime}:00`
+        openingTime: operatingHours.openingTime,
+        closingTime: operatingHours.closingTime
       });
       if (!res.error) {
         toast.success('Đã cập nhật giờ hoạt động thành công!', { id: toastId });
@@ -135,7 +145,7 @@ export function SellerSettingsPage() {
     setIsSaving(true);
     const toastId = toast.loading('Đang cập nhật trạng thái hoạt động...');
     try {
-      const res = await restaurantService.updateStatus({ status: newStatus });
+      const res = await restaurantService.updateStatus({ isTemporarilyClosed: newStatus !== 'Active' });
       if (!res.error) {
         toast.success(`Cửa hàng đã ${newStatus === 'Active' ? 'mở cửa' : 'tạm đóng cửa'}!`, { id: toastId });
         setStatus(newStatus);

@@ -16,5 +16,6 @@ namespace ShoppingFood.Application.Features.Products.Queries
         public double? UserLatitude { get; set; }
         public double? UserLongitude { get; set; }
         public double? MaxDistanceInKm { get; set; }
+        public string? Status { get; set; }
     }
 }

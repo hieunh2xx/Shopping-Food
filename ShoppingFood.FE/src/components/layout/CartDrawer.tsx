@@ -47,7 +47,20 @@ export function CartDrawer() {
   // Calculate selected total
   const selectedTotal = useMemo(() => {
     if (!selectedProvider || !groupedItems[selectedProvider]) return 0;
-    return groupedItems[selectedProvider].items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+    return groupedItems[selectedProvider].items.reduce((sum, item) => {
+      let itemPrice = item.product.price;
+      if (item.selectedSize) {
+        const sizeOpt = item.product.sizes?.find(s => s.sizeName === item.selectedSize);
+        if (sizeOpt) itemPrice += sizeOpt.extraPrice;
+      }
+      if (item.selectedToppings && item.selectedToppings.length > 0) {
+        item.selectedToppings.forEach(topName => {
+          const topOpt = item.product.toppings?.find(t => t.name === topName || (t as any).toppingName === topName);
+          if (topOpt) itemPrice += topOpt.price;
+        });
+      }
+      return sum + (itemPrice * item.quantity);
+    }, 0);
   }, [selectedProvider, groupedItems]);
 
   const handleCheckout = () => {
@@ -147,49 +160,80 @@ export function CartDrawer() {
                           </label>
 
                           <ul className="p-2 space-y-2">
-                            {group.items.map((item) => (
-                              <li key={item.product.id} className="flex gap-4 p-3 rounded-2xl hover:bg-gray-50 transition-colors group/item">
-                                <div className="w-20 h-20 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0 shadow-sm relative">
-                                  {item.product.primaryImageUrl ? (
-                                    <img src={item.product.primaryImageUrl} alt={item.product.itemName} className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-110" />
-                                  ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-2xl">🍜</div>
-                                  )}
-                                </div>
-                                <div className="flex-1 flex flex-col py-1">
-                                  <div className="flex justify-between items-start gap-2 mb-2">
-                                    <h4 className="font-semibold text-gray-800 text-sm line-clamp-2 leading-tight">{item.product.itemName}</h4>
-                                    <button
-                                      onClick={() => removeItem(item.product.id)}
-                                      className="text-gray-300 hover:text-rose-500 transition-colors mt-0.5"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </button>
+                            {group.items.map((item) => {
+                              let itemUnitPrice = item.product.price;
+                              if (item.selectedSize) {
+                                const sizeOpt = item.product.sizes?.find(s => s.sizeName === item.selectedSize);
+                                if (sizeOpt) itemUnitPrice += sizeOpt.extraPrice;
+                              }
+                              if (item.selectedToppings && item.selectedToppings.length > 0) {
+                                item.selectedToppings.forEach(topName => {
+                                  const topOpt = item.product.toppings?.find(t => t.name === topName || (t as any).toppingName === topName);
+                                  if (topOpt) itemUnitPrice += topOpt.price;
+                                });
+                              }
+
+                              const itemKey = `${item.product.id}-${item.selectedSize || 'default'}-${item.selectedToppings?.sort().join(',') || ''}`;
+
+                              return (
+                                <li key={itemKey} className="flex gap-4 p-3 rounded-2xl hover:bg-gray-50 transition-colors group/item">
+                                  <div className="w-20 h-20 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0 shadow-sm relative">
+                                    {item.product.primaryImageUrl ? (
+                                      <img src={item.product.primaryImageUrl} alt={item.product.itemName} className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-110" />
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center text-2xl">🍜</div>
+                                    )}
                                   </div>
-                                  
-                                  <div className="flex items-end justify-between mt-auto">
-                                    <p className="text-orange-600 font-bold tracking-tight">
-                                      {formatCurrency(item.product.price * item.quantity)}
-                                    </p>
-                                    <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-full p-1 shadow-sm">
+                                  <div className="flex-1 flex flex-col py-1">
+                                    <div className="flex justify-between items-start gap-2 mb-1">
+                                      <h4 className="font-semibold text-gray-800 text-sm line-clamp-2 leading-tight">{item.product.itemName}</h4>
                                       <button
-                                        onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                                        className="w-7 h-7 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                                        onClick={() => removeItem(item.product.id, item.selectedSize, item.selectedToppings)}
+                                        className="text-gray-300 hover:text-rose-500 transition-colors mt-0.5"
                                       >
-                                        <Minus className="w-3 h-3" />
-                                      </button>
-                                      <span className="text-sm font-semibold w-6 text-center text-gray-900">{item.quantity}</span>
-                                      <button
-                                        onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                                        className="w-7 h-7 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-                                      >
-                                        <Plus className="w-3 h-3" />
+                                        <Trash2 className="w-4 h-4" />
                                       </button>
                                     </div>
+
+                                    {(item.selectedSize || (item.selectedToppings && item.selectedToppings.length > 0)) && (
+                                      <div className="flex flex-wrap gap-1 mb-2">
+                                        {item.selectedSize && (
+                                          <span className="text-[10px] font-semibold bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded">
+                                            Size: {item.selectedSize}
+                                          </span>
+                                        )}
+                                        {item.selectedToppings?.map((topping, idx) => (
+                                          <span key={idx} className="text-[10px] font-medium bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                                            +{topping}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                    
+                                    <div className="flex items-end justify-between mt-auto">
+                                      <p className="text-orange-600 font-bold tracking-tight">
+                                        {formatCurrency(itemUnitPrice * item.quantity)}
+                                      </p>
+                                      <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-full p-1 shadow-sm">
+                                        <button
+                                          onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.selectedSize, item.selectedToppings)}
+                                          className="w-7 h-7 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                                        >
+                                          <Minus className="w-3 h-3" />
+                                        </button>
+                                        <span className="text-sm font-semibold w-6 text-center text-gray-900">{item.quantity}</span>
+                                        <button
+                                          onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.selectedSize, item.selectedToppings)}
+                                          className="w-7 h-7 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                                        >
+                                          <Plus className="w-3 h-3" />
+                                        </button>
+                                      </div>
+                                    </div>
                                   </div>
-                                </div>
-                              </li>
-                            ))}
+                                </li>
+                              );
+                            })}
                           </ul>
                         </div>
                       );

@@ -5,8 +5,6 @@ import type { IApiResponse, IApproveApplicationRequest, IApproveProductRequest }
 
 /**
  * Admin Service — handles admin-specific endpoints
- * 
- * Extends BaseService with approval actions.
  */
 class AdminService extends BaseService<unknown> {
   protected readonly endpoint = API_ENDPOINTS.ADMIN.BASE;
@@ -17,6 +15,14 @@ class AdminService extends BaseService<unknown> {
    */
   async approveSellerApplication(data: IApproveApplicationRequest): Promise<IApiResponse<void>> {
     return httpClient.post<IApiResponse<void>>(`${this.endpoint}/ApproveSellerApplication`, data);
+  }
+
+  async getSellerApplications(params?: { status?: string; skip?: number; take?: number }): Promise<IApiResponse<any>> {
+    return httpClient.get<IApiResponse<any>>(API_ENDPOINTS.ADMIN.SELLER_APPLICATIONS, { params });
+  }
+
+  async getShipperApplications(params?: { status?: string; skip?: number; take?: number }): Promise<IApiResponse<any>> {
+    return httpClient.get<IApiResponse<any>>(API_ENDPOINTS.ADMIN.SHIPPER_APPLICATIONS, { params });
   }
 
   /**
@@ -56,3 +62,4 @@ class AdminService extends BaseService<unknown> {
 
 // Export singleton instance
 export const adminService = new AdminService();
+export default adminService;

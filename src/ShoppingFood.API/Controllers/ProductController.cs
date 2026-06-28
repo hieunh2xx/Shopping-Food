@@ -86,6 +86,10 @@ namespace ShoppingFood.API.Controllers
         public async Task<ActionResult<ApiResponse>> UpdateAvailability(Guid id, [FromBody] UpdateProductAvailabilityCommand command)
         {
             command.Id = id;
+            if (userDto != null)
+            {
+                command.CurrentUserId = userDto.Id;
+            }
             var response = await _mediator.Send(command);
             return Ok(response);
         }
@@ -93,6 +97,10 @@ namespace ShoppingFood.API.Controllers
         [HttpPost("Report")]
         public async Task<ActionResult<ApiResponse>> ReportProduct([FromBody] CreateProductReportCommand command)
         {
+            if (userDto != null)
+            {
+                command.CurrentUserId = userDto.Id;
+            }
             var response = await _mediator.Send(command);
             return Ok(response);
         }

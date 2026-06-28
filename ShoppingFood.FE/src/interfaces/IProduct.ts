@@ -40,8 +40,9 @@ export interface IProductToppingDto {
  */
 export interface IProductSizeDto {
   id: string;
-  name: string;
-  priceAdjustment: number;
+  sizeName: string;
+  extraPrice: number;
+  isDefault?: boolean;
 }
 
 /**
@@ -112,4 +113,5 @@ export interface ISearchProductQuery {
   sortBy?: string;
   minRating?: number;
   isFreeship?: boolean;
+  status?: string;
 }

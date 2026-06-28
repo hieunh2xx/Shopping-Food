@@ -47,8 +47,8 @@ export function ProductSearch({ onSearch }: ProductSearchProps) {
         {/* Filter Button */}
         <Button
           type="button"
-          variant="outline"
-          className="px-4 border-gray-200 text-gray-700 hover:bg-gray-50"
+          variant="secondary"
+          className="px-4 border border-gray-200 text-gray-700 hover:bg-gray-50"
         >
           <SlidersHorizontal className="w-5 h-5 mr-2" />
           Lọc

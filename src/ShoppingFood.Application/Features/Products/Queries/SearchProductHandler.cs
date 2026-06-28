@@ -57,17 +57,27 @@ namespace ShoppingFood.Application.Features.Products.Queries
             }
 
             Guid? userProfileId = null;
+            bool isAdmin = false;
             if (request.CurrentUserId.HasValue)
             {
                 var users = await _userRepository.GetAsync(
                     predicate: u => u.Id == request.CurrentUserId.Value,
                     include: q => q.Include(u => u.Profile)
                 );
-                userProfileId = users.FirstOrDefault()?.Profile?.Id;
+                var currentUser = users.FirstOrDefault();
+                userProfileId = currentUser?.Profile?.Id;
+                isAdmin = currentUser?.Profile?.Role == UserRole.Admin;
+            }
+
+            ProductStatus? statusFilter = null;
+            if (!string.IsNullOrEmpty(request.Status) && Enum.TryParse<ProductStatus>(request.Status, true, out var statusParsed))
+            {
+                statusFilter = statusParsed;
             }
 
             Expression<Func<Product, bool>> predicate = p =>
-                (p.Status == ProductStatus.Approved || (userProfileId != null && p.Restaurant.OwnerId == userProfileId)) &&
+                (isAdmin || p.Status == ProductStatus.Approved || (userProfileId != null && p.Restaurant.OwnerId == userProfileId)) &&
+                (!statusFilter.HasValue || p.Status == statusFilter.Value) &&
                 (!hasFilter || (
                     request.RestaurantId.HasValue
                         // Seller context: only search product name and description

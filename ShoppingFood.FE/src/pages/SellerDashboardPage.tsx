@@ -10,12 +10,9 @@ import {
   XOctagon, 
   Calendar, 
   ChevronRight, 
-  ArrowRight,
-  TrendingDown,
-  CheckCircle,
   Utensils
 } from 'lucide-react';
-import { Card, Button } from '../components/common';
+import { Card } from '../components/common';
 
 export function SellerDashboardPage() {
   const [stats, setStats] = useState<any | null>(null);

@@ -18,7 +18,11 @@ import {
   SellerProductsPage,
   SellerOrdersPage,
   SellerSettingsPage,
+  SellerCategoriesPage,
+  SellerToppingsPage,
   AdminUsersPage,
+  AdminSettingsPage,
+  AdminApprovalsPage,
   NotFoundPage,
   ProfilePage,
   OrdersPage,
@@ -82,6 +86,8 @@ export function AppRoutes() {
         <Route path="products" element={<SellerProductsPage />} />
         <Route path="orders" element={<SellerOrdersPage />} />
         <Route path="settings" element={<SellerSettingsPage />} />
+        <Route path="categories" element={<SellerCategoriesPage />} />
+        <Route path="toppings" element={<SellerToppingsPage />} />
       </Route>
 
       {/* Admin routes - protected with AdminLayout */}
@@ -96,8 +102,8 @@ export function AppRoutes() {
         <Route index element={<AdminDashboardPage />} />
         <Route path="users" element={<AdminUsersPage />} />
         <Route path="permissions" element={<AdminPermissionsPage />} />
-        <Route path="approvals" element={<div className="p-8"><h2 className="text-2xl font-bold">Duyệt đối tác</h2><p className="mt-4 text-gray-500">Đang phát triển...</p></div>} />
-        <Route path="settings" element={<div className="p-8"><h2 className="text-2xl font-bold">Cấu hình hệ thống</h2><p className="mt-4 text-gray-500">Đang phát triển...</p></div>} />
+        <Route path="approvals" element={<AdminApprovalsPage />} />
+        <Route path="settings" element={<AdminSettingsPage />} />
       </Route>
 
       {/* Shipper routes - protected with ShipperLayout */}

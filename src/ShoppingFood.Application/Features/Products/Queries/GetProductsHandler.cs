@@ -31,40 +31,30 @@ namespace ShoppingFood.Application.Features.Products.Queries
         public async Task<ApiResponse> Handle(GetProductsQuery request, CancellationToken cancellationToken)
         {
             Guid? userProfileId = null;
+            bool isAdmin = false;
             if (request.CurrentUserId.HasValue)
             {
                 var users = await _userRepository.GetAsync(
                     predicate: u => u.Id == request.CurrentUserId.Value,
                     include: q => q.Include(u => u.Profile)
                 );
-                userProfileId = users.FirstOrDefault()?.Profile?.Id;
+                var currentUser = users.FirstOrDefault();
+                userProfileId = currentUser?.Profile?.Id;
+                isAdmin = currentUser?.Profile?.Role == UserRole.Admin;
+            }
+
+            ProductStatus? statusFilter = null;
+            if (!string.IsNullOrEmpty(request.Status) && Enum.TryParse<ProductStatus>(request.Status, true, out var statusParsed))
+            {
+                statusFilter = statusParsed;
             }
 
             Expression<Func<Product, bool>> predicate = p => 
-                (p.Status == ProductStatus.Approved || (userProfileId != null && p.Restaurant.OwnerId == userProfileId));
+                (isAdmin || p.Status == ProductStatus.Approved || (userProfileId != null && p.Restaurant.OwnerId == userProfileId)) &&
+                (!statusFilter.HasValue || p.Status == statusFilter.Value) &&
+                (!request.CategoryId.HasValue || p.CategoryId == request.CategoryId.Value) &&
+                (string.IsNullOrEmpty(request.Filter) || (p.ItemName.Contains(request.Filter) || p.Category.Title.Contains(request.Filter)));
 
-            if (request.CategoryId.HasValue)
-            {
-                var catId = request.CategoryId.Value;
-                predicate = p => (p.Status == ProductStatus.Approved || (userProfileId != null && p.Restaurant.OwnerId == userProfileId)) && p.CategoryId == catId;
-            }
-
-            if (!string.IsNullOrEmpty(request.Filter))
-            {
-                var filter = request.Filter;
-                if(request.CategoryId.HasValue)
-                {
-                    var catId = request.CategoryId.Value;
-                    predicate = p => (p.Status == ProductStatus.Approved || (userProfileId != null && p.Restaurant.OwnerId == userProfileId)) &&
-                                    p.CategoryId == catId &&
-                                    (p.ItemName.Contains(filter) || (p.Category.Title.Contains(filter)));
-                }
-                else
-                {
-                    predicate = p => (p.Status == ProductStatus.Approved || (userProfileId != null && p.Restaurant.OwnerId == userProfileId)) &&
-                                    p.ItemName.Contains(filter) && p.Category.Title.Contains(filter);
-                }
-            }
 
             var products = await _productRepository.GetAsync(
                 predicate: predicate,

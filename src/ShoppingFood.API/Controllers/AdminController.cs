@@ -1,11 +1,14 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using ShoppingFood.Application.Features.Admin.Commands;
+using ShoppingFood.Application.Features.Admin.Queries;
 using ShoppingFood.Application.Features.LoyaltyPoints.Commands;
 using ShoppingFood.Application.Features.LoyaltyPoints.Queries;
 using ShoppingFood.Application.Features.Products.GlobalMenuCategories.Commands;
 using ShoppingFood.Application.Features.Products.GlobalMenuCategories.Queries;
 using ShoppingFood.Core.Base;
+using System;
+using System.Threading.Tasks;
 
 namespace ShoppingFood.API.Controllers
 {
@@ -13,6 +16,28 @@ namespace ShoppingFood.API.Controllers
     {
         public AdminController(IMediator mediator) : base(mediator) 
         {
+        }
+
+        [HttpGet("SellerApplications")]
+        public async Task<ActionResult<ApiResponse>> GetSellerApplications([FromQuery] GetSellerApplicationsQuery query)
+        {
+            if (userDto != null)
+            {
+                query.CurrentUserId = userDto.Id;
+            }
+            var response = await _mediator.Send(query);
+            return Ok(response);
+        }
+
+        [HttpGet("ShipperApplications")]
+        public async Task<ActionResult<ApiResponse>> GetShipperApplications([FromQuery] GetShipperApplicationsQuery query)
+        {
+            if (userDto != null)
+            {
+                query.CurrentUserId = userDto.Id;
+            }
+            var response = await _mediator.Send(query);
+            return Ok(response);
         }
 
         [HttpPost("ApproveSellerApplication")]

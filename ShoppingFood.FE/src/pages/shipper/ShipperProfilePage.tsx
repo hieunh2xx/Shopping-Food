@@ -80,11 +80,7 @@ export function ShipperProfilePage() {
 
 
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('vi-VN', {
-      day: '2-digit', month: '2-digit', year: 'numeric'
-    });
-  };
+
 
   if (loading) {
     return (

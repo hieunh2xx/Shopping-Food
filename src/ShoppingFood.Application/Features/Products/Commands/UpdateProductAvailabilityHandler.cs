@@ -64,7 +64,6 @@ namespace ShoppingFood.Application.Features.Products.Commands
                 product.AvailableTo = request.AvailableTo;
                 product.UpdatedAt = DateTime.UtcNow;
 
-                _productRepository.Update(product);
                 await _unitOfWork.SaveChangesAsync();
 
                 var productDto = _mapper.Map<ProductDto>(product);

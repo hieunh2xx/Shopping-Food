@@ -76,6 +76,8 @@ export const API_ENDPOINTS = {
     APPROVE_SELLER: '/Admin/ApproveSellerApplication',  // POST
     APPROVE_PRODUCT: '/Admin/ApproveProduct',           // POST
     APPROVE_SHIPPER: '/Admin/approve-shipper-application', // POST
+    SELLER_APPLICATIONS: '/Admin/SellerApplications',   // GET
+    SHIPPER_APPLICATIONS: '/Admin/ShipperApplications', // GET
     GLOBAL_MENU_CATEGORY: '/Admin/GlobalMenuCategory',   // GET, POST
     GLOBAL_MENU_CATEGORY_BY_ID: (id: string) => `/Admin/GlobalMenuCategory/${id}`, // PUT, DELETE
     GLOBAL_MENU_CATEGORY_VISIBILITY: (id: string) => `/Admin/GlobalMenuCategory/Visibility/${id}`, // PATCH

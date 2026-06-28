@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
@@ -20,15 +20,18 @@ namespace ShoppingFood.Application.Features.Restaurants.Queries
     {
         private readonly IRestaurantProfileRepository _restaurantProfileRepository;
         private readonly IProductRepository _productRepository;
+        private readonly IUserRepository _userRepository;
         private readonly IMapper _mapper;
 
         public GetRestaurantDetailHandler(
             IRestaurantProfileRepository restaurantProfileRepository,
             IProductRepository productRepository,
+            IUserRepository userRepository,
             IMapper mapper)
         {
             _restaurantProfileRepository = restaurantProfileRepository;
             _productRepository = productRepository;
+            _userRepository = userRepository;
             _mapper = mapper;
         }
         public async Task<ApiResponse> Handle(GetRestaurantDetailQuery request, CancellationToken cancellationToken)
@@ -43,7 +46,22 @@ namespace ShoppingFood.Application.Features.Restaurants.Queries
             if (restaurant == null)
                 return ApiResponse.Failure(404, "Restaurant was not found");
 
-            if(restaurant.Status != RestaurantStatus.Active)
+            bool isOwnerOrAdmin = false;
+            if (request.CurrentUserId.HasValue)
+            {
+                var users = await _userRepository.GetAsync(
+                    predicate: u => u.Id == request.CurrentUserId.Value,
+                    include: q => q.Include(u => u.Profile)
+                );
+                var currentUser = users.FirstOrDefault();
+                if (currentUser != null && currentUser.Profile != null)
+                {
+                    isOwnerOrAdmin = currentUser.Profile.Role == UserRole.Admin || 
+                                     restaurant.OwnerId == currentUser.Profile.Id;
+                }
+            }
+
+            if (!isOwnerOrAdmin && restaurant.Status != RestaurantStatus.Active)
                 return ApiResponse.Failure(403, "Restaurant is currently inactive or suspended.");
 
             var restaurantDto = _mapper.Map<RestaurantProfileDto>(restaurant);

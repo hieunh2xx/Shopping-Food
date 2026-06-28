@@ -43,7 +43,7 @@ namespace ShoppingFood.Application.Mappings
             CreateMap<UpdateProductCommand, Product>()
                 .ForMember(dest => dest.Images, opt => opt.Ignore())
                 .ForMember(dest => dest.ProductToppings, opt => opt.Ignore())
-                .ForMember(dest => dest.ProductSizes, opt => opt.MapFrom(src => src.Sizes));
+                .ForMember(dest => dest.ProductSizes, opt => opt.Ignore());
 
             CreateMap<Product, ProductDto>()
                 .ForMember(dest => dest.RestaurantName, opt => opt.MapFrom(src => src.Restaurant != null ? src.Restaurant.RestaurantName : string.Empty))
@@ -59,7 +59,7 @@ namespace ShoppingFood.Application.Mappings
                 .ForMember(dest => dest.AvailableTo, opt => opt.MapFrom(src => src.AvailableTo.HasValue ? src.AvailableTo.Value.ToString(@"hh\:mm") : null))
                 .ForMember(dest => dest.IsAvailableNow, opt => opt.MapFrom(src => 
                 (!src.AvailableFrom.HasValue || !src.AvailableTo.HasValue) || 
-                (DateTime.UtcNow.TimeOfDay >= src.AvailableFrom.Value && DateTime.UtcNow.TimeOfDay <= src.AvailableTo.Value)))
+                (DateTime.UtcNow.AddHours(7).TimeOfDay >= src.AvailableFrom.Value && DateTime.UtcNow.AddHours(7).TimeOfDay <= src.AvailableTo.Value)))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
 
             CreateMap<ProductTopping, ProductToppingDto>()
@@ -98,6 +98,8 @@ namespace ShoppingFood.Application.Mappings
             //RestaurantProfile mappings
             CreateMap<RestaurantProfile, RestaurantProfileDto>()
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+                .ForMember(dest => dest.OpeningTime, opt => opt.MapFrom(src => src.OpeningTime.HasValue ? src.OpeningTime.Value.ToString(@"hh\:mm") : null))
+                .ForMember(dest => dest.ClosingTime, opt => opt.MapFrom(src => src.ClosingTime.HasValue ? src.ClosingTime.Value.ToString(@"hh\:mm") : null))
                 .ForMember(dest => dest.Products, opt => opt.Ignore());
 
             //FavoriteRestaurant mappings
@@ -111,6 +113,19 @@ namespace ShoppingFood.Application.Mappings
             //SellerApplication mappings
             CreateMap<SellerApplication, SellerApplicationStatusDto>()
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
+
+            CreateMap<SellerApplication, SellerApplicationDto>()
+                .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.UserProfile != null ? src.UserProfile.FullName : string.Empty))
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.UserProfile != null && src.UserProfile.UserAccount != null ? src.UserProfile.UserAccount.Email : string.Empty))
+                .ForMember(dest => dest.Phone, opt => opt.MapFrom(src => src.UserProfile != null && src.UserProfile.UserAccount != null ? src.UserProfile.UserAccount.Phone : string.Empty))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
+
+            CreateMap<ShipperApplication, ShipperApplicationDto>()
+                .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.UserProfile != null ? src.UserProfile.FullName : string.Empty))
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.UserProfile != null && src.UserProfile.UserAccount != null ? src.UserProfile.UserAccount.Email : string.Empty))
+                .ForMember(dest => dest.Phone, opt => opt.MapFrom(src => src.UserProfile != null && src.UserProfile.UserAccount != null ? src.UserProfile.UserAccount.Phone : string.Empty))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+                .ForMember(dest => dest.VehicleType, opt => opt.MapFrom(src => src.VehicleType.ToString()));
 
             //ProductReview mappings
             CreateMap<ProductReview, ProductReviewDto>()

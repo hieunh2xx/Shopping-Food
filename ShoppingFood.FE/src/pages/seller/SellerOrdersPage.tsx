@@ -7,12 +7,10 @@ import {
   User,
   Phone,
   MapPin,
-  DollarSign,
   Check,
   X,
   Utensils,
   Truck,
-  Eye,
   AlertCircle
 } from 'lucide-react';
 import { Card, Button } from '../../components/common';
@@ -128,7 +126,7 @@ export function SellerOrdersPage() {
     try {
       const res = await orderService.rejectOrder({
         orderId: selectedOrder.id,
-        reason: rejectReason
+        rejectReason: rejectReason
       });
       if (!res.error) {
         toast.success('Đã từ chối đơn hàng thành công', { id: toastId });

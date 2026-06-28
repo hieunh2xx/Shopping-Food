@@ -63,38 +63,77 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = items.reduce((sum, item) => {
-    // Add logic for sizes/toppings if needed later. For now base price * quantity
-    return sum + item.product.price * item.quantity;
+    let itemPrice = item.product.price;
+    if (item.selectedSize) {
+      const sizeOpt = item.product.sizes?.find(s => s.sizeName === item.selectedSize);
+      if (sizeOpt) {
+        itemPrice += sizeOpt.extraPrice;
+      }
+    }
+    if (item.selectedToppings && item.selectedToppings.length > 0) {
+      item.selectedToppings.forEach(topName => {
+        const topOpt = item.product.toppings?.find(t => t.name === topName || (t as any).toppingName === topName);
+        if (topOpt) {
+          itemPrice += topOpt.price;
+        }
+      });
+    }
+    return sum + itemPrice * item.quantity;
   }, 0);
 
-  const addItem = useCallback((product: IProductDto, quantity: number = 1) => {
+  const addItem = useCallback((
+    product: IProductDto, 
+    quantity: number = 1,
+    selectedSize?: string,
+    selectedToppings?: string[],
+    note?: string
+  ) => {
     setItems((prev) => {
-      const existing = prev.find((item) => item.product.id === product.id);
+      const existing = prev.find((item) => 
+        item.product.id === product.id &&
+        item.selectedSize === selectedSize &&
+        JSON.stringify(item.selectedToppings?.sort() || []) === JSON.stringify(selectedToppings?.sort() || [])
+      );
       if (existing) {
         toast.success(`Đã cập nhật số lượng: ${product.itemName}`);
         return prev.map((item) =>
-          item.product.id === product.id
+          item.product.id === product.id &&
+          item.selectedSize === selectedSize &&
+          JSON.stringify(item.selectedToppings?.sort() || []) === JSON.stringify(selectedToppings?.sort() || [])
             ? { ...item, quantity: item.quantity + quantity }
             : item
         );
       }
       toast.success(`Đã thêm vào giỏ: ${product.itemName}`);
-      return [...prev, { product, quantity }];
+      return [...prev, { product, quantity, selectedSize, selectedToppings, note }];
     });
   }, []);
 
-  const removeItem = useCallback((productId: string) => {
-    setItems((prev) => prev.filter((item) => item.product.id !== productId));
+  const removeItem = useCallback((productId: string, selectedSize?: string, selectedToppings?: string[]) => {
+    setItems((prev) => prev.filter((item) => 
+      !(item.product.id === productId &&
+        item.selectedSize === selectedSize &&
+        JSON.stringify(item.selectedToppings?.sort() || []) === JSON.stringify(selectedToppings?.sort() || []))
+    ));
   }, []);
 
-  const updateQuantity = useCallback((productId: string, quantity: number) => {
+  const updateQuantity = useCallback((
+    productId: string, 
+    quantity: number,
+    selectedSize?: string,
+    selectedToppings?: string[]
+  ) => {
     if (quantity <= 0) {
-      removeItem(productId);
+      removeItem(productId, selectedSize, selectedToppings);
       return;
     }
     setItems((prev) =>
       prev.map((item) =>
-        item.product.id === productId ? { ...item, quantity } : item
+        item.product.id === productId &&
+        item.selectedSize === selectedSize &&
+        JSON.stringify(item.selectedToppings?.sort() || []) === JSON.stringify(selectedToppings?.sort() || [])
+          ? { ...item, quantity }
+          : item
       )
     );
   }, [removeItem]);

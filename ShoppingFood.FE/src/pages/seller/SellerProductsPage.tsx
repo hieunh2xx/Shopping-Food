@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, Edit, Trash2, Eye, EyeOff, Package, AlertTriangle, X, Loader2, UtensilsCrossed } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Eye, EyeOff, AlertTriangle, X, Loader2, UtensilsCrossed } from 'lucide-react';
 import { Button, Input, Modal, Pagination, Loading } from '../../components/common';
 import { useProducts } from '../../hooks/useProducts';
-import { productService, menuCategoryService } from '../../services';
+import { productService, menuCategoryService, toppingService } from '../../services';
 import { authService } from '../../services/AuthService';
-import type { IProductDto, IAddProductRequest, IUpdateProductRequest, IProductSizeDto, IMenuCategoryDto } from '../../interfaces';
+import type { IProductDto, IAddProductRequest, IUpdateProductRequest, IProductSizeDto, IMenuCategoryDto, IToppingDto } from '../../interfaces';
 import toast from 'react-hot-toast';
 
 const PAGE_SIZE = 10;
@@ -28,8 +28,49 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
   const [categoryId, setCategoryId] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [sizes, setSizes] = useState<IProductSizeDto[]>([]);
+  const [availableToppings, setAvailableToppings] = useState<IToppingDto[]>([]);
+  const [selectedToppings, setSelectedToppings] = useState<string[]>([]);
+  const [availableFrom, setAvailableFrom] = useState('');
+  const [availableTo, setAvailableTo] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleUploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    const toastId = toast.loading('Đang tải ảnh lên...');
+    try {
+      const res = await authService.uploadImage(file);
+      if (!res.error && res.data?.imageUrl) {
+        setImageUrl(res.data.imageUrl);
+        toast.success('Tải ảnh lên thành công!', { id: toastId });
+      } else {
+        toast.error(res.message || 'Không thể tải ảnh lên', { id: toastId });
+      }
+    } catch {
+      toast.error('Lỗi khi tải ảnh lên', { id: toastId });
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const isEditing = !!product;
+
+  // Load toppings of restaurant
+  useEffect(() => {
+    const loadToppings = async () => {
+      if (isOpen && restaurantId) {
+        try {
+          const res = await toppingService.getByRestaurantId(restaurantId);
+          if (!res.error && res.data) {
+            setAvailableToppings(res.data);
+          }
+        } catch { /* silent */ }
+      }
+    };
+    loadToppings();
+  }, [isOpen, restaurantId]);
 
   // Populate form on open
   useEffect(() => {
@@ -40,6 +81,9 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
       setCategoryId(product.categoryId);
       setImageUrl(product.primaryImageUrl || '');
       setSizes(product.sizes || []);
+      setSelectedToppings(product.toppings?.map(t => t.id) || []);
+      setAvailableFrom(product.availableFrom || '');
+      setAvailableTo(product.availableTo || '');
     } else {
       setItemName('');
       setDescription('');
@@ -47,18 +91,21 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
       setCategoryId(categories[0]?.id || '');
       setImageUrl('');
       setSizes([]);
+      setSelectedToppings([]);
+      setAvailableFrom('');
+      setAvailableTo('');
     }
   }, [product, isOpen, categories]);
 
   const addSize = () => {
-    setSizes([...sizes, { id: crypto.randomUUID(), name: '', priceAdjustment: 0 }]);
+    setSizes([...sizes, { id: crypto.randomUUID(), sizeName: '', extraPrice: 0, isDefault: false }]);
   };
 
   const removeSize = (index: number) => {
     setSizes(sizes.filter((_, i) => i !== index));
   };
 
-  const updateSize = (index: number, field: keyof IProductSizeDto, value: string | number) => {
+  const updateSize = (index: number, field: keyof IProductSizeDto, value: any) => {
     const updated = [...sizes];
     updated[index] = { ...updated[index], [field]: value };
     setSizes(updated);
@@ -89,10 +136,26 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
           price,
           categoryId,
           imageUrls: imageUrl.trim() ? [imageUrl.trim()] : undefined,
-          sizes: sizes.filter(s => s.name.trim()),
+          sizes: sizes.filter(s => s.sizeName.trim()).map(s => {
+            const isExisting = product.sizes?.some(orig => orig.id === s.id);
+            return {
+              id: isExisting ? s.id : undefined,
+              sizeName: s.sizeName,
+              extraPrice: s.extraPrice,
+              isDefault: s.isDefault
+            };
+          }),
+          toppingIds: selectedToppings,
         };
         const res = await productService.update(product.id, payload);
         if (!res.error) {
+          if (availableFrom || availableTo) {
+            await productService.updateAvailability({
+              id: product.id,
+              availableFrom: availableFrom || undefined,
+              availableTo: availableTo || undefined
+            });
+          }
           toast.success('Cập nhật sản phẩm thành công!');
           onSaved();
           onClose();
@@ -107,10 +170,22 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
           price,
           categoryId,
           imageUrls: imageUrl.trim() ? [imageUrl.trim()] : undefined,
-          sizes: sizes.filter(s => s.name.trim()),
+          sizes: sizes.filter(s => s.sizeName.trim()).map(s => ({
+            sizeName: s.sizeName,
+            extraPrice: s.extraPrice,
+            isDefault: s.isDefault
+          })),
+          toppingIds: selectedToppings,
         };
         const res = await productService.create(payload);
-        if (!res.error) {
+        if (!res.error && res.data) {
+          if (availableFrom || availableTo) {
+            await productService.updateAvailability({
+              id: res.data.id,
+              availableFrom: availableFrom || undefined,
+              availableTo: availableTo || undefined
+            });
+          }
           toast.success('Thêm sản phẩm thành công!');
           onSaved();
           onClose();
@@ -167,15 +242,50 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
           />
         </div>
 
-        {/* Image URL */}
+        {/* Product Image */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Ảnh sản phẩm (URL)</label>
-          <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://example.com/image.jpg" />
-          {imageUrl && (
-            <div className="mt-2 w-20 h-20 rounded-xl overflow-hidden border border-gray-200">
-              <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Ảnh sản phẩm</label>
+          <div className="flex gap-4 items-center">
+            {imageUrl ? (
+              <div className="relative w-24 h-24 rounded-2xl overflow-hidden border border-gray-200 group bg-gray-50 flex-shrink-0">
+                <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => setImageUrl('')}
+                  className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity text-xs font-semibold"
+                >
+                  Xóa ảnh
+                </button>
+              </div>
+            ) : (
+              <label className="w-24 h-24 rounded-2xl border-2 border-dashed border-gray-300 hover:border-orange-500 hover:bg-orange-50/20 cursor-pointer flex flex-col items-center justify-center text-gray-400 hover:text-orange-500 transition-all flex-shrink-0">
+                {isUploading ? (
+                  <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
+                ) : (
+                  <>
+                    <Plus className="w-5 h-5 mb-1" />
+                    <span className="text-[10px] font-medium">Chọn ảnh</span>
+                  </>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleUploadImage}
+                  disabled={isUploading}
+                  className="hidden"
+                />
+              </label>
+            )}
+            <div className="flex-1">
+              <p className="text-xs text-gray-400 mb-1.5">Nhập URL ảnh trực tiếp (nếu có):</p>
+              <Input
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                placeholder="https://example.com/image.jpg"
+                disabled={isUploading}
+              />
             </div>
-          )}
+          </div>
         </div>
 
         {/* Sizes */}
@@ -193,15 +303,15 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
             {sizes.map((size, idx) => (
               <div key={idx} className="flex items-center gap-2">
                 <Input
-                  value={size.name}
-                  onChange={(e) => updateSize(idx, 'name', e.target.value)}
+                  value={size.sizeName}
+                  onChange={(e) => updateSize(idx, 'sizeName', e.target.value)}
                   placeholder="VD: Lớn, Nhỏ, Vừa"
                   className="flex-1"
                 />
                 <Input
                   type="number"
-                  value={size.priceAdjustment || ''}
-                  onChange={(e) => updateSize(idx, 'priceAdjustment', Number(e.target.value))}
+                  value={size.extraPrice || ''}
+                  onChange={(e) => updateSize(idx, 'extraPrice', Number(e.target.value))}
                   placeholder="+/- giá"
                   className="w-28"
                 />
@@ -210,6 +320,54 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
                 </button>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* Toppings Selection */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Tùy chọn Topping đi kèm</label>
+          {availableToppings.length === 0 ? (
+            <p className="text-xs text-gray-400 italic bg-gray-50 p-3 rounded-xl">Chưa có topping nào. Bạn có thể tạo topping ở trang Quản lý Topping.</p>
+          ) : (
+            <div className="grid grid-cols-2 gap-2 bg-gray-50 p-3.5 rounded-xl max-h-40 overflow-y-auto border border-gray-100">
+              {availableToppings.map(t => (
+                <label key={t.id} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer hover:text-gray-900">
+                  <input
+                    type="checkbox"
+                    checked={selectedToppings.includes(t.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedToppings([...selectedToppings, t.id]);
+                      } else {
+                        setSelectedToppings(selectedToppings.filter(id => id !== t.id));
+                      }
+                    }}
+                    className="rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+                  />
+                  <span className="truncate">{t.toppingName} (+{t.price.toLocaleString('vi-VN')}đ)</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Time Availability */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Mở bán từ (Giờ:Phút)</label>
+            <Input
+              type="time"
+              value={availableFrom}
+              onChange={(e) => setAvailableFrom(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Đến lúc (Giờ:Phút)</label>
+            <Input
+              type="time"
+              value={availableTo}
+              onChange={(e) => setAvailableTo(e.target.value)}
+            />
           </div>
         </div>
 
@@ -311,16 +469,7 @@ export function SellerProductsPage() {
     loadProfile();
   }, []);
 
-  // Reload categories helper
-  const reloadCategories = useCallback(async () => {
-    if (!restaurantId) return;
-    try {
-      const catRes = await menuCategoryService.getByRestaurant(restaurantId);
-      if (!catRes.error && catRes.data) {
-        setCategories(catRes.data);
-      }
-    } catch { /* silent */ }
-  }, [restaurantId]);
+
 
   // Load products when restaurantId, search, category, or page changes
   const loadProducts = useCallback(() => {
@@ -356,9 +505,18 @@ export function SellerProductsPage() {
     setIsFormOpen(true);
   };
 
-  const handleEdit = (product: IProductDto) => {
-    setEditingProduct(product);
-    setIsFormOpen(true);
+  const handleEdit = async (product: IProductDto) => {
+    try {
+      const res = await productService.getById(product.id);
+      if (!res.error && res.data) {
+        setEditingProduct(res.data);
+        setIsFormOpen(true);
+      } else {
+        toast.error('Không thể lấy chi tiết sản phẩm');
+      }
+    } catch {
+      toast.error('Không thể lấy chi tiết sản phẩm');
+    }
   };
 
   const handleDeleteClick = (product: IProductDto) => {

@@ -15,7 +15,12 @@ namespace ShoppingFood.API.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<ApiResponse>> GetDetail(Guid id)
         {
-            var respone = await _mediator.Send(new GetRestaurantDetailQuery(id));
+            var query = new GetRestaurantDetailQuery(id);
+            if (userDto != null)
+            {
+                query.CurrentUserId = userDto.Id;
+            }
+            var respone = await _mediator.Send(query);
             return Ok(respone);
         }
 

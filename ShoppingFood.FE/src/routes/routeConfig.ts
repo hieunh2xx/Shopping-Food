@@ -14,6 +14,7 @@ export const ROUTES = {
   SELLER_APPLY: '/seller/apply',
   SELLER_PRODUCTS: '/seller/products',
   SELLER_CATEGORIES: '/seller/categories',
+  SELLER_TOPPINGS: '/seller/toppings',
   ADMIN_DASHBOARD: '/admin',
   ADMIN_APPLICATIONS: '/admin/applications',
   ADMIN_PRODUCTS: '/admin/products',

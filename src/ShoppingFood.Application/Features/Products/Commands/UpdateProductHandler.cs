@@ -1,8 +1,10 @@
 using AutoMapper;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
 using ShoppingFood.Repository.Interfaces;
+using ShoppingFood.Domain.Context;
 using ShoppingFood.Domain.Models;
 using System;
 using System.Collections.Generic;
@@ -18,12 +20,18 @@ namespace ShoppingFood.Application.Features.Products.Commands
         private readonly IProductRepository _productRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly ShoppingFoodContext _dbContext;
 
-        public UpdateProductHandler(IProductRepository productRepository, IUnitOfWork unitOfWork, IMapper mapper)
+        public UpdateProductHandler(
+            IProductRepository productRepository, 
+            IUnitOfWork unitOfWork, 
+            IMapper mapper,
+            ShoppingFoodContext dbContext)
         {
             _productRepository = productRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _dbContext = dbContext;
         }
         public async Task<ApiResponse> Handle(UpdateProductCommand request, CancellationToken cancellationToken)
         {
@@ -41,11 +49,16 @@ namespace ShoppingFood.Application.Features.Products.Commands
                 UpdateToppings(product, request.ToppingIds);
                 UpdateSizes(product, request.Sizes);
 
-                _productRepository.Update(product);
                 await _unitOfWork.SaveChangesAsync();
                 var productDto = _mapper.Map<ProductDto>(product);
                 return ApiResponse.Success(productDto, "Update product successfully");
             }
+            //catch (DbUpdateConcurrencyException ex)
+            //{
+            //    var details = string.Join("; ", ex.Entries.Select(e => $"Entity: {e.Entity.GetType().Name}, State: {e.State}, Key: {string.Join(",", e.Metadata.FindPrimaryKey().Properties.Select(p => e.Property(p.Name).CurrentValue))}"));
+            //    await _unitOfWork.LogErrorAsync("UpdateProductHandler.Handle.Concurrency", new Exception($"Concurrency details: {details}", ex));
+            //    return ApiResponse.Failure(400, "An error occurred: data may have been modified or deleted since entities were loaded.");
+            //}
             catch (Exception ex)
             {
                 await _unitOfWork.LogErrorAsync("UpdateProductHandler.Handle", ex);
@@ -57,8 +70,19 @@ namespace ShoppingFood.Application.Features.Products.Commands
         {
             if (imageUrls == null) return;
 
-            product.Images.Clear();
-            foreach (var url in imageUrls)
+            // Remove images that are no longer in the request
+            var imagesToRemove = product.Images
+                .Where(i => !imageUrls.Contains(i.ImageUrl))
+                .ToList();
+            foreach (var image in imagesToRemove)
+            {
+                product.Images.Remove(image);
+            }
+
+            // Add new images that are not already present
+            var existingUrls = product.Images.Select(i => i.ImageUrl).ToList();
+            var urlsToAdd = imageUrls.Where(url => !existingUrls.Contains(url)).ToList();
+            foreach (var url in urlsToAdd)
             {
                 product.Images.Add(new ProductImage
                 {
@@ -73,8 +97,19 @@ namespace ShoppingFood.Application.Features.Products.Commands
         {
             if (toppingIds == null) return;
 
-            product.ProductToppings.Clear();
-            foreach (var toppingId in toppingIds)
+            // Remove toppings that are not in the request
+            var toppingsToRemove = product.ProductToppings
+                .Where(pt => !toppingIds.Contains(pt.ToppingId))
+                .ToList();
+            foreach (var topping in toppingsToRemove)
+            {
+                product.ProductToppings.Remove(topping);
+            }
+
+            // Add new toppings that are not already present
+            var existingToppingIds = product.ProductToppings.Select(pt => pt.ToppingId).ToList();
+            var toppingsToAdd = toppingIds.Where(id => !existingToppingIds.Contains(id)).ToList();
+            foreach (var toppingId in toppingsToAdd)
             {
                 product.ProductToppings.Add(new ProductTopping
                 {
@@ -88,13 +123,37 @@ namespace ShoppingFood.Application.Features.Products.Commands
         {
             if (sizes == null) return;
 
-            product.ProductSizes.Clear();
+            // Remove sizes that are not in the request
+            var requestIds = sizes.Select(s => s.Id).Where(id => id != Guid.Empty).ToList();
+            var sizesToRemove = product.ProductSizes.Where(s => !requestIds.Contains(s.Id)).ToList();
+            foreach (var size in sizesToRemove)
+            {
+                product.ProductSizes.Remove(size);
+            }
+
+            // Add or Update sizes
             foreach (var sizeDto in sizes)
             {
-                var size = _mapper.Map<ProductSize>(sizeDto);
-                size.Id = size.Id == Guid.Empty ? Guid.NewGuid() : size.Id;
-                size.ProductId = product.Id;
-                product.ProductSizes.Add(size);
+                var existingSize = product.ProductSizes.FirstOrDefault(s => s.Id == sizeDto.Id);
+                if (existingSize == null)
+                {
+                    // Add new size
+                    var newSize = _mapper.Map<ProductSize>(sizeDto);
+                    if (newSize.Id == Guid.Empty)
+                    {
+                        newSize.Id = Guid.NewGuid();
+                    }
+                    newSize.ProductId = product.Id;
+                    product.ProductSizes.Add(newSize);
+                    _dbContext.Entry(newSize).State = EntityState.Added;
+                }
+                else
+                {
+                    // Update existing size
+                    existingSize.SizeName = sizeDto.SizeName;
+                    existingSize.ExtraPrice = sizeDto.ExtraPrice;
+                    existingSize.IsDefault = sizeDto.IsDefault;
+                }
             }
         }
     }

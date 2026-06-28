@@ -24,8 +24,8 @@ export interface ICartState {
  * Cart context value
  */
 export interface ICartContext extends ICartState {
-  addItem: (product: IProductDto, quantity?: number) => void;
-  removeItem: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  addItem: (product: IProductDto, quantity?: number, selectedSize?: string, selectedToppings?: string[], note?: string) => void;
+  removeItem: (productId: string, selectedSize?: string, selectedToppings?: string[]) => void;
+  updateQuantity: (productId: string, quantity: number, selectedSize?: string, selectedToppings?: string[]) => void;
   clearCart: () => void;
 }
