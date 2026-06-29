@@ -39,6 +39,7 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
 
   // File Upload State
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedShopFile, setSelectedShopFile] = useState<File | null>(null);
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
 
   useEffect(() => {
@@ -50,7 +51,9 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
     }
   }, []);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewShopUrl, setPreviewShopUrl] = useState<string | null>(null);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [isShopViewerOpen, setIsShopViewerOpen] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -77,6 +80,36 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
       setErrors(prev => {
         const next = { ...prev };
         delete next.businessLicenseUrl;
+        return next;
+      });
+    }
+  };
+
+  const handleShopFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File không được vượt quá 5MB');
+      return;
+    }
+
+    const extension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+    const allowedExtensions = ['.png', '.jpg', '.jpeg', '.webp'];
+    if (!allowedExtensions.includes(extension)) {
+      toast.error('Chỉ chấp nhận các định dạng ảnh .png, .jpg, .jpeg, .webp');
+      return;
+    }
+
+    setSelectedShopFile(file);
+    const objectUrl = URL.createObjectURL(file);
+    setPreviewShopUrl(objectUrl);
+    setForm(prev => ({ ...prev, shopImageUrl: file.name }));
+
+    if (errors.shopImageUrl) {
+      setErrors(prev => {
+        const next = { ...prev };
+        delete next.shopImageUrl;
         return next;
       });
     }
@@ -123,6 +156,7 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
     if (!form.businessAddress.trim()) newErrors.businessAddress = 'Vui lòng nhập địa chỉ';
     if (!form.contactInfo.trim()) newErrors.contactInfo = 'Vui lòng nhập thông tin liên hệ';
     if (!selectedFile) newErrors.businessLicenseUrl = 'Vui lòng tải lên Hợp đồng/Giấy phép';
+    if (!selectedShopFile) newErrors.shopImageUrl = 'Vui lòng tải lên Ảnh chụp mặt tiền cửa hàng';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -161,8 +195,8 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
         phone: form.phone,
         businessName: form.businessName,
         businessAddress: form.businessAddress,
-        businessLicenseUrl: form.businessLicenseUrl || 'pending',
-        shopImageUrl: form.shopImageUrl || 'pending',
+        businessLicenseUrl: form.businessLicenseUrl || 'pending.jpg',
+        shopImageUrl: form.shopImageUrl || 'pending.jpg',
         contactInfo: form.contactInfo,
         idToken: idToken,
       });
@@ -410,6 +444,72 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
               )}
             </div>
 
+            {/* Shop Image Upload Area */}
+            <div className="pt-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Ảnh chụp mặt tiền cửa hàng <span className="text-red-500">*</span>
+              </label>
+              <div className={`border-2 border-dashed rounded-xl p-6 transition-colors ${errors.shopImageUrl ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-orange-500 bg-gray-50'}`}>
+                <div className="flex flex-col items-center justify-center text-center">
+                  {!selectedShopFile ? (
+                    <>
+                      <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center mb-3">
+                        <UploadCloud className="w-6 h-6 text-orange-600" />
+                      </div>
+                      <p className="text-sm text-gray-600 mb-1">Kéo thả file vào đây hoặc click để chọn</p>
+                      <p className="text-xs text-gray-500 mb-4">Hỗ trợ: PNG, JPG, JPEG, WEBP (Tối đa 5MB)</p>
+                      <label className="cursor-pointer inline-flex items-center justify-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                        Chọn File
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept="image/png,image/jpeg,image/webp"
+                          onChange={handleShopFileChange}
+                        />
+                      </label>
+                    </>
+                  ) : (
+                    <div className="w-full flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center shrink-0">
+                          <CheckCircle2 className="w-5 h-5 text-green-500" />
+                        </div>
+                        <div className="text-left overflow-hidden">
+                          <p className="text-sm font-medium text-gray-900 truncate">{selectedShopFile.name}</p>
+                          <p className="text-xs text-gray-500">{(selectedShopFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setIsShopViewerOpen(true)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex items-center gap-1 text-sm font-medium"
+                        >
+                          <Eye className="w-4 h-4" />
+                          <span className="hidden sm:inline">Xem</span>
+                        </button>
+                        <label className="cursor-pointer p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors text-sm font-medium">
+                          Đổi file
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept="image/png,image/jpeg,image/webp"
+                            onChange={handleShopFileChange}
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              {errors.shopImageUrl && (
+                <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                  <span className="w-1 h-1 bg-red-600 rounded-full inline-block"></span>
+                  {errors.shopImageUrl}
+                </p>
+              )}
+            </div>
+
             <div className="flex gap-4 pt-4">
               <Button type="button" variant="secondary" onClick={handleBack} className="w-1/3">
                 <ChevronLeft className="w-5 h-5 mr-2" />
@@ -461,6 +561,13 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
         fileUrl={previewUrl}
         fileType={selectedFile?.type || null}
         fileName={selectedFile?.name || null}
+      />
+      <DocumentViewerModal
+        isOpen={isShopViewerOpen}
+        onClose={() => setIsShopViewerOpen(false)}
+        fileUrl={previewShopUrl}
+        fileType={selectedShopFile?.type || null}
+        fileName={selectedShopFile?.name || null}
       />
     </div>
   );

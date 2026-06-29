@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ChefHat, Truck, Shield, Star, History, RotateCcw, MapPin } from 'lucide-react';
-import { useProducts, useCart } from '../hooks';
+import { useProducts, useCart, useAuth } from '../hooks';
 import { ProductList } from '../components/product/ProductList';
 import { RestaurantCard } from '../components/restaurant/RestaurantCard';
 import { restaurantService } from '../services/RestaurantService';
@@ -12,7 +12,15 @@ import { formatCurrency } from '../utils/formatters';
 export function HomePage() {
   const { bestSellers, fetchBestSellers, isLoading } = useProducts();
   const { addItem } = useCart();
-  
+  const { isAuthenticated, user } = useAuth();
+
+  const getPartnerRoute = () => {
+    if (isAuthenticated && user?.role === 'Customer') {
+      return ROUTES.SELLER_APPLY;
+    }
+    return ROUTES.REGISTER_SELLER;
+  };
+
   // Nearby Restaurants State
   const [nearbyRestaurants, setNearbyRestaurants] = useState<INearbyRestaurantDto[]>([]);
   const [isNearbyLoading, setIsNearbyLoading] = useState(false);
@@ -156,7 +164,7 @@ export function HomePage() {
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
-                to={ROUTES.REGISTER_SELLER}
+                to={getPartnerRoute()}
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-gray-300 text-gray-700 hover:text-orange-600 hover:border-orange-400 hover:bg-gray-50 font-medium transition-all"
               >
                 Trở thành đối tác
@@ -294,7 +302,7 @@ export function HomePage() {
               Tiếp cận hàng triệu khách hàng tiềm năng. Đăng ký ngay hôm nay và bắt đầu kinh doanh.
             </p>
             <Link
-              to={ROUTES.REGISTER_SELLER}
+              to={getPartnerRoute()}
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-orange-600 font-semibold hover:bg-orange-50 transition-colors shadow-lg"
             >
               Đăng ký ngay
