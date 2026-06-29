@@ -200,7 +200,7 @@ export function ProductDetailPage() {
                 <Clock className="w-5 h-5 text-green-500" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">Giờ mở cửa</p>
+                <p className="text-xs text-gray-500">Giờ bán món</p>
                 <p className="text-sm font-medium text-gray-900">
                   {product.availableFrom || '00:00'} - {product.availableTo || '23:59'}
                 </p>

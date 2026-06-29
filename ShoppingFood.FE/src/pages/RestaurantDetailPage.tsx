@@ -172,7 +172,9 @@ export function RestaurantDetailPage() {
                 <div>
                   <p className="font-medium text-gray-900 mb-1">Giờ mở cửa</p>
                   <p className="text-sm">Thứ 2 - Chủ Nhật</p>
-                  <p className="text-sm font-medium text-orange-600">08:00 - 22:00</p>
+                  <p className="text-sm font-medium text-orange-600">
+                    {restaurant.openingTime || '08:00'} - {restaurant.closingTime || '22:00'}
+                  </p>
                 </div>
               </div>
 

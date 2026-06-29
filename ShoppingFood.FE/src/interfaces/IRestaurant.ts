@@ -14,6 +14,8 @@ export interface IRestaurantProfileDto {
   reviewCount: number;
   createdAt: string;
   isFavorite?: boolean;
+  openingTime?: string;
+  closingTime?: string;
   products: IProductDto[];
 }
 
