@@ -16,6 +16,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<AuthenticationFilter>();
+    options.Filters.Add<CheckSellerSuspensionAttribute>();
 }).AddNewtonsoftJson();
 
 // Add clean architecture layer service registrations

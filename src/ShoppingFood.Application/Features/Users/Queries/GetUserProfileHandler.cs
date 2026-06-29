@@ -48,6 +48,7 @@ namespace ShoppingFood.Application.Features.Users.Queries
                     {
                         RestaurantId = restaurant.Id,
                         RestaurantName = restaurant.RestaurantName,
+                        Status = restaurant.Status.ToString(),
                         Address = restaurant.Address,
                         AverageRating = restaurant.AverageRating,
                         ReviewCount = restaurant.ReviewCount,

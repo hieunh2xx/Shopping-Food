@@ -13,7 +13,24 @@ export interface IRestaurantProfileDto {
   averageRating: number;
   reviewCount: number;
   createdAt: string;
+  isFavorite?: boolean;
   products: IProductDto[];
+}
+
+export interface INearbyRestaurantDto {
+  id: string;
+  restaurantName: string;
+  restaurantAddress: string;
+  logoUrl?: string;
+  latitude?: number;
+  longitude?: number;
+  averageRating: number;
+  reviewCount: number;
+  openingTime?: string;
+  closingTime?: string;
+  maxDeliveryRadius?: number;
+  shippingFee: number;
+  distanceKm: number;
 }
 
 export interface IUpdateRestaurantBasicInfo {

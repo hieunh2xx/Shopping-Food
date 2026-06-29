@@ -20,6 +20,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
         private readonly IShipperProfileRepository _shipperProfileRepository;
         private readonly IOrderDeliveryProposalRepository _orderDeliveryProposalRepository;
         private readonly INotificationRepository _notificationRepository;
+        private readonly IOrderDispatchHistoryRepository _orderDispatchHistoryRepository;
         private readonly IUnitOfWork _unitOfWork;
 
         public ForceAssignHandler(
@@ -28,6 +29,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
             IShipperProfileRepository shipperProfileRepository,
             IOrderDeliveryProposalRepository orderDeliveryProposalRepository,
             INotificationRepository notificationRepository,
+            IOrderDispatchHistoryRepository orderDispatchHistoryRepository,
             IUnitOfWork unitOfWork)
         {
             _userRepository = userRepository;
@@ -35,6 +37,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
             _shipperProfileRepository = shipperProfileRepository;
             _orderDeliveryProposalRepository = orderDeliveryProposalRepository;
             _notificationRepository = notificationRepository;
+            _orderDispatchHistoryRepository = orderDispatchHistoryRepository;
             _unitOfWork = unitOfWork;
         }
 
@@ -69,6 +72,27 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
                 AssignOrder(order, shipper.Id);
 
                 await UpdateOrCreateProposalAsync(request.OrderId, request.ShipperId);
+
+                var coordinator = (await _userRepository.GetAsync(
+                    predicate: u => u.Id == request.CurrentUserId!.Value,
+                    include: q => q.Include(u => u.Profile),
+                    disableTracking: true
+                )).FirstOrDefault();
+
+                var history = new OrderDispatchHistory
+                {
+                    Id = Guid.NewGuid(),
+                    OrderId = request.OrderId,
+                    ActorId = request.CurrentUserId!.Value,
+                    ActorName = coordinator?.Profile?.FullName ?? "Điều phối viên",
+                    ActorRole = "Coordinator",
+                    ActionType = DispatchActionType.ManualAssigned,
+                    TargetShipperId = shipper.Id,
+                    TargetShipperName = shipper.UserProfile?.FullName ?? "Shipper",
+                    Note = "Bắt buộc gán đơn (Force Assign)",
+                    CreatedAt = DateTime.UtcNow
+                };
+                _orderDispatchHistoryRepository.Add(history);
 
                 AddNotifications(order, shipper);
                 
@@ -203,5 +227,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
                 _notificationRepository.Add(customerNotification);
             }
         }
+
+        
     }
 }

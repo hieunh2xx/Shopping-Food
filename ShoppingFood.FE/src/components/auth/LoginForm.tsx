@@ -76,7 +76,7 @@ export function LoginForm() {
         navigate(ROUTES.SHIPPER_DASHBOARD);
         break;
       case 'Coordinator':
-        navigate(ROUTES.ORDERS);
+        navigate(ROUTES.COORDINATOR_DISPATCH);
         break;
       case 'Customer':
       case 'Mall':

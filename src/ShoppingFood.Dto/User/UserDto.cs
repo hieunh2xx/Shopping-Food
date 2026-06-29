@@ -23,6 +23,7 @@ namespace ShoppingFood.Dto.User
     {
         public Guid RestaurantId { get; set; }
         public string RestaurantName { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
         public double AverageRating { get; set; }
         public int ReviewCount { get; set; }

@@ -83,6 +83,8 @@ export const API_ENDPOINTS = {
     GLOBAL_MENU_CATEGORY_VISIBILITY: (id: string) => `/Admin/GlobalMenuCategory/Visibility/${id}`, // PATCH
     POINT_GIFT_CONFIG: '/Admin/point-gift-config',
     POINT_GIFT_CONFIG_BY_ID: (id: string) => `/Admin/point-gift-config/${id}`,
+    RESTAURANTS: '/Admin/Restaurants', // GET
+    SUSPEND_RESTAURANT: '/Admin/suspend-restaurant', // POST (assuming it exists or will be added, wait I should check if it exists in API)
   },
 
   // === Shipper (ShipperController) ===
@@ -113,6 +115,7 @@ export const API_ENDPOINTS = {
   RESTAURANT: {
     BASE: '/Restaurant',
     BY_ID: (id: string) => `/Restaurant/${id}`,
+    NEARBY: '/Restaurant/nearby',
     DASHBOARD_STATS: '/Restaurant/DashboardStats',
     FAVORITES: '/Restaurant/Favorites',
     TOGGLE_FAVORITE: (id: string) => `/Restaurant/${id}/Favorite`,
@@ -140,6 +143,8 @@ export const API_ENDPOINTS = {
     RELEASE_ORDER: (orderId: string) => `/Coordinator/orders/${orderId}/release`,
     MONITOR_SHIPPERS: '/Coordinator/shippers/monitoring',
     SUSPEND_SHIPPER: (shipperId: string) => `/Coordinator/shippers/${shipperId}/suspend`,
+    DISPATCH_HISTORY: '/Coordinator/orders/dispatch-history',
+    ORDER_DISPATCH_HISTORY: (orderId: string) => `/Coordinator/orders/${orderId}/dispatch-history`,
   },
 
   DISCOUNT: {
@@ -166,5 +171,8 @@ export const API_ENDPOINTS = {
     ADJUST_USER_TIER: '/LoyaltyPoint/adjust-user-tier',
   },
 
+  SUPPORT: {
+    APPEAL: '/Support/appeal',
+  },
 } as const;
 

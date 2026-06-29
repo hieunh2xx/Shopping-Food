@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
@@ -18,17 +18,20 @@ namespace ShoppingFood.Application.Features.Orders.Commands
         private readonly IShipperProfileRepository _shipperProfileRepository;
         private readonly IUserRepository _userRepository;
         private readonly IOrderDeliveryProposalRepository _orderDeliveryProposalRepository;
+        private readonly IOrderDispatchHistoryRepository _orderDispatchHistoryRepository;
         private readonly IUnitOfWork _unitOfWork;
 
         public RejectDeliveryOfferHandler(
             IShipperProfileRepository shipperProfileRepository,
             IUserRepository userRepository,
             IOrderDeliveryProposalRepository orderDeliveryProposalRepository,
+            IOrderDispatchHistoryRepository orderDispatchHistoryRepository,
             IUnitOfWork unitOfWork)
         {
             _shipperProfileRepository = shipperProfileRepository;
             _userRepository = userRepository;
             _orderDeliveryProposalRepository = orderDeliveryProposalRepository;
+            _orderDispatchHistoryRepository = orderDispatchHistoryRepository;
             _unitOfWork = unitOfWork;
         }
 
@@ -68,6 +71,21 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     existingProposal.ExpiredAt = DateTime.UtcNow;
                     _orderDeliveryProposalRepository.Update(existingProposal);
                 }
+
+                var history = new OrderDispatchHistory
+                {
+                    Id = Guid.NewGuid(),
+                    OrderId = request.OrderId,
+                    ActorId = request.CurrentUserId.Value,
+                    ActorName = shipperProfile.UserProfile.FullName,
+                    ActorRole = "Shipper",
+                    ActionType = request.IsExpired ? DispatchActionType.Expired : DispatchActionType.Rejected,
+                    TargetShipperId = shipperProfile.Id,
+                    TargetShipperName = shipperProfile.UserProfile.FullName,
+                    Note = request.IsExpired ? "Đề xuất hết hạn (Shipper không phản hồi)" : "Shipper từ chối đơn hàng",
+                    CreatedAt = DateTime.UtcNow
+                };
+                _orderDispatchHistoryRepository.Add(history);
 
                 await _unitOfWork.SaveChangesAsync();
                 return ApiResponse.Success(null, "Offer interaction recorded successfully.");

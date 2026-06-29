@@ -29,6 +29,13 @@ namespace ShoppingFood.API.Controllers
             return Ok(response);
         }
 
+        [HttpGet("Restaurants")]
+        public async Task<ActionResult<ApiResponse>> GetRestaurants([FromQuery] GetRestaurantsQuery query)
+        {
+            var response = await _mediator.Send(query);
+            return Ok(response);
+        }
+
         [HttpGet("ShipperApplications")]
         public async Task<ActionResult<ApiResponse>> GetShipperApplications([FromQuery] GetShipperApplicationsQuery query)
         {
@@ -127,6 +134,13 @@ namespace ShoppingFood.API.Controllers
             {
                 command.CurrentUserId = userDto.Id;
             }
+            var response = await _mediator.Send(command);
+            return Ok(response);
+        }
+
+        [HttpPut("suspend-restaurant")]
+        public async Task<ActionResult<ApiResponse>> SuspendRestaurant([FromBody] SuspendRestaurantCommand command)
+        {
             var response = await _mediator.Send(command);
             return Ok(response);
         }

@@ -20,6 +20,7 @@ export interface IUserDto {
 export interface ISellerInfoDto {
   restaurantId: string;
   restaurantName: string;
+  status: string;
   address: string;
   averageRating: number;
   reviewCount: number;

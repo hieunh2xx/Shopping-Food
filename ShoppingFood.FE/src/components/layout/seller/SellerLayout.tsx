@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Package, 
@@ -6,7 +6,8 @@ import {
   Settings,
   Store,
   Layers,
-  ListPlus
+  ListPlus,
+  ShieldAlert
 } from 'lucide-react';
 import { useAuth } from '../../../hooks';
 import { ROUTES } from '../../../routes/routeConfig';
@@ -30,6 +31,10 @@ export function SellerLayout() {
     { name: 'Thông tin cửa hàng', path: '/seller/settings', icon: Settings },
   ];
 
+  if (user?.sellerInfo?.status === 'Suspended') {
+    navItems.push({ name: 'Gửi khiếu nại', path: ROUTES.SELLER_APPEAL, icon: ShieldAlert });
+  }
+
   return (
     <DashboardLayout
       navItems={navItems}
@@ -50,6 +55,24 @@ export function SellerLayout() {
             Đăng ký lên Mall
           </button>
         )
+      }
+      globalBanner={
+        user?.sellerInfo?.status === 'Suspended' ? (
+          <div className="bg-red-50 border-l-4 border-red-500 p-4 m-4 rounded-r-lg shadow-sm">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <ShieldAlert className="h-5 w-5 text-red-500" aria-hidden="true" />
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-bold text-red-800">Cửa hàng của bạn đã bị khóa</h3>
+                <p className="text-sm text-red-700 mt-1">
+                  Hiện tại nhà hàng đang bị khóa do vi phạm chính sách của hệ thống. Khách hàng sẽ không thể nhìn thấy cửa hàng cũng như đặt món ăn của bạn.
+                  Vui lòng chọn tính năng <Link to={ROUTES.SELLER_APPEAL} className="font-bold underline text-red-800 hover:text-red-900">Gửi Khiếu Nại</Link> (hoặc liên hệ Admin) để được hỗ trợ mở khóa.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : null
       }
     />
   );

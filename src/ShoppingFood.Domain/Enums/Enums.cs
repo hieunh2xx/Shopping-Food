@@ -33,12 +33,7 @@ namespace ShoppingFood.Domain.Enums
         
     }
 
-    public enum ProductReportStatus
-    {
-        Pending,
-        Resolved,
-        Dismissed
-    }
+
     public enum RestaurantStatus
     {
         Active,
@@ -83,6 +78,15 @@ namespace ShoppingFood.Domain.Enums
         Accepted,
         Rejected,
         Expired
+    }
+
+    public enum DispatchActionType
+    {
+        ManualAssigned,
+        Accepted,
+        Rejected,
+        Expired,
+        Canceled
     }
     
     public enum DiscountType
@@ -135,5 +139,22 @@ namespace ShoppingFood.Domain.Enums
         Delivery,
         Loyalty,
         Review
+    }
+
+    public enum ReportStatus
+    {
+        Pending,
+        Resolved,
+        Dismissed
+    }
+
+    public enum ReportTargetType
+    {
+        Product,
+        Order,
+        Driver,
+        Review,
+        Restaurant,
+        SystemAppeal
     }
 }

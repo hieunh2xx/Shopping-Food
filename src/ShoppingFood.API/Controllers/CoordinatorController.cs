@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using ShoppingFood.Application.Features.Coordinator.Commands;
 using ShoppingFood.Application.Features.Coordinator.Queries;
@@ -129,7 +129,44 @@ namespace ShoppingFood.API.Controllers
             return StatusCode(response.Code, response);
         }
 
+        [HttpGet("orders/{orderId}/dispatch-history")]
+        public async Task<IActionResult> GetDispatchHistory(Guid orderId)
+        {
+            var query = new GetOrderDispatchHistoryQuery { OrderId = orderId };
+            if (userDto != null)
+            {
+                query.CurrentUserId = userDto.Id;
+            }
 
+            var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpGet("orders/dispatch-history")]
+        public async Task<IActionResult> GetAllDispatchHistories(
+            [FromQuery] Guid? orderId, 
+            [FromQuery] string? actionType, 
+            [FromQuery] string? filter,
+            [FromQuery] int skip = 0, 
+            [FromQuery] int take = 10)
+        {
+            var query = new GetAllDispatchHistoryQuery
+            {
+                OrderId = orderId,
+                ActionType = actionType,
+                Filter = filter,
+                Skip = skip,
+                Take = take
+            };
+
+            if (userDto != null)
+            {
+                query.CurrentUserId = userDto.Id;
+            }
+
+            var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
+        }
     }
 }
 

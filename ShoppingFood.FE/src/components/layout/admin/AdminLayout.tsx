@@ -5,7 +5,10 @@ import {
   Settings, 
   Store,
   ChefHat,
-  ShieldCheck
+  ShieldCheck,
+  History,
+  Truck,
+  ShieldAlert
 } from 'lucide-react';
 import { useAuth } from '../../../hooks';
 import { ROUTES } from '../../../routes/routeConfig';
@@ -23,6 +26,10 @@ export function AdminLayout() {
   const navItems = [
     { name: 'Tổng quan', path: ROUTES.ADMIN_DASHBOARD, icon: LayoutDashboard },
     { name: 'Người dùng', path: '/admin/users', icon: Users },
+    { name: 'Quản lý Nhà hàng', path: '/admin/restaurants', icon: Store },
+    { name: 'Bảng điều phối', path: ROUTES.ADMIN_DISPATCH, icon: Truck },
+    { name: 'Giám sát Shipper', path: ROUTES.ADMIN_SHIPPERS, icon: ShieldAlert },
+    { name: 'Lịch sử điều phối', path: ROUTES.ADMIN_DISPATCH_HISTORY, icon: History },
     { name: 'Phân quyền', path: '/admin/permissions', icon: ShieldCheck },
     { name: 'Duyệt đối tác', path: '/admin/approvals', icon: Store },
     { name: 'Cấu hình hệ thống', path: '/admin/settings', icon: Settings },

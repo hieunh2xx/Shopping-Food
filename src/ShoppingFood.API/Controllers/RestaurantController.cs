@@ -90,5 +90,12 @@ namespace ShoppingFood.API.Controllers
             var response = await _mediator.Send(command);
             return Ok(response);
         }
+
+        [HttpGet("nearby")]
+        public async Task<ActionResult<ApiResponse>> GetNearBy([FromQuery] GetNearbyRestaurantsQuery query)
+        {
+            var response = await _mediator.Send(query);
+            return Ok(response);
+        }
     }
 }

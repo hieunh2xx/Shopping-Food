@@ -17,6 +17,7 @@ export interface DashboardLayoutProps {
   userRoleName: string;
   onLogout: () => void;
   extraAction?: React.ReactNode;
+  globalBanner?: React.ReactNode;
 }
 
 export function DashboardLayout({
@@ -27,6 +28,7 @@ export function DashboardLayout({
   userRoleName,
   onLogout,
   extraAction,
+  globalBanner,
 }: DashboardLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user } = useAuth();
@@ -140,8 +142,11 @@ export function DashboardLayout({
         </header>
 
         {/* Page Content */}
-        <div className="flex-1 overflow-auto">
-          <Outlet />
+        <div className="flex-1 overflow-auto flex flex-col">
+          {globalBanner}
+          <div className="flex-1">
+            <Outlet />
+          </div>
         </div>
       </main>
     </div>

@@ -532,22 +532,22 @@ namespace ShoppingFood.Domain.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("e2546c1f-17c4-4911-8990-7b3b3a795edb"),
-                            CreatedAt = new DateTime(2026, 6, 25, 9, 31, 19, 863, DateTimeKind.Utc).AddTicks(7699),
+                            Id = new Guid("aa415db9-7933-49fd-abc1-aa99afd5b352"),
+                            CreatedAt = new DateTime(2026, 6, 29, 10, 3, 26, 671, DateTimeKind.Utc).AddTicks(27),
                             MinPoints = 100,
                             Tier = "Silver"
                         },
                         new
                         {
-                            Id = new Guid("860a3d3f-895a-49cb-8d7c-d7c37cdbe94b"),
-                            CreatedAt = new DateTime(2026, 6, 25, 9, 31, 19, 863, DateTimeKind.Utc).AddTicks(7704),
+                            Id = new Guid("a80abf90-3cbd-457d-b0a3-4d0fffec9ce7"),
+                            CreatedAt = new DateTime(2026, 6, 29, 10, 3, 26, 671, DateTimeKind.Utc).AddTicks(29),
                             MinPoints = 500,
                             Tier = "Gold"
                         },
                         new
                         {
-                            Id = new Guid("8fd40f75-290f-499d-af02-fecd2d1b28a4"),
-                            CreatedAt = new DateTime(2026, 6, 25, 9, 31, 19, 863, DateTimeKind.Utc).AddTicks(7705),
+                            Id = new Guid("5c5e456f-8d72-4925-8b1d-d4c03047fd1d"),
+                            CreatedAt = new DateTime(2026, 6, 29, 10, 3, 26, 671, DateTimeKind.Utc).AddTicks(31),
                             MinPoints = 1000,
                             Tier = "Diamond"
                         });
@@ -735,6 +735,49 @@ namespace ShoppingFood.Domain.Migrations
                     b.HasIndex("ShipperId");
 
                     b.ToTable("ORDER_DELIVERY_PROPOSAL", (string)null);
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.OrderDispatchHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ActionType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ActorName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ActorRole")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("TargetShipperId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("TargetShipperName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("ORDER_DISPATCH_HISTORY", (string)null);
                 });
 
             modelBuilder.Entity("ShoppingFood.Domain.Models.OrderItem", b =>
@@ -935,46 +978,6 @@ namespace ShoppingFood.Domain.Migrations
                     b.HasIndex("ProductId");
 
                     b.ToTable("PRODUCT_IMAGE", (string)null);
-                });
-
-            modelBuilder.Entity("ShoppingFood.Domain.Models.ProductReport", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<Guid>("ProductId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<Guid>("ReporterId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProductId");
-
-                    b.HasIndex("ReporterId");
-
-                    b.ToTable("PRODUCT_REPORT", (string)null);
                 });
 
             modelBuilder.Entity("ShoppingFood.Domain.Models.ProductReview", b =>
@@ -1390,6 +1393,48 @@ namespace ShoppingFood.Domain.Migrations
                         .IsUnique();
 
                     b.ToTable("SHIPPER_PROFILE", (string)null);
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.SystemReport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Content")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("ReporterId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("TargetId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("TargetType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReporterId");
+
+                    b.ToTable("SYSTEM_REPORT", (string)null);
                 });
 
             modelBuilder.Entity("ShoppingFood.Domain.Models.Topping", b =>
@@ -1842,6 +1887,17 @@ namespace ShoppingFood.Domain.Migrations
                     b.Navigation("Shipper");
                 });
 
+            modelBuilder.Entity("ShoppingFood.Domain.Models.OrderDispatchHistory", b =>
+                {
+                    b.HasOne("ShoppingFood.Domain.Models.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+                });
+
             modelBuilder.Entity("ShoppingFood.Domain.Models.OrderItem", b =>
                 {
                     b.HasOne("ShoppingFood.Domain.Models.Order", "Order")
@@ -1906,25 +1962,6 @@ namespace ShoppingFood.Domain.Migrations
                         .IsRequired();
 
                     b.Navigation("Product");
-                });
-
-            modelBuilder.Entity("ShoppingFood.Domain.Models.ProductReport", b =>
-                {
-                    b.HasOne("ShoppingFood.Domain.Models.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ShoppingFood.Domain.Models.UserProfile", "Reporter")
-                        .WithMany()
-                        .HasForeignKey("ReporterId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Product");
-
-                    b.Navigation("Reporter");
                 });
 
             modelBuilder.Entity("ShoppingFood.Domain.Models.ProductReview", b =>
@@ -2059,6 +2096,17 @@ namespace ShoppingFood.Domain.Migrations
                     b.Navigation("ShipperApplication");
 
                     b.Navigation("UserProfile");
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.SystemReport", b =>
+                {
+                    b.HasOne("ShoppingFood.Domain.Models.UserProfile", "Reporter")
+                        .WithMany()
+                        .HasForeignKey("ReporterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Reporter");
                 });
 
             modelBuilder.Entity("ShoppingFood.Domain.Models.Topping", b =>

@@ -5,7 +5,7 @@ using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
 using ShoppingFood.Domain.Enums;
 using ShoppingFood.Domain.Models;
-using ShoppingFood.Dto.Product;
+using ShoppingFood.Dto.Support;
 using ShoppingFood.Repository.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -17,21 +17,21 @@ namespace ShoppingFood.Application.Features.Products.Commands
 {
     public class CreateProductReportHandler : IRequestHandler<CreateProductReportCommand, ApiResponse>
     {
-        private readonly IProductReportRepository _productReportRepository;
+        private readonly ISystemReportRepository _systemReportRepository;
         private readonly IProductRepository _productRepository;
         private readonly IUserRepository _userRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
         public CreateProductReportHandler(
-            IProductReportRepository productReportRepository,
+            ISystemReportRepository systemReportRepository,
             IProductRepository productRepository,
             IUserRepository userRepository,
             IUnitOfWork unitOfWork,
             IMapper mapper
             ) 
         {
-            _productReportRepository = productReportRepository;
+            _systemReportRepository = systemReportRepository;
             _productRepository = productRepository;
             _userRepository = userRepository;
             _unitOfWork = unitOfWork;
@@ -57,17 +57,18 @@ namespace ShoppingFood.Application.Features.Products.Commands
                 if (userProfile == null)
                     return ApiResponse.Failure(404, "User profile not found");
 
-                var report = _mapper.Map<ProductReport>(request);
+                var report = _mapper.Map<SystemReport>(request);
                 report.Id = Guid.NewGuid();
                 report.ReporterId = userProfile.Id;
-                report.Status = ProductReportStatus.Pending;
+                report.TargetType = ReportTargetType.Product;
+                report.Status = ReportStatus.Pending;
                 report.CreatedAt = DateTime.UtcNow;
                 report.UpdatedAt = DateTime.UtcNow;
                 
-                _productReportRepository.Add( report );
+                _systemReportRepository.Add( report );
                 await _unitOfWork.SaveChangesAsync();
 
-                var dto = _mapper.Map<ProductReportDto>(report);
+                var dto = _mapper.Map<SystemReportDto>(report);
 
                 return ApiResponse.Success(dto, "Your report has been submitted and is pending review.");
             }

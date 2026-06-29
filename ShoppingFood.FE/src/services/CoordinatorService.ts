@@ -26,8 +26,8 @@ class CoordinatorService extends BaseService<any, any, any> {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.COORDINATOR.FORCE_ASSIGN, data);
   }
 
-  async resolveIncident(orderId: string): Promise<IApiResponse<any>> {
-    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.COORDINATOR.RESOLVE_INCIDENT(orderId));
+  async resolveIncident(orderId: string, data: any): Promise<IApiResponse<any>> {
+    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.COORDINATOR.RESOLVE_INCIDENT(orderId), data);
   }
 
   async releaseOrder(orderId: string, data: IReleaseOrderRequest): Promise<IApiResponse<any>> {
@@ -50,6 +50,20 @@ class CoordinatorService extends BaseService<any, any, any> {
       API_ENDPOINTS.COORDINATOR.SUSPEND_SHIPPER(shipperId),
       data
     );
+  }
+
+  async getDispatchHistory(orderId: string): Promise<IApiResponse<any[]>> {
+    return httpClient.get<IApiResponse<any[]>>(API_ENDPOINTS.COORDINATOR.ORDER_DISPATCH_HISTORY(orderId));
+  }
+
+  async getAllDispatchHistories(params?: {
+    orderId?: string;
+    actionType?: string;
+    filter?: string;
+    skip?: number;
+    take?: number;
+  }): Promise<IApiResponse<any[]>> {
+    return httpClient.get<IApiResponse<any[]>>(API_ENDPOINTS.COORDINATOR.DISPATCH_HISTORY, { params });
   }
 }
 

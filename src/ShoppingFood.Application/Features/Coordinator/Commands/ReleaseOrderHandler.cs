@@ -21,6 +21,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
         private readonly IShipperProfileRepository _shipperProfileRepository;
         private readonly IOrderDeliveryProposalRepository _orderDeliveryProposalRepository;
         private readonly INotificationRepository _notificationRepository;
+        private readonly IOrderDispatchHistoryRepository _orderDispatchHistoryRepository;
         private readonly IUnitOfWork _unitOfWork;
 
         public ReleaseOrderHandler(
@@ -29,6 +30,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
             IShipperProfileRepository shipperProfileRepository,
             IOrderDeliveryProposalRepository orderDeliveryProposalRepository, 
             INotificationRepository notificationRepository,
+            IOrderDispatchHistoryRepository orderDispatchHistoryRepository,
             IUnitOfWork unitOfWork) 
         {
             _userRepository = userRepository;
@@ -36,6 +38,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
             _shipperProfileRepository = shipperProfileRepository;
             _orderDeliveryProposalRepository = orderDeliveryProposalRepository;
             _notificationRepository = notificationRepository;
+            _orderDispatchHistoryRepository = orderDispatchHistoryRepository;
             _unitOfWork = unitOfWork;
         }
         public async Task<ApiResponse> Handle(ReleaseOrderCommand request, CancellationToken cancellationToken)
@@ -56,6 +59,21 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
                     return ApiResponse.Failure(400, $"Order status must be Shipper or WaitingForShipper to be released. Current status: {order.Status}");
 
                 var oldShipperId = order.ShipperId.Value;
+
+                // Fetch Coordinator Profile for ActorName
+                var coordinator = (await _userRepository.GetAsync(
+                    predicate: u => u.Id == request.CurrentUserId!.Value,
+                    include: q => q.Include(u => u.Profile),
+                    disableTracking: true
+                )).FirstOrDefault();
+                string actorName = coordinator?.Profile?.FullName ?? "Điều phối viên";
+
+                var oldShippers = await _shipperProfileRepository.GetAsync(
+                    predicate: s => s.Id == oldShipperId,
+                    include: q => q.Include(s => s.UserProfile),
+                    disableTracking: true
+                );
+                var oldShipper = oldShippers.FirstOrDefault();
 
                 if(request.NewShipperId.HasValue && request.NewShipperId.Value != Guid.Empty)
                 {
@@ -80,6 +98,36 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
 
                     await UpdateProposalsForReassignAsync(order.Id, oldShipperId, newShipperId);
 
+                    var cancelHistory = new OrderDispatchHistory
+                    {
+                        Id = Guid.NewGuid(),
+                        OrderId = order.Id,
+                        ActorId = request.CurrentUserId!.Value,
+                        ActorName = actorName,
+                        ActorRole = "Coordinator",
+                        ActionType = DispatchActionType.Canceled,
+                        TargetShipperId = oldShipperId,
+                        TargetShipperName = oldShipper?.UserProfile?.FullName ?? "Shipper",
+                        Note = $"Gỡ đơn để gán cho shipper mới. Lý do: {request.Reason}",
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    _orderDispatchHistoryRepository.Add(cancelHistory);
+
+                    var assignHistory = new OrderDispatchHistory
+                    {
+                        Id = Guid.NewGuid(),
+                        OrderId = order.Id,
+                        ActorId = request.CurrentUserId!.Value,
+                        ActorName = actorName,
+                        ActorRole = "Coordinator",
+                        ActionType = DispatchActionType.ManualAssigned,
+                        TargetShipperId = newShipperId,
+                        TargetShipperName = newShipper?.UserProfile?.FullName ?? "Shipper",
+                        Note = $"Điều phối lại đơn hàng",
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    _orderDispatchHistoryRepository.Add(assignHistory);
+
                     await AddReassignNotificationAsync(order, oldShipperId, newShipper, request.Reason);
                 }
                 else
@@ -88,10 +136,23 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
 
                     await InvalidateAcceptedProposalAsync(order.Id, oldShipperId);
 
+                    var cancelHistory = new OrderDispatchHistory
+                    {
+                        Id = Guid.NewGuid(),
+                        OrderId = order.Id,
+                        ActorId = request.CurrentUserId!.Value,
+                        ActorName = actorName,
+                        ActorRole = "Coordinator",
+                        ActionType = DispatchActionType.Canceled,
+                        TargetShipperId = oldShipperId,
+                        TargetShipperName = oldShipper?.UserProfile?.FullName ?? "Shipper",
+                        Note = $"Thu hồi đơn hàng. Lý do: {request.Reason}",
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    _orderDispatchHistoryRepository.Add(cancelHistory);
+
                     await AddNotificationAsync(order, oldShipperId, request.Reason);
-
                 }
-
 
                 await _unitOfWork.SaveChangesAsync();
 

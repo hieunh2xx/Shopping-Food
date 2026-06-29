@@ -21,6 +21,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
         private readonly IUserRepository _userRepository;
         private readonly INotificationRepository _notificationRepository;
         private readonly IOrderDeliveryProposalRepository _orderDeliveryProposalRepository;
+        private readonly IOrderDispatchHistoryRepository _orderDispatchHistoryRepository;
         private readonly IUnitOfWork _unitOfWork;
 
         public AcceptDeliveryOfferHandler(
@@ -29,6 +30,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             IUserRepository userRepository,
             INotificationRepository notificationRepository,
             IOrderDeliveryProposalRepository orderDeliveryProposalRepository,
+            IOrderDispatchHistoryRepository orderDispatchHistoryRepository,
             IUnitOfWork unitOfWork)
         {
             _orderRepository = orderRepository;
@@ -36,6 +38,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             _userRepository = userRepository;
             _notificationRepository = notificationRepository;
             _orderDeliveryProposalRepository = orderDeliveryProposalRepository;
+            _orderDispatchHistoryRepository = orderDispatchHistoryRepository;
             _unitOfWork = unitOfWork;
         }
 
@@ -99,6 +102,21 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     existingProposal.Status = ProposalStatus.Accepted;
                     _orderDeliveryProposalRepository.Update(existingProposal);
                 }
+
+                var history = new OrderDispatchHistory
+                {
+                    Id = Guid.NewGuid(),
+                    OrderId = order.Id,
+                    ActorId = request.CurrentUserId.Value,
+                    ActorName = shipperProfile.UserProfile.FullName,
+                    ActorRole = "Shipper",
+                    ActionType = DispatchActionType.Accepted,
+                    TargetShipperId = shipperProfile.Id,
+                    TargetShipperName = shipperProfile.UserProfile.FullName,
+                    CreatedAt = DateTime.UtcNow
+                };
+                _orderDispatchHistoryRepository.Add(history);
+
                 await _unitOfWork.SaveChangesAsync();
 
                 return ApiResponse.Success(new { order.Id, Status = order.Status.ToString() }, "Successfully received the single delivery proposal.");

@@ -25,6 +25,7 @@ namespace ShoppingFood.Dto.Restaurant
         public string? ClosingTime { get; set; }
         public double? MaxDeliveryRadiusKm { get; set; }
         public decimal ShippingFee { get; set; }
+        public bool IsFavorite { get; set; }
 
         public List<ProductDto> Products { get; set; } = new List<ProductDto>();
     }

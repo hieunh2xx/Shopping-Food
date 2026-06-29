@@ -21,17 +21,20 @@ namespace ShoppingFood.Application.Features.Restaurants.Queries
         private readonly IRestaurantProfileRepository _restaurantProfileRepository;
         private readonly IProductRepository _productRepository;
         private readonly IUserRepository _userRepository;
+        private readonly IFavoriteRestaurantRepository _favoriteRestaurantRepository;
         private readonly IMapper _mapper;
 
         public GetRestaurantDetailHandler(
             IRestaurantProfileRepository restaurantProfileRepository,
             IProductRepository productRepository,
             IUserRepository userRepository,
+            IFavoriteRestaurantRepository favoriteRestaurantRepository,
             IMapper mapper)
         {
             _restaurantProfileRepository = restaurantProfileRepository;
             _productRepository = productRepository;
             _userRepository = userRepository;
+            _favoriteRestaurantRepository = favoriteRestaurantRepository;
             _mapper = mapper;
         }
         public async Task<ApiResponse> Handle(GetRestaurantDetailQuery request, CancellationToken cancellationToken)
@@ -65,6 +68,15 @@ namespace ShoppingFood.Application.Features.Restaurants.Queries
                 return ApiResponse.Failure(403, "Restaurant is currently inactive or suspended.");
 
             var restaurantDto = _mapper.Map<RestaurantProfileDto>(restaurant);
+
+            if (request.CurrentUserId.HasValue)
+            {
+                var favorite = await _favoriteRestaurantRepository.GetAsync(
+                    predicate: f => f.UserProfileId == request.CurrentUserId.Value && f.RestaurantId == request.Id,
+                    disableTracking: true
+                );
+                restaurantDto.IsFavorite = favorite.Any();
+            }
 
             var products = await GetApprovedProductsAsync(request.Id);
             restaurantDto.Products = _mapper.Map<System.Collections.Generic.List<ProductDto>>(products);

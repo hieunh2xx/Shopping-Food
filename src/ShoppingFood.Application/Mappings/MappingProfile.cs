@@ -57,8 +57,8 @@ namespace ShoppingFood.Application.Mappings
                 .ForMember(dest => dest.IsFreeship, opt => opt.MapFrom(src => src.IsFreeship))
                 .ForMember(dest => dest.AvailableFrom, opt => opt.MapFrom(src => src.AvailableFrom.HasValue ? src.AvailableFrom.Value.ToString(@"hh\:mm") : null))
                 .ForMember(dest => dest.AvailableTo, opt => opt.MapFrom(src => src.AvailableTo.HasValue ? src.AvailableTo.Value.ToString(@"hh\:mm") : null))
-                .ForMember(dest => dest.IsAvailableNow, opt => opt.MapFrom(src => 
-                (!src.AvailableFrom.HasValue || !src.AvailableTo.HasValue) || 
+                .ForMember(dest => dest.IsAvailableNow, opt => opt.MapFrom(src =>
+                (!src.AvailableFrom.HasValue || !src.AvailableTo.HasValue) ||
                 (DateTime.UtcNow.AddHours(7).TimeOfDay >= src.AvailableFrom.Value && DateTime.UtcNow.AddHours(7).TimeOfDay <= src.AvailableTo.Value)))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
 
@@ -77,9 +77,9 @@ namespace ShoppingFood.Application.Mappings
 
             // MenuCategory mappings
             CreateMap<AddMenuCategoryCommand, MenuCategory>();
-            
+
             CreateMap<UpdateMenuCategoryCommand, MenuCategory>();
-            
+
             CreateMap<MenuCategory, MenuCategoryDto>()
                 .ForMember(dest => dest.ProductCount, opt => opt.MapFrom(src => src.Products != null ? src.Products.Count : 0));
 
@@ -88,12 +88,15 @@ namespace ShoppingFood.Application.Mappings
             CreateMap<AddGlobalMenuCategoryCommand, GlobalMenuCategory>().ReverseMap();
             CreateMap<UpdateGlobalMenuCategoryCommand, GlobalMenuCategory>().ReverseMap();
 
-            //ProductReport mappings
-            CreateMap<ProductReport, ProductReportDto>()
-                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product != null ? src.Product.ItemName : string.Empty))
+            //SystemReport mappings
+            CreateMap<SystemReport, ShoppingFood.Dto.Support.SystemReportDto>()
                 .ForMember(dest => dest.ReporterName, opt => opt.MapFrom(src => src.Reporter != null ? src.Reporter.FullName : string.Empty))
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
-            CreateMap<CreateProductReportCommand, ProductReport>();
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+                .ForMember(dest => dest.TargetType, opt => opt.MapFrom(src => src.TargetType.ToString()));
+            CreateMap<ShoppingFood.Application.Features.Products.Commands.CreateProductReportCommand, SystemReport>()
+                .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.Reason))
+                .ForMember(dest => dest.Content, opt => opt.MapFrom(src => src.Description))
+                .ForMember(dest => dest.TargetId, opt => opt.MapFrom(src => src.ProductId));
 
             //RestaurantProfile mappings
             CreateMap<RestaurantProfile, RestaurantProfileDto>()
@@ -189,6 +192,8 @@ namespace ShoppingFood.Application.Mappings
 
             CreateMap<OrderItem, DispatchOrderItemDto>();
 
+            CreateMap<OrderDispatchHistory, OrderDispatchHistoryDto>();
+
             CreateMap<ShipperProfile, SuggestedShipperDto>()
                 .ForMember(dest => dest.ShipperId, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.UserProfile.FullName))
@@ -228,6 +233,17 @@ namespace ShoppingFood.Application.Mappings
                 .ForMember(dest => dest.DiscountType, opt => opt.MapFrom(src => src.Discount != null ? src.Discount.Type.ToString() : string.Empty))
                 .ForMember(dest => dest.DiscountValue, opt => opt.MapFrom(src => src.Discount != null ? src.Discount.Value : 0))
                 .ForMember(dest => dest.MinOrderAmount, opt => opt.MapFrom(src => src.Discount != null ? src.Discount.MinOrderAmount : 0));
+
+            CreateMap<RestaurantProfile, NearbyRestaurantDto>()
+                .ForMember(dest => dest.OpeningTime,
+                    opt => opt.MapFrom(src => src.OpeningTime.HasValue
+                        ? src.OpeningTime.Value.ToString(@"hh\:mm")
+                        : null))
+                .ForMember(dest => dest.ClosingTime,
+                    opt => opt.MapFrom(src => src.ClosingTime.HasValue
+                        ? src.ClosingTime.Value.ToString(@"hh\:mm")
+                        : null))
+                .ForMember(dest => dest.DistanceKm, opt => opt.Ignore());
 
         }
     }

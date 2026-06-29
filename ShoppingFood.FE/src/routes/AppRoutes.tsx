@@ -3,7 +3,7 @@ import { ROUTES } from './routeConfig';
 import { PrivateRoute } from './PrivateRoute';
 
 // Layout
-import { MainLayout, AdminLayout, SellerLayout, UserLayout, ShipperLayout } from '../components/layout';
+import { MainLayout, AdminLayout, SellerLayout, UserLayout, ShipperLayout, CoordinatorLayout } from '../components/layout';
 
 // Pages
 import {
@@ -12,6 +12,7 @@ import {
   RegisterPage,
   ProductsPage,
   ProductDetailPage,
+  RestaurantDetailPage,
   SellerDashboardPage,
   AdminDashboardPage,
   AdminPermissionsPage,
@@ -21,6 +22,7 @@ import {
   SellerCategoriesPage,
   SellerToppingsPage,
   AdminUsersPage,
+  AdminRestaurantsPage,
   AdminSettingsPage,
   AdminApprovalsPage,
   NotFoundPage,
@@ -31,7 +33,11 @@ import {
   ShipperDashboard,
   ShipperHistoryPage,
   ShipperIncomePage,
-  ShipperProfilePage
+  ShipperProfilePage,
+  SellerAppealPage,
+  DispatchHistoryPage,
+  DispatchBoardPage,
+  MonitorShippersPage
 } from '../pages';
 
 /**
@@ -52,6 +58,7 @@ export function AppRoutes() {
         <Route path={ROUTES.HOME} element={<HomePage />} />
         <Route path={ROUTES.PRODUCTS} element={<ProductsPage />} />
         <Route path={ROUTES.PRODUCT_DETAIL} element={<ProductDetailPage />} />
+        <Route path={ROUTES.RESTAURANT_DETAIL} element={<RestaurantDetailPage />} />
         
         {/* Protected Client Routes inside UserLayout */}
         <Route element={<UserLayout />}>
@@ -88,6 +95,7 @@ export function AppRoutes() {
         <Route path="settings" element={<SellerSettingsPage />} />
         <Route path="categories" element={<SellerCategoriesPage />} />
         <Route path="toppings" element={<SellerToppingsPage />} />
+        <Route path="appeal" element={<SellerAppealPage />} />
       </Route>
 
       {/* Admin routes - protected with AdminLayout */}
@@ -101,9 +109,28 @@ export function AppRoutes() {
       >
         <Route index element={<AdminDashboardPage />} />
         <Route path="users" element={<AdminUsersPage />} />
+        <Route path="restaurants" element={<AdminRestaurantsPage />} />
         <Route path="permissions" element={<AdminPermissionsPage />} />
         <Route path="approvals" element={<AdminApprovalsPage />} />
         <Route path="settings" element={<AdminSettingsPage />} />
+        <Route path="dispatch" element={<DispatchBoardPage />} />
+        <Route path="shippers" element={<MonitorShippersPage />} />
+        <Route path="dispatch-history" element={<DispatchHistoryPage />} />
+      </Route>
+
+      {/* Coordinator routes - protected with CoordinatorLayout */}
+      <Route
+        path={ROUTES.COORDINATOR_DASHBOARD}
+        element={
+          <PrivateRoute allowedRoles={['Coordinator', 'Admin']}>
+            <CoordinatorLayout />
+          </PrivateRoute>
+        }
+      >
+        <Route index element={<DispatchBoardPage />} />
+        <Route path="dispatch" element={<DispatchBoardPage />} />
+        <Route path="shippers" element={<MonitorShippersPage />} />
+        <Route path="history" element={<DispatchHistoryPage />} />
       </Route>
 
       {/* Shipper routes - protected with ShipperLayout */}

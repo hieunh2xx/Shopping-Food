@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using ShoppingFood.Repository.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -29,7 +29,7 @@ namespace ShoppingFood.Application.Features.Products.GlobalMenuCategories.Comman
         private async Task<bool> BeUniqueName(UpdateGlobalMenuCategoryCommand command, CancellationToken token)
         {
             var existing = await _globalMenuCategoryRepository.GetAsync(p =>
-            p.Name.ToLower() == command.Name.ToLower());
+                p.Name.ToLower() == command.Name.ToLower() && p.Id != command.Id);
             return existing.Count == 0;
         }
     }

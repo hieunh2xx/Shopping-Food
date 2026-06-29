@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Edit, Trash2, Eye, EyeOff, Layers, ArrowUpDown } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, EyeOff, Layers, ArrowUpDown, ImagePlus } from 'lucide-react';
 import { Button, Input, Modal, Loading } from '../../components/common';
-import { adminService } from '../../services';
+import { adminService, authService } from '../../services';
 import toast from 'react-hot-toast';
 
 export function AdminSettingsPage() {
@@ -22,6 +22,36 @@ export function AdminSettingsPage() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deletingCategory, setDeletingCategory] = useState<any | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Upload State
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Vui lòng chọn file hình ảnh');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const res = await authService.uploadImage(file);
+      if (!res.error && res.data?.imageUrl) {
+        setImageUrl(res.data.imageUrl);
+        toast.success('Tải ảnh lên thành công');
+      } else {
+        toast.error(res.message || 'Lỗi khi tải ảnh lên');
+      }
+    } catch {
+      toast.error('Lỗi kết nối khi tải ảnh');
+    } finally {
+      setIsUploading(false);
+      // Reset input value so same file can be selected again
+      e.target.value = '';
+    }
+  };
 
   const loadCategories = useCallback(async () => {
     setIsLoading(true);
@@ -294,8 +324,47 @@ export function AdminSettingsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Đường dẫn ảnh (URL)</label>
-            <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://example.com/category-thumb.jpg" />
+            <label className="block text-sm font-medium text-gray-700 mb-2">Ảnh sản phẩm</label>
+            <div className="flex gap-4">
+              {/* Left side: Upload Button / Preview */}
+              <div className="relative w-28 h-28 flex-shrink-0 rounded-2xl border-2 border-dashed border-gray-300 hover:border-orange-500 hover:bg-orange-50 transition-colors flex flex-col items-center justify-center overflow-hidden bg-white group">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                  title="Chọn ảnh từ máy"
+                />
+                
+                {isUploading ? (
+                  <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin z-10"></div>
+                ) : imageUrl ? (
+                  <>
+                    <img src={imageUrl} alt="Preview" className="absolute inset-0 w-full h-full object-cover z-10 pointer-events-none" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-opacity z-10 text-white pointer-events-none">
+                      <Edit className="w-5 h-5 mb-1" />
+                      <span className="text-[10px] font-medium">Đổi ảnh</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center justify-center text-gray-400 pointer-events-none z-10 group-hover:text-orange-500">
+                    <Plus className="w-7 h-7 mb-1" />
+                    <span className="text-xs font-medium">Chọn ảnh</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Right side: URL Input */}
+              <div className="flex-1 flex flex-col justify-center">
+                <label className="block text-xs text-gray-500 mb-1.5 font-medium">Nhập URL ảnh trực tiếp (nếu có):</label>
+                <Input 
+                  value={imageUrl} 
+                  onChange={(e) => setImageUrl(e.target.value)} 
+                  placeholder="https://example.com/image.jpg" 
+                  className="bg-gray-50"
+                />
+              </div>
+            </div>
           </div>
 
           <div>

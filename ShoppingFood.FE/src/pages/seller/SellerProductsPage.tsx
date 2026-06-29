@@ -704,11 +704,10 @@ export function SellerProductsPage() {
                         <button
                           onClick={() => handleToggleVisibility(product)}
                           disabled={togglingId === product.id}
-                          className={`p-2 rounded-lg transition-colors disabled:opacity-50 ${
-                            product.isHidden
+                          className={`p-2 rounded-lg transition-colors disabled:opacity-50 ${product.isHidden
                               ? 'text-gray-400 hover:text-orange-600 hover:bg-orange-50'
                               : 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50'
-                          }`}
+                            }`}
                           title={product.isHidden ? 'Sản phẩm đang ẩn — nhấn để hiện' : 'Sản phẩm đang hiện — nhấn để ẩn'}
                         >
                           {product.isHidden ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}

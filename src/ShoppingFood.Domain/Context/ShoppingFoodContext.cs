@@ -32,7 +32,7 @@ namespace ShoppingFood.Domain.Context
         public DbSet<ProductSize> ProductSizes { get; set; } = null!;
         public DbSet<ProductReview> ProductReviews { get; set; } = null!;
         public DbSet<GlobalMenuCategory> GlobalMenuCategories { get; set; } = null!;
-        public DbSet<ProductReport> ProductReports { get; set; } = null!;
+        public DbSet<SystemReport> SystemReports { get; set; } = null!;
         public DbSet<Notification> Notifications { get; set; } = null!;
         public DbSet<FavoriteRestaurant> FavoriteRestaurants { get; set; } = null!;
         public DbSet<UserAddress> UserAddresses { get; set; } = null!;
@@ -49,6 +49,7 @@ namespace ShoppingFood.Domain.Context
         public DbSet<FlashSale> FlashSales { get; set; } = null!;
         public DbSet<FlashSaleProduct> FlashSaleProducts { get; set; } = null!;
         public DbSet<MemberTierConfig> MemberTierConfigs { get; set; } = null!;
+        public DbSet<OrderDispatchHistory> OrderDispatchHistories { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -406,18 +407,14 @@ namespace ShoppingFood.Domain.Context
                 entity.Property(e => e.UpdatedAt);
             });
 
-            modelBuilder.Entity<ProductReport>(entity =>
+            modelBuilder.Entity<SystemReport>(entity =>
             {
-                entity.ToTable("PRODUCT_REPORT");
+                entity.ToTable("SYSTEM_REPORT");
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Reason).IsRequired().HasMaxLength(150);
-                entity.Property(e => e.Description).HasMaxLength(100);
+                entity.Property(e => e.TargetType).HasConversion<string>().IsRequired();
+                entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.Content).HasMaxLength(2000);
                 entity.Property(e => e.Status).HasConversion<string>().IsRequired();
-
-                entity.HasOne(d => d.Product)
-                .WithMany()
-                .HasForeignKey(d => d.ProductId)
-                .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasOne(d => d.Reporter)
                 .WithMany()
@@ -762,6 +759,18 @@ namespace ShoppingFood.Domain.Context
                 entity.HasData(new MemberTierConfig { Id = Guid.NewGuid(), Tier = MemberTier.Silver, MinPoints = 100, CreatedAt = DateTime.UtcNow },
                                new MemberTierConfig { Id = Guid.NewGuid(), Tier = MemberTier.Gold, MinPoints = 500, CreatedAt = DateTime.UtcNow },
                                new MemberTierConfig { Id = Guid.NewGuid(), Tier = MemberTier.Diamond, MinPoints = 1000, CreatedAt = DateTime.UtcNow });
+            });
+
+            modelBuilder.Entity<OrderDispatchHistory>(entity =>
+            {
+                entity.ToTable("ORDER_DISPATCH_HISTORY");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.ActionType).HasConversion<string>().IsRequired();
+
+                entity.HasOne(e => e.Order)
+                .WithMany()
+                .HasForeignKey(e => e.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }

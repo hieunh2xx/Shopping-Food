@@ -9,9 +9,10 @@ import { ChangePasswordModal } from '../components/auth/ChangePasswordModal';
 import { UpdateProfileModal } from '../components/auth/UpdateProfileModal';
 import { ChangeContactModal } from '../components/auth/ChangeContactModal';
 import { UserAddressManager } from '../components/profile/UserAddressManager';
-import { Lock, Trash2 } from 'lucide-react';
+import { Lock, Trash2, Heart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../routes/routeConfig';
+import { FavoriteRestaurants } from '../components/profile/FavoriteRestaurants';
 
 export function ProfilePage() {
   const navigate = useNavigate();
@@ -286,6 +287,14 @@ export function ProfilePage() {
 
       <div className="mt-8 bg-white p-6 rounded-lg shadow-sm border border-gray-100">
         <UserAddressManager />
+      </div>
+
+      <div className="mt-8 bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+        <h3 className="text-xl font-bold mb-6 text-gray-800 flex items-center gap-2">
+          <Heart className="w-6 h-6 text-red-500 fill-current" />
+          Quán ăn yêu thích
+        </h3>
+        <FavoriteRestaurants />
       </div>
 
       <div className="mt-8 bg-white p-6 rounded-lg shadow-sm border border-red-100">

@@ -1,13 +1,14 @@
 import { httpClient } from './base/HttpClient';
 import { API_ENDPOINTS } from '../config/endpoints';
-import type { 
-  IApiResponse, 
-  IRestaurantProfileDto, 
-  IUpdateRestaurantBasicInfo, 
-  IUpdateRestaurantOperatingHours, 
-  IUpdateRestaurantStatus, 
-  IUpdateRestaurantDeliveryRadius, 
-  IUpdateRestaurantShippingFee 
+import type {
+  IApiResponse,
+  IRestaurantProfileDto,
+  IUpdateRestaurantBasicInfo,
+  IUpdateRestaurantOperatingHours,
+  IUpdateRestaurantStatus,
+  IUpdateRestaurantDeliveryRadius,
+  IUpdateRestaurantShippingFee,
+  INearbyRestaurantDto
 } from '../interfaces';
 
 class RestaurantService {
@@ -17,6 +18,10 @@ class RestaurantService {
 
   async getDashboardStats(params?: { startDate?: string; endDate?: string }): Promise<IApiResponse<any>> {
     return httpClient.get<IApiResponse<any>>(API_ENDPOINTS.RESTAURANT.DASHBOARD_STATS, { params });
+  }
+
+  async getNearby(params: { latitude: number; longitude: number; radiusInKm: number; skip?: number; take?: number }): Promise<IApiResponse<INearbyRestaurantDto[]>> {
+    return httpClient.get<IApiResponse<INearbyRestaurantDto[]>>(API_ENDPOINTS.RESTAURANT.NEARBY, { params });
   }
 
   async getFavorites(params?: { skip?: number; take?: number }): Promise<IApiResponse<IRestaurantProfileDto[]>> {

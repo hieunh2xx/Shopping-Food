@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, ChefHat, Truck, Shield, Star, History, RotateCcw } from 'lucide-react';
+import { ArrowRight, ChefHat, Truck, Shield, Star, History, RotateCcw, MapPin } from 'lucide-react';
 import { useProducts, useCart } from '../hooks';
 import { ProductList } from '../components/product/ProductList';
+import { RestaurantCard } from '../components/restaurant/RestaurantCard';
+import { restaurantService } from '../services/RestaurantService';
+import type { INearbyRestaurantDto } from '../interfaces';
 import { ROUTES } from '../routes/routeConfig';
 import { formatCurrency } from '../utils/formatters';
 
@@ -10,7 +13,10 @@ export function HomePage() {
   const { bestSellers, fetchBestSellers, isLoading } = useProducts();
   const { addItem } = useCart();
   
-  // Mock data for "Buy Again" feature
+  // Nearby Restaurants State
+  const [nearbyRestaurants, setNearbyRestaurants] = useState<INearbyRestaurantDto[]>([]);
+  const [isNearbyLoading, setIsNearbyLoading] = useState(false);
+  const [locationStatus, setLocationStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [recentOrders] = useState([
     {
       id: 'mock-1',
@@ -65,6 +71,54 @@ export function HomePage() {
   useEffect(() => {
     fetchBestSellers(8);
   }, [fetchBestSellers]);
+
+  useEffect(() => {
+    fetchNearbyRestaurants();
+  }, []);
+
+  const fetchNearbyRestaurants = () => {
+    setIsNearbyLoading(true);
+    setLocationStatus('loading');
+
+    // Mặc định: Hồ Chí Minh
+    const defaultLocation = { latitude: 10.7769, longitude: 106.7009 };
+
+    if (!navigator.geolocation) {
+      setLocationStatus('error');
+      loadNearby(defaultLocation.latitude, defaultLocation.longitude);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocationStatus('success');
+        loadNearby(position.coords.latitude, position.coords.longitude);
+      },
+      () => {
+        setLocationStatus('error');
+        loadNearby(defaultLocation.latitude, defaultLocation.longitude);
+      },
+      { timeout: 5000 }
+    );
+  };
+
+  const loadNearby = async (lat: number, lng: number) => {
+    try {
+      const res = await restaurantService.getNearby({
+        latitude: lat,
+        longitude: lng,
+        radiusInKm: 10,
+        take: 8
+      });
+      if (!res.error && res.data) {
+        setNearbyRestaurants(res.data);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsNearbyLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-0 bg-white">
@@ -191,6 +245,41 @@ export function HomePage() {
         </div>
 
         <ProductList products={bestSellers} isLoading={isLoading} emptyMessage="Chưa có dữ liệu sản phẩm" />
+      </section>
+
+      {/* Nearby Restaurants */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-16 border-t border-gray-100">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+              <MapPin className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Quán ngon quanh bạn</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                {locationStatus === 'loading' ? 'Đang xác định vị trí...' : 
+                 locationStatus === 'error' ? 'Sử dụng vị trí mặc định (Hồ Chí Minh)' : 
+                 'Các nhà hàng gần vị trí của bạn nhất'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {isNearbyLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        ) : nearbyRestaurants.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {nearbyRestaurants.map(rest => (
+              <RestaurantCard key={rest.id} restaurant={rest} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12 bg-gray-50 rounded-2xl border border-gray-100">
+            <p className="text-gray-500">Chưa tìm thấy quán nào trong bán kính 10km quanh bạn.</p>
+          </div>
+        )}
       </section>
 
       {/* CTA */}

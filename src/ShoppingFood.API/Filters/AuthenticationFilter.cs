@@ -292,6 +292,14 @@ namespace ShoppingFood.API.Filters
                 }
             }
 
+            if (path.StartsWith("/api/Support/appeal", StringComparison.OrdinalIgnoreCase))
+            {
+                if (user.Profile?.Role != UserRole.Seller && user.Profile?.Role != UserRole.Mall)
+                {
+                    throw new UnauthorizedAccessException("Only sellers and malls are allowed to submit appeals.");
+                }
+            }
+
 
             // Inject CurrentUserId into Commands/Queries
             foreach (var arg in context.ActionArguments.Values)
