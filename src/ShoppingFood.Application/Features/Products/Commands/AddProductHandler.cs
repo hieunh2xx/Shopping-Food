@@ -1,5 +1,6 @@
 using AutoMapper;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
 using ShoppingFood.Domain.Models;
@@ -17,12 +18,21 @@ namespace ShoppingFood.Application.Features.Products.Commands
     public class AddProductHandler : IRequestHandler<AddProductCommand, ApiResponse>
     {
         private readonly IProductRepository _productRepository;
+        private readonly IUserRepository _userRepository;
+        private readonly INotificationRepository _notificationRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public AddProductHandler(IProductRepository productRepository, IUnitOfWork unitOfWork, IMapper mapper)
+        public AddProductHandler(
+            IProductRepository productRepository, 
+            IUserRepository userRepository,
+            INotificationRepository notificationRepository,
+            IUnitOfWork unitOfWork, 
+            IMapper mapper)
         {
             _productRepository = productRepository;
+            _userRepository = userRepository;
+            _notificationRepository = notificationRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
@@ -38,6 +48,29 @@ namespace ShoppingFood.Application.Features.Products.Commands
                 AddSizes(product, request.Sizes);
 
                 _productRepository.Add(product);
+                await _unitOfWork.SaveChangesAsync();
+
+                // Send notification to all admin users
+                var admins = await _userRepository.GetAsync(
+                    predicate: u => u.Profile != null && u.Profile.Role == UserRole.Admin,
+                    include: q => q.Include(u => u.Profile),
+                    disableTracking: true
+                );
+
+                foreach (var admin in admins)
+                {
+                    var notification = new Notification
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = admin.Id,
+                        Title = "Yêu cầu duyệt món ăn mới",
+                        Message = $"Món ăn mới '{product.ItemName}' đang chờ bạn phê duyệt.",
+                        NotificationType = NotificationType.System,
+                        IsRead = false,
+                        CreateAt = DateTime.UtcNow
+                    };
+                    _notificationRepository.Add(notification);
+                }
                 await _unitOfWork.SaveChangesAsync();
 
                 var productDto = _mapper.Map<ProductDto>(product);

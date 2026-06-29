@@ -50,6 +50,10 @@ namespace ShoppingFood.API.Controllers
         [HttpGet]
         public async Task<ActionResult<ApiResponse>> Get([FromQuery] GetProductsQuery query)
         {
+            if (userDto != null)
+            {
+                query.CurrentUserId = userDto.Id;
+            }
             var response = await _mediator.Send(query);
             return Ok(response);
         }
@@ -64,6 +68,10 @@ namespace ShoppingFood.API.Controllers
         [HttpGet("Search")]
         public async Task<ActionResult<ApiResponse>> Search([FromQuery] SearchProductQuery query)
         {
+            if (userDto != null)
+            {
+                query.CurrentUserId = userDto.Id;
+            }
             var response = await _mediator.Send(query);
             return Ok(response);
         }

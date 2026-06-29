@@ -62,6 +62,13 @@ export const API_ENDPOINTS = {
     REVIEW: '/Product/review',                     // POST
   },
 
+  NOTIFICATION: {
+    BASE: '/Notification',
+    GET_ALL: '/Notification',
+    READ: (id: string) => `/Notification/${id}/read`,
+    READ_ALL: '/Notification/read-all',
+  },
+
   // === Menu Category (MenuCategoryController) ===
   MENU_CATEGORY: {
     BASE: '/MenuCategory',

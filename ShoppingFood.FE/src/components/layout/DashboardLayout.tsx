@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { LogOut, Menu, X } from 'lucide-react';
 import { useAuth } from '../../hooks';
+import { NotificationBell } from './NotificationBell';
 
 export interface NavItem {
   name: string;
@@ -129,6 +130,7 @@ export function DashboardLayout({
           </div>
           
           <div className="flex items-center gap-4">
+            <NotificationBell />
             <div className="flex items-center gap-3">
               <div className="text-right hidden sm:block">
                 <p className="text-sm font-medium text-gray-900">{user?.fullName || 'User'}</p>

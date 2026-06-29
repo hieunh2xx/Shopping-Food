@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { User, LogOut, ChefHat, Search } from 'lucide-react';
 import { useAuth } from '../../hooks';
 import { CartDrawer } from './CartDrawer';
+import { NotificationBell } from './NotificationBell';
 import { ROUTES } from '../../routes/routeConfig';
 import { useState } from 'react';
 
@@ -57,6 +58,9 @@ export function Header() {
                 <>
                   {/* Cart */}
                   <CartDrawer />
+
+                  {/* Notifications */}
+                  <NotificationBell />
 
                   {/* User Menu */}
                   <div className="relative group">

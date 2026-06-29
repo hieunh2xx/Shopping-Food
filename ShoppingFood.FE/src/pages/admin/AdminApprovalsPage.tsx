@@ -43,21 +43,20 @@ export function AdminApprovalsPage() {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      if (activeTab === 'sellers') {
-        const res = await adminService.getSellerApplications({ status: 'Pending' });
-        if (!res.error && res.data) {
-          setSellers(res.data);
-        }
-      } else if (activeTab === 'shippers') {
-        const res = await adminService.getShipperApplications({ status: 'Pending' });
-        if (!res.error && res.data) {
-          setShippers(res.data);
-        }
-      } else if (activeTab === 'products') {
-        const res = await productService.search({ status: 'Pending' });
-        if (!res.error && res.data) {
-          setProducts(res.data);
-        }
+      const [sellersRes, shippersRes, productsRes] = await Promise.all([
+        adminService.getSellerApplications({ status: 'Pending' }),
+        adminService.getShipperApplications({ status: 'Pending' }),
+        productService.search({ status: 'Pending' })
+      ]);
+
+      if (!sellersRes.error && sellersRes.data) {
+        setSellers(sellersRes.data);
+      }
+      if (!shippersRes.error && shippersRes.data) {
+        setShippers(shippersRes.data);
+      }
+      if (!productsRes.error && productsRes.data) {
+        setProducts(productsRes.data);
       }
     } catch {
       toast.error('Không thể tải danh sách phê duyệt');

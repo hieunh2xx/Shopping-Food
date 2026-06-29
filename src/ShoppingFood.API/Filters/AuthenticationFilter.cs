@@ -79,6 +79,31 @@ namespace ShoppingFood.API.Filters
 
             if (isBypassPath || isGuestCartRequest)
             {
+                if (context.HttpContext.Request.Headers.ContainsKey("Authorization"))
+                {
+                    try
+                    {
+                        string optToken = context.HttpContext.Request.Headers["Authorization"]!;
+                        if (optToken.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                        {
+                            optToken = optToken.Substring("Bearer ".Length).Trim();
+                        }
+                        string optUsername = TokenHelper.GetUsernameFromToken(optToken, _configuration);
+                        var optUser = await _dbContext.Users
+                            .Include(u => u.Profile)
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(u => u.UserName == optUsername);
+                        if (optUser != null)
+                        {
+                            var mappedUserDto = _mapper.Map<UserDto>(optUser);
+                            context.HttpContext.User = new MyPrincipal(mappedUserDto);
+                        }
+                    }
+                    catch
+                    {
+                        // Fail silently for bypass/guest request
+                    }
+                }
                 await next();
                 return;
             }
@@ -297,6 +322,15 @@ namespace ShoppingFood.API.Filters
                 if (user.Profile?.Role != UserRole.Seller && user.Profile?.Role != UserRole.Mall)
                 {
                     throw new UnauthorizedAccessException("Only sellers and malls are allowed to submit appeals.");
+                }
+            }
+
+            // Phân quyền: Notification cho phép tất cả các Role (chỉ cần đăng nhập)
+            if (path.StartsWith("/api/Notification", StringComparison.OrdinalIgnoreCase))
+            {
+                if (user.Profile == null)
+                {
+                    throw new UnauthorizedAccessException("User profile is required to access notifications.");
                 }
             }
 

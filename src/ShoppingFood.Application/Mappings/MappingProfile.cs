@@ -245,6 +245,7 @@ namespace ShoppingFood.Application.Mappings
                         : null))
                 .ForMember(dest => dest.DistanceKm, opt => opt.Ignore());
 
+            CreateMap<Notification, ShoppingFood.Dto.Notification.NotificationDto>();
         }
     }
 }

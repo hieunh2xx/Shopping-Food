@@ -15,4 +15,6 @@ export { orderService } from './OrderService';
 export { coordinatorService } from './CoordinatorService';
 export { promotionService } from './PromotionService';
 export { loyaltyPointService } from './LoyaltyPointService';
-export {pointGiftConfigService} from './PointGiftConfigService'
+export {pointGiftConfigService} from './PointGiftConfigService';
+export { notificationService } from './NotificationService';
+export type { INotificationDto } from './NotificationService';
