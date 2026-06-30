@@ -8,7 +8,9 @@ import {
   ShieldCheck,
   History,
   Truck,
-  ShieldAlert
+  ShieldAlert,
+  Tag,
+  Award
 } from 'lucide-react';
 import { useAuth } from '../../../hooks';
 import { ROUTES } from '../../../routes/routeConfig';
@@ -32,6 +34,8 @@ export function AdminLayout() {
     { name: 'Lịch sử điều phối', path: ROUTES.ADMIN_DISPATCH_HISTORY, icon: History },
     { name: 'Phân quyền', path: '/admin/permissions', icon: ShieldCheck },
     { name: 'Duyệt đối tác', path: '/admin/approvals', icon: Store },
+    { name: 'Khuyến mãi hệ thống', path: '/admin/discounts', icon: Tag },
+    { name: 'Cấu hình Điểm', path: '/admin/loyalty', icon: Award },
     { name: 'Cấu hình hệ thống', path: '/admin/settings', icon: Settings },
   ];
 

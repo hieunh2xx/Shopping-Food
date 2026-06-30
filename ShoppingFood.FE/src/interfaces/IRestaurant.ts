@@ -1,5 +1,13 @@
 import type { IProductDto } from './IProduct';
 
+export interface IFavoriteRestaurantDto {
+  restaurantId: string;
+  restaurantName: string;
+  logoUrl?: string;
+  address: string;
+  favoritedAt: string;
+}
+
 export interface IRestaurantProfileDto {
   id: string;
   restaurantName: string;

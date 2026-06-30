@@ -3,7 +3,8 @@ import { useParams } from 'react-router-dom';
 import { Heart, MapPin, Clock, Star, Phone, ShieldCheck } from 'lucide-react';
 import { restaurantService } from '../services/RestaurantService';
 import { productService } from '../services/ProductService';
-import type { IRestaurantProfileDto, IProductDto } from '../interfaces';
+import { menuCategoryService } from '../services/MenuCategoryService';
+import type { IRestaurantProfileDto, IProductDto, IMenuCategoryDto } from '../interfaces';
 import { ProductList } from '../components/product/ProductList';
 import toast from 'react-hot-toast';
 
@@ -11,6 +12,8 @@ export function RestaurantDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [restaurant, setRestaurant] = useState<IRestaurantProfileDto | null>(null);
   const [products, setProducts] = useState<IProductDto[]>([]);
+  const [categories, setCategories] = useState<IMenuCategoryDto[]>([]);
+  const [activeCategory, setActiveCategory] = useState<string>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [isProductsLoading, setIsProductsLoading] = useState(true);
   const [isFavoriting, setIsFavoriting] = useState(false);
@@ -18,7 +21,8 @@ export function RestaurantDetailPage() {
   useEffect(() => {
     if (id) {
       fetchRestaurant(id);
-      fetchProducts(id);
+      fetchCategories(id);
+      fetchProducts(id, 'all');
     }
   }, [id]);
 
@@ -37,9 +41,25 @@ export function RestaurantDetailPage() {
     }
   };
 
-  const fetchProducts = async (restId: string) => {
+  const fetchCategories = async (restId: string) => {
     try {
-      const res = await productService.search({ restaurantId: restId, take: 50 });
+      const res = await menuCategoryService.getByRestaurant(restId);
+      if (!res.error && res.data) {
+        setCategories(res.data);
+      }
+    } catch {
+      console.error('Lỗi tải danh mục món ăn');
+    }
+  };
+
+  const fetchProducts = async (restId: string, categoryId: string) => {
+    setIsProductsLoading(true);
+    try {
+      const res = await productService.search({ 
+        restaurantId: restId, 
+        categoryId: categoryId === 'all' ? undefined : categoryId,
+        take: 50 
+      });
       if (!res.error && res.data) {
         setProducts(res.data);
       }
@@ -47,6 +67,13 @@ export function RestaurantDetailPage() {
       console.error('Lỗi tải danh sách món ăn');
     } finally {
       setIsProductsLoading(false);
+    }
+  };
+
+  const handleCategoryChange = (categoryId: string) => {
+    setActiveCategory(categoryId);
+    if (restaurant) {
+      fetchProducts(restaurant.id, categoryId);
     }
   };
 
@@ -191,6 +218,36 @@ export function RestaurantDetailPage() {
           {/* Menu */}
           <div className="lg:col-span-3">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Thực đơn quán</h2>
+            
+            {/* Category Tabs */}
+            <div className="mb-6 overflow-x-auto pb-4 hide-scrollbar">
+              <div className="flex gap-3">
+                <button
+                  onClick={() => handleCategoryChange('all')}
+                  className={`px-5 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                    activeCategory === 'all'
+                      ? 'bg-orange-600 text-white shadow-md shadow-orange-500/20'
+                      : 'bg-white border border-gray-200 text-gray-700 hover:border-orange-400 hover:text-orange-600'
+                  }`}
+                >
+                  Tất cả món
+                </button>
+                {categories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => handleCategoryChange(cat.id)}
+                    className={`px-5 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                      activeCategory === cat.id
+                        ? 'bg-orange-600 text-white shadow-md shadow-orange-500/20'
+                        : 'bg-white border border-gray-200 text-gray-700 hover:border-orange-400 hover:text-orange-600'
+                    }`}
+                  >
+                    {cat.title}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <ProductList products={products} isLoading={isProductsLoading} emptyMessage="Quán ăn hiện tại chưa có món nào." />
           </div>
 

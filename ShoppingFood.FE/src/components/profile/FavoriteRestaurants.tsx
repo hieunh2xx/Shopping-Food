@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Heart } from 'lucide-react';
 import { restaurantService } from '../../services/RestaurantService';
-import type { IRestaurantProfileDto } from '../../interfaces';
+import type { IFavoriteRestaurantDto } from '../../interfaces';
 import { RestaurantCard } from '../restaurant/RestaurantCard';
 
 export function FavoriteRestaurants() {
-  const [favorites, setFavorites] = useState<IRestaurantProfileDto[]>([]);
+  const [favorites, setFavorites] = useState<IFavoriteRestaurantDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -49,10 +49,14 @@ export function FavoriteRestaurants() {
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       {favorites.map(rest => (
         <RestaurantCard 
-          key={rest.id} 
+          key={rest.restaurantId} 
           restaurant={{
-            ...rest,
+            id: rest.restaurantId,
+            restaurantName: rest.restaurantName,
             restaurantAddress: rest.address,
+            logoUrl: rest.logoUrl,
+            averageRating: 0,
+            reviewCount: 0,
             distanceKm: 0,
             shippingFee: 0,
           }} 

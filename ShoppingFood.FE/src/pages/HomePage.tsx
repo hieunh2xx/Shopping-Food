@@ -5,6 +5,7 @@ import { useProducts, useCart, useAuth } from '../hooks';
 import { ProductList } from '../components/product/ProductList';
 import { RestaurantCard } from '../components/restaurant/RestaurantCard';
 import { restaurantService } from '../services/RestaurantService';
+import { orderService } from '../services/OrderService';
 import type { INearbyRestaurantDto } from '../interfaces';
 import { ROUTES } from '../routes/routeConfig';
 import { formatCurrency } from '../utils/formatters';
@@ -25,56 +26,30 @@ export function HomePage() {
   const [nearbyRestaurants, setNearbyRestaurants] = useState<INearbyRestaurantDto[]>([]);
   const [isNearbyLoading, setIsNearbyLoading] = useState(false);
   const [locationStatus, setLocationStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [recentOrders] = useState([
-    {
-      id: 'mock-1',
-      restaurantId: 'rest-1',
-      restaurantName: 'Phở Bắc Hải',
-      itemName: 'Phở bò đặc biệt',
-      price: 55000,
-      stockStatus: 'InStock',
-      categoryId: 'cat-1',
-      categoryName: 'Món nước',
-      primaryImageUrl: '',
-      description: '',
-      images: [],
-      toppings: [],
-      sizes: [],
-      createdAt: '',
-      isHidden: false,
-      averageRating: 5,
-      reviewCount: 10,
-      isFreeship: true,
-      availableFrom: null,
-      availableTo: null,
-      isAvailableNow: true,
-      status: 'Active'
-    },
-    {
-      id: 'mock-2',
-      restaurantId: 'rest-2',
-      restaurantName: 'Cơm Tấm Cali',
-      itemName: 'Cơm sườn bì chả',
-      price: 65000,
-      stockStatus: 'InStock',
-      categoryId: 'cat-2',
-      categoryName: 'Cơm',
-      primaryImageUrl: '',
-      description: '',
-      images: [],
-      toppings: [],
-      sizes: [],
-      createdAt: '',
-      isHidden: false,
-      averageRating: 4.5,
-      reviewCount: 42,
-      isFreeship: false,
-      availableFrom: null,
-      availableTo: null,
-      isAvailableNow: true,
-      status: 'Active'
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchRecentOrders();
     }
-  ]);
+  }, [isAuthenticated]);
+
+  const fetchRecentOrders = async () => {
+    try {
+      const res = await orderService.getRecentItems();
+      if (!res.error && res.data) {
+        const mappedData = res.data.map((item: any) => ({
+          ...item,
+          id: item.productId,
+          price: item.unitPrice,
+          primaryImageUrl: item.imageUrl,
+        }));
+        setRecentOrders(mappedData);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
     fetchBestSellers(8);
@@ -198,43 +173,49 @@ export function HomePage() {
       </section>
 
       {/* Recently Ordered (Buy Again) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-12 border-t border-gray-100">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
-              <History className="w-5 h-5 text-orange-600" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">Món bạn đã thử</h2>
-              <p className="text-sm text-gray-500 mt-1">Đặt lại những món ngon bạn từng ăn</p>
+      {recentOrders.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-12 border-t border-gray-100">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                <History className="w-5 h-5 text-orange-600" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Món bạn đã thử</h2>
+                <p className="text-sm text-gray-500 mt-1">Đặt lại những món ngon bạn từng ăn</p>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {recentOrders.map((product) => (
-            <div key={product.id} className="bg-white rounded-2xl border border-gray-200 p-4 hover:shadow-md transition-shadow">
-              <div className="flex gap-4">
-                <div className="w-20 h-20 rounded-xl bg-gray-100 flex items-center justify-center overflow-hidden shrink-0">
-                  <span className="text-3xl">🍲</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {recentOrders.map((product) => (
+              <div key={product.id} className="bg-white rounded-2xl border border-gray-200 p-4 hover:shadow-md transition-shadow">
+                <div className="flex gap-4">
+                  <div className="w-20 h-20 rounded-xl bg-gray-100 flex items-center justify-center overflow-hidden shrink-0">
+                    {product.primaryImageUrl ? (
+                      <img src={product.primaryImageUrl} alt={product.itemName} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-3xl">🍲</span>
+                    )}
+                  </div>
+                  <div className="flex flex-col flex-1">
+                    <h3 className="font-semibold text-gray-900 line-clamp-1">{product.itemName}</h3>
+                    <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{product.restaurantName}</p>
+                    <p className="font-bold text-orange-600 mt-auto">{formatCurrency(product.price)}</p>
+                  </div>
                 </div>
-                <div className="flex flex-col flex-1">
-                  <h3 className="font-semibold text-gray-900 line-clamp-1">{product.itemName}</h3>
-                  <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{product.restaurantName}</p>
-                  <p className="font-bold text-orange-600 mt-auto">{formatCurrency(product.price)}</p>
-                </div>
+                <button 
+                  onClick={() => addItem(product, 1)}
+                  className="mt-4 w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-orange-50 text-orange-600 font-medium hover:bg-orange-100 transition-colors"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  Mua lại
+                </button>
               </div>
-              <button 
-                onClick={() => addItem(product, 1)}
-                className="mt-4 w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-orange-50 text-orange-600 font-medium hover:bg-orange-100 transition-colors"
-              >
-                <RotateCcw className="w-4 h-4" />
-                Mua lại
-              </button>
-            </div>
-          ))}
-        </div>
-      </section>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Best Sellers */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-16">

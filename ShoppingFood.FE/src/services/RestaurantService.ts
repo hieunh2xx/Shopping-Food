@@ -8,7 +8,8 @@ import type {
   IUpdateRestaurantStatus,
   IUpdateRestaurantDeliveryRadius,
   IUpdateRestaurantShippingFee,
-  INearbyRestaurantDto
+  INearbyRestaurantDto,
+  IFavoriteRestaurantDto
 } from '../interfaces';
 
 class RestaurantService {
@@ -24,8 +25,8 @@ class RestaurantService {
     return httpClient.get<IApiResponse<INearbyRestaurantDto[]>>(API_ENDPOINTS.RESTAURANT.NEARBY, { params });
   }
 
-  async getFavorites(params?: { skip?: number; take?: number }): Promise<IApiResponse<IRestaurantProfileDto[]>> {
-    return httpClient.get<IApiResponse<IRestaurantProfileDto[]>>(API_ENDPOINTS.RESTAURANT.FAVORITES, {
+  async getFavorites(params?: { skip?: number; take?: number }): Promise<IApiResponse<IFavoriteRestaurantDto[]>> {
+    return httpClient.get<IApiResponse<IFavoriteRestaurantDto[]>>(API_ENDPOINTS.RESTAURANT.FAVORITES, {
       params,
     });
   }

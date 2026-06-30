@@ -24,6 +24,13 @@ class OrderService {
   }
 
   /**
+   * Get recently ordered items for the current user
+   */
+  public async getRecentItems(): Promise<IApiResponse<any[]>> {
+    return httpClient.get<IApiResponse<any[]>>(API_ENDPOINTS.ORDER.RECENT_ITEMS);
+  }
+
+  /**
    * Get orders for the restaurant owned by the current seller
    */
   public async getRestaurantOrders(params?: { status?: string; skip?: number; take?: number }): Promise<IApiResponse<any[]>> {

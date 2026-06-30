@@ -30,6 +30,7 @@ export const API_ENDPOINTS = {
   ORDER: {
     BASE: '/Order',
     MY_ORDERS: '/Order/MyOrders', // GET
+    RECENT_ITEMS: '/Order/recent-items', // GET
     RESTAURANT_ORDERS: '/Order/RestaurantOrders', // GET
     DETAILS: (id: string) => `/Order/details/${id}`, // GET
     CHECKOUT: '/Order/checkout', // POST

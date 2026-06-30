@@ -7,7 +7,9 @@ import {
   Store,
   Layers,
   ListPlus,
-  ShieldAlert
+  ShieldAlert,
+  Ticket,
+  Gift
 } from 'lucide-react';
 import { useAuth } from '../../../hooks';
 import { ROUTES } from '../../../routes/routeConfig';
@@ -28,6 +30,8 @@ export function SellerLayout() {
     { name: 'Thực đơn', path: ROUTES.SELLER_PRODUCTS, icon: Package },
     { name: 'Danh mục thực đơn', path: '/seller/categories', icon: Layers },
     { name: 'Tùy chọn Topping', path: '/seller/toppings', icon: ListPlus },
+    { name: 'Mã giảm giá', path: '/seller/discounts', icon: Ticket },
+    { name: 'Mua X Tặng Y', path: '/seller/promotions', icon: Gift },
     { name: 'Thông tin cửa hàng', path: '/seller/settings', icon: Settings },
   ];
 

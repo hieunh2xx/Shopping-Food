@@ -143,6 +143,17 @@ namespace ShoppingFood.API.Controllers
             var response = await _mediator.Send(command);
             return StatusCode(response.Code, response);
         }
+        [HttpGet("recent-items")]
+        public async Task<IActionResult> GetRecentOrderItems([FromQuery] GetRecentOrderItemsQuery query)
+        {
+            if(userDto != null)
+            {
+                query.CurrentUserId = userDto.Id;
+            }
+            var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
+        }
+
         [HttpPost("seller-cancel")]
         public async Task<IActionResult> SellerCancelOrder([FromBody]  SellerCancelOrderCommand command)
         {

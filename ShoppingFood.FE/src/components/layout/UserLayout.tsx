@@ -1,19 +1,23 @@
-import { Outlet, NavLink } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { ROUTES } from '../../routes/routeConfig';
-import { User, ShoppingBag, Store } from 'lucide-react';
+import { User, ShoppingBag, Store, Heart, MapPin, LogOut, Ticket, Award, ClipboardList } from 'lucide-react';
 import { useAuth } from '../../hooks';
 
 export function UserLayout() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const navItems = [
-    { name: 'Hồ sơ cá nhân', path: ROUTES.PROFILE as string, icon: <User className="w-5 h-5" /> },
-    { name: 'Đơn hàng của tôi', path: ROUTES.ORDERS as string, icon: <ShoppingBag className="w-5 h-5" /> },
-  ];
+  const handleLogout = async () => {
+    await logout();
+    navigate(ROUTES.LOGIN);
+  };
 
-  if (user?.role === 'Customer') {
-    navItems.push({ name: 'Đăng ký bán hàng', path: ROUTES.SELLER_APPLY, icon: <Store className="w-5 h-5" /> });
-  }
+  const isProfileTab = (tab: string) => {
+    const search = new URLSearchParams(location.search);
+    if (tab === 'info' && (!search.get('tab') || search.get('tab') === 'info') && location.pathname === ROUTES.PROFILE) return true;
+    return search.get('tab') === tab && location.pathname === ROUTES.PROFILE;
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
@@ -22,22 +26,89 @@ export function UserLayout() {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sticky top-24">
             <h2 className="text-lg font-bold text-gray-900 mb-4 px-2">Tài khoản của tôi</h2>
             <nav className="flex flex-col space-y-1">
-              {navItems.map((item) => (
+              <NavLink
+                to={`${ROUTES.PROFILE}?tab=info`}
+                className={() =>
+                  `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm ${
+                    isProfileTab('info') ? 'bg-orange-50 text-orange-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`
+                }
+              >
+                <User className="w-5 h-5" /> Hồ sơ cá nhân
+              </NavLink>
+              <NavLink
+                to={ROUTES.ORDERS as string}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm ${
+                    isActive && !isProfileTab('favorites') && !isProfileTab('address') && !isProfileTab('vouchers') && !isProfileTab('loyalty')
+                      ? 'bg-orange-50 text-orange-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`
+                }
+              >
+                <ClipboardList className="w-5 h-5" /> Đơn hàng của tôi
+              </NavLink>
+              <NavLink
+                to={`${ROUTES.PROFILE}?tab=favorites`}
+                className={() =>
+                  `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm ${
+                    isProfileTab('favorites') ? 'bg-orange-50 text-orange-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`
+                }
+              >
+                <Heart className="w-5 h-5" /> Quán ăn yêu thích
+              </NavLink>
+              <NavLink
+                to={`${ROUTES.PROFILE}?tab=address`}
+                className={() =>
+                  `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm ${
+                    isProfileTab('address') ? 'bg-orange-50 text-orange-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`
+                }
+              >
+                <MapPin className="w-5 h-5" /> Sổ địa chỉ
+              </NavLink>
+              <NavLink
+                to={`${ROUTES.PROFILE}?tab=vouchers`}
+                className={() =>
+                  `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm ${
+                    isProfileTab('vouchers') ? 'bg-orange-50 text-orange-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`
+                }
+              >
+                <Ticket className="w-5 h-5" /> Ví Voucher
+              </NavLink>
+              <NavLink
+                to={`${ROUTES.PROFILE}?tab=loyalty`}
+                className={() =>
+                  `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm ${
+                    isProfileTab('loyalty') ? 'bg-orange-50 text-orange-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`
+                }
+              >
+                <Award className="w-5 h-5" /> Điểm thưởng
+              </NavLink>
+
+              <div className="my-2 border-t border-gray-100"></div>
+              
+              {user?.role === 'Customer' && (
                 <NavLink
-                  key={item.path}
-                  to={item.path}
+                  to={ROUTES.SELLER_APPLY as string}
                   className={({ isActive }) =>
                     `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm ${
-                      isActive
-                        ? 'bg-orange-50 text-orange-600'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      isActive ? 'bg-orange-50 text-orange-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                     }`
                   }
                 >
-                  {item.icon}
-                  {item.name}
+                  <Store className="w-5 h-5" /> Đăng ký bán hàng
                 </NavLink>
-              ))}
+              )}
+              
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors text-red-600 hover:bg-red-50 text-sm"
+              >
+                <LogOut className="w-5 h-5" /> Đăng xuất
+              </button>
             </nav>
           </div>
         </div>

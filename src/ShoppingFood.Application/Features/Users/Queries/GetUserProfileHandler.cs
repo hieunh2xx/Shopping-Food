@@ -57,6 +57,9 @@ namespace ShoppingFood.Application.Features.Users.Queries
                 }
             }
 
+            var lp = await _dbContext.LoyaltyPoints
+                .FirstOrDefaultAsync(lp => lp.UserAccountId == user.Id, cancellationToken);
+
             var userDto = new UserDto
             {
                 Id = user.Id,
@@ -71,7 +74,10 @@ namespace ShoppingFood.Application.Features.Users.Queries
                 Gender = user.Profile?.Gender,
                 DateOfBirth = user.Profile?.DateOfBirth,
                 SellerInfo = sellerInfo,
-                CreatedAt = user.CreatedAt
+                CreatedAt = user.CreatedAt,
+                Tier = lp?.Tier.ToString(),
+                TotalEarnedPoints = lp?.TotalEarnedPoints ?? 0,
+                PointsBalance = lp?.PointsBalance ?? 0
             };
 
             return ApiResponse.Success(userDto, "User profile retrieved successfully.");

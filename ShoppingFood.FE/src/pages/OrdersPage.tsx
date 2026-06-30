@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { orderService } from '../services/OrderService';
 import type { IOrderSummary } from '../interfaces';
 import toast from 'react-hot-toast';
-import { PackageOpen } from 'lucide-react';
+import { PackageOpen, XCircle, RefreshCw } from 'lucide-react';
+import { Button } from '../components/common';
 
 export function OrdersPage() {
-  // Customer State
   const [orders, setOrders] = useState<IOrderSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -13,7 +13,6 @@ export function OrdersPage() {
     fetchOrders();
   }, []);
 
-  // Customer fetch
   const fetchOrders = async () => {
     setIsLoading(true);
     try {
@@ -51,7 +50,28 @@ export function OrdersPage() {
     }
   };
 
-  // Render Customer Orders View
+  const handleCancelOrder = async (orderId: string) => {
+    if (!window.confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) return;
+    try {
+      await orderService.cancelOrder({ orderId });
+      toast.success('Hủy đơn hàng thành công');
+      fetchOrders();
+    } catch (error: any) {
+      toast.error(error.message || 'Lỗi khi hủy đơn hàng');
+    }
+  };
+
+  const handleReorder = async (orderId: string) => {
+    try {
+      await orderService.reorder({ orderId });
+      toast.success('Đã thêm lại các món vào giỏ hàng');
+      // Should ideally refresh cart context here or redirect to cart
+      // window.dispatchEvent(new Event('cart_updated')); // naive approach if context needs trigger
+    } catch (error: any) {
+      toast.error(error.message || 'Lỗi khi đặt lại đơn hàng');
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto py-10 px-4">
       <h1 className="text-3xl font-bold mb-8 text-gray-800">Đơn hàng của tôi</h1>
@@ -67,8 +87,8 @@ export function OrdersPage() {
       ) : (
         <div className="space-y-4">
           {orders.map(order => (
-            <div key={order.id} className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
+            <div key={order.id} className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+              <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
                   <span className="font-semibold text-gray-800">Đơn hàng #{order.id.substring(0, 8)}</span>
                   <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusColor(order.status)}`}>
@@ -76,10 +96,33 @@ export function OrdersPage() {
                   </span>
                 </div>
                 <p className="text-sm text-gray-500">Ngày đặt: {formatDate(order.createdAt)}</p>
-                <p className="text-sm text-gray-500">Thanh toán: {order.paymentMethod}</p>
+                <p className="text-sm text-gray-500 mb-4">Thanh toán: {order.paymentMethod}</p>
+                
+                <div className="flex gap-2">
+                  {order.status.toLowerCase() === 'pending' && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleCancelOrder(order.id)}
+                      className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+                    >
+                      <XCircle className="w-4 h-4 mr-1.5" /> Hủy đơn
+                    </Button>
+                  )}
+                  {['delivered', 'cancelled'].includes(order.status.toLowerCase()) && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleReorder(order.id)}
+                      className="text-orange-600 border-orange-200 hover:bg-orange-50 hover:text-orange-700"
+                    >
+                      <RefreshCw className="w-4 h-4 mr-1.5" /> Đặt lại
+                    </Button>
+                  )}
+                </div>
               </div>
               
-              <div className="text-right">
+              <div className="text-right sm:mt-0 mt-4 border-t sm:border-t-0 sm:border-l border-gray-100 pt-4 sm:pt-0 sm:pl-6">
                 <p className="text-sm text-gray-500 mb-1">Tổng tiền</p>
                 <p className="text-xl font-bold text-orange-600">{formatCurrency(order.totalAmount)}</p>
               </div>
@@ -90,3 +133,4 @@ export function OrdersPage() {
     </div>
   );
 }
+

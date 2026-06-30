@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ShieldCheck, Store, Bike, UtensilsCrossed, CheckCircle, XCircle, FileText, Image as ImageIcon } from 'lucide-react';
-import { Button, Modal, Loading } from '../../components/common';
+import { Button, Modal, Loading, Pagination } from '../../components/common';
 import { adminService, productService } from '../../services';
 import { formatCurrency } from '../../utils/formatters';
 import toast from 'react-hot-toast';
@@ -11,10 +11,14 @@ export function AdminApprovalsPage() {
   const [activeTab, setActiveTab] = useState<TabType>('sellers');
   const [isLoading, setIsLoading] = useState(true);
 
-  // Lists
   const [sellers, setSellers] = useState<any[]>([]);
   const [shippers, setShippers] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
+
+  // Pagination & Totals
+  const [page, setPage] = useState(1);
+  const [take, setTake] = useState(10);
+  const [totals, setTotals] = useState({ sellers: 0, shippers: 0, products: 0 });
 
   // Action/Reason Modal state
   const [actionModal, setActionModal] = useState<{
@@ -43,20 +47,24 @@ export function AdminApprovalsPage() {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
+      const skip = (page - 1) * take;
       const [sellersRes, shippersRes, productsRes] = await Promise.all([
-        adminService.getSellerApplications({ status: 'Pending' }),
-        adminService.getShipperApplications({ status: 'Pending' }),
-        productService.search({ status: 'Pending' })
+        adminService.getSellerApplications({ status: 'Pending', skip, take }),
+        adminService.getShipperApplications({ status: 'Pending', skip, take }),
+        productService.search({ status: 'Pending', skip, take })
       ]);
 
       if (!sellersRes.error && sellersRes.data) {
         setSellers(sellersRes.data);
+        setTotals(prev => ({ ...prev, sellers: sellersRes.total || 0 }));
       }
       if (!shippersRes.error && shippersRes.data) {
         setShippers(shippersRes.data);
+        setTotals(prev => ({ ...prev, shippers: shippersRes.total || 0 }));
       }
       if (!productsRes.error && productsRes.data) {
         setProducts(productsRes.data);
+        setTotals(prev => ({ ...prev, products: productsRes.total || 0 }));
       }
     } catch {
       toast.error('Không thể tải danh sách phê duyệt');
@@ -67,7 +75,7 @@ export function AdminApprovalsPage() {
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+  }, [fetchData, take]);
 
   const openActionModal = (type: 'approve' | 'reject', tab: TabType, id: string, name: string) => {
     setRejectionReason('');
@@ -147,7 +155,7 @@ export function AdminApprovalsPage() {
       {/* Tabs */}
       <div className="flex border-b border-gray-200 mb-8 bg-gray-50 p-1.5 rounded-2xl w-fit">
         <button
-          onClick={() => setActiveTab('sellers')}
+          onClick={() => { setActiveTab('sellers'); setPage(1); }}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
             activeTab === 'sellers'
               ? 'bg-white text-orange-600 shadow-sm'
@@ -155,10 +163,10 @@ export function AdminApprovalsPage() {
           }`}
         >
           <Store className="w-4 h-4" />
-          Cửa hàng ({sellers.length})
+          Cửa hàng ({totals.sellers})
         </button>
         <button
-          onClick={() => setActiveTab('shippers')}
+          onClick={() => { setActiveTab('shippers'); setPage(1); }}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
             activeTab === 'shippers'
               ? 'bg-white text-orange-600 shadow-sm'
@@ -166,10 +174,10 @@ export function AdminApprovalsPage() {
           }`}
         >
           <Bike className="w-4 h-4" />
-          Tài xế ({shippers.length})
+          Tài xế ({totals.shippers})
         </button>
         <button
-          onClick={() => setActiveTab('products')}
+          onClick={() => { setActiveTab('products'); setPage(1); }}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
             activeTab === 'products'
               ? 'bg-white text-orange-600 shadow-sm'
@@ -177,7 +185,7 @@ export function AdminApprovalsPage() {
           }`}
         >
           <UtensilsCrossed className="w-4 h-4" />
-          Món ăn mới ({products.length})
+          Món ăn mới ({totals.products})
         </button>
       </div>
 
@@ -406,6 +414,42 @@ export function AdminApprovalsPage() {
                 </table>
               </div>
             )
+          )}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {!isLoading && (
+        <div className="mt-6">
+          {activeTab === 'sellers' && (
+            <Pagination 
+              currentPage={page} 
+              totalPages={Math.ceil(totals.sellers / take)} 
+              onPageChange={setPage} 
+              pageSize={take}
+              pageSizeOptions={[10, 20, 50]}
+              onPageSizeChange={(size) => { setTake(size); setPage(1); }}
+            />
+          )}
+          {activeTab === 'shippers' && (
+            <Pagination 
+              currentPage={page} 
+              totalPages={Math.ceil(totals.shippers / take)} 
+              onPageChange={setPage} 
+              pageSize={take}
+              pageSizeOptions={[10, 20, 50]}
+              onPageSizeChange={(size) => { setTake(size); setPage(1); }}
+            />
+          )}
+          {activeTab === 'products' && (
+            <Pagination 
+              currentPage={page} 
+              totalPages={Math.ceil(totals.products / take)} 
+              onPageChange={setPage} 
+              pageSize={take}
+              pageSizeOptions={[10, 20, 50]}
+              onPageSizeChange={(size) => { setTake(size); setPage(1); }}
+            />
           )}
         </div>
       )}

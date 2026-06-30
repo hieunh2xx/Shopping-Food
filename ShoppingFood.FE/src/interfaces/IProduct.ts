@@ -108,10 +108,14 @@ export interface ISearchProductQuery {
   maxPrice?: number;
   restaurantId?: string;
   categoryId?: string;
+  globalCategoryId?: string;
   skip?: number;
   take?: number;
   sortBy?: string;
   minRating?: number;
   isFreeship?: boolean;
   status?: string;
+  userLatitude?: number;
+  userLongitude?: number;
+  maxDistanceInKm?: number;
 }

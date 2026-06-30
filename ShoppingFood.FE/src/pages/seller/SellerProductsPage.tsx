@@ -7,7 +7,7 @@ import { authService } from '../../services/AuthService';
 import type { IProductDto, IAddProductRequest, IUpdateProductRequest, IProductSizeDto, IMenuCategoryDto, IToppingDto } from '../../interfaces';
 import toast from 'react-hot-toast';
 
-const PAGE_SIZE = 10;
+// Removed PAGE_SIZE const, using state instead
 
 // ─── Product Form Modal ───────────────────────────────────────────────────────
 interface ProductFormModalProps {
@@ -427,14 +427,14 @@ function StockBadge({ status }: { status: string }) {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export function SellerProductsPage() {
-  const { products, total, isLoading, searchProducts, deleteProduct } = useProducts();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [take, setTake] = useState(10);
+  const { products, total, isLoading, searchProducts, toggleStatus, deleteProduct } = useProducts();
   const [categories, setCategories] = useState<IMenuCategoryDto[]>([]);
 
   const [restaurantId, setRestaurantId] = useState<string>('');
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-
   // Modal state
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<IProductDto | null>(null);
@@ -478,16 +478,16 @@ export function SellerProductsPage() {
       restaurantId,
       filter: search.trim() || undefined,
       categoryId: selectedCategory || undefined,
-      skip: (currentPage - 1) * PAGE_SIZE,
-      take: PAGE_SIZE,
+      skip: (currentPage - 1) * take,
+      take: take,
     });
-  }, [restaurantId, search, selectedCategory, currentPage, searchProducts]);
+  }, [restaurantId, search, selectedCategory, currentPage, take, searchProducts]);
 
   useEffect(() => {
     loadProducts();
   }, [loadProducts]);
 
-  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const totalPages = Math.ceil(total / take);
 
   // Handlers
   const handleSearch = () => {
@@ -740,11 +740,18 @@ export function SellerProductsPage() {
             </div>
 
             {/* Pagination footer */}
-            <div className="p-4 border-t border-gray-200 flex items-center justify-between">
+            <div className="p-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
               <span className="text-sm text-gray-500">
-                Hiển thị {Math.min((currentPage - 1) * PAGE_SIZE + 1, total)} – {Math.min(currentPage * PAGE_SIZE, total)} trong số {total} món
+                Hiển thị {Math.min((currentPage - 1) * take + 1, total)} – {Math.min(currentPage * take, total)} trong số {total} món
               </span>
-              <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+              <Pagination 
+                currentPage={currentPage} 
+                totalPages={totalPages} 
+                onPageChange={setCurrentPage}
+                pageSize={take}
+                pageSizeOptions={[10, 20, 50]}
+                onPageSizeChange={(size) => { setTake(size); setCurrentPage(1); }} 
+              />
             </div>
           </div>
         </>

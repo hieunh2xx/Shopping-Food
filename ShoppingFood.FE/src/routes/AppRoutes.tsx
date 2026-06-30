@@ -21,10 +21,14 @@ import {
   SellerSettingsPage,
   SellerCategoriesPage,
   SellerToppingsPage,
+  SellerDiscountsPage,
+  SellerPromotionsPage,
   AdminUsersPage,
   AdminRestaurantsPage,
   AdminSettingsPage,
   AdminApprovalsPage,
+  AdminDiscountsPage,
+  AdminLoyaltyConfigPage,
   NotFoundPage,
   ProfilePage,
   OrdersPage,
@@ -37,7 +41,14 @@ import {
   SellerAppealPage,
   DispatchHistoryPage,
   DispatchBoardPage,
-  MonitorShippersPage
+  MonitorShippersPage,
+  CheckoutPage,
+  GuestOrderTrackingPage,
+  RestaurantsPage,
+  PromotionsPage,
+  HelpCenterPage,
+  TermsOfUsePage,
+  PrivacyPolicyPage
 } from '../pages';
 
 /**
@@ -58,7 +69,14 @@ export function AppRoutes() {
         <Route path={ROUTES.HOME} element={<HomePage />} />
         <Route path={ROUTES.PRODUCTS} element={<ProductsPage />} />
         <Route path={ROUTES.PRODUCT_DETAIL} element={<ProductDetailPage />} />
+        <Route path={ROUTES.RESTAURANTS} element={<RestaurantsPage />} />
         <Route path={ROUTES.RESTAURANT_DETAIL} element={<RestaurantDetailPage />} />
+        <Route path={ROUTES.PROMOTIONS} element={<PromotionsPage />} />
+        <Route path={ROUTES.CHECKOUT} element={<CheckoutPage />} />
+        <Route path={ROUTES.GUEST_ORDER_TRACKING} element={<GuestOrderTrackingPage />} />
+        <Route path={ROUTES.HELP_CENTER} element={<HelpCenterPage />} />
+        <Route path={ROUTES.TERMS_OF_USE} element={<TermsOfUsePage />} />
+        <Route path={ROUTES.PRIVACY_POLICY} element={<PrivacyPolicyPage />} />
         
         {/* Protected Client Routes inside UserLayout */}
         <Route element={<UserLayout />}>
@@ -95,6 +113,8 @@ export function AppRoutes() {
         <Route path="settings" element={<SellerSettingsPage />} />
         <Route path="categories" element={<SellerCategoriesPage />} />
         <Route path="toppings" element={<SellerToppingsPage />} />
+        <Route path="discounts" element={<SellerDiscountsPage />} />
+        <Route path="promotions" element={<SellerPromotionsPage />} />
         <Route path="appeal" element={<SellerAppealPage />} />
       </Route>
 
@@ -112,6 +132,8 @@ export function AppRoutes() {
         <Route path="restaurants" element={<AdminRestaurantsPage />} />
         <Route path="permissions" element={<AdminPermissionsPage />} />
         <Route path="approvals" element={<AdminApprovalsPage />} />
+        <Route path="discounts" element={<AdminDiscountsPage />} />
+        <Route path="loyalty" element={<AdminLoyaltyConfigPage />} />
         <Route path="settings" element={<AdminSettingsPage />} />
         <Route path="dispatch" element={<DispatchBoardPage />} />
         <Route path="shippers" element={<MonitorShippersPage />} />

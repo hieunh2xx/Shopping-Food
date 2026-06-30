@@ -23,7 +23,7 @@ class DiscountService extends BaseService<IDiscountDto, ICreateDiscountRequest, 
   }
   
   async updateDiscount(id: string, data: IUpdateDiscountRequest): Promise<IApiResponse<IDiscountDto>> {
-    return httpClient.put<IApiResponse<IDiscountDto>>(API_ENDPOINTS.DISCOUNT.BY_ID(id), data);
+    return httpClient.post<IApiResponse<IDiscountDto>>(API_ENDPOINTS.DISCOUNT.BY_ID(id), data);
   }
 
   async deleteDiscount(id: string): Promise<IApiResponse<any>> {

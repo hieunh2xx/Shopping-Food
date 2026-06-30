@@ -1,8 +1,18 @@
 import { ChefHat } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '../../routes/routeConfig';
+import { useAuth } from '../../hooks';
 
 export function Footer() {
+  const { isAuthenticated, user } = useAuth();
+
+  const getPartnerRoute = () => {
+    if (isAuthenticated && user?.role === 'Customer') {
+      return ROUTES.SELLER_APPLY;
+    }
+    return ROUTES.REGISTER_SELLER;
+  };
+
   return (
     <footer className="bg-gray-50 border-t border-gray-200 mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
@@ -32,12 +42,12 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link to={ROUTES.PRODUCTS} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                <Link to={ROUTES.RESTAURANTS} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
                   Nhà hàng
                 </Link>
               </li>
               <li>
-                <Link to={ROUTES.PRODUCTS} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                <Link to={ROUTES.PROMOTIONS} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
                   Khuyến mãi
                 </Link>
               </li>
@@ -48,7 +58,7 @@ export function Footer() {
             <h4 className="text-sm font-semibold text-gray-700 mb-4">Đối tác</h4>
             <ul className="space-y-2">
               <li>
-                <Link to={ROUTES.REGISTER_SELLER} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                <Link to={getPartnerRoute()} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
                   Đăng ký bán hàng
                 </Link>
               </li>
@@ -64,19 +74,19 @@ export function Footer() {
             <h4 className="text-sm font-semibold text-gray-700 mb-4">Hỗ trợ</h4>
             <ul className="space-y-2">
               <li>
-                <a href="#" className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                <Link to={ROUTES.HELP_CENTER} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
                   Trung tâm trợ giúp
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                <Link to={ROUTES.TERMS_OF_USE} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
                   Điều khoản sử dụng
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                <Link to={ROUTES.PRIVACY_POLICY} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
                   Chính sách bảo mật
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

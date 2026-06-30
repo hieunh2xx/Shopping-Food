@@ -1,7 +1,7 @@
-﻿import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import type { ButtonHTMLAttributes, ReactNode } from 'react';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'outline';
   size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
   children: ReactNode;
@@ -12,6 +12,7 @@ const variantClasses = {
   secondary: 'bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-300',
   danger: 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-gray-900 shadow-lg shadow-red-500/25',
   ghost: 'bg-transparent hover:bg-gray-100 text-gray-600 hover:text-gray-800',
+  outline: 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-300',
 };
 
 const sizeClasses = {

@@ -83,13 +83,12 @@ namespace ShoppingFood.Application.Features.Products.Queries
                         // Seller context: only search product name and description
                         ? (p.ItemName.ToLower().Contains(filter!) ||
                            (p.Description != null && p.Description.ToLower().Contains(filter!)))
-                        // Customer context: search across all fields
+                        // Customer context: search across only food fields
                         : (p.ItemName.ToLower().Contains(filter!) ||
-                           (p.Description != null && p.Description.ToLower().Contains(filter!)) ||
-                           p.Category.Title.ToLower().Contains(filter!) ||
-                           p.Restaurant.RestaurantName.ToLower().Contains(filter!))
+                           (p.Description != null && p.Description.ToLower().Contains(filter!)))
                 )) &&
                 (!request.CategoryId.HasValue || p.CategoryId == request.CategoryId.Value) &&
+                (!request.GlobalCategoryId.HasValue || p.GlobalCategoryId == request.GlobalCategoryId.Value) &&
                 (!request.MinPrice.HasValue || p.Price >= request.MinPrice.Value) &&
                 (!request.MaxPrice.HasValue || p.Price <= request.MaxPrice.Value) &&
                 (!request.RestaurantId.HasValue || p.RestaurantId == request.RestaurantId.Value) &&

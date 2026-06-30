@@ -246,6 +246,24 @@ namespace ShoppingFood.Application.Mappings
                 .ForMember(dest => dest.DistanceKm, opt => opt.Ignore());
 
             CreateMap<Notification, ShoppingFood.Dto.Notification.NotificationDto>();
+
+            CreateMap<OrderItem, RecentOrderItemDto>()
+                .ForMember(dest => dest.ProductId,
+                    opt => opt.MapFrom(src => src.ProductId ?? Guid.Empty))
+                .ForMember(dest => dest.ImageUrl,
+                    opt => opt.MapFrom(src =>
+                        src.Product != null && src.Product.Images != null && src.Product.Images.Any()
+                            ? (src.Product.Images.FirstOrDefault(i => i.IsPrimary) ?? src.Product.Images.First()).ImageUrl
+                            : null))
+                .ForMember(dest => dest.RestaurantId,
+                    opt => opt.MapFrom(src =>
+                        src.Product != null ? (Guid?)src.Product.RestaurantId : null))
+                .ForMember(dest => dest.RestaurantName,
+                    opt => opt.MapFrom(src =>
+                        src.Product != null && src.Product.Restaurant != null
+                            ? src.Product.Restaurant.RestaurantName
+                            : null))
+                .ForMember(dest => dest.LastOrderedAt, opt => opt.Ignore());
         }
     }
 }

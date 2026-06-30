@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
@@ -34,10 +34,15 @@ namespace ShoppingFood.Application.Features.Discounts.Queries
         public async Task<ApiResponse> Handle(GetDiscountQuery request, CancellationToken cancellationToken)
         {
             var now = DateTime.UtcNow;
-            Expression<Func<Discount, bool>> predicate = d =>
-                d.Status == DiscountStatus.Active &&
-                d.StartDate <= now && now <= d.EndDate &&
-                d.UsedCount < d.Quantity;
+            Expression<Func<Discount, bool>> predicate = d => true;
+            
+            if (!request.IncludeAll)
+            {
+                predicate = d =>
+                    d.Status == DiscountStatus.Active &&
+                    d.StartDate <= now && now <= d.EndDate &&
+                    d.UsedCount < d.Quantity;
+            }
 
             if(request.RestaurantId.HasValue && request.CartAmount.HasValue)
             {
@@ -46,12 +51,14 @@ namespace ShoppingFood.Application.Features.Discounts.Queries
                 var excludedDiscountIds = await GetExcludedDiscountIdsAsync(request.CurrentUserId);
 
                 predicate = d =>
-                    d.Status == DiscountStatus.Active &&
-                    d.StartDate <= now && now <= d.EndDate &&
-                    d.UsedCount < d.Quantity &&
-                    amount >= d.MinOrderAmount &&
-                    (d.RestaurantId == restId || d.RestaurantId == null) &&
-                    !excludedDiscountIds.Contains(d.Id);
+                    (request.IncludeAll || (
+                        d.Status == DiscountStatus.Active &&
+                        d.StartDate <= now && now <= d.EndDate &&
+                        d.UsedCount < d.Quantity &&
+                        amount >= d.MinOrderAmount &&
+                        !excludedDiscountIds.Contains(d.Id)
+                    )) &&
+                    (d.RestaurantId == restId || d.RestaurantId == null);
             }
 
             var discounts = await _discountRepository.GetAsync(

@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { User, LogOut, ChefHat, Search } from 'lucide-react';
+import { User, LogOut, ChefHat, Search, ClipboardList } from 'lucide-react';
 import { useAuth } from '../../hooks';
 import { CartDrawer } from './CartDrawer';
 import { NotificationBell } from './NotificationBell';
@@ -56,6 +56,16 @@ export function Header() {
             <nav className="flex items-center">
               {isAuthenticated ? (
                 <>
+                  {/* Order Tracking */}
+                  <Link
+                    to={ROUTES.GUEST_ORDER_TRACKING}
+                    className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-gray-100/50 transition-colors text-sm font-medium text-gray-700"
+                    title="Tra cứu đơn hàng"
+                  >
+                    <ClipboardList className="w-5 h-5 text-gray-600" />
+                    <span className="hidden xl:block">Tra cứu đơn</span>
+                  </Link>
+
                   {/* Cart */}
                   <CartDrawer />
 
@@ -140,6 +150,14 @@ export function Header() {
                 </>
               ) : (
                 <div className="flex items-center gap-2">
+                  <Link
+                    to={ROUTES.GUEST_ORDER_TRACKING}
+                    className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-gray-100/50 transition-colors text-sm font-medium text-gray-700"
+                    title="Tra cứu đơn hàng"
+                  >
+                    <ClipboardList className="w-5 h-5 text-gray-600" />
+                    <span className="hidden xl:block">Tra cứu đơn</span>
+                  </Link>
                   <CartDrawer />
                   <Link
                     to={ROUTES.LOGIN}

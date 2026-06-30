@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using ShoppingFood.Core.Base;
 using System;
 using System.Collections.Generic;
@@ -12,5 +12,6 @@ namespace ShoppingFood.Application.Features.Discounts.Queries
     {
         public Guid? RestaurantId { get; set; }
         public decimal? CartAmount { get; set; }
+        public bool IncludeAll { get; set; } = false;
     }
 }

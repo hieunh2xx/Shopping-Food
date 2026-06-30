@@ -17,11 +17,13 @@ namespace ShoppingFood.Application.Features.Users.Queries
     public class GetUserHandler : IRequestHandler<GetUserQuery, ApiResponse>
     {
         private readonly IUserRepository _userRepository;
+        private readonly ILoyaltyPointRepository _loyaltyPointRepository;
         private readonly IMapper _mapper;
 
-        public GetUserHandler(IUserRepository userRepository, IMapper mapper)
+        public GetUserHandler(IUserRepository userRepository, ILoyaltyPointRepository loyaltyPointRepository, IMapper mapper)
         {
             _userRepository = userRepository;
+            _loyaltyPointRepository = loyaltyPointRepository;
             _mapper = mapper;
         }
 
@@ -45,6 +47,24 @@ namespace ShoppingFood.Application.Features.Users.Queries
             var total = await _userRepository.GetCountAsync(predicate);
 
             var userDtos = _mapper.Map<IReadOnlyList<UserDto>>(users);
+
+            // Map loyalty point data (tier, points) for each user
+            var userIds = users.Select(u => u.Id).ToList();
+            var loyaltyPoints = await _loyaltyPointRepository.GetAsync(
+                predicate: lp => userIds.Contains(lp.UserAccountId),
+                disableTracking: true
+            );
+            var lpDict = loyaltyPoints.ToDictionary(lp => lp.UserAccountId);
+
+            foreach (var dto in userDtos)
+            {
+                if (lpDict.TryGetValue(dto.Id, out var lp))
+                {
+                    dto.Tier = lp.Tier.ToString();
+                    dto.TotalEarnedPoints = lp.TotalEarnedPoints;
+                    dto.PointsBalance = lp.PointsBalance;
+                }
+            }
 
             return ApiResponse.Success(userDtos, "Users retrieved successfully", total);
         }

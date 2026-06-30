@@ -16,6 +16,9 @@ namespace ShoppingFood.Dto.User
         public string? Gender { get; set; }
         public DateTime? DateOfBirth { get; set; }
         public DateTime CreatedAt { get; set; }
+        public string? Tier { get; set; }
+        public int TotalEarnedPoints { get; set; }
+        public int PointsBalance { get; set; }
         public SellerInfoDto? SellerInfo { get; set; }
     }
 

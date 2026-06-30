@@ -56,10 +56,26 @@ class HttpClient {
       (error) => Promise.reject(error)
     );
 
-    // Response interceptor: handle 401 unauthorized
+    // Helper to detect if a message is purely English (lacks Vietnamese diacritics)
+    const isEnglish = (msg: string) => {
+      if (!msg || typeof msg !== 'string') return false;
+      const viRegex = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i;
+      // If it contains letters but NO Vietnamese characters, treat as English
+      return /[a-zA-Z]/.test(msg) && !viRegex.test(msg);
+    };
+
+    // Response interceptor: handle 401 unauthorized and filter English messages
     this.axiosInstance.interceptors.response.use(
-      (response) => response,
+      (response) => {
+        if (response.data && response.data.message && isEnglish(response.data.message)) {
+          response.data.message = ''; // Clear so components use their Vietnamese fallbacks
+        }
+        return response;
+      },
       async (error) => {
+        if (error.response?.data?.message && isEnglish(error.response.data.message)) {
+          error.response.data.message = ''; // Clear English error messages
+        }
         const originalRequest = error.config;
         if (error.response?.status === 401 && !originalRequest._retry) {
           if (this.isRefreshing) {

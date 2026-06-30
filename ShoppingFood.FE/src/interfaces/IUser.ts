@@ -14,6 +14,9 @@ export interface IUserDto {
   gender?: string | null;
   dateOfBirth?: string | null;
   createdAt: string;
+  tier?: string | null;
+  totalEarnedPoints?: number;
+  pointsBalance?: number;
   sellerInfo?: ISellerInfoDto | null;
 }
 
