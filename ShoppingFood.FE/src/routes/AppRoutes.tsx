@@ -48,7 +48,11 @@ import {
   PromotionsPage,
   HelpCenterPage,
   TermsOfUsePage,
-  PrivacyPolicyPage
+  PrivacyPolicyPage,
+  AdminFlashSalePage,
+  AdminNotificationsPage,
+  SellerFlashSalesPage,
+  AuthShipperApplyPage,
 } from '../pages';
 
 /**
@@ -95,6 +99,11 @@ export function AppRoutes() {
               <SellerApplyPage />
             </PrivateRoute>
           } />
+          <Route path={ROUTES.SHIPPER_APPLY} element={
+            <PrivateRoute allowedRoles={['Customer', 'Seller', 'Mall']}>
+              <AuthShipperApplyPage />
+            </PrivateRoute>
+          } />
         </Route>
       </Route>
 
@@ -115,6 +124,7 @@ export function AppRoutes() {
         <Route path="toppings" element={<SellerToppingsPage />} />
         <Route path="discounts" element={<SellerDiscountsPage />} />
         <Route path="promotions" element={<SellerPromotionsPage />} />
+        <Route path="flash-sales" element={<SellerFlashSalesPage />} />
         <Route path="appeal" element={<SellerAppealPage />} />
       </Route>
 
@@ -138,6 +148,8 @@ export function AppRoutes() {
         <Route path="dispatch" element={<DispatchBoardPage />} />
         <Route path="shippers" element={<MonitorShippersPage />} />
         <Route path="dispatch-history" element={<DispatchHistoryPage />} />
+        <Route path="flash-sales" element={<AdminFlashSalePage />} />
+        <Route path="notifications" element={<AdminNotificationsPage />} />
       </Route>
 
       {/* Coordinator routes - protected with CoordinatorLayout */}

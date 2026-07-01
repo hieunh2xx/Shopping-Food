@@ -93,6 +93,7 @@ export const API_ENDPOINTS = {
     POINT_GIFT_CONFIG_BY_ID: (id: string) => `/Admin/point-gift-config/${id}`,
     RESTAURANTS: '/Admin/Restaurants', // GET
     SUSPEND_RESTAURANT: '/Admin/suspend-restaurant', // POST (assuming it exists or will be added, wait I should check if it exists in API)
+    BROADCAST_NOTIFICATION: '/Admin/notifications/broadcast', // POST
   },
 
   // === Shipper (ShipperController) ===
@@ -161,6 +162,19 @@ export const API_ENDPOINTS = {
     SAVE: '/Discount/save',
     BY_ID: (id: string) => `/Discount/${id}`,
     APPLY: '/Discount/apply',
+    STATS: '/Discount/stats', // GET
+    LOCK: (id: string) => `/Discount/${id}/lock`, // PATCH
+  },
+
+  FLASH_SALE: {
+    BASE: '/FlashSale',
+    ACTIVE: '/FlashSale/active', // GET
+    ALL: '/FlashSale/flash-sales', // GET
+    CREATE: '/FlashSale/flash-sales', // POST
+    UPDATE: (id: string) => `/FlashSale/flash-sales/${id}`, // POST
+    DELETE: (id: string) => `/FlashSale/flash-sales/${id}`, // DELETE
+    REGISTER: '/FlashSale/register', // POST
+    REVIEW_PRODUCT: '/FlashSale/review-product', // POST
   },
 
   PROMOTION: {

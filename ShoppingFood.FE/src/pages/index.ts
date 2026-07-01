@@ -40,3 +40,7 @@ export { default as DispatchBoardPage } from './coordinator/DispatchBoardPage';
 export { default as MonitorShippersPage } from './coordinator/MonitorShippersPage';
 export { CheckoutPage } from './CheckoutPage';
 export { GuestOrderTrackingPage } from './GuestOrderTrackingPage';
+export { AdminFlashSalePage } from './admin/AdminFlashSalePage';
+export { AdminNotificationsPage } from './admin/AdminNotificationsPage';
+export { SellerFlashSalesPage } from './seller/SellerFlashSalesPage';
+export { AuthShipperApplyPage } from './shipper/AuthShipperApplyPage';

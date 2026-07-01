@@ -8,6 +8,7 @@ using ShoppingFood.Domain.Models;
 using ShoppingFood.Dto.Cart;
 using ShoppingFood.Dto.Coordinator;
 using ShoppingFood.Dto.Discount;
+using ShoppingFood.Dto.FlashSale;
 using ShoppingFood.Dto.LoyaltyPoint;
 using ShoppingFood.Dto.Order;
 using ShoppingFood.Dto.Product;
@@ -264,6 +265,9 @@ namespace ShoppingFood.Application.Mappings
                             ? src.Product.Restaurant.RestaurantName
                             : null))
                 .ForMember(dest => dest.LastOrderedAt, opt => opt.Ignore());
+
+            CreateMap<FlashSale, FlashSaleDto>()
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
         }
     }
 }

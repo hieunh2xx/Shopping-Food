@@ -4,6 +4,7 @@ using ShoppingFood.Application.Features.Admin.Commands;
 using ShoppingFood.Application.Features.Admin.Queries;
 using ShoppingFood.Application.Features.LoyaltyPoints.Commands;
 using ShoppingFood.Application.Features.LoyaltyPoints.Queries;
+using ShoppingFood.Application.Features.Notifications.Commands;
 using ShoppingFood.Application.Features.Products.GlobalMenuCategories.Commands;
 using ShoppingFood.Application.Features.Products.GlobalMenuCategories.Queries;
 using ShoppingFood.Core.Base;
@@ -143,6 +144,15 @@ namespace ShoppingFood.API.Controllers
         {
             var response = await _mediator.Send(command);
             return Ok(response);
+        }
+
+        [HttpPost("notifications/broadcast")]
+        public async Task<ActionResult<ApiResponse>> BroadcastNotification([FromBody] BroadcastNotificationCommand command)
+        {
+            if (userDto != null)
+                command.CurrentUserId = userDto.Id;
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
         }
     }
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Tag, Search, Plus, Trash2, Edit2, ShieldAlert } from 'lucide-react';
+import { Tag, Search, Plus, Trash2, Edit2, ShieldAlert, Lock } from 'lucide-react';
 import { Button, Input, Modal, Pagination } from '../../components/common';
 import toast from 'react-hot-toast';
 import { discountService } from '../../services/DiscountService';
@@ -162,6 +162,21 @@ export function AdminDiscountsPage() {
     }
   };
 
+  const handleLock = async (id: string) => {
+    if (!confirm('Bạn có chắc chắn muốn khóa khẩn cấp mã giảm giá này? (Ngưng áp dụng lập tức)')) return;
+    try {
+      const res = await discountService.lockDiscount(id);
+      if (!res.error) {
+        toast.success('Đã khóa mã giảm giá');
+        fetchDiscounts();
+      } else {
+        toast.error(res.message || 'Lỗi khóa mã');
+      }
+    } catch {
+      toast.error('Lỗi khi khóa mã');
+    }
+  };
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-8">
@@ -225,6 +240,9 @@ export function AdminDiscountsPage() {
                     <div className="flex justify-end gap-2">
                       <Button variant="outline" size="sm" onClick={() => handleOpenModal(discount)}>
                         <Edit2 className="w-4 h-4" />
+                      </Button>
+                      <Button variant="outline" size="sm" className="text-orange-600 border-orange-200 hover:bg-orange-50" onClick={() => handleLock(discount.id)} title="Khóa khẩn cấp">
+                        <Lock className="w-4 h-4" />
                       </Button>
                       <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => handleDelete(discount.id)}>
                         <Trash2 className="w-4 h-4" />

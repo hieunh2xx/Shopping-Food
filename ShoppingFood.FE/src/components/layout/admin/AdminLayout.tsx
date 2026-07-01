@@ -10,7 +10,9 @@ import {
   Truck,
   ShieldAlert,
   Tag,
-  Award
+  Award,
+  Zap,
+  BellRing
 } from 'lucide-react';
 import { useAuth } from '../../../hooks';
 import { ROUTES } from '../../../routes/routeConfig';
@@ -35,7 +37,9 @@ export function AdminLayout() {
     { name: 'Phân quyền', path: '/admin/permissions', icon: ShieldCheck },
     { name: 'Duyệt đối tác', path: '/admin/approvals', icon: Store },
     { name: 'Khuyến mãi hệ thống', path: '/admin/discounts', icon: Tag },
+    { name: 'Flash Sale', path: ROUTES.ADMIN_FLASH_SALES, icon: Zap },
     { name: 'Cấu hình Điểm', path: '/admin/loyalty', icon: Award },
+    { name: 'Gửi thông báo', path: ROUTES.ADMIN_NOTIFICATIONS, icon: BellRing },
     { name: 'Cấu hình hệ thống', path: '/admin/settings', icon: Settings },
   ];
 

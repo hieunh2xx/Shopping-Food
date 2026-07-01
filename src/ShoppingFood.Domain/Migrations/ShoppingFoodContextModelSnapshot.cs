@@ -532,22 +532,22 @@ namespace ShoppingFood.Domain.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("aa415db9-7933-49fd-abc1-aa99afd5b352"),
-                            CreatedAt = new DateTime(2026, 6, 29, 10, 3, 26, 671, DateTimeKind.Utc).AddTicks(27),
+                            Id = new Guid("c1dffa50-6445-44a6-9e0a-539cf9a2e13f"),
+                            CreatedAt = new DateTime(2026, 7, 1, 7, 43, 25, 603, DateTimeKind.Utc).AddTicks(7907),
                             MinPoints = 100,
                             Tier = "Silver"
                         },
                         new
                         {
-                            Id = new Guid("a80abf90-3cbd-457d-b0a3-4d0fffec9ce7"),
-                            CreatedAt = new DateTime(2026, 6, 29, 10, 3, 26, 671, DateTimeKind.Utc).AddTicks(29),
+                            Id = new Guid("c462caf8-9e7a-46ca-8338-42db0da96bfb"),
+                            CreatedAt = new DateTime(2026, 7, 1, 7, 43, 25, 603, DateTimeKind.Utc).AddTicks(7909),
                             MinPoints = 500,
                             Tier = "Gold"
                         },
                         new
                         {
-                            Id = new Guid("5c5e456f-8d72-4925-8b1d-d4c03047fd1d"),
-                            CreatedAt = new DateTime(2026, 6, 29, 10, 3, 26, 671, DateTimeKind.Utc).AddTicks(31),
+                            Id = new Guid("a23d8d45-59d3-4446-867c-660a7cd78327"),
+                            CreatedAt = new DateTime(2026, 7, 1, 7, 43, 25, 603, DateTimeKind.Utc).AddTicks(7910),
                             MinPoints = 1000,
                             Tier = "Diamond"
                         });
@@ -628,6 +628,9 @@ namespace ShoppingFood.Domain.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("AppliedDiscountId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("ContactName")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -696,6 +699,8 @@ namespace ShoppingFood.Domain.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AppliedDiscountId");
 
                     b.HasIndex("GuestUserId");
 
@@ -1846,6 +1851,10 @@ namespace ShoppingFood.Domain.Migrations
 
             modelBuilder.Entity("ShoppingFood.Domain.Models.Order", b =>
                 {
+                    b.HasOne("ShoppingFood.Domain.Models.Discount", "AppliedDiscount")
+                        .WithMany()
+                        .HasForeignKey("AppliedDiscountId");
+
                     b.HasOne("ShoppingFood.Domain.Models.GuestUser", "GuestUser")
                         .WithMany()
                         .HasForeignKey("GuestUserId")
@@ -1860,6 +1869,8 @@ namespace ShoppingFood.Domain.Migrations
                         .WithMany()
                         .HasForeignKey("UserAccountId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("AppliedDiscount");
 
                     b.Navigation("GuestUser");
 

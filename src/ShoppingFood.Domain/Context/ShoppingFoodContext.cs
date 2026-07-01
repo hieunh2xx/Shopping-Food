@@ -59,7 +59,7 @@ namespace ShoppingFood.Domain.Context
             {
                 entity.ToTable("USER_ACCOUNT");
                 entity.HasKey(e => e.Id);
-                
+
                 var userNameIndex = entity.HasIndex(e => e.UserName).IsUnique();
                 var phoneIndex = entity.HasIndex(e => e.Phone).IsUnique();
                 var emailIndex = entity.HasIndex(e => e.Email).IsUnique();
@@ -226,7 +226,7 @@ namespace ShoppingFood.Domain.Context
             {
                 entity.ToTable("CART");
                 entity.HasKey(e => e.Id);
-                
+
                 var userAccountIndex = entity.HasIndex(e => e.UserAccountId).IsUnique();
                 var guestUserIndex = entity.HasIndex(e => e.GuestUserId).IsUnique();
 
@@ -297,6 +297,11 @@ namespace ShoppingFood.Domain.Context
                       .WithMany()
                       .HasForeignKey(d => d.ShipperId)
                       .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(d => d.AppliedDiscount)
+                      .WithMany()
+                      .HasForeignKey(d => d.AppliedDiscountId)
+                      .OnDelete(DeleteBehavior.SetNull);
             });
 
             // OrderItem Entity
@@ -545,7 +550,7 @@ namespace ShoppingFood.Domain.Context
                 entity.Property(e => e.DriverLicenseUrl).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.VehicleRegistrationUrl).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.Status).HasConversion<string>().IsRequired();
-                
+
                 entity.HasOne(d => d.UserProfile)
                       .WithMany()
                       .HasForeignKey(d => d.UserProfileId)

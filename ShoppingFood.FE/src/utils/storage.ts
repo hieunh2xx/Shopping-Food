@@ -7,12 +7,31 @@ const USER_KEY = 'sf_user';
  * LocalStorage utility — SRP: only handles storage operations
  */
 export class StorageUtil {
+  private static normalizeToken(token: string): string {
+    return token.trim().replace(/^Bearer\s+/i, '').trim();
+  }
+
+  static isJwtToken(token: string | null): token is string {
+    if (!token) return false;
+    const normalized = this.normalizeToken(token);
+    return /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(normalized);
+  }
+
   static getToken(): string | null {
-    return localStorage.getItem(TOKEN_KEY);
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!this.isJwtToken(token)) {
+      localStorage.removeItem(TOKEN_KEY);
+      return null;
+    }
+    return this.normalizeToken(token);
   }
 
   static setToken(token: string): void {
-    localStorage.setItem(TOKEN_KEY, token);
+    if (!this.isJwtToken(token)) {
+      localStorage.removeItem(TOKEN_KEY);
+      return;
+    }
+    localStorage.setItem(TOKEN_KEY, this.normalizeToken(token));
   }
 
   static getUser(): IUserDto | null {
@@ -35,6 +54,6 @@ export class StorageUtil {
   }
 
   static isAuthenticated(): boolean {
-    return !!this.getToken();
+    return this.isJwtToken(this.getToken());
   }
 }

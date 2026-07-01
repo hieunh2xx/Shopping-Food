@@ -15,8 +15,8 @@ const MS_REDIRECT_URI = window.location.origin;
 
 export function LoginForm() {
   const navigate = useNavigate();
-  const { login, sendLoginOtp, verifyLoginOtp, verifyUnlockAccount, loginGoogle, loginMicrosoft, loginFirebasePhone, isLoading } = useAuth();
-  
+  const { login, sendLoginOtp, verifyLoginOtp, verifyUnlockAccount, loginGoogle, loginMicrosoft, loginFirebasePhone, isLoading, error: authError } = useAuth();
+
   // Step 1: Login
   const [loginMethod] = useState<'standard' | 'phone'>('standard');
   const [userName, setUserName] = useState('');
@@ -53,7 +53,7 @@ export function LoginForm() {
         handleVerifyOtp();
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [otpCode]);
 
   const validateLogin = (): boolean => {
@@ -93,13 +93,18 @@ export function LoginForm() {
     const result = await login({ userName, password });
     if (result.success) {
       if (result.requireOtp && result.data) {
-        setPreAuthToken(result.data.preAuthToken);
-        setAvailableMethods(result.data.availableMethods);
+        setPreAuthToken(result.data.preAuthToken || result.data.PreAuthToken || '');
+        setAvailableMethods(result.data.availableMethods || result.data.AvailableMethods || []);
         setIsLocked(result.isLocked || false);
         setStep(2);
       } else {
         handleRedirectByRole(result.role);
       }
+    } else {
+      // Show server error inline only under the password field
+      setErrors({ 
+        password: result.message || 'Tên đăng nhập hoặc mật khẩu không đúng' 
+      });
     }
   };
 
@@ -147,14 +152,14 @@ export function LoginForm() {
   const handleVerifyOtp = async (e?: FormEvent) => {
     if (e) e.preventDefault();
     if (otpCode.length < 6) return;
-    
+
     let result;
     if (isLocked) {
       result = await verifyUnlockAccount(preAuthToken, otpCode);
     } else {
       result = await verifyLoginOtp(preAuthToken, otpCode);
     }
-    
+
     if (result.success) {
       handleRedirectByRole(result.role);
     }
@@ -172,7 +177,7 @@ export function LoginForm() {
     try {
       const result = await confirmationResult.confirm(otpCode);
       const idToken = await result.user.getIdToken();
-      
+
       const res = await loginFirebasePhone(idToken);
       if (res.success) {
         handleRedirectByRole(res.role);
@@ -235,8 +240,8 @@ export function LoginForm() {
             {isLocked ? 'Tài khoản đang bị khóa' : 'Xác thực tài khoản'}
           </h3>
           <p className="text-sm text-gray-500 mt-2">
-            {isLocked 
-              ? 'Tài khoản của bạn đã bị khóa bảo vệ. Vui lòng xác thực OTP để mở khóa.' 
+            {isLocked
+              ? 'Tài khoản của bạn đã bị khóa bảo vệ. Vui lòng xác thực OTP để mở khóa.'
               : 'Vui lòng chọn phương thức nhận mã OTP (mã có hiệu lực 10 phút)'}
           </p>
         </div>
@@ -246,12 +251,11 @@ export function LoginForm() {
               Gửi mã qua Email
             </Button>
           )}
-          {/* Hide phone OTP verification method option */}
-          {/* availableMethods.includes('phone') && (
+          {/* {availableMethods.includes('phone') && (
             <Button type="button" variant="secondary" onClick={() => handleSendOtp('phone')} isLoading={isLoading} className="w-full">
               Gửi mã qua SMS
             </Button>
-          ) */}
+          )} */}
           {availableMethods.length === 0 && (
             <p className="text-sm text-red-500 text-center">Tài khoản này chưa cập nhật Email hay Số điện thoại.</p>
           )}
@@ -289,7 +293,7 @@ export function LoginForm() {
   return (
     <>
       <form onSubmit={loginMethod === 'standard' ? handleLoginSubmit : handlePhoneLoginSubmit} className="space-y-5 animate-in fade-in duration-300">
-        
+
         {/* Hide phone login option tab selector */}
         {/*
         <div className="flex justify-center mb-6">
@@ -341,7 +345,7 @@ export function LoginForm() {
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
-            
+
             <div className="flex justify-end -mt-2 mb-2">
               <button
                 type="button"
@@ -407,9 +411,9 @@ export function LoginForm() {
         <div id="recaptcha-container"></div>
       </form>
 
-      <ForgotPasswordModal 
-        isOpen={isForgotModalOpen} 
-        onClose={() => setIsForgotModalOpen(false)} 
+      <ForgotPasswordModal
+        isOpen={isForgotModalOpen}
+        onClose={() => setIsForgotModalOpen(false)}
       />
     </>
   );

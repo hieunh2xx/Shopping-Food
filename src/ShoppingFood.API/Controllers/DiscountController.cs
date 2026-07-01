@@ -81,5 +81,24 @@ namespace ShoppingFood.API.Controllers
             var response = await _mediator.Send(command);
             return Ok(response);
         }
+
+        [HttpGet("stats")]
+        public async Task<ActionResult<ApiResponse>> GetDiscountStats([FromQuery] GetDiscountStatsQuery query)
+        {
+            if (userDto != null)
+                query.CurrentUserId = userDto.Id;
+            var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpPatch("{id}/lock")]
+        public async Task<ActionResult<ApiResponse>> LockDiscount(Guid id)
+        {
+            var command = new LockDiscountCommand { Id = id };
+            if (userDto != null)
+                command.CurrentUserId = userDto.Id;
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
     }
 }

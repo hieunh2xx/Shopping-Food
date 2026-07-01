@@ -157,4 +157,11 @@ namespace ShoppingFood.Domain.Enums
         Restaurant,
         SystemAppeal
     }
+
+    public enum TargetAudience
+    {
+        AllCustomers,
+        ByTier,
+        SpecificCustomers
+    }
 }

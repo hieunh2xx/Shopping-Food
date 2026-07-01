@@ -9,7 +9,8 @@ import {
   ListPlus,
   ShieldAlert,
   Ticket,
-  Gift
+  Gift,
+  Zap
 } from 'lucide-react';
 import { useAuth } from '../../../hooks';
 import { ROUTES } from '../../../routes/routeConfig';
@@ -32,6 +33,7 @@ export function SellerLayout() {
     { name: 'Tùy chọn Topping', path: '/seller/toppings', icon: ListPlus },
     { name: 'Mã giảm giá', path: '/seller/discounts', icon: Ticket },
     { name: 'Mua X Tặng Y', path: '/seller/promotions', icon: Gift },
+    { name: 'Flash Sale', path: ROUTES.SELLER_FLASH_SALES, icon: Zap },
     { name: 'Thông tin cửa hàng', path: '/seller/settings', icon: Settings },
   ];
 

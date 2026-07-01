@@ -58,6 +58,10 @@ class AdminService extends BaseService<unknown> {
   async toggleGlobalMenuCategoryVisibility(id: string): Promise<IApiResponse<any>> {
     return httpClient.patch<IApiResponse<any>>(API_ENDPOINTS.ADMIN.GLOBAL_MENU_CATEGORY_VISIBILITY(id));
   }
+
+  async broadcastNotification(data: { userIds: string[], title: string, message: string, type: number }): Promise<IApiResponse<any>> {
+    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ADMIN.BROADCAST_NOTIFICATION, data);
+  }
 }
 
 // Export singleton instance

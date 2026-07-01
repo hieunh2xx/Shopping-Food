@@ -23,6 +23,7 @@ namespace ShoppingFood.Domain.Models
         public string IpAddress { get; set; } = string.Empty;
         public double? DeliveryLatitude { get; set; }
         public double? DeliveryLongitude { get; set; }
+        public Guid? AppliedDiscountId { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
@@ -31,5 +32,6 @@ namespace ShoppingFood.Domain.Models
         public virtual GuestUser? GuestUser { get; set; }
         public virtual ShipperProfile? Shipper { get; set; }
         public virtual ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
+        public virtual Discount? AppliedDiscount { get; set; } 
     }
 }

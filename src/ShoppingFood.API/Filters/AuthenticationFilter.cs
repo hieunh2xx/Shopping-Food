@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using ShoppingFood.Core.Interfaces;
 using ShoppingFood.Core.Base;
@@ -65,6 +66,9 @@ namespace ShoppingFood.API.Filters
                                     path.StartsWith("/api/Admin/GlobalMenuCategory", StringComparison.OrdinalIgnoreCase)) ||
 
                                 (method == "GET" &&
+                                    path.Equals("/api/FlashSale/active", StringComparison.OrdinalIgnoreCase)) ||
+
+                                (method == "GET" &&
                                     path.Equals("/api/LoyaltyPoint/gifts", StringComparison.OrdinalIgnoreCase));
 
             bool isGuestCartRequest = (path.StartsWith("/api/Cart", StringComparison.OrdinalIgnoreCase) ||
@@ -120,7 +124,15 @@ namespace ShoppingFood.API.Filters
             }
 
             // Decode username
-            string username = TokenHelper.GetUsernameFromToken(token, _configuration);
+            string username;
+            try
+            {
+                username = TokenHelper.GetUsernameFromToken(token, _configuration);
+            }
+            catch (SecurityTokenException)
+            {
+                throw new UnauthorizedAccessException("Invalid token format");
+            }
 
             // Fetch user
             var user = await _dbContext.Users
@@ -279,28 +291,33 @@ namespace ShoppingFood.API.Filters
                 }
             }
 
-            if (path.StartsWith("/api/Discount", StringComparison.OrdinalIgnoreCase) &&
-                !path.Equals("/api/Discount/save", StringComparison.OrdinalIgnoreCase) &&
-                !path.Equals("/api/Discount/apply", StringComparison.OrdinalIgnoreCase) &&
-                (method == "POST" ||
-                 method == "PUT" ||
-                 method == "DELETE" ||
-                 method == "PATCH"))
+            if (path.StartsWith("/api/Discount", StringComparison.OrdinalIgnoreCase))
             {
-                if (user.Profile?.Role != UserRole.Admin &&
-                    user.Profile?.Role != UserRole.Seller &&
-                    user.Profile?.Role != UserRole.Mall)
+                if (method == "PATCH" && path.EndsWith("/lock", StringComparison.OrdinalIgnoreCase))
                 {
-                    throw new UnauthorizedAccessException("Only admin/seller/mall have the right to perform this operation");
+                    if (user.Profile?.Role != UserRole.Admin)
+                        throw new UnauthorizedAccessException("Only admin can emergency lock discount codes.");
                 }
-            }
 
-            if (path.Equals("/api/Discount/save", StringComparison.OrdinalIgnoreCase) &&
-                method == "POST")
-            {
-                if (user.Profile?.Role != UserRole.Customer)
+                else if (method == "POST" && path.Equals("/api/Discount/save", StringComparison.OrdinalIgnoreCase))
                 {
-                    throw new UnauthorizedAccessException("Only customers can save discounts to their wallet.");
+                    if (user.Profile?.Role != UserRole.Customer)
+                        throw new UnauthorizedAccessException("Only customers can save discounts to their wallet.");
+                }
+
+                else if (method == "GET" && path.Equals("/api/Discount/stats", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (user.Profile?.Role != UserRole.Seller && user.Profile?.Role != UserRole.Mall)
+                        throw new UnauthorizedAccessException("Only sellers can view discount statistics.");
+                }
+     
+                else if ((method == "POST" || method == "PUT" || method == "DELETE" || method == "PATCH") &&
+                         !path.Equals("/api/Discount/apply", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (user.Profile?.Role != UserRole.Admin &&
+                        user.Profile?.Role != UserRole.Seller &&
+                        user.Profile?.Role != UserRole.Mall)
+                        throw new UnauthorizedAccessException("Only admin/seller/mall have the right to perform this operation.");
                 }
             }
 
@@ -328,13 +345,30 @@ namespace ShoppingFood.API.Filters
             // Phân quyền: Notification cho phép tất cả các Role (chỉ cần đăng nhập)
             if (path.StartsWith("/api/Notification", StringComparison.OrdinalIgnoreCase))
             {
-                if (user.Profile == null)
+                if (user.Profile == null)   
                 {
                     throw new UnauthorizedAccessException("User profile is required to access notifications.");
                 }
             }
 
+            if (path.StartsWith("/api/FlashSale", StringComparison.OrdinalIgnoreCase) &&
+                !path.Equals("/api/FlashSale/register", StringComparison.OrdinalIgnoreCase) &&
+                (method == "POST" || method == "PUT" || method == "DELETE"))
+            {
+                if (user.Profile?.Role != UserRole.Admin)
+                {
+                    throw new UnauthorizedAccessException("Only admin can manage flash sales.");
+                }
+            }
 
+            if (path.Equals("/api/FlashSale/register", StringComparison.OrdinalIgnoreCase) &&
+                method == "POST")
+            {
+                if (user.Profile?.Role != UserRole.Seller && user.Profile?.Role != UserRole.Mall)
+                {
+                    throw new UnauthorizedAccessException("Only sellers can register products for flash sales.");
+                }
+            }
             // Inject CurrentUserId into Commands/Queries
             foreach (var arg in context.ActionArguments.Values)
             {

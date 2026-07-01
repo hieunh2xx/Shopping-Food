@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Tag, Search, Plus, Trash2, Edit2 } from 'lucide-react';
+import { Tag, Search, Plus, Trash2, Edit2, BarChart3 } from 'lucide-react';
 import { Button, Input, Modal } from '../../components/common';
 import toast from 'react-hot-toast';
 import { discountService } from '../../services/DiscountService';
@@ -16,6 +16,8 @@ export function SellerDiscountsPage() {
 
   // Filters & Pagination
   const [searchTerm, setSearchTerm] = useState('');
+  const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
+  const [stats, setStats] = useState<any>(null);
   const [page, setPage] = useState(1);
   const take = 10;
 
@@ -166,6 +168,20 @@ export function SellerDiscountsPage() {
     }
   };
 
+  const handleShowStats = async () => {
+    try {
+      const res = await discountService.getDiscountStats();
+      if (!res.error && res.data) {
+        setStats(res.data);
+        setIsStatsModalOpen(true);
+      } else {
+        toast.error(res.message || 'Lỗi tải thống kê');
+      }
+    } catch {
+      toast.error('Lỗi khi tải thống kê mã giảm giá');
+    }
+  };
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-8">
@@ -173,9 +189,14 @@ export function SellerDiscountsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Mã giảm giá cửa hàng</h1>
           <p className="text-sm text-gray-500 mt-1">Phát hành mã khuyến mãi riêng để thu hút khách hàng</p>
         </div>
-        <Button onClick={() => handleOpenModal()} className="flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Tạo mã giảm giá
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" onClick={handleShowStats} className="flex items-center gap-2">
+            <BarChart3 className="w-4 h-4" /> Thống kê
+          </Button>
+          <Button onClick={() => handleOpenModal()} className="flex items-center gap-2">
+            <Plus className="w-4 h-4" /> Tạo mã giảm giá
+          </Button>
+        </div>
       </div>
 
       <div className="bg-white p-4 rounded-2xl border border-gray-200 mb-6 flex items-center gap-4">
@@ -316,6 +337,23 @@ export function SellerDiscountsPage() {
             <Button type="submit">Lưu mã giảm giá</Button>
           </div>
         </form>
+      </Modal>
+
+      <Modal isOpen={isStatsModalOpen} onClose={() => setIsStatsModalOpen(false)} title="Thống kê mã giảm giá">
+        {stats ? (
+          <div className="space-y-4">
+            <div className="p-4 bg-orange-50 rounded-xl">
+              <div className="text-sm text-gray-500 mb-1">Tổng số mã đã dùng</div>
+              <div className="text-2xl font-bold text-orange-600">{stats.totalUsedCount || 0}</div>
+            </div>
+            <div className="p-4 bg-green-50 rounded-xl">
+              <div className="text-sm text-gray-500 mb-1">Tổng số tiền đã giảm</div>
+              <div className="text-2xl font-bold text-green-600">{(stats.totalDiscountAmount || 0).toLocaleString()}đ</div>
+            </div>
+          </div>
+        ) : (
+          <div className="p-4 text-center text-gray-500">Đang tải dữ liệu...</div>
+        )}
       </Modal>
     </div>
   );

@@ -13,6 +13,13 @@ export function Footer() {
     return ROUTES.REGISTER_SELLER;
   };
 
+  const getShipperRoute = () => {
+    if (isAuthenticated && (user?.role === 'Customer' || user?.role === 'Seller' || user?.role === 'Mall')) {
+      return ROUTES.SHIPPER_APPLY;
+    }
+    return ROUTES.REGISTER_SHIPPER;
+  };
+
   return (
     <footer className="bg-gray-50 border-t border-gray-200 mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
@@ -63,7 +70,7 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link to={ROUTES.REGISTER_SHIPPER} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                <Link to={getShipperRoute()} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
                   Trở thành tài xế
                 </Link>
               </li>

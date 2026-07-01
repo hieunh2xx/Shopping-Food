@@ -60,13 +60,13 @@ export function useAuth() {
       } else {
         setError(response.message);
         toast.error(response.message || 'Đăng nhập thất bại');
-        return { success: false };
+        return { success: false, message: response.message };
       }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Đăng nhập thất bại';
+    } catch (err: any) {
+      const message = err.response?.data?.message || err.response?.data?.title || err.message || 'Đăng nhập thất bại';
       setError(message);
       toast.error(message);
-      return { success: false };
+      return { success: false, message };
     } finally {
       setIsLoading(false);
     }

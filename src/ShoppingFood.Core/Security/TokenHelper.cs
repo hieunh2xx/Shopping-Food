@@ -13,7 +13,19 @@ namespace ShoppingFood.Core.Security
     {
         public static string GetUsernameFromToken(string token, IConfiguration configuration)
         {
+            if (string.IsNullOrWhiteSpace(token))
+                throw new SecurityTokenException("Invalid token format");
+
+            token = token.Trim();
+            if (token.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            {
+                token = token.Substring("Bearer ".Length).Trim();
+            }
+
             var tokenHandler = new JwtSecurityTokenHandler();
+            if (!tokenHandler.CanReadToken(token))
+                throw new SecurityTokenException("Invalid token format");
+
             var jwtToken = tokenHandler.ReadToken(token) as JwtSecurityToken;
             
             if (jwtToken == null)

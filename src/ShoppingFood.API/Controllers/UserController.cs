@@ -92,13 +92,13 @@ namespace ShoppingFood.API.Controllers
 
             if (user == null)
             {
-                return Unauthorized(ApiResponse.Failure(401, "Invalid username or password"));
+                return Unauthorized(ApiResponse.Failure(401, "Sai Tên đăng nhập / Email hoặc Mật khẩu."));
             }
 
             var passwordHash = HashPassword(request.Password);
             if (user.PasswordHash != passwordHash)
             {
-                return Unauthorized(ApiResponse.Failure(401, "Invalid username or password"));
+                return Unauthorized(ApiResponse.Failure(401, "Sai Tên đăng nhập / Email hoặc Mật khẩu."));
             }
 
             if (user.Status == ShoppingFood.Domain.Enums.UserStatus.Blocked)
@@ -461,6 +461,19 @@ namespace ShoppingFood.API.Controllers
         {
             var response = await _mediator.Send(command);
             return Ok(response);
+        }
+
+        [HttpPost("apply-shipper")]
+        public async Task<ActionResult<ApiResponse>> ApplyShipper([FromBody] ApplyShipperCommand command)
+        {
+            if (userDto != null)
+            {
+                command.CurrentUserId = userDto.Id;
+            }
+            
+
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
         }
 
         [HttpPost("LockAccount")]

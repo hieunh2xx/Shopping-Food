@@ -67,7 +67,8 @@ class HttpClient {
     // Response interceptor: handle 401 unauthorized and filter English messages
     this.axiosInstance.interceptors.response.use(
       (response) => {
-        if (response.data && response.data.message && isEnglish(response.data.message)) {
+        const msg = response.data && response.data.message;
+        if (msg && isEnglish(msg) && msg !== 'AccountLocked' && msg !== 'RequireOtp') {
           response.data.message = ''; // Clear so components use their Vietnamese fallbacks
         }
         return response;
@@ -77,7 +78,13 @@ class HttpClient {
           error.response.data.message = ''; // Clear English error messages
         }
         const originalRequest = error.config;
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        
+        // Do not attempt to refresh token for auth endpoints
+        const isAuthEndpoint = originalRequest.url?.includes('/User/Login') || 
+                               originalRequest.url?.includes('/User/Register') ||
+                               originalRequest.url?.includes('/User/Send');
+                               
+        if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
           if (this.isRefreshing) {
             return new Promise((resolve) => {
               this.refreshSubscribers.push((token: string) => {

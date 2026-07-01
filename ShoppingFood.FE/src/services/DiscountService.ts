@@ -33,6 +33,14 @@ class DiscountService extends BaseService<IDiscountDto, ICreateDiscountRequest, 
   async applyDiscount(data: IApplyDiscountRequest): Promise<IApiResponse<IApplyDiscountResponse>> { 
     return httpClient.post<IApiResponse<IApplyDiscountResponse>>(API_ENDPOINTS.DISCOUNT.APPLY, data);
   }
+
+  async getDiscountStats(): Promise<IApiResponse<any>> {
+    return httpClient.get<IApiResponse<any>>(API_ENDPOINTS.DISCOUNT.STATS);
+  }
+
+  async lockDiscount(id: string): Promise<IApiResponse<any>> {
+    return httpClient.patch<IApiResponse<any>>(API_ENDPOINTS.DISCOUNT.LOCK(id));
+  }
 }
 
 export const discountService = new DiscountService();

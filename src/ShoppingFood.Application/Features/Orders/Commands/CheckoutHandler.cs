@@ -15,6 +15,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static System.Net.WebRequestMethods;
 
+
 namespace ShoppingFood.Application.Features.Orders.Commands
 {
     public class CheckoutHandler : IRequestHandler<CheckoutCommand, ApiResponse>
@@ -27,11 +28,11 @@ namespace ShoppingFood.Application.Features.Orders.Commands
         private readonly IGuestUserRepository _guestUserRepository;
         private readonly IDiscountRepository _discountRepository;
         private readonly ICustomerDiscountRepository _customerDiscountRepository;
+        private readonly ILoyaltyPointRepository _loyaltyPointRepository;
+        private readonly IFlashSaleProductRepository _flashSaleProductRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ShoppingFoodContext _dbContext;
         private readonly IHttpContextAccessor _httpContextAccessor;
-
-
 
         public CheckoutHandler(
             ICartRepository cartRepository,
@@ -42,6 +43,8 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             IGuestUserRepository guestUserRepository,
             IDiscountRepository discountRepository,
             ICustomerDiscountRepository customerDiscountRepository,
+            ILoyaltyPointRepository loyaltyPointRepository,
+            IFlashSaleProductRepository flashSaleProductRepository,
             IUnitOfWork unitOfWork,
             ShoppingFoodContext dbContext,
             IHttpContextAccessor httpContextAccessor
@@ -55,6 +58,8 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             _guestUserRepository = guestUserRepository;
             _discountRepository = discountRepository;
             _customerDiscountRepository = customerDiscountRepository;
+            _loyaltyPointRepository = loyaltyPointRepository;
+            _flashSaleProductRepository = flashSaleProductRepository;
             _unitOfWork = unitOfWork;
             _dbContext = dbContext;
             _httpContextAccessor = httpContextAccessor;
@@ -136,14 +141,24 @@ namespace ShoppingFood.Application.Features.Orders.Commands
 
                 var (totalAmount, shippingFee) = await CalculateTotalAmountAsync(cart.Items);
                 decimal itemsTotal = cart.Items.Sum(i => i.PriceAtAdded * i.Quantity);
-                var (discountAmount, error) = await ApplyDiscountAsync(request, cart, itemsTotal);
+                var (discountAmount, appliedDiscountId, error) = await ApplyDiscountAsync(request, cart, itemsTotal);
                 if (error != null)
                 {
                     return ApiResponse.Failure(400, error);
                 }
-                totalAmount = Math.Max(0, totalAmount - discountAmount);
+
+                decimal tierDiscountAmount = 0;
+                if (request.CurrentUserId.HasValue)
+                {
+                    bool hasFlashSaleProduct = await HasFlashSaleProductAsync(cart.Items);
+                    if (!hasFlashSaleProduct)
+                        tierDiscountAmount = await GetMemberTierDiscountAsync(request.CurrentUserId.Value, itemsTotal);
+                }
+
+                totalAmount = Math.Max(0, totalAmount - discountAmount - tierDiscountAmount);
 
                 var order = CreateOrderEntity(request, totalAmount, shippingFee);
+                order.AppliedDiscountId = appliedDiscountId;
                 PopulateOrderItems(order, cart.Items);
 
                 _orderRepository.Add(order);
@@ -164,9 +179,9 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             }
         }
 
-        private async Task<(decimal DiscountAmount, string? ErrorMessage)> ApplyDiscountAsync(CheckoutCommand request, Cart cart, decimal itemsTotal)
+        private async Task<(decimal DiscountAmount, Guid? AppliedDiscountId, string? ErrorMessage)> ApplyDiscountAsync(CheckoutCommand request, Cart cart, decimal itemsTotal)
         {
-            if (string.IsNullOrWhiteSpace(request.DiscountCode)) return (0, null);
+            if (string.IsNullOrWhiteSpace(request.DiscountCode)) return (0, null, null);
 
             Guid? cartRestaurantId = cart.Items.FirstOrDefault()?.Product?.RestaurantId;
 
@@ -178,18 +193,18 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 );
             var discount = discounts.FirstOrDefault(d => d.RestaurantId == cartRestaurantId)
                             ?? discounts.FirstOrDefault(d => d.RestaurantId == null);
-            if(discount == null) return (0, "Discount code not found.");
+            if(discount == null) return (0, null, "Discount code not found.");
 
-            if (discount.Status != DiscountStatus.Active) return (0, "This discount code is inactive or cancelled.");
+            if (discount.Status != DiscountStatus.Active) return (0, null, "This discount code is inactive or cancelled.");
 
             var now = DateTime.UtcNow;
-            if (now < discount.StartDate || now > discount.EndDate) return (0, "This discount code is expired or not active yet.");
+            if (now < discount.StartDate || now > discount.EndDate) return (0, null, "This discount code is expired or not active yet.");
 
             if (discount.UsedCount >= discount.Quantity)
-                return (0, "This discount code has run out of usage.");
+                return (0, null, "This discount code has run out of usage.");
 
             if (itemsTotal < discount.MinOrderAmount)
-                return (0, $"Minimum order amount of {discount.MinOrderAmount} is required to use this code.");
+                return (0, null, $"Minimum order amount of {discount.MinOrderAmount} is required to use this code.");
 
             if (request.CurrentUserId.HasValue)
             {
@@ -200,7 +215,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 var customerDiscount = customerDiscounts.FirstOrDefault();
 
                 if (customerDiscount != null && customerDiscount.UsageCount >= discount.MaxUsagePerUser)
-                    return (0, "You have reached the maximum usage limit for this discount code.");
+                    return (0, null, "You have reached the maximum usage limit for this discount code.");
 
                 if(customerDiscount != null)
                 {
@@ -228,7 +243,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             discount.UpdatedAt = now;
             _discountRepository.Update(discount);
 
-            return (discountAmount, null);
+            return (discountAmount, discount.Id, null);
         }
 
         private decimal CalculateTotalAmount(Discount discount, decimal cartAmount)
@@ -368,6 +383,66 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             {
                 _cartItemRepository.Delete(item);
             }
+        }
+
+        private async Task<bool> HasFlashSaleProductAsync(IEnumerable<CartItem> cartItems)
+        {
+            var now = DateTime.UtcNow;
+            var productIds = cartItems.Select(i => i.ProductId).ToList();
+
+            var flashSaleProducts = await _flashSaleProductRepository.GetAsync(
+                predicate: fsp => productIds.Contains(fsp.ProductId)
+                               && fsp.Status == FlashSaleProductStatus.Approved,
+                include: q => q.Include(fsp => fsp.FlashSale),
+                disableTracking: true
+            );
+
+            return flashSaleProducts.Any(fsp =>
+                fsp.FlashSale.Status == FlashSaleStatus.Active
+                && fsp.FlashSale.StartDate <= now
+                && fsp.FlashSale.EndDate > now
+                && !fsp.FlashSale.IsDeleted
+            );
+        }
+
+        private async Task<decimal> GetMemberTierDiscountAsync(Guid userId, decimal itemsTotal)
+        {
+            var loyaltyPoints = await _loyaltyPointRepository.GetAsync(
+                predicate: lp => lp.UserAccountId == userId,
+                disableTracking: true
+            );
+            var tier = loyaltyPoints.FirstOrDefault()?.Tier ?? MemberTier.Bronze;
+
+            decimal percent = 0;
+            decimal minOrder = 0;
+            decimal maxCap = 0;
+
+            switch (tier)
+            {
+                case MemberTier.Silver:
+                    percent = 0.03m;
+                    minOrder = 100_000m;
+                    maxCap = 20_000m;
+                    break;
+                case MemberTier.Gold:
+                    percent = 0.05m;
+                    minOrder = 150_000m;
+                    maxCap = 35_000m;
+                    break;
+                case MemberTier.Diamond:
+                    percent = 0.08m;
+                    minOrder = 200_000m;
+                    maxCap = 50_000m;
+                    break;
+                default:
+                    return 0;
+            }
+
+            if (itemsTotal < minOrder)
+                return 0;
+
+            var discount = itemsTotal * percent;
+            return Math.Min(discount, maxCap);
         }
     }
 }
