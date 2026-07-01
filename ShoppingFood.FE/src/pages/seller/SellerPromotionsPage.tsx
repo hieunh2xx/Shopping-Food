@@ -4,7 +4,7 @@ import { Button, Input, Modal } from '../../components/common';
 import toast from 'react-hot-toast';
 import { promotionService } from '../../services/PromotionService';
 import { productService } from '../../services/ProductService';
-import type { IBuyXGetYPromotionDto, ICreatePromotionRequest, IProductDto } from '../../interfaces';
+import type { IBuyXGetYPromotionDto, ICreatePromotionRequest, IProductDto, IUpdatePromotionRequest } from '../../interfaces';
 import { useAuth } from '../../hooks';
 
 export function SellerPromotionsPage() {
@@ -78,9 +78,9 @@ export function SellerPromotionsPage() {
     } else {
       setEditingPromo(null);
       setFormData({
-        triggerProductId: products[0]?.id || '',
+        triggerProductId: '',
         buyQuantity: '' as any,
-        giftProductId: products[0]?.id || '',
+        giftProductId: '',
         giftQuantity: '' as any,
         startDate: new Date().toISOString().slice(0, 16),
         endDate: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 16),
@@ -217,26 +217,26 @@ export function SellerPromotionsPage() {
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2 sm:col-span-1">
               <label className="block text-sm font-medium text-gray-700 mb-1">Mua Món *</label>
-              <select required className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-500" value={formData.triggerProductId} onChange={(e) => setFormData({...formData, triggerProductId: e.target.value})}>
+              <select required className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-500" value={formData.triggerProductId} onChange={(e) => setFormData({ ...formData, triggerProductId: e.target.value })}>
                 <option value="" disabled>-- Chọn món ăn --</option>
-                {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                {products.map(p => <option key={p.id} value={p.id}>{p.itemName}</option>)}
               </select>
             </div>
             <div className="col-span-2 sm:col-span-1">
               <label className="block text-sm font-medium text-gray-700 mb-1">Số lượng mua *</label>
-              <Input type="number" required min="1" value={formData.buyQuantity} onChange={e => setFormData({...formData, buyQuantity: e.target.value === '' ? ('' as any) : Number(e.target.value)})} />
+              <Input type="number" required min="1" value={formData.buyQuantity} onChange={e => setFormData({ ...formData, buyQuantity: e.target.value === '' ? ('' as any) : Number(e.target.value) })} />
             </div>
 
             <div className="col-span-2 sm:col-span-1">
               <label className="block text-sm font-medium text-gray-700 mb-1">Tặng Món *</label>
-              <select required className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-500" value={formData.giftProductId} onChange={(e) => setFormData({...formData, giftProductId: e.target.value})}>
+              <select required className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-500" value={formData.giftProductId} onChange={(e) => setFormData({ ...formData, giftProductId: e.target.value })}>
                 <option value="" disabled>-- Chọn món tặng --</option>
-                {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                {products.map(p => <option key={p.id} value={p.id}>{p.itemName}</option>)}
               </select>
             </div>
             <div className="col-span-2 sm:col-span-1">
               <label className="block text-sm font-medium text-gray-700 mb-1">Số lượng tặng *</label>
-              <Input type="number" required min="1" value={formData.giftQuantity} onChange={e => setFormData({...formData, giftQuantity: e.target.value === '' ? ('' as any) : Number(e.target.value)})} />
+              <Input type="number" required min="1" value={formData.giftQuantity} onChange={e => setFormData({ ...formData, giftQuantity: e.target.value === '' ? ('' as any) : Number(e.target.value) })} />
             </div>
 
             <div>
@@ -249,11 +249,11 @@ export function SellerPromotionsPage() {
             </div>
 
             <div className="col-span-2 flex items-center gap-2 mt-2">
-              <input type="checkbox" id="isActive" checked={formData.isActive} onChange={e => setFormData({...formData, isActive: e.target.checked})} />
+              <input type="checkbox" id="isActive" checked={formData.isActive} onChange={e => setFormData({ ...formData, isActive: e.target.checked })} />
               <label htmlFor="isActive" className="text-sm font-medium text-gray-700">Kích hoạt ngay</label>
             </div>
           </div>
-          
+
           <div className="flex justify-end gap-3 mt-6">
             <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Hủy</Button>
             <Button type="submit">Lưu chương trình</Button>

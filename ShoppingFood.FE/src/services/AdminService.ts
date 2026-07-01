@@ -59,7 +59,13 @@ class AdminService extends BaseService<unknown> {
     return httpClient.patch<IApiResponse<any>>(API_ENDPOINTS.ADMIN.GLOBAL_MENU_CATEGORY_VISIBILITY(id));
   }
 
-  async broadcastNotification(data: { userIds: string[], title: string, message: string, type: number }): Promise<IApiResponse<any>> {
+  async broadcastNotification(data: {
+    flashSaleId: string;
+    customMessage: string;
+    targetAudience: number; // 0=AllCustomers, 1=ByTier, 2=SpecificCustomers
+    targetTier?: number; // 0=Bronze, 1=Silver, 2=Gold, 3=Diamond
+    targetUserIds?: string[];
+  }): Promise<IApiResponse<any>> {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ADMIN.BROADCAST_NOTIFICATION, data);
   }
 }

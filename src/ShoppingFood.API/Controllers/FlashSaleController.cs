@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using ShoppingFood.Application.Features.FlashSales.Commands;
 using ShoppingFood.Application.Features.FlashSales.Queries;
@@ -67,6 +67,16 @@ namespace ShoppingFood.API.Controllers
             if (userDto != null)
                 command.CurrentUserId = userDto.Id;
             var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpGet("flash-sales/{id}/products")]
+        public async Task<ActionResult<ApiResponse>> GetFlashSaleProducts(Guid id, [FromQuery] GetFlashSaleProductsQuery query)
+        {
+            query.FlashSaleId = id;
+            if (userDto != null)
+                query.CurrentUserId = userDto.Id;
+            var response = await _mediator.Send(query);
             return StatusCode(response.Code, response);
         }
 

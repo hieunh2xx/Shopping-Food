@@ -14,10 +14,14 @@ export function SellerFlashSalesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSaleId, setSelectedSaleId] = useState('');
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    productId: string;
+    flashSalePrice: number | '';
+    quantityLimit: number | '';
+  }>({
     productId: '',
-    flashSalePrice: 0,
-    stockQuantity: 0
+    flashSalePrice: '',
+    quantityLimit: ''
   });
 
   useEffect(() => {
@@ -46,13 +50,13 @@ export function SellerFlashSalesPage() {
 
   const handleRegisterClick = (saleId: string) => {
     setSelectedSaleId(saleId);
-    setFormData({ productId: '', flashSalePrice: 0, stockQuantity: 0 });
+    setFormData({ productId: '', flashSalePrice: '', quantityLimit: '' });
     setIsModalOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.productId || formData.flashSalePrice <= 0 || formData.stockQuantity <= 0) {
+    if (!formData.productId || !formData.flashSalePrice || !formData.quantityLimit || Number(formData.flashSalePrice) <= 0 || Number(formData.quantityLimit) <= 0) {
       toast.error('Vui lòng nhập thông tin hợp lệ');
       return;
     }
@@ -61,8 +65,8 @@ export function SellerFlashSalesPage() {
       const res = await flashSaleService.registerFlashSale({
         flashSaleId: selectedSaleId,
         productId: formData.productId,
-        flashSalePrice: formData.flashSalePrice,
-        stockQuantity: formData.stockQuantity
+        flashSalePrice: Number(formData.flashSalePrice),
+        quantityLimit: Number(formData.quantityLimit)
       });
 
       if (!res.error) {
@@ -100,16 +104,16 @@ export function SellerFlashSalesPage() {
                 HOT
               </div>
               <div className="p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-2">{sale.name}</h3>
+                <h3 className="text-lg font-bold text-gray-900 mb-2">{sale.title}</h3>
                 <p className="text-sm text-gray-500 mb-4 line-clamp-2">{sale.description || 'Chương trình siêu sale hấp dẫn'}</p>
                 <div className="space-y-2 mb-6">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Bắt đầu:</span>
-                    <span className="font-medium text-gray-900">{formatDate(sale.startTime)}</span>
+                    <span className="font-medium text-gray-900">{formatDate(sale.startDate)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Kết thúc:</span>
-                    <span className="font-medium text-gray-900">{formatDate(sale.endTime)}</span>
+                    <span className="font-medium text-gray-900">{formatDate(sale.endDate)}</span>
                   </div>
                 </div>
                 <Button className="w-full" onClick={() => handleRegisterClick(sale.id)}>
@@ -132,7 +136,7 @@ export function SellerFlashSalesPage() {
             >
               <option value="">-- Chọn sản phẩm --</option>
               {products.map(p => (
-                <option key={p.id} value={p.id}>{p.name} - Giá gốc: {p.price.toLocaleString()}đ</option>
+                <option key={p.id} value={p.id}>{p.itemName} - Giá gốc: {p.price.toLocaleString()}đ</option>
               ))}
             </select>
           </div>
@@ -142,7 +146,7 @@ export function SellerFlashSalesPage() {
               type="number"
               min="0"
               value={formData.flashSalePrice}
-              onChange={(e) => setFormData({ ...formData, flashSalePrice: Number(e.target.value) })}
+              onChange={(e) => setFormData({ ...formData, flashSalePrice: e.target.value === '' ? '' : Number(e.target.value) })}
             />
           </div>
           <div>
@@ -150,8 +154,8 @@ export function SellerFlashSalesPage() {
             <Input
               type="number"
               min="1"
-              value={formData.stockQuantity}
-              onChange={(e) => setFormData({ ...formData, stockQuantity: Number(e.target.value) })}
+              value={formData.quantityLimit}
+              onChange={(e) => setFormData({ ...formData, quantityLimit: e.target.value === '' ? '' : Number(e.target.value) })}
             />
           </div>
           <div className="flex justify-end gap-3 mt-6">

@@ -4,9 +4,9 @@ import type { IApiResponse } from '../interfaces';
 
 export interface IFlashSale {
   id: string;
-  name: string;
-  startTime: string;
-  endTime: string;
+  title: string;
+  startDate: string;
+  endDate: string;
   description: string;
   status: string;
 }
@@ -15,40 +15,41 @@ export interface IFlashSaleProduct {
   id: string;
   flashSaleId: string;
   productId: string;
-  productName?: string;
+  productName: string;
+  restaurantName: string;
   originalPrice: number;
   flashSalePrice: number;
-  stockQuantity: number;
+  quantityLimit: number;
   soldQuantity: number;
   status: string;
   rejectReason?: string;
+  createdAt: string;
 }
 
 export interface IReviewFlashSaleProductRequest {
   flashSaleProductId: string;
   isApproved: boolean;
-  rejectReason?: string;
+  rejectionReason?: string;
 }
 
 export interface IRegisterFlashSaleRequest {
   flashSaleId: string;
   productId: string;
   flashSalePrice: number;
-  stockQuantity: number;
+  quantityLimit: number;
 }
 
 export interface ICreateFlashSaleRequest {
-  name: string;
-  startTime: string;
-  endTime: string;
+  title: string;
+  startDate: string;
+  endDate: string;
   description?: string;
 }
 
 export interface IUpdateFlashSaleRequest {
-  name?: string;
-  startTime?: string;
-  endTime?: string;
-  description?: string;
+  title?: string;
+  startDate?: string;
+  endDate?: string;
   status?: string;
 }
 
@@ -79,6 +80,12 @@ class FlashSaleService {
 
   public async reviewFlashSaleProduct(data: IReviewFlashSaleProductRequest): Promise<IApiResponse<any>> {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.FLASH_SALE.REVIEW_PRODUCT, data);
+  }
+
+  public async getFlashSaleProducts(flashSaleId: string, skip = 0, take = 50): Promise<IApiResponse<{ total: number; data: IFlashSaleProduct[] }>> {
+    return httpClient.get<IApiResponse<{ total: number; data: IFlashSaleProduct[] }>>(API_ENDPOINTS.FLASH_SALE.PRODUCTS(flashSaleId), {
+      params: { skip, take }
+    });
   }
 }
 

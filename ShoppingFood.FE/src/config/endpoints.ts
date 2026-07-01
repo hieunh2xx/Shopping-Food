@@ -53,7 +53,7 @@ export const API_ENDPOINTS = {
     CREATE: '/Product',        // POST
     UPDATE: (id: string) => `/Product/${id}`,     // PUT
     DELETE: (id: string) => `/Product/${id}`,     // DELETE
-    SEARCH: '/Product/Search',                     // GET
+    SEARCH: '/Product',                            // GET
     BEST_SELLERS: '/Product/BestSellers',          // GET ?take=
     CATEGORIES: '/Product/Categories',             // GET
     STOCK_STATUS: (id: string) => `/Product/StockStatus/${id}`,       // PATCH
@@ -173,6 +173,7 @@ export const API_ENDPOINTS = {
     CREATE: '/FlashSale/flash-sales', // POST
     UPDATE: (id: string) => `/FlashSale/flash-sales/${id}`, // POST
     DELETE: (id: string) => `/FlashSale/flash-sales/${id}`, // DELETE
+    PRODUCTS: (id: string) => `/FlashSale/flash-sales/${id}/products`, // GET
     REGISTER: '/FlashSale/register', // POST
     REVIEW_PRODUCT: '/FlashSale/review-product', // POST
   },

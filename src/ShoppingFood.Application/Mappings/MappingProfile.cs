@@ -268,6 +268,12 @@ namespace ShoppingFood.Application.Mappings
 
             CreateMap<FlashSale, FlashSaleDto>()
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
+
+            CreateMap<FlashSaleProduct, FlashSaleProductDto>()
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product != null ? src.Product.ItemName : string.Empty))
+                .ForMember(dest => dest.OriginalPrice, opt => opt.MapFrom(src => src.Product != null ? src.Product.Price : 0))
+                .ForMember(dest => dest.RestaurantName, opt => opt.MapFrom(src => src.Product != null && src.Product.Restaurant != null ? src.Product.Restaurant.RestaurantName : string.Empty));
         }
     }
 }

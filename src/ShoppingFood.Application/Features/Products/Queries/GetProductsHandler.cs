@@ -53,8 +53,8 @@ namespace ShoppingFood.Application.Features.Products.Queries
                 (isAdmin || p.Status == ProductStatus.Approved || (userProfileId != null && p.Restaurant.OwnerId == userProfileId)) &&
                 (!statusFilter.HasValue || p.Status == statusFilter.Value) &&
                 (!request.CategoryId.HasValue || p.CategoryId == request.CategoryId.Value) &&
+                (!request.RestaurantId.HasValue || p.RestaurantId == request.RestaurantId.Value) &&
                 (string.IsNullOrEmpty(request.Filter) || (p.ItemName.Contains(request.Filter) || p.Category.Title.Contains(request.Filter)));
-
 
             var products = await _productRepository.GetAsync(
                 predicate: predicate,

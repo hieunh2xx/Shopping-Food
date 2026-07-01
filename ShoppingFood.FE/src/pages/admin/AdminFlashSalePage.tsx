@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { Plus, Edit2, Trash2, Zap, Clock, PlayCircle } from 'lucide-react';
+import { Plus, Edit2, Trash2, Zap, Clock, PlayCircle, CheckCircle2, XCircle, Package } from 'lucide-react';
 import { flashSaleService } from '../../services/FlashSaleService';
-import type { IFlashSale, ICreateFlashSaleRequest } from '../../services/FlashSaleService';
+import type { IFlashSale, ICreateFlashSaleRequest, IFlashSaleProduct } from '../../services/FlashSaleService';
 import { Button, Input, Modal } from '../../components/common';
 import { formatDate } from '../../utils/formatters';
 
@@ -11,11 +11,19 @@ export function AdminFlashSalePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState<ICreateFlashSaleRequest>({
-    name: '',
-    startTime: '',
-    endTime: '',
-    description: ''
+    title: '',
+    startDate: '',
+    endDate: '',
+    description: '',
   });
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  // Review Products Modal State
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [selectedFlashSale, setSelectedFlashSale] = useState<IFlashSale | null>(null);
+  const [flashSaleProducts, setFlashSaleProducts] = useState<IFlashSaleProduct[]>([]);
+  const [isReviewing, setIsReviewing] = useState(false);
 
   useEffect(() => {
     fetchFlashSales();
@@ -34,23 +42,56 @@ export function AdminFlashSalePage() {
     }
   };
 
-  const handleCreate = async () => {
-    if (!formData.name || !formData.startTime || !formData.endTime) {
+  const handleOpenModal = () => {
+    setEditingId(null);
+    setFormData({
+      title: '',
+      startDate: '',
+      endDate: '',
+      description: '',
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleEdit = (sale: IFlashSale) => {
+    setEditingId(sale.id);
+    setFormData({
+      title: sale.title,
+      startDate: sale.startDate.slice(0, 16),
+      endDate: sale.endDate.slice(0, 16),
+      description: sale.description || '',
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleSubmit = async () => {
+    if (!formData.title || !formData.startDate || !formData.endDate) {
       toast.error('Vui lòng điền đầy đủ thông tin bắt buộc');
       return;
     }
     
     try {
-      const res = await flashSaleService.createFlashSale(formData);
-      if (!res.error) {
-        toast.success('Tạo chương trình Flash Sale thành công!');
-        setIsModalOpen(false);
-        fetchFlashSales();
+      if (editingId) {
+        const res = await flashSaleService.updateFlashSale(editingId, formData);
+        if (!res.error) {
+          toast.success('Cập nhật chương trình Flash Sale thành công!');
+          setIsModalOpen(false);
+          fetchFlashSales();
+        } else {
+          toast.error(res.message || 'Lỗi khi cập nhật Flash Sale');
+        }
       } else {
-        toast.error(res.message || 'Lỗi khi tạo Flash Sale');
+        const res = await flashSaleService.createFlashSale(formData);
+        if (!res.error) {
+          toast.success('Tạo chương trình Flash Sale thành công!');
+          setIsModalOpen(false);
+          fetchFlashSales();
+        } else {
+          toast.error(res.message || 'Lỗi khi tạo Flash Sale');
+        }
       }
     } catch (error) {
-      toast.error('Lỗi hệ thống khi tạo Flash Sale');
+      toast.error('Lỗi hệ thống khi lưu Flash Sale');
     }
   };
 
@@ -70,6 +111,46 @@ export function AdminFlashSalePage() {
     }
   };
 
+  const handleOpenReviewModal = async (sale: IFlashSale) => {
+    setSelectedFlashSale(sale);
+    setIsReviewModalOpen(true);
+    setIsReviewing(true);
+    try {
+      const res = await flashSaleService.getFlashSaleProducts(sale.id);
+      if (!res.error && res.data) {
+        setFlashSaleProducts(res.data.data);
+      }
+    } catch (error) {
+      toast.error('Lỗi khi tải danh sách sản phẩm');
+    } finally {
+      setIsReviewing(false);
+    }
+  };
+
+  const handleReviewProduct = async (productId: string, isApproved: boolean, rejectionReason?: string) => {
+    try {
+      const res = await flashSaleService.reviewFlashSaleProduct({
+        flashSaleProductId: productId,
+        isApproved,
+        rejectionReason
+      });
+      if (!res.error) {
+        toast.success(isApproved ? 'Đã duyệt sản phẩm' : 'Đã từ chối sản phẩm');
+        // Refresh product list
+        if (selectedFlashSale) {
+          const productsRes = await flashSaleService.getFlashSaleProducts(selectedFlashSale.id);
+          if (!productsRes.error && productsRes.data) {
+            setFlashSaleProducts(productsRes.data.data);
+          }
+        }
+      } else {
+        toast.error(res.message || 'Lỗi khi duyệt sản phẩm');
+      }
+    } catch (error) {
+      toast.error('Lỗi hệ thống');
+    }
+  };
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
@@ -80,7 +161,7 @@ export function AdminFlashSalePage() {
           </h1>
           <p className="text-sm text-gray-500 mt-1">Quản lý các chương trình Flash Sale giờ vàng</p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)} className="flex items-center gap-2">
+        <Button onClick={handleOpenModal} className="flex items-center gap-2">
           <Plus className="w-4 h-4" />
           Tạo chương trình mới
         </Button>
@@ -110,9 +191,9 @@ export function AdminFlashSalePage() {
               ) : (
                 flashSales.map((sale) => (
                   <tr key={sale.id} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="p-4 font-medium text-gray-900">{sale.name}</td>
-                    <td className="p-4 text-gray-600">{formatDate(sale.startTime)}</td>
-                    <td className="p-4 text-gray-600">{formatDate(sale.endTime)}</td>
+                    <td className="p-4 font-medium text-gray-900">{sale.title}</td>
+                    <td className="p-4 text-gray-600">{formatDate(sale.startDate)}</td>
+                    <td className="p-4 text-gray-600">{formatDate(sale.endDate)}</td>
                     <td className="p-4">
                       <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
                         sale.status === 'Active' ? 'bg-green-100 text-green-700' :
@@ -125,6 +206,21 @@ export function AdminFlashSalePage() {
                     </td>
                     <td className="p-4">
                       <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => handleOpenReviewModal(sale)}
+                          className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors flex items-center gap-1"
+                          title="Duyệt sản phẩm"
+                        >
+                          <Package className="w-4 h-4" />
+                          <span className="text-xs font-medium">Duyệt SP</span>
+                        </button>
+                        <button
+                          onClick={() => handleEdit(sale)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Sửa"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
                         <button
                           onClick={() => handleDelete(sale.id)}
                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -145,32 +241,34 @@ export function AdminFlashSalePage() {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title="Tạo chương trình Flash Sale"
+        title={editingId ? "Cập nhật chương trình Flash Sale" : "Tạo chương trình Flash Sale"}
       >
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Tên chương trình</label>
             <Input
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               placeholder="VD: Flash Sale Giờ Vàng"
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Bắt đầu</label>
               <Input
                 type="datetime-local"
-                value={formData.startTime}
-                onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                value={formData.startDate}
+                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                className="!pr-10"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Kết thúc</label>
               <Input
                 type="datetime-local"
-                value={formData.endTime}
-                onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                value={formData.endDate}
+                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                className="!pr-10"
               />
             </div>
           </div>
@@ -188,8 +286,100 @@ export function AdminFlashSalePage() {
             <Button variant="outline" onClick={() => setIsModalOpen(false)}>
               Hủy
             </Button>
-            <Button onClick={handleCreate}>
-              Tạo chương trình
+            <Button onClick={handleSubmit}>
+              {editingId ? "Cập nhật" : "Tạo chương trình"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={isReviewModalOpen}
+        onClose={() => setIsReviewModalOpen(false)}
+        title={`Duyệt sản phẩm - ${selectedFlashSale?.title}`}
+      >
+        <div className="space-y-4">
+          <div className="overflow-x-auto max-h-[60vh]">
+            <table className="w-full text-left border-collapse">
+              <thead className="sticky top-0 bg-white shadow-sm">
+                <tr className="bg-gray-50 border-b border-gray-100">
+                  <th className="p-3 text-sm font-semibold text-gray-600">Sản phẩm</th>
+                  <th className="p-3 text-sm font-semibold text-gray-600">Giá Flash Sale</th>
+                  <th className="p-3 text-sm font-semibold text-gray-600">Số lượng</th>
+                  <th className="p-3 text-sm font-semibold text-gray-600">Trạng thái</th>
+                  <th className="p-3 text-sm font-semibold text-gray-600 text-right">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {isReviewing ? (
+                  <tr>
+                    <td colSpan={5} className="p-8 text-center text-gray-500">Đang tải...</td>
+                  </tr>
+                ) : flashSaleProducts.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="p-8 text-center text-gray-500">Chưa có sản phẩm đăng ký</td>
+                  </tr>
+                ) : (
+                  flashSaleProducts.map((p) => (
+                    <tr key={p.id} className="hover:bg-gray-50/50 transition-colors">
+                      <td className="p-3">
+                        <div className="font-medium text-gray-900 line-clamp-2">{p.productName}</div>
+                        <div className="text-xs text-gray-500">{p.restaurantName}</div>
+                        <div className="text-xs text-gray-400 line-through mt-1">{p.originalPrice.toLocaleString()}đ</div>
+                      </td>
+                      <td className="p-3 font-medium text-orange-600">{p.flashSalePrice.toLocaleString()}đ</td>
+                      <td className="p-3 text-gray-600">
+                        {p.soldQuantity} / {p.quantityLimit}
+                      </td>
+                      <td className="p-3">
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          p.status === 'Approved' ? 'bg-green-100 text-green-700' :
+                          p.status === 'Rejected' ? 'bg-red-100 text-red-700' :
+                          'bg-yellow-100 text-yellow-700'
+                        }`}>
+                          {p.status === 'Approved' ? 'Đã duyệt' : 
+                           p.status === 'Rejected' ? 'Đã từ chối' : 'Chờ duyệt'}
+                        </span>
+                        {p.status === 'Rejected' && p.rejectReason && (
+                          <div className="text-[10px] text-red-500 mt-1 max-w-[120px] truncate" title={p.rejectReason}>
+                            Lý do: {p.rejectReason}
+                          </div>
+                        )}
+                      </td>
+                      <td className="p-3">
+                        {p.status === 'Pending' && (
+                          <div className="flex justify-end gap-2">
+                            <button
+                              onClick={() => handleReviewProduct(p.id, true)}
+                              className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                              title="Duyệt"
+                            >
+                              <CheckCircle2 className="w-5 h-5" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                const reason = window.prompt('Nhập lý do từ chối:');
+                                if (reason !== null) {
+                                  handleReviewProduct(p.id, false, reason);
+                                }
+                              }}
+                              className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Từ chối"
+                            >
+                              <XCircle className="w-5 h-5" />
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex justify-end mt-4">
+            <Button variant="outline" onClick={() => setIsReviewModalOpen(false)}>
+              Đóng
             </Button>
           </div>
         </div>

@@ -91,16 +91,31 @@ export function UserLayout() {
               <div className="my-2 border-t border-gray-100"></div>
               
               {user?.role === 'Customer' && (
-                <NavLink
-                  to={ROUTES.SELLER_APPLY as string}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm ${
-                      isActive ? 'bg-orange-50 text-orange-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                    }`
-                  }
-                >
-                  <Store className="w-5 h-5" /> Đăng ký bán hàng
-                </NavLink>
+                <>
+                  <NavLink
+                    to={ROUTES.SELLER_APPLY as string}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm ${
+                        isActive ? 'bg-orange-50 text-orange-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      }`
+                    }
+                  >
+                    <Store className="w-5 h-5" /> Đăng ký bán hàng
+                  </NavLink>
+                  <NavLink
+                    to={ROUTES.SHIPPER_APPLY as string}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm ${
+                        isActive ? 'bg-orange-50 text-orange-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      }`
+                    }
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                    Đăng ký giao hàng
+                  </NavLink>
+                </>
               )}
               
               <button

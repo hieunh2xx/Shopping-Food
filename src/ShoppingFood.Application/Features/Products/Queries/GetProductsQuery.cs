@@ -8,5 +8,6 @@ namespace ShoppingFood.Application.Features.Products.Queries
     {
         public Guid? CategoryId { get; set; }
         public string? Status { get; set; }
+        public Guid? RestaurantId { get; set; }
     }
 }
