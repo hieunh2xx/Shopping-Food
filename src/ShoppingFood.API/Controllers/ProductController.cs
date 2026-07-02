@@ -112,11 +112,48 @@ namespace ShoppingFood.API.Controllers
             var response = await _mediator.Send(command);
             return Ok(response);
         }
+        [HttpGet("{productId}/reviews")]
+        public async Task<ActionResult<ApiResponse>> GetProductReviews(Guid productId, [FromQuery] int skip = 0, [FromQuery] int take = 20)
+        {
+            var query = new GetProductReviewsQuery { ProductId = productId, Skip = skip, Take = take };
+            var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpGet("seller/reviews")]
+        public async Task<ActionResult<ApiResponse>> GetSellerReviews([FromQuery] GetSellerReviewsQuery query)
+        {
+            if (userDto != null)
+                query.CurrentUserId = userDto.Id;
+            var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
+        }
+
         [HttpPost("review")]
         public async Task<ActionResult<ApiResponse>> ReviewProduct([FromBody] CreateProductReviewCommand command)
         {
             var response = await _mediator.Send(command);
             return Ok(response);
+        }
+
+        [HttpPost("review/{reviewId}/reply")]
+        public async Task<ActionResult<ApiResponse>> ReplyReview(Guid reviewId, [FromBody] ReplyReviewCommand command)
+        {
+            command.ReviewId = reviewId;
+            if (userDto != null)
+                command.CurrentUserId = userDto.Id;
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpPost("review/{reviewId}/report")]
+        public async Task<ActionResult<ApiResponse>> ReportReview(Guid reviewId, [FromBody] ReportReviewCommand command)
+        {
+            command.ReviewId = reviewId;
+            if (userDto != null)
+                command.CurrentUserId = userDto.Id;
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
         }
     }
 }

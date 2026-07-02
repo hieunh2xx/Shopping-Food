@@ -154,5 +154,23 @@ namespace ShoppingFood.API.Controllers
             var response = await _mediator.Send(command);
             return StatusCode(response.Code, response);
         }
+
+        [HttpGet("review-reports")]
+        public async Task<ActionResult<ApiResponse>> GetReviewReports([FromQuery] GetReviewReportsQuery query)
+        {
+            if(userDto != null)
+                query.CurrentUserId = userDto.Id;
+            var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpPost("review-reports/{reportId}/moderate")]
+        public async Task<ActionResult<ApiResponse>> ModerateReview(Guid reportId, [FromBody] ModerateReviewCommand command)
+        {
+            if (userDto != null)
+                command.CurrentUserId = userDto.Id;
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
     }
 }

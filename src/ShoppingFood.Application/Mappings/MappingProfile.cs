@@ -4,6 +4,7 @@ using ShoppingFood.Application.Features.Products.Commands;
 using ShoppingFood.Application.Features.Products.GlobalMenuCategories.Commands;
 using ShoppingFood.Application.Features.Products.Menu.Commands;
 using ShoppingFood.Application.Features.Users.Commands;
+using ShoppingFood.Domain.Enums;
 using ShoppingFood.Domain.Models;
 using ShoppingFood.Dto.Cart;
 using ShoppingFood.Dto.Coordinator;
@@ -134,7 +135,9 @@ namespace ShoppingFood.Application.Mappings
             //ProductReview mappings
             CreateMap<ProductReview, ProductReviewDto>()
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.UserProfile != null ? src.UserProfile.FullName : string.Empty))
-                .ForMember(dest => dest.AvatarUrl, opt => opt.MapFrom(src => src.UserProfile != null ? src.UserProfile.AvatarUrl : null));
+                .ForMember(dest => dest.AvatarUrl, opt => opt.MapFrom(src => src.UserProfile != null ? src.UserProfile.AvatarUrl : null))
+                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product != null ? src.Product.ItemName : string.Empty))
+                .ForMember(dest => dest.SellerReply, opt => opt.MapFrom(src => src.SellerReply));
 
             //CartItem and Cart mappings
             CreateMap<Cart, CartDto>();
@@ -274,6 +277,19 @@ namespace ShoppingFood.Application.Mappings
                 .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product != null ? src.Product.ItemName : string.Empty))
                 .ForMember(dest => dest.OriginalPrice, opt => opt.MapFrom(src => src.Product != null ? src.Product.Price : 0))
                 .ForMember(dest => dest.RestaurantName, opt => opt.MapFrom(src => src.Product != null && src.Product.Restaurant != null ? src.Product.Restaurant.RestaurantName : string.Empty));
+
+            CreateMap<SystemReport, IncidentItemDto>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.Title))
+                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Content))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+                .ForMember(dest => dest.ReportId, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src =>
+                    src.TargetType == ReportTargetType.Order ? src.TargetId : (Guid?)null))
+                .ForMember(dest => dest.IncidentType, opt => opt.Ignore())
+                .ForMember(dest => dest.ContactName, opt => opt.Ignore())
+                .ForMember(dest => dest.ContactPhone, opt => opt.Ignore())
+                .ForMember(dest => dest.ShipperProfileId, opt => opt.Ignore());
         }
     }
 }

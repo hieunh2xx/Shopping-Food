@@ -42,6 +42,8 @@ import {
   DispatchHistoryPage,
   DispatchBoardPage,
   MonitorShippersPage,
+  CoordinatorIncidentsPage,
+  AdminReviewReportsPage,
   CheckoutPage,
   GuestOrderTrackingPage,
   RestaurantsPage,
@@ -53,6 +55,7 @@ import {
   AdminNotificationsPage,
   SellerFlashSalesPage,
   AuthShipperApplyPage,
+  DashboardProfilePage,
 } from '../pages';
 
 /**
@@ -150,6 +153,9 @@ export function AppRoutes() {
         <Route path="dispatch-history" element={<DispatchHistoryPage />} />
         <Route path="flash-sales" element={<AdminFlashSalePage />} />
         <Route path="notifications" element={<AdminNotificationsPage />} />
+        <Route path="review-reports" element={<AdminReviewReportsPage />} />
+        <Route path="incidents" element={<CoordinatorIncidentsPage />} />
+        <Route path="profile" element={<DashboardProfilePage />} />
       </Route>
 
       {/* Coordinator routes - protected with CoordinatorLayout */}
@@ -165,6 +171,8 @@ export function AppRoutes() {
         <Route path="dispatch" element={<DispatchBoardPage />} />
         <Route path="shippers" element={<MonitorShippersPage />} />
         <Route path="history" element={<DispatchHistoryPage />} />
+        <Route path="incidents" element={<CoordinatorIncidentsPage />} />
+        <Route path="profile" element={<DashboardProfilePage />} />
       </Route>
 
       {/* Shipper routes - protected with ShipperLayout */}

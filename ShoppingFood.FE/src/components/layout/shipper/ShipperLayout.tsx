@@ -4,7 +4,8 @@ import {
   History, 
   TrendingUp, 
   User, 
-  Bike
+  Bike,
+  FileText
 } from 'lucide-react';
 import { useAuth } from '../../../hooks';
 import { ROUTES } from '../../../routes/routeConfig';

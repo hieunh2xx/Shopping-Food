@@ -297,7 +297,7 @@ export function ProductDetailPage() {
       </div>
 
       {/* Reviews Section */}
-      <ProductReviews productId={product.id} />
+      <ProductReviews productId={product.id} restaurantId={product.restaurantId} />
 
       {/* Report Violation Modal */}
       <Modal isOpen={isReportOpen} onClose={() => setIsReportOpen(false)} title="Báo cáo món ăn vi phạm" size="md">

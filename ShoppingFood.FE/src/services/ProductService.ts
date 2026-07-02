@@ -11,6 +11,7 @@ import type {
   IUpdateAvailabilityRequest,
   ISearchProductQuery,
   IMenuCategoryDto,
+  IProductReviewDto,
 } from '../interfaces';
 
 /**
@@ -63,8 +64,24 @@ class ProductService extends BaseService<IProductDto, IAddProductRequest, IUpdat
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.PRODUCT.REPORT, data);
   }
 
+  async getProductReviews(productId: string, skip = 0, take = 20): Promise<IApiResponse<IProductReviewDto[]>> {
+    return httpClient.get<IApiResponse<IProductReviewDto[]>>(API_ENDPOINTS.PRODUCT.REVIEWS(productId), { params: { skip, take } });
+  }
+
+  async getSellerReviews(skip = 0, take = 50): Promise<IApiResponse<IProductReviewDto[]>> {
+    return httpClient.get<IApiResponse<IProductReviewDto[]>>(API_ENDPOINTS.PRODUCT.SELLER_REVIEWS, { params: { skip, take } });
+  }
+
   async reviewProduct(data: { productId: string; rating: number; comment?: string }): Promise<IApiResponse<any>> {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.PRODUCT.REVIEW, data);
+  }
+
+  async replyReview(reviewId: string, reply: string): Promise<IApiResponse<any>> {
+    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.PRODUCT.REVIEW_REPLY(reviewId), { reply });
+  }
+
+  async reportReview(reviewId: string, reason: string): Promise<IApiResponse<any>> {
+    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.PRODUCT.REVIEW_REPORT(reviewId), { reason });
   }
 }
 

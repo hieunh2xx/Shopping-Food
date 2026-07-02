@@ -186,11 +186,12 @@ namespace ShoppingFood.API.Filters
                 }
             }
 
-            // Phân quyền: CUD món ăn & topping chỉ dành cho Seller (ngoại trừ Report và Review)
+            // Phân quyền: CUD món ăn & topping chỉ dành cho Seller (ngoại trừ Report, Review và Reply review)
             if ((path.Contains("/api/Product", StringComparison.OrdinalIgnoreCase) ||
                  path.Contains("/api/Topping", StringComparison.OrdinalIgnoreCase)) &&
                 !path.Equals("/api/Product/Report", StringComparison.OrdinalIgnoreCase) &&
                 !path.Equals("/api/Product/review", StringComparison.OrdinalIgnoreCase) &&
+                !path.Contains("/review/", StringComparison.OrdinalIgnoreCase) &&
                 (method == "POST" ||
                  method == "PUT" ||
                  method == "DELETE" ||
@@ -209,6 +210,19 @@ namespace ShoppingFood.API.Filters
                 if (user.Profile?.Role != UserRole.Customer)
                 {
                     throw new UnauthorizedAccessException("Only customers can report or review products.");
+                }
+            }
+
+            // Phân quyền: Reply review — Seller và Mall only
+            if (path.Contains("/api/Product", StringComparison.OrdinalIgnoreCase) &&
+                path.Contains("/review/", StringComparison.OrdinalIgnoreCase) &&
+                path.EndsWith("/reply", StringComparison.OrdinalIgnoreCase) &&
+                path.EndsWith("/report", StringComparison.OrdinalIgnoreCase) &&
+                method == "POST")
+            {
+                if (user.Profile?.Role != UserRole.Seller && user.Profile?.Role != UserRole.Mall)
+                {
+                    throw new UnauthorizedAccessException("Only sellers can reply to reviews.");
                 }
             }
 
@@ -240,11 +254,22 @@ namespace ShoppingFood.API.Filters
                 throw new UnauthorizedAccessException("Only the admin has the right to perform this operation.");
             }
 
-            if (path.Contains("/api/Shipper", StringComparison.OrdinalIgnoreCase))
+            if (path.StartsWith("/api/Shipper", StringComparison.OrdinalIgnoreCase) &&
+                !path.Equals("/api/Shipper/review", StringComparison.OrdinalIgnoreCase))
             {
                 if (user.Profile?.Role != UserRole.Shipper)
                 {
                     throw new UnauthorizedAccessException("Only shippers have the right to perform this operation.");
+                }
+            }
+
+            // Phân quyền: đánh giá tài xế — chỉ Customer
+            if (path.Equals("/api/Shipper/review", StringComparison.OrdinalIgnoreCase) &&
+                method == "POST")
+            {
+                if (user.Profile?.Role != UserRole.Customer)
+                {
+                    throw new UnauthorizedAccessException("Only customers can review shippers.");
                 }
             }
 
@@ -342,6 +367,15 @@ namespace ShoppingFood.API.Filters
                 }
             }
 
+            if (path.Equals("/api/Support/order-complaint", StringComparison.OrdinalIgnoreCase) &&
+                path.EndsWith("/shipper-complaint", StringComparison.OrdinalIgnoreCase) &&
+                (method == "POST"))
+            {
+                if (user.Profile?.Role != UserRole.Customer)
+                {
+                    throw new UnauthorizedAccessException("Only customers can submit order complaints.");
+                }
+            }
             // Phân quyền: Notification cho phép tất cả các Role (chỉ cần đăng nhập)
             if (path.StartsWith("/api/Notification", StringComparison.OrdinalIgnoreCase))
             {

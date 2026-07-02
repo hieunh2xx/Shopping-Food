@@ -26,9 +26,16 @@ namespace ShoppingFood.Application.Features.Admin.Queries
         {
             var filterLower = request.Filter?.ToLower();
 
+            // Parse status string to enum to avoid ToString() in LINQ (EF Core can't translate it)
+            RestaurantStatus? statusFilter = null;
+            if (!string.IsNullOrEmpty(request.Status) && Enum.TryParse<RestaurantStatus>(request.Status, true, out var parsed))
+            {
+                statusFilter = parsed;
+            }
+
             var restaurants = await _restaurantProfileRepository.GetAsync(
                 predicate: r => 
-                    (string.IsNullOrEmpty(request.Status) || r.Status.ToString() == request.Status) &&
+                    (!statusFilter.HasValue || r.Status == statusFilter.Value) &&
                     (string.IsNullOrEmpty(filterLower) || r.RestaurantName.ToLower().Contains(filterLower) || r.Email.ToLower().Contains(filterLower)),
                 orderBy: q => q.OrderByDescending(r => r.CreatedAt),
                 skip: request.Skip,
@@ -38,7 +45,7 @@ namespace ShoppingFood.Application.Features.Admin.Queries
 
             var total = await _restaurantProfileRepository.GetCountAsync(
                 predicate: r => 
-                    (string.IsNullOrEmpty(request.Status) || r.Status.ToString() == request.Status) &&
+                    (!statusFilter.HasValue || r.Status == statusFilter.Value) &&
                     (string.IsNullOrEmpty(filterLower) || r.RestaurantName.ToLower().Contains(filterLower) || r.Email.ToLower().Contains(filterLower))
             );
 

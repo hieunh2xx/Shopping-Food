@@ -358,26 +358,26 @@ export default function DispatchBoardPage() {
                 {/* Items */}
                 <div className="text-sm text-gray-700">
                   <span className="font-semibold">Món ăn: </span>
-                  {order.items?.map((item: any) => `${item.productName} (x${item.quantity})`).join(', ')}
+                  {order.items?.map((item: any) => `${item.itemName} (x${item.quantity})`).join(', ')}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-xs text-gray-500">
                   <div className="flex items-center gap-1.5">
                     <MapPin className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
-                    <span className="truncate">Cửa hàng: <strong className="text-gray-700">{order.items?.[0]?.product?.restaurant?.restaurantName || 'N/A'}</strong> ({order.items?.[0]?.product?.restaurant?.address})</span>
+                    <span className="truncate">Cửa hàng: <strong className="text-gray-700">{order.restaurantName || 'N/A'}</strong> ({order.restaurantAddress})</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <User className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
-                    <span>Khách hàng: <strong className="text-gray-700">{order.contactName || order.userAccount?.profile?.fullName || 'Khách vãng lai'}</strong> ({order.contactPhone})</span>
+                    <span>Khách hàng: <strong className="text-gray-700">{(!order.contactName || order.contactName === 'string') ? 'Khách vãng lai' : order.contactName}</strong> ({order.contactPhone})</span>
                   </div>
                   <div className="flex items-center gap-1.5 sm:col-span-2">
                     <MapPin className="w-3.5 h-3.5 text-orange-500 flex-shrink-0" />
-                    <span>Giao tới: <strong className="text-gray-700">{order.deliveryAddress}</strong></span>
+                    <span>Giao tới: <strong className="text-gray-700">{order.deliveryAddress === 'string' ? 'Không có địa chỉ' : order.deliveryAddress}</strong></span>
                   </div>
-                  {order.shipper && (
+                  {order.shipperId && (
                     <div className="flex items-center gap-1.5 sm:col-span-2 mt-1 py-1 px-2.5 bg-gray-50 rounded-lg w-max border border-gray-100">
                       <Truck className="w-3.5 h-3.5 text-purple-500" />
-                      <span>Tài xế giao: <strong className="text-purple-700">{order.shipper.userProfile.fullName}</strong> ({order.shipper.userProfile.userAccount.phone})</span>
+                      <span>Tài xế giao: <strong className="text-purple-700">{order.shipperName}</strong> ({order.shipperPhone})</span>
                     </div>
                   )}
                   {order.rejectReason && order.status === 'Cancelled' && (

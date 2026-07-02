@@ -25,6 +25,7 @@ export const ROUTES = {
   SELLER_CATEGORIES: '/seller/categories',
   SELLER_TOPPINGS: '/seller/toppings',
   SELLER_FLASH_SALES: '/seller/flash-sales',
+  SELLER_REVIEWS: '/seller/reviews',
   ADMIN_DASHBOARD: '/admin',
   ADMIN_APPLICATIONS: '/admin/applications',
   ADMIN_PRODUCTS: '/admin/products',
@@ -33,6 +34,8 @@ export const ROUTES = {
   ADMIN_DISPATCH_HISTORY: '/admin/dispatch-history',
   ADMIN_FLASH_SALES: '/admin/flash-sales',
   ADMIN_NOTIFICATIONS: '/admin/notifications',
+  ADMIN_REVIEW_REPORTS: '/admin/review-reports',
+  ADMIN_INCIDENTS: '/admin/incidents',
   PROFILE: '/profile',
   ORDERS: '/orders',
   SHIPPER_APPLY: '/shipper/apply',
@@ -44,6 +47,7 @@ export const ROUTES = {
   COORDINATOR_DISPATCH: '/coordinator/dispatch',
   COORDINATOR_SHIPPERS: '/coordinator/shippers',
   COORDINATOR_HISTORY: '/coordinator/history',
+  COORDINATOR_INCIDENTS: '/coordinator/incidents',
 } as const;
 
 /**

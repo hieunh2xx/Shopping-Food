@@ -4,7 +4,8 @@ import {
   History,
   ShieldCheck,
   UserCheck,
-  ShieldAlert
+  ShieldAlert,
+  User
 } from 'lucide-react';
 import { useAuth } from '../../../hooks';
 import { ROUTES } from '../../../routes/routeConfig';
@@ -23,6 +24,8 @@ export function CoordinatorLayout() {
     { name: 'Bảng điều phối', path: ROUTES.COORDINATOR_DISPATCH, icon: LayoutDashboard },
     { name: 'Giám sát Shipper', path: ROUTES.COORDINATOR_SHIPPERS, icon: ShieldAlert },
     { name: 'Lịch sử điều phối', path: ROUTES.COORDINATOR_HISTORY, icon: History },
+    { name: 'Xử lý khiếu nại', path: ROUTES.COORDINATOR_INCIDENTS, icon: ShieldCheck },
+    { name: 'Hồ sơ cá nhân', path: '/coordinator/profile', icon: User },
   ];
 
   return (

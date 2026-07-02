@@ -61,6 +61,10 @@ export const API_ENDPOINTS = {
     AVAILABILITY: (id: string) => `/Product/TimeAvailability/${id}`,  // PATCH
     REPORT: '/Product/Report',                     // POST
     REVIEW: '/Product/review',                     // POST
+    REVIEWS: (productId: string) => `/Product/${productId}/reviews`, // GET
+    SELLER_REVIEWS: '/Product/seller/reviews',     // GET
+    REVIEW_REPLY: (reviewId: string) => `/Product/review/${reviewId}/reply`, // POST
+    REVIEW_REPORT: (reviewId: string) => `/Product/review/${reviewId}/report`, // POST
   },
 
   NOTIFICATION: {
@@ -94,6 +98,8 @@ export const API_ENDPOINTS = {
     RESTAURANTS: '/Admin/Restaurants', // GET
     SUSPEND_RESTAURANT: '/Admin/suspend-restaurant', // POST (assuming it exists or will be added, wait I should check if it exists in API)
     BROADCAST_NOTIFICATION: '/Admin/notifications/broadcast', // POST
+    REVIEW_REPORTS: '/Admin/review-reports', // GET
+    MODERATE_REVIEW_REPORT: (reportId: string) => `/Admin/review-reports/${reportId}/moderate`, // POST
   },
 
   // === Shipper (ShipperController) ===
@@ -108,10 +114,11 @@ export const API_ENDPOINTS = {
     CONFIRM_FAILED: '/Shipper/confirm-failed', //POST
     LOCATION: '/Shipper/location', // POST
     INCOME_REPORT: '/Shipper/income-report',
-    SCHEDULE_AREA: 'Shipper/schedule-area',
+    SCHEDULE_AREA: '/Shipper/schedule-area',
     AVAILABLE_OFFERS: '/Shipper/available-offers',
     REJECT_OFFER: '/Shipper/reject-offers',
     DELIVERY_ROUTE: (orderId: string) => `/Shipper/delivery-route/${orderId}`, // GET
+    REVIEW: '/Shipper/review', // POST
   },
 
   // === Cart (CartController) ===
@@ -154,6 +161,8 @@ export const API_ENDPOINTS = {
     SUSPEND_SHIPPER: (shipperId: string) => `/Coordinator/shippers/${shipperId}/suspend`,
     DISPATCH_HISTORY: '/Coordinator/orders/dispatch-history',
     ORDER_DISPATCH_HISTORY: (orderId: string) => `/Coordinator/orders/${orderId}/dispatch-history`,
+    INCIDENTS: '/Coordinator/incidents',
+    RESOLVE_COMPLAINT: (id: string) => `/Coordinator/complaint/${id}/resolve`,
   },
 
   DISCOUNT: {
@@ -196,6 +205,8 @@ export const API_ENDPOINTS = {
 
   SUPPORT: {
     APPEAL: '/Support/appeal',
+    ORDER_COMPLAINT: '/Support/order-complaint', // POST
+    SHIPPER_COMPLAINT: '/Support/shipper-complaint', // POST
   },
 } as const;
 

@@ -50,6 +50,7 @@ namespace ShoppingFood.Domain.Context
         public DbSet<FlashSaleProduct> FlashSaleProducts { get; set; } = null!;
         public DbSet<MemberTierConfig> MemberTierConfigs { get; set; } = null!;
         public DbSet<OrderDispatchHistory> OrderDispatchHistories { get; set; } = null!;
+        public DbSet<ShipperReview> ShipperReviews { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -388,6 +389,8 @@ namespace ShoppingFood.Domain.Context
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Rating).IsRequired();
                 entity.Property(e => e.Comment).HasMaxLength(1000);
+                entity.Property(e => e.SellerReply).HasMaxLength(1000);
+                entity.Property(e => e.SellerRepliedAt);
                 entity.Property(e => e.CreatedAt).IsRequired();
 
                 entity.HasOne(d => d.Product)
@@ -776,6 +779,30 @@ namespace ShoppingFood.Domain.Context
                 .WithMany()
                 .HasForeignKey(e => e.OrderId)
                 .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<ShipperReview>(entity =>
+            {
+                entity.ToTable("SHIPPER_REVIEW");
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.OrderId).IsUnique(); // 1 đơn chỉ 1 review
+                entity.Property(e => e.Rating).IsRequired();
+                entity.Property(e => e.Comment).HasMaxLength(1000);
+
+                entity.HasOne(d => d.Order)
+                    .WithMany()
+                    .HasForeignKey(d => d.OrderId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(d => d.ShipperProfile)
+                    .WithMany()
+                    .HasForeignKey(d => d.ShipperProfileId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(d => d.Reviewer)
+                    .WithMany()
+                    .HasForeignKey(d => d.ReviewerAccountId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
         }
     }

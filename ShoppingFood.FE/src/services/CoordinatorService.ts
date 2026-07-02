@@ -1,7 +1,7 @@
 import { httpClient } from "./base/HttpClient"; 
 import { BaseService } from "./base/BaseService";
 import { API_ENDPOINTS } from "../config/endpoints";
-import type { ISuggestedShipper, IApiResponse, IDispatchOrder, ISendProposalRequest, IForceAssignRequest, IReleaseOrderRequest, IMonitorShipperDto, ISuspendShipperRequest } from "../interfaces";
+import type { ISuggestedShipper, IApiResponse, IDispatchOrder, ISendProposalRequest, IForceAssignRequest, IReleaseOrderRequest, IMonitorShipperDto, ISuspendShipperRequest, IIncidentItemDto, IResolveIncidentRequest } from "../interfaces";
 
 class CoordinatorService extends BaseService<any, any, any> {
   protected readonly endpoint = API_ENDPOINTS.COORDINATOR.BASE;
@@ -64,6 +64,14 @@ class CoordinatorService extends BaseService<any, any, any> {
     take?: number;
   }): Promise<IApiResponse<any[]>> {
     return httpClient.get<IApiResponse<any[]>>(API_ENDPOINTS.COORDINATOR.DISPATCH_HISTORY, { params });
+  }
+
+  async getIncidents(type?: string, skip = 0, take = 50): Promise<IApiResponse<IIncidentItemDto[]>> {
+    return httpClient.get<IApiResponse<IIncidentItemDto[]>>(API_ENDPOINTS.COORDINATOR.INCIDENTS, { params: { incidentType: type, skip, take } });
+  }
+
+  async resolveComplaint(reportId: string, data: IResolveIncidentRequest): Promise<IApiResponse<any>> {
+    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.COORDINATOR.RESOLVE_COMPLAINT(reportId), data);
   }
 }
 

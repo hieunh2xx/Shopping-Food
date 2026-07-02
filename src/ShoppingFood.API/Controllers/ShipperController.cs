@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Application.Features.Users.Commands;
+using ShoppingFood.Application.Features.Shippers.Commands;
 using System.Threading.Tasks;
 using ShoppingFood.Application.Features.Orders.Commands;
 using ShoppingFood.Application.Features.Orders.Queries;
@@ -173,5 +174,13 @@ namespace ShoppingFood.API.Controllers
             return StatusCode(response.Code, response);
         }
 
+        [HttpPost("review")]
+        public async Task<ActionResult<ApiResponse>> ReviewShipper([FromBody] CreateShipperReviewCommand command)
+        {
+            if (userDto != null)
+                command.CurrentUserId = userDto.Id;
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
     }
 }

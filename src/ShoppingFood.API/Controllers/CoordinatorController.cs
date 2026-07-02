@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using ShoppingFood.Application.Features.Coordinator.Commands;
 using ShoppingFood.Application.Features.Coordinator.Queries;
+using ShoppingFood.Core.Base;
 
 namespace ShoppingFood.API.Controllers
 {
@@ -165,6 +166,25 @@ namespace ShoppingFood.API.Controllers
             }
 
             var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpGet("incidents")]
+        public async Task<ActionResult<ApiResponse>> GetIncidents([FromQuery] GetIncidentsQuery query)
+        {
+            if (userDto != null)
+                query.CurrentUserId = userDto.Id;
+            var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpPost("complaint/{reportId}/resolve")]
+        public async Task<ActionResult<ApiResponse>> ResolveComplaint(Guid reportId, [FromBody] ResolveComplaintCommand command)
+        {
+            command.ReportId = reportId;
+            if (userDto != null)
+                command.CurrentUserId = userDto.Id;
+            var response = await _mediator.Send(command);
             return StatusCode(response.Code, response);
         }
     }

@@ -152,7 +152,7 @@ namespace ShoppingFood.Domain.Enums
     {
         Product,
         Order,
-        Driver,
+        Shipper,
         Review,
         Restaurant,
         SystemAppeal

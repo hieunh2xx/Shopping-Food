@@ -35,12 +35,16 @@ export { ShipperHistoryPage } from './shipper/ShipperHistoryPage';
 export { ShipperIncomePage } from './shipper/ShipperIncomePage';
 export { ShipperProfilePage } from './shipper/ShipperProfilePage';
 export { default as SellerAppealPage } from './seller/SellerAppealPage';
-export { default as DispatchHistoryPage } from './coordinator/DispatchHistoryPage';
+// Coordinator pages
 export { default as DispatchBoardPage } from './coordinator/DispatchBoardPage';
+export { default as DispatchHistoryPage } from './coordinator/DispatchHistoryPage';
 export { default as MonitorShippersPage } from './coordinator/MonitorShippersPage';
+export { CoordinatorIncidentsPage } from './coordinator/CoordinatorIncidentsPage';
 export { CheckoutPage } from './CheckoutPage';
 export { GuestOrderTrackingPage } from './GuestOrderTrackingPage';
 export { AdminFlashSalePage } from './admin/AdminFlashSalePage';
 export { AdminNotificationsPage } from './admin/AdminNotificationsPage';
+export { AdminReviewReportsPage } from './admin/AdminReviewReportsPage';
 export { SellerFlashSalesPage } from './seller/SellerFlashSalesPage';
 export { AuthShipperApplyPage } from './shipper/AuthShipperApplyPage';
+export { DashboardProfilePage } from './shared/DashboardProfilePage';

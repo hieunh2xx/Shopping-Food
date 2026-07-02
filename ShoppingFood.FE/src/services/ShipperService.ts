@@ -73,6 +73,10 @@ class ShipperService {
   async rejectOffer(data: IRejectDeliveryOfferRequest): Promise<IApiResponse<any>>{
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.SHIPPER.REJECT_OFFER, data);
   }
+
+  async reviewShipper(data: { orderId: string; rating: number; comment?: string }): Promise<IApiResponse<any>>{
+    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.SHIPPER.REVIEW, data);
+  }
 }
 
 export const shipperService = new ShipperService();

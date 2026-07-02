@@ -12,7 +12,8 @@ import {
   Tag,
   Award,
   Zap,
-  BellRing
+  BellRing,
+  User
 } from 'lucide-react';
 import { useAuth } from '../../../hooks';
 import { ROUTES } from '../../../routes/routeConfig';
@@ -40,7 +41,9 @@ export function AdminLayout() {
     { name: 'Flash Sale', path: ROUTES.ADMIN_FLASH_SALES, icon: Zap },
     { name: 'Cấu hình Điểm', path: '/admin/loyalty', icon: Award },
     { name: 'Gửi thông báo', path: ROUTES.ADMIN_NOTIFICATIONS, icon: BellRing },
+    { name: 'Xử lý khiếu nại', path: ROUTES.ADMIN_INCIDENTS, icon: ShieldAlert },
     { name: 'Cấu hình hệ thống', path: '/admin/settings', icon: Settings },
+    { name: 'Hồ sơ cá nhân', path: '/admin/profile', icon: User },
   ];
 
   return (

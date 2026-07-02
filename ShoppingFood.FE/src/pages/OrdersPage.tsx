@@ -1,13 +1,22 @@
 import { useState, useEffect } from 'react';
 import { orderService } from '../services/OrderService';
+import { supportService } from '../services/SupportService';
+import { shipperService } from '../services/ShipperService';
+import { authService } from '../services/AuthService';
 import type { IOrderSummary } from '../interfaces';
 import toast from 'react-hot-toast';
-import { PackageOpen, XCircle, RefreshCw } from 'lucide-react';
-import { Button } from '../components/common';
+import { PackageOpen, XCircle, RefreshCw, AlertTriangle, Star } from 'lucide-react';
+import { Button, Input, Modal } from '../components/common';
 
 export function OrdersPage() {
   const [orders, setOrders] = useState<IOrderSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
+
+  // Modal States
+  const [orderComplaintModal, setOrderComplaintModal] = useState({ isOpen: false, orderId: '', reason: '', description: '', evidenceImageUrl: '' });
+  const [shipperComplaintModal, setShipperComplaintModal] = useState({ isOpen: false, orderId: '', reason: '', description: '', evidenceImageUrl: '' });
+  const [shipperReviewModal, setShipperReviewModal] = useState({ isOpen: false, orderId: '', rating: 5, comment: '' });
 
   useEffect(() => {
     fetchOrders();
@@ -72,6 +81,89 @@ export function OrdersPage() {
     }
   };
 
+  const handleSubmitOrderComplaint = async () => {
+    if (!orderComplaintModal.reason.trim()) {
+      toast.error('Vui lòng nhập lý do khiếu nại');
+      return;
+    }
+    try {
+      await supportService.submitOrderComplaint({
+        orderId: orderComplaintModal.orderId,
+        reason: orderComplaintModal.reason,
+        description: orderComplaintModal.description,
+        evidenceImageUrl: orderComplaintModal.evidenceImageUrl || 'https://via.placeholder.com/150' // Default fallback if not required, but API makes it string.Empty if not provided
+      });
+      toast.success('Gửi khiếu nại đơn hàng thành công');
+      setOrderComplaintModal({ isOpen: false, orderId: '', reason: '', description: '', evidenceImageUrl: '' });
+    } catch (error: any) {
+      toast.error(error.message || 'Lỗi khi gửi khiếu nại');
+    }
+  };
+
+  const handleSubmitShipperComplaint = async () => {
+    if (!shipperComplaintModal.reason.trim()) {
+      toast.error('Vui lòng nhập lý do khiếu nại');
+      return;
+    }
+    try {
+      await supportService.submitShipperComplaint({
+        orderId: shipperComplaintModal.orderId,
+        reason: shipperComplaintModal.reason,
+        description: shipperComplaintModal.description,
+        evidenceImageUrl: shipperComplaintModal.evidenceImageUrl || 'https://via.placeholder.com/150'
+      });
+      toast.success('Gửi khiếu nại tài xế thành công');
+      setShipperComplaintModal({ isOpen: false, orderId: '', reason: '', description: '', evidenceImageUrl: '' });
+    } catch (error: any) {
+      toast.error(error.message || 'Lỗi khi gửi khiếu nại');
+    }
+  };
+
+  const handleUploadEvidence = async (e: React.ChangeEvent<HTMLInputElement>, target: 'order' | 'shipper') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Ảnh không được vượt quá 5MB');
+      return;
+    }
+
+    setIsUploading(true);
+    const toastId = toast.loading('Đang tải ảnh lên...');
+    
+    try {
+      const res = await authService.uploadImage(file);
+      if (!res.error && res.data?.imageUrl) {
+        toast.success('Tải ảnh lên thành công', { id: toastId });
+        if (target === 'order') {
+          setOrderComplaintModal(prev => ({ ...prev, evidenceImageUrl: res.data!.imageUrl }));
+        } else {
+          setShipperComplaintModal(prev => ({ ...prev, evidenceImageUrl: res.data!.imageUrl }));
+        }
+      } else {
+        toast.error(res.message || 'Lỗi tải ảnh', { id: toastId });
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Lỗi tải ảnh', { id: toastId });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleSubmitShipperReview = async () => {
+    try {
+      await shipperService.reviewShipper({
+        orderId: shipperReviewModal.orderId,
+        rating: shipperReviewModal.rating,
+        comment: shipperReviewModal.comment
+      });
+      toast.success('Đánh giá tài xế thành công');
+      setShipperReviewModal({ isOpen: false, orderId: '', rating: 5, comment: '' });
+    } catch (error: any) {
+      toast.error(error.message || 'Lỗi khi gửi đánh giá');
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto py-10 px-4">
       <h1 className="text-3xl font-bold mb-8 text-gray-800">Đơn hàng của tôi</h1>
@@ -119,6 +211,33 @@ export function OrdersPage() {
                       <RefreshCw className="w-4 h-4 mr-1.5" /> Đặt lại
                     </Button>
                   )}
+                  {order.status.toLowerCase() !== 'pending' && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setOrderComplaintModal({ isOpen: true, orderId: order.id, reason: '', description: '', evidenceImageUrl: '' })}
+                    >
+                      <AlertTriangle className="w-4 h-4 mr-1.5" /> Hỗ trợ đơn
+                    </Button>
+                  )}
+                  {['shipped', 'delivered'].includes(order.status.toLowerCase()) && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setShipperComplaintModal({ isOpen: true, orderId: order.id, reason: '', description: '', evidenceImageUrl: '' })}
+                    >
+                      <AlertTriangle className="w-4 h-4 mr-1.5 text-orange-500" /> Báo cáo TX
+                    </Button>
+                  )}
+                  {order.status.toLowerCase() === 'delivered' && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setShipperReviewModal({ isOpen: true, orderId: order.id, rating: 5, comment: '' })}
+                    >
+                      <Star className="w-4 h-4 mr-1.5 text-yellow-500" /> Đánh giá TX
+                    </Button>
+                  )}
                 </div>
               </div>
               
@@ -130,6 +249,124 @@ export function OrdersPage() {
           ))}
         </div>
       )}
+
+      {/* Modals */}
+      <Modal
+        isOpen={orderComplaintModal.isOpen}
+        onClose={() => setOrderComplaintModal(prev => ({ ...prev, isOpen: false }))}
+        title="Khiếu nại / Hỗ trợ đơn hàng"
+      >
+        <div className="space-y-4">
+          <Input 
+            label="Lý do" 
+            placeholder="Ví dụ: Thiếu món, sai món, chất lượng kém..."
+            value={orderComplaintModal.reason}
+            onChange={(e) => setOrderComplaintModal({ ...orderComplaintModal, reason: e.target.value })}
+          />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả chi tiết</label>
+            <textarea 
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500"
+              rows={4}
+              value={orderComplaintModal.description}
+              onChange={(e) => setOrderComplaintModal({ ...orderComplaintModal, description: e.target.value })}
+            ></textarea>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Hình ảnh chứng minh</label>
+            <input 
+              type="file" 
+              accept="image/*"
+              className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+              onChange={(e) => handleUploadEvidence(e, 'order')}
+              disabled={isUploading}
+            />
+            {orderComplaintModal.evidenceImageUrl && (
+              <img src={orderComplaintModal.evidenceImageUrl} alt="Evidence" className="mt-2 h-20 object-cover rounded-lg border border-gray-200" />
+            )}
+          </div>
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <Button variant="outline" onClick={() => setOrderComplaintModal(prev => ({ ...prev, isOpen: false }))}>Hủy</Button>
+            <Button onClick={handleSubmitOrderComplaint}>Gửi khiếu nại</Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={shipperComplaintModal.isOpen}
+        onClose={() => setShipperComplaintModal(prev => ({ ...prev, isOpen: false }))}
+        title="Báo cáo tài xế"
+      >
+        <div className="space-y-4">
+          <Input 
+            label="Lý do báo cáo" 
+            placeholder="Ví dụ: Thái độ không tốt, trễ giờ, không liên lạc được..."
+            value={shipperComplaintModal.reason}
+            onChange={(e) => setShipperComplaintModal({ ...shipperComplaintModal, reason: e.target.value })}
+          />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả chi tiết</label>
+            <textarea 
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500"
+              rows={4}
+              value={shipperComplaintModal.description}
+              onChange={(e) => setShipperComplaintModal({ ...shipperComplaintModal, description: e.target.value })}
+            ></textarea>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Hình ảnh chứng minh</label>
+            <input 
+              type="file" 
+              accept="image/*"
+              className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+              onChange={(e) => handleUploadEvidence(e, 'shipper')}
+              disabled={isUploading}
+            />
+            {shipperComplaintModal.evidenceImageUrl && (
+              <img src={shipperComplaintModal.evidenceImageUrl} alt="Evidence" className="mt-2 h-20 object-cover rounded-lg border border-gray-200" />
+            )}
+          </div>
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <Button variant="outline" onClick={() => setShipperComplaintModal(prev => ({ ...prev, isOpen: false }))}>Hủy</Button>
+            <Button onClick={handleSubmitShipperComplaint} className="bg-red-600 hover:bg-red-700 text-white border-transparent">Gửi báo cáo</Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={shipperReviewModal.isOpen}
+        onClose={() => setShipperReviewModal(prev => ({ ...prev, isOpen: false }))}
+        title="Đánh giá tài xế giao hàng"
+      >
+        <div className="space-y-4">
+          <div className="flex justify-center gap-2 mb-4">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                key={star}
+                type="button"
+                onClick={() => setShipperReviewModal({ ...shipperReviewModal, rating: star })}
+                className={`focus:outline-none transition-colors ${star <= shipperReviewModal.rating ? 'text-yellow-400' : 'text-gray-300 hover:text-yellow-200'}`}
+              >
+                <Star className="w-10 h-10 fill-current" />
+              </button>
+            ))}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Lời nhắn (Tùy chọn)</label>
+            <textarea 
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500"
+              rows={3}
+              placeholder="Chia sẻ trải nghiệm của bạn với tài xế này..."
+              value={shipperReviewModal.comment}
+              onChange={(e) => setShipperReviewModal({ ...shipperReviewModal, comment: e.target.value })}
+            ></textarea>
+          </div>
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <Button variant="outline" onClick={() => setShipperReviewModal(prev => ({ ...prev, isOpen: false }))}>Hủy</Button>
+            <Button onClick={handleSubmitShipperReview}>Gửi đánh giá</Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

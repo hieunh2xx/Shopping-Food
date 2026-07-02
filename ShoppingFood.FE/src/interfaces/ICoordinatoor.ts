@@ -48,15 +48,28 @@ export interface IForceAssignRequest{
     shipperId: string;
 }
 
-export interface IResolveIncidentRequest{
-    resolutionType: 'CustomerFault' | 'ShipperFault' | 'ForceCancelNoPenalty';
+export interface IResolveIncidentRequest {
+    resolutionType: 'CustomerFault' | 'ShipperFault' | 'ForceCancelNoPenalty' | 'CompensateCustomer' | 'Warning' | 'Dismiss';
     notes: string;
     penaltyScore?: number;
 }
 
-export interface IReleaseOrderRequest{
+export interface IReleaseOrderRequest {
     newShipperId?: string;
     reason: string;
+}
+
+export interface IIncidentItemDto {
+    id: string;
+    incidentType: string; // DeliveryFailed, OrderComplaint, ShipperComplaint
+    title: string;
+    description: string;
+    status: string; // Pending, Resolved, Ignored
+    orderId: string;
+    shipperProfileId?: string;
+    contactName: string;
+    contactPhone?: string;
+    createdAt: string;
 }
 
 export interface IMonitorShipperDto {

@@ -68,6 +68,13 @@ class AdminService extends BaseService<unknown> {
   }): Promise<IApiResponse<any>> {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ADMIN.BROADCAST_NOTIFICATION, data);
   }
+  async getReviewReports(skip = 0, take = 50): Promise<IApiResponse<any>> {
+    return httpClient.get<IApiResponse<any>>(API_ENDPOINTS.ADMIN.REVIEW_REPORTS, { params: { skip, take } });
+  }
+
+  async moderateReviewReport(reportId: string, action: number): Promise<IApiResponse<any>> {
+    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ADMIN.MODERATE_REVIEW_REPORT(reportId), { action });
+  }
 }
 
 // Export singleton instance
