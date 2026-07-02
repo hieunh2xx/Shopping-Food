@@ -266,7 +266,7 @@ export function OrdersPage() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả chi tiết</label>
             <textarea 
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500"
+              className="w-full px-4 py-2.5 bg-gray-100/50 border border-gray-300/50 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500/40 focus:border-orange-500/40 transition-all"
               rows={4}
               value={orderComplaintModal.description}
               onChange={(e) => setOrderComplaintModal({ ...orderComplaintModal, description: e.target.value })}
@@ -307,7 +307,7 @@ export function OrdersPage() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả chi tiết</label>
             <textarea 
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500"
+              className="w-full px-4 py-2.5 bg-gray-100/50 border border-gray-300/50 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500/40 focus:border-orange-500/40 transition-all"
               rows={4}
               value={shipperComplaintModal.description}
               onChange={(e) => setShipperComplaintModal({ ...shipperComplaintModal, description: e.target.value })}

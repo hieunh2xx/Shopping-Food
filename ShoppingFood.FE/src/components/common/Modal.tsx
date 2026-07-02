@@ -1,4 +1,4 @@
-﻿import { useEffect, type ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 
 interface ModalProps {
@@ -52,7 +52,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
         {/* Header */}
         {title && (
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-100">{title}</h3>
+            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
             <button
               onClick={onClose}
               className="p-1.5 rounded-lg text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-colors"
