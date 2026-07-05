@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { Plus, Edit2, Trash2, Zap, Clock, PlayCircle, CheckCircle2, XCircle, Package } from 'lucide-react';
 import { flashSaleService } from '../../services/FlashSaleService';
-import type { IFlashSale, ICreateFlashSaleRequest, IFlashSaleProduct } from '../../services/FlashSaleService';
+import type { IFlashSale, ICreateFlashSaleRequest, IFlashSaleProduct } from '../../interfaces';
 import { Button, Input, Modal } from '../../components/common';
 import { formatDate } from '../../utils/formatters';
 
@@ -195,14 +195,27 @@ export function AdminFlashSalePage() {
                     <td className="p-4 text-gray-600">{formatDate(sale.startDate)}</td>
                     <td className="p-4 text-gray-600">{formatDate(sale.endDate)}</td>
                     <td className="p-4">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                        sale.status === 'Active' ? 'bg-green-100 text-green-700' :
-                        sale.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-gray-100 text-gray-700'
-                      }`}>
-                        {sale.status === 'Active' ? 'Đang diễn ra' : 
-                         sale.status === 'Pending' ? 'Sắp diễn ra' : 'Đã kết thúc'}
-                      </span>
+                      {(() => {
+                        const now = new Date().getTime();
+                        const start = new Date(sale.startDate).getTime();
+                        const end = new Date(sale.endDate).getTime();
+                        
+                        let dynamicStatus = sale.status;
+                        if (now > end) dynamicStatus = 'Ended';
+                        else if (now >= start && now <= end) dynamicStatus = 'Active';
+                        else if (now < start) dynamicStatus = 'Pending';
+
+                        return (
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                            dynamicStatus === 'Active' ? 'bg-green-100 text-green-700' :
+                            dynamicStatus === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                            {dynamicStatus === 'Active' ? 'Đang diễn ra' : 
+                             dynamicStatus === 'Pending' ? 'Sắp diễn ra' : 'Đã kết thúc'}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="p-4">
                       <div className="flex justify-end gap-2">

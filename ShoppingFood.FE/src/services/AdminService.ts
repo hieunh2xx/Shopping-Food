@@ -1,7 +1,7 @@
 import { httpClient } from './base/HttpClient';
 import { BaseService } from './base/BaseService';
 import { API_ENDPOINTS } from '../config/endpoints';
-import type { IApiResponse, IApproveApplicationRequest, IApproveProductRequest } from '../interfaces';
+import type { IApiResponse, IApproveApplicationRequest, IApproveProductRequest, ICreateSupportTicketRequest } from '../interfaces';
 
 /**
  * Admin Service — handles admin-specific endpoints
@@ -74,6 +74,10 @@ class AdminService extends BaseService<unknown> {
 
   async moderateReviewReport(reportId: string, action: number): Promise<IApiResponse<any>> {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ADMIN.MODERATE_REVIEW_REPORT(reportId), { action });
+  }
+
+  async createSupportTicket(data: ICreateSupportTicketRequest): Promise<IApiResponse<any>> {
+    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ADMIN.SUPPORT_TICKETS, data);
   }
 }
 

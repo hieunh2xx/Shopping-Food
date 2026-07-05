@@ -6,6 +6,33 @@ import { authService } from '../../services/AuthService';
 import { toast } from 'react-hot-toast';
 import { ROUTES } from '../../routes/routeConfig';
 
+const FileUploadField = ({ label, file, setter, handleFileSelect }: { label: string; file: File | null; setter: React.Dispatch<React.SetStateAction<File | null>>, handleFileSelect: (e: React.ChangeEvent<HTMLInputElement>, setter: React.Dispatch<React.SetStateAction<File | null>>) => void }) => (
+  <div className="pt-1">
+    <label className="block text-sm font-medium text-gray-700 mb-2">{label} <span className="text-red-500">*</span></label>
+    <div className="border-2 border-dashed rounded-xl p-5 transition-colors border-gray-300 hover:border-orange-500 bg-gray-50">
+      <div className="flex flex-col items-center justify-center text-center">
+        {!file ? (
+          <>
+            <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center mb-2">
+              <UploadCloud className="w-5 h-5 text-orange-600" />
+            </div>
+            <p className="text-xs text-gray-500 mb-3">PNG, JPG, JPEG, WEBP (Tối đa 5MB)</p>
+            <label className="cursor-pointer inline-flex items-center justify-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+              Chọn File
+              <input type="file" className="hidden" accept="image/*" onChange={e => handleFileSelect(e, setter)} />
+            </label>
+          </>
+        ) : (
+          <div className="flex flex-col items-center">
+            <span className="text-sm font-medium text-gray-700 mb-2 truncate max-w-[200px]">{file.name}</span>
+            <button type="button" onClick={() => setter(null)} className="text-xs text-red-600 hover:text-red-700 font-medium">Xóa / Chọn lại</button>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+);
+
 export function AuthShipperApplyPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -57,18 +84,26 @@ export function AuthShipperApplyPage() {
     setLoading(true);
 
     try {
-      const uploadPromises = [
-        authService.uploadImage(idFrontFile),
-        authService.uploadImage(idBackFile),
-        authService.uploadImage(driverLicenseFile),
-        authService.uploadImage(vehicleRegFile)
+      const filesToUpload = [
+        { file: idFrontFile, name: 'Mặt trước CMND/CCCD' },
+        { file: idBackFile, name: 'Mặt sau CMND/CCCD' },
+        { file: driverLicenseFile, name: 'Bằng lái xe' },
+        { file: vehicleRegFile, name: 'Giấy đăng ký xe' }
       ];
 
-      const uploadResults = await Promise.all(uploadPromises);
-
-      for (let i = 0; i < uploadResults.length; i++) {
-        if (uploadResults[i].error || !uploadResults[i].data) {
-          throw new Error(`Lỗi tải lên tệp tin thứ ${i + 1}`);
+      const uploadResults = [];
+      for (const item of filesToUpload) {
+        if (!item.file) continue;
+        try {
+          const res = await authService.uploadImage(item.file);
+          if (res.error || !res.data) {
+            throw new Error(res.message || `Lỗi tải lên ${item.name}`);
+          }
+          uploadResults.push(res);
+        } catch (err: any) {
+          toast.error(`Lỗi tải lên ${item.name}: ${err.response?.data?.message || err.message}`);
+          setLoading(false);
+          return;
         }
       }
 
@@ -95,32 +130,6 @@ export function AuthShipperApplyPage() {
     }
   };
 
-  const FileUploadField = ({ label, file, setter }: { label: string; file: File | null; setter: React.Dispatch<React.SetStateAction<File | null>> }) => (
-    <div className="pt-1">
-      <label className="block text-sm font-medium text-gray-700 mb-2">{label} <span className="text-red-500">*</span></label>
-      <div className="border-2 border-dashed rounded-xl p-5 transition-colors border-gray-300 hover:border-orange-500 bg-gray-50">
-        <div className="flex flex-col items-center justify-center text-center">
-          {!file ? (
-            <>
-              <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center mb-2">
-                <UploadCloud className="w-5 h-5 text-orange-600" />
-              </div>
-              <p className="text-xs text-gray-500 mb-3">PNG, JPG, JPEG, WEBP (Tối đa 5MB)</p>
-              <label className="cursor-pointer inline-flex items-center justify-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                Chọn File
-                <input type="file" className="hidden" accept="image/*" onChange={e => handleFileSelect(e, setter)} />
-              </label>
-            </>
-          ) : (
-            <div className="flex flex-col items-center">
-              <span className="text-sm font-medium text-gray-700 mb-2 truncate max-w-[200px]">{file.name}</span>
-              <button type="button" onClick={() => setter(null)} className="text-xs text-red-600 hover:text-red-700 font-medium">Xóa / Chọn lại</button>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
@@ -140,8 +149,8 @@ export function AuthShipperApplyPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FileUploadField label="Mặt trước CMND/CCCD" file={idFrontFile} setter={setIdFrontFile} />
-            <FileUploadField label="Mặt sau CMND/CCCD" file={idBackFile} setter={setIdBackFile} />
+            <FileUploadField label="Mặt trước CMND/CCCD" file={idFrontFile} setter={setIdFrontFile} handleFileSelect={handleFileSelect} />
+            <FileUploadField label="Mặt sau CMND/CCCD" file={idBackFile} setter={setIdBackFile} handleFileSelect={handleFileSelect} />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -160,8 +169,8 @@ export function AuthShipperApplyPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FileUploadField label="Bằng lái xe" file={driverLicenseFile} setter={setDriverLicenseFile} />
-            <FileUploadField label="Giấy đăng ký xe" file={vehicleRegFile} setter={setVehicleRegFile} />
+            <FileUploadField label="Bằng lái xe" file={driverLicenseFile} setter={setDriverLicenseFile} handleFileSelect={handleFileSelect} />
+            <FileUploadField label="Giấy đăng ký xe" file={vehicleRegFile} setter={setVehicleRegFile} handleFileSelect={handleFileSelect} />
           </div>
 
           <div className="pt-6 border-t border-gray-100 flex justify-end gap-4 mt-8">

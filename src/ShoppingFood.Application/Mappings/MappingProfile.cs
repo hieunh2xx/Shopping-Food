@@ -9,6 +9,7 @@ using ShoppingFood.Domain.Models;
 using ShoppingFood.Dto.Cart;
 using ShoppingFood.Dto.Coordinator;
 using ShoppingFood.Dto.Discount;
+using ShoppingFood.Dto.Faq;
 using ShoppingFood.Dto.FlashSale;
 using ShoppingFood.Dto.LoyaltyPoint;
 using ShoppingFood.Dto.Order;
@@ -143,7 +144,10 @@ namespace ShoppingFood.Application.Mappings
             CreateMap<Cart, CartDto>();
             CreateMap<CartItem, CartItemDto>()
                 .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product != null ? src.Product.ItemName : string.Empty))
-                .ForMember(dest => dest.ProductImageUrl, opt => opt.MapFrom(src => src.Product != null && src.Product.Images != null && src.Product.Images.Any() ? src.Product.Images.First().ImageUrl : null));
+                .ForMember(dest => dest.ProductImageUrl, opt => opt.MapFrom(src => src.Product != null && src.Product.Images != null && src.Product.Images.Any() ? src.Product.Images.First().ImageUrl : null))
+                .ForMember(dest => dest.IsProductDeleted, opt => opt.MapFrom(src => src.Product != null ? src.Product.IsDeleted : true))
+                .ForMember(dest => dest.RestaurantId, opt => opt.MapFrom(src => src.Product != null && src.Product.Restaurant != null ? src.Product.Restaurant.Id : Guid.Empty))
+                .ForMember(dest => dest.RestaurantName, opt => opt.MapFrom(src => src.Product != null && src.Product.Restaurant != null ? src.Product.Restaurant.RestaurantName : string.Empty));
 
             //ShipperApplication mappings
             CreateMap<RegisterShipperCommand, User>()
@@ -290,6 +294,8 @@ namespace ShoppingFood.Application.Mappings
                 .ForMember(dest => dest.ContactName, opt => opt.Ignore())
                 .ForMember(dest => dest.ContactPhone, opt => opt.Ignore())
                 .ForMember(dest => dest.ShipperProfileId, opt => opt.Ignore());
+
+            CreateMap<Faq, FaqDto>();
         }
     }
 }

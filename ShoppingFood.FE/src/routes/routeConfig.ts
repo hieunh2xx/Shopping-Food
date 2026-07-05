@@ -15,6 +15,7 @@ export const ROUTES = {
   PRODUCT_DETAIL: '/products/:id',
   RESTAURANTS: '/restaurants',
   HELP_CENTER: '/help',
+  REPORT_INCIDENT: '/support/report',
   TERMS_OF_USE: '/terms',
   PRIVACY_POLICY: '/privacy',
   RESTAURANT_DETAIL: '/restaurant/:id',
@@ -36,6 +37,8 @@ export const ROUTES = {
   ADMIN_NOTIFICATIONS: '/admin/notifications',
   ADMIN_REVIEW_REPORTS: '/admin/review-reports',
   ADMIN_INCIDENTS: '/admin/incidents',
+  ADMIN_FAQ: '/admin/faq',
+  ADMIN_CHAT: '/admin/chat',
   PROFILE: '/profile',
   ORDERS: '/orders',
   SHIPPER_APPLY: '/shipper/apply',
@@ -48,6 +51,7 @@ export const ROUTES = {
   COORDINATOR_SHIPPERS: '/coordinator/shippers',
   COORDINATOR_HISTORY: '/coordinator/history',
   COORDINATOR_INCIDENTS: '/coordinator/incidents',
+  COORDINATOR_CHAT: '/coordinator/chat',
 } as const;
 
 /**

@@ -13,6 +13,7 @@
   "dependencies": {
     "@azure/msal-browser": "^5.11.0",
     "@azure/msal-react": "^5.4.2",
+    "@microsoft/signalr": "^10.0.0",
     "@react-oauth/google": "^0.13.5",
     "axios": "^1.16.1",
     "firebase": "^12.14.0",

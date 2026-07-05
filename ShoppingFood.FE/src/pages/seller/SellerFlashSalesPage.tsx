@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { Zap, Plus, Search } from 'lucide-react';
 import { flashSaleService } from '../../services/FlashSaleService';
-import type { IFlashSale } from '../../services/FlashSaleService';
+import type { IFlashSale } from '../../interfaces';
 import { productService } from '../../services/ProductService';
 import { Button, Input, Modal } from '../../components/common';
 import { formatDate } from '../../utils/formatters';

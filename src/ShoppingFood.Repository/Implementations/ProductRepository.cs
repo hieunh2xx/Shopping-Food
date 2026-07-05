@@ -20,7 +20,8 @@ namespace ShoppingFood.Repository.Implementations
             var dbContext = (ShoppingFoodContext)_dbContext;
 
             var bestSellerIds = await dbContext.OrderItems
-                .Where(oi => oi.ProductId != null)
+                .Include(oi => oi.Product)
+                .Where(oi => oi.ProductId != null && oi.Product != null && oi.Product.Status == ShoppingFood.Domain.Enums.ProductStatus.Approved && !oi.Product.IsHidden)
                 .GroupBy(oi => oi.ProductId)
                 .Select(g => new
                 {

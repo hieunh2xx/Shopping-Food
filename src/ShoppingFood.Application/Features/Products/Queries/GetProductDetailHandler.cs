@@ -34,7 +34,7 @@ namespace ShoppingFood.Application.Features.Products.Queries
         {
             var products = await _productRepository.GetAsync(
                 predicate: p => p.Id == request.Id,
-                include: q => q.Include(p => p.Restaurant)
+                include: q => q.IgnoreQueryFilters().Include(p => p.Restaurant)
                                .Include(p => p.Images)
                                .Include(p => p.Category)
                                .Include(p => p.ProductToppings)
@@ -54,7 +54,6 @@ namespace ShoppingFood.Application.Features.Products.Queries
           
             if (product.Status != ProductStatus.Pending && product.Status != ProductStatus.Approved)
             {
-       
                 bool isOwner = false;
                 if (request.CurrentUserId.HasValue)
                 {
@@ -73,7 +72,7 @@ namespace ShoppingFood.Application.Features.Products.Queries
                     return ApiResponse.Failure(404, "Product was not found.");
                 }
             }
-            else if (product.Status == ProductStatus.Pending)
+            else if (product.Status == ProductStatus.Pending || product.IsHidden || product.IsDeleted)
             {
                 bool isOwner = false;
                 if (request.CurrentUserId.HasValue)

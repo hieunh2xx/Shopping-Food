@@ -15,3 +15,11 @@ export interface IApproveProductRequest {
   isApproved: boolean;
   rejectionReason?: string;
 }
+
+export interface ICreateSupportTicketRequest {
+  orderId: string;
+  customerId?: string;
+  reason: string;
+  description?: string;
+  evidenceImageUrl?: string;
+}

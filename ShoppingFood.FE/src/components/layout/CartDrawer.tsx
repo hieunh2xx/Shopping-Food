@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { toast } from 'react-hot-toast';
 import { ShoppingCart, X, Plus, Minus, Trash2, Store } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useCart, useAuth } from '../../hooks';
@@ -10,7 +11,7 @@ import type { ICartItem } from '../../interfaces';
 
 export function CartDrawer() {
   const [isOpen, setIsOpen] = useState(false);
-  const { items, totalItems, updateQuantity, removeItem } = useCart();
+  const { items, totalItems, updateQuantity, removeItem, clearCart } = useCart();
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
@@ -71,8 +72,19 @@ export function CartDrawer() {
   const handleCheckout = () => {
     if (!selectedProvider) return;
 
+    const selectedGroup = groupedItems[selectedProvider];
+    if (selectedGroup && selectedGroup.items.some(item => item.isProductDeleted)) {
+      toast.error('Vui lòng xóa các món đã ngừng bán khỏi giỏ hàng trước khi thanh toán');
+      return;
+    }
+
     setIsOpen(false);
-    navigate('/checkout');
+    const checkoutUrl = `${ROUTES.CHECKOUT}?restaurantId=${selectedProvider}`;
+    if (isAuthenticated) {
+      navigate(checkoutUrl);
+    } else {
+      navigate(ROUTES.LOGIN, { state: { returnUrl: checkoutUrl } });
+    }
   };
 
   return (
@@ -105,12 +117,26 @@ export function CartDrawer() {
                   Giỏ hàng
                 </h2>
               </div>
-              <button
-                onClick={() => setIsOpen(false)}
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                {groups.length > 0 && (
+                  <button
+                    onClick={() => {
+                      if (window.confirm('Bạn có chắc chắn muốn xóa toàn bộ giỏ hàng?')) {
+                        clearCart();
+                      }
+                    }}
+                    className="text-xs font-medium text-red-500 hover:text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-full transition-colors"
+                  >
+                    Xóa tất cả
+                  </button>
+                )}
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto px-6 py-6 bg-gray-50/30 space-y-6 scrollbar-thin scrollbar-thumb-gray-200">
@@ -179,14 +205,19 @@ export function CartDrawer() {
                             <li key={itemKey} className="flex gap-4 p-3 rounded-2xl hover:bg-gray-50 transition-colors group/item">
                               <div className="w-20 h-20 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0 shadow-sm relative">
                                 {item.product.primaryImageUrl ? (
-                                  <img src={item.product.primaryImageUrl} alt={item.product.itemName} className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-110" />
+                                  <img src={item.product.primaryImageUrl} alt={item.product.itemName} className={`w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-110 ${item.isProductDeleted ? 'opacity-50 grayscale' : ''}`} />
                                 ) : (
-                                  <div className="w-full h-full flex items-center justify-center text-2xl">🍜</div>
+                                  <div className={`w-full h-full flex items-center justify-center text-2xl ${item.isProductDeleted ? 'opacity-50 grayscale' : ''}`}>🍜</div>
+                                )}
+                                {item.isProductDeleted && (
+                                  <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                                    <span className="text-[10px] font-bold text-white uppercase tracking-wider px-1 text-center leading-tight">Ngừng bán</span>
+                                  </div>
                                 )}
                               </div>
                               <div className="flex-1 flex flex-col py-1">
                                 <div className="flex justify-between items-start gap-2 mb-1">
-                                  <h4 className="font-semibold text-gray-800 text-sm line-clamp-2 leading-tight">{item.product.itemName}</h4>
+                                  <h4 className={`font-semibold text-sm line-clamp-2 leading-tight ${item.isProductDeleted ? 'text-gray-400 line-through' : 'text-gray-800'}`}>{item.product.itemName}</h4>
                                   <button
                                     onClick={() => removeItem(item.product.id, item.selectedSize, item.selectedToppings)}
                                     className="text-gray-300 hover:text-rose-500 transition-colors mt-0.5"
@@ -211,24 +242,30 @@ export function CartDrawer() {
                                 )}
 
                                 <div className="flex items-end justify-between mt-auto">
-                                  <p className="text-orange-600 font-bold tracking-tight">
+                                  <p className={`font-bold tracking-tight ${item.isProductDeleted ? 'text-gray-400' : 'text-orange-600'}`}>
                                     {formatCurrency(itemUnitPrice * item.quantity)}
                                   </p>
-                                  <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-full p-1 shadow-sm">
-                                    <button
-                                      onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.selectedSize, item.selectedToppings)}
-                                      className="w-7 h-7 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-                                    >
-                                      <Minus className="w-3 h-3" />
-                                    </button>
-                                    <span className="text-sm font-semibold w-6 text-center text-gray-900">{item.quantity}</span>
-                                    <button
-                                      onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.selectedSize, item.selectedToppings)}
-                                      className="w-7 h-7 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-                                    >
-                                      <Plus className="w-3 h-3" />
-                                    </button>
-                                  </div>
+                                  {item.isProductDeleted ? (
+                                    <div className="flex items-center">
+                                      <span className="text-xs text-red-500 font-medium">Vui lòng xóa món</span>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-full p-1 shadow-sm">
+                                      <button
+                                        onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.selectedSize, item.selectedToppings)}
+                                        className="w-7 h-7 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                                      >
+                                        <Minus className="w-3 h-3" />
+                                      </button>
+                                      <span className="text-sm font-semibold w-6 text-center text-gray-900">{item.quantity}</span>
+                                      <button
+                                        onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.selectedSize, item.selectedToppings)}
+                                        className="w-7 h-7 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                                      >
+                                        <Plus className="w-3 h-3" />
+                                      </button>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             </li>

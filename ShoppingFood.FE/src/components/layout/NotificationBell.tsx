@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Bell, Check, Loader2, Info, AlertTriangle, ShieldCheck, Heart } from 'lucide-react';
-import { notificationService, type INotificationDto } from '../../services';
+import { notificationService } from '../../services';
+import type { INotificationDto } from '../../interfaces';
 import toast from 'react-hot-toast';
 
 export function NotificationBell() {

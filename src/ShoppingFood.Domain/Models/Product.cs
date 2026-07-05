@@ -21,6 +21,7 @@ namespace ShoppingFood.Domain.Models
         public TimeSpan? AvailableTo { get; set; }
         public ProductStatus Status { get; set; } = ProductStatus.Pending;
         public Guid? GlobalCategoryId { get; set; }
+        public bool IsDeleted { get; set; } = false;
         // Navigation properties
         public virtual RestaurantProfile Restaurant { get; set; } = null!;
         public virtual MenuCategory Category { get; set; } = null!;

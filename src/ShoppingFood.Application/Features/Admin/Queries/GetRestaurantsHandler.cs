@@ -26,7 +26,7 @@ namespace ShoppingFood.Application.Features.Admin.Queries
         {
             var filterLower = request.Filter?.ToLower();
 
-            // Parse status string to enum to avoid ToString() in LINQ (EF Core can't translate it)
+            //
             RestaurantStatus? statusFilter = null;
             if (!string.IsNullOrEmpty(request.Status) && Enum.TryParse<RestaurantStatus>(request.Status, true, out var parsed))
             {

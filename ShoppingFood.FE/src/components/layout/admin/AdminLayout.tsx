@@ -13,7 +13,9 @@ import {
   Award,
   Zap,
   BellRing,
-  User
+  User,
+  HelpCircle,
+  MessageSquare
 } from 'lucide-react';
 import { useAuth } from '../../../hooks';
 import { ROUTES } from '../../../routes/routeConfig';
@@ -42,6 +44,8 @@ export function AdminLayout() {
     { name: 'Cấu hình Điểm', path: '/admin/loyalty', icon: Award },
     { name: 'Gửi thông báo', path: ROUTES.ADMIN_NOTIFICATIONS, icon: BellRing },
     { name: 'Xử lý khiếu nại', path: ROUTES.ADMIN_INCIDENTS, icon: ShieldAlert },
+    { name: 'Quản lý FAQ', path: ROUTES.ADMIN_FAQ, icon: HelpCircle },
+    { name: 'Live Chat', path: ROUTES.ADMIN_CHAT, icon: MessageSquare },
     { name: 'Cấu hình hệ thống', path: '/admin/settings', icon: Settings },
     { name: 'Hồ sơ cá nhân', path: '/admin/profile', icon: User },
   ];

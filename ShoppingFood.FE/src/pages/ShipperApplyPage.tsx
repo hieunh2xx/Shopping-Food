@@ -6,6 +6,62 @@ import { authService } from '../services/AuthService';
 import { toast } from 'react-hot-toast';
 import { ROUTES } from '../routes/routeConfig';
 
+// --- File Upload UI ---
+const FileUploadField = ({
+  label, file, errorKey, required = true, setter, handleFileSelect, errors
+}: {
+  label: string; file: File | null; errorKey: string; required?: boolean;
+  setter: React.Dispatch<React.SetStateAction<File | null>>;
+  handleFileSelect: (e: React.ChangeEvent<HTMLInputElement>, setter: React.Dispatch<React.SetStateAction<File | null>>, errorKey: string) => void;
+  errors: Record<string, string>;
+}) => (
+  <div className="pt-1">
+    <label className="block text-sm font-medium text-gray-700 mb-2">
+      {label} {required && <span className="text-red-500">*</span>}
+    </label>
+    <div className={`border-2 border-dashed rounded-xl p-5 transition-colors ${errors[errorKey] ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-orange-500 bg-gray-50'}`}>
+      <div className="flex flex-col items-center justify-center text-center">
+        {!file ? (
+          <>
+            <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center mb-2">
+              <UploadCloud className="w-5 h-5 text-orange-600" />
+            </div>
+            <p className="text-xs text-gray-500 mb-3">PNG, JPG, JPEG, WEBP (Tối đa 5MB)</p>
+            <label className="cursor-pointer inline-flex items-center justify-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+              Chọn File
+              <input type="file" className="hidden" accept="image/*"
+                onChange={e => handleFileSelect(e, setter, errorKey)} />
+            </label>
+          </>
+        ) : (
+          <div className="w-full flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+            <div className="flex items-center gap-3 overflow-hidden">
+              <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center shrink-0">
+                <CheckCircle2 className="w-5 h-5 text-green-500" />
+              </div>
+              <div className="text-left overflow-hidden">
+                <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
+                <p className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+              </div>
+            </div>
+            <label className="cursor-pointer p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors text-sm font-medium shrink-0">
+              Đổi file
+              <input type="file" className="hidden" accept="image/*"
+                onChange={e => handleFileSelect(e, setter, errorKey)} />
+            </label>
+          </div>
+        )}
+      </div>
+    </div>
+    {errors[errorKey] && (
+      <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+        <span className="w-1 h-1 bg-red-600 rounded-full inline-block"></span>
+        {errors[errorKey]}
+      </p>
+    )}
+  </div>
+);
+
 export function ShipperApplyPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
@@ -132,17 +188,29 @@ export function ShipperApplyPage() {
 
     setLoading(true);
     try {
-      const uploadPromises = [
-        authService.uploadImage(idFrontFile!),
-        authService.uploadImage(idBackFile!),
-        authService.uploadImage(driverLicenseFile!),
-        authService.uploadImage(vehicleRegFile!),
-        ...(avatarFile ? [authService.uploadImage(avatarFile)] : [])
+      const filesToUpload = [
+        { file: idFrontFile!, name: 'Mặt trước CMND/CCCD' },
+        { file: idBackFile!, name: 'Mặt sau CMND/CCCD' },
+        { file: driverLicenseFile!, name: 'Bằng lái xe' },
+        { file: vehicleRegFile!, name: 'Giấy đăng ký xe' },
+        ...(avatarFile ? [{ file: avatarFile, name: 'Ảnh đại diện' }] : [])
       ];
-      const uploadResults = await Promise.all(uploadPromises);
-      uploadResults.forEach((res, index) => {
-        if (res.error || !res.data) throw new Error(`Lỗi tải lên tệp thứ ${index + 1}`);
-      });
+
+      const uploadResults = [];
+      for (const item of filesToUpload) {
+        if (!item.file) continue;
+        try {
+          const res = await authService.uploadImage(item.file);
+          if (res.error || !res.data) {
+            throw new Error(res.message || `Lỗi tải lên ${item.name}`);
+          }
+          uploadResults.push(res);
+        } catch (err: any) {
+          toast.error(`Lỗi tải lên ${item.name}: ${err.response?.data?.message || err.message}`);
+          setLoading(false);
+          return;
+        }
+      }
 
       const res = await authService.registerShipper({
         userName: form.userName,
@@ -172,60 +240,6 @@ export function ShipperApplyPage() {
       setLoading(false);
     }
   };
-
-  // --- File Upload UI ---
-  const FileUploadField = ({
-    label, file, errorKey, required = true, setter
-  }: {
-    label: string; file: File | null; errorKey: string; required?: boolean;
-    setter: React.Dispatch<React.SetStateAction<File | null>>;
-  }) => (
-    <div className="pt-1">
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
-      <div className={`border-2 border-dashed rounded-xl p-5 transition-colors ${errors[errorKey] ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-orange-500 bg-gray-50'}`}>
-        <div className="flex flex-col items-center justify-center text-center">
-          {!file ? (
-            <>
-              <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center mb-2">
-                <UploadCloud className="w-5 h-5 text-orange-600" />
-              </div>
-              <p className="text-xs text-gray-500 mb-3">PNG, JPG, JPEG, WEBP (Tối đa 5MB)</p>
-              <label className="cursor-pointer inline-flex items-center justify-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                Chọn File
-                <input type="file" className="hidden" accept="image/*"
-                  onChange={e => handleFileSelect(e, setter, errorKey)} />
-              </label>
-            </>
-          ) : (
-            <div className="w-full flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
-              <div className="flex items-center gap-3 overflow-hidden">
-                <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center shrink-0">
-                  <CheckCircle2 className="w-5 h-5 text-green-500" />
-                </div>
-                <div className="text-left overflow-hidden">
-                  <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
-                  <p className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                </div>
-              </div>
-              <label className="cursor-pointer p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors text-sm font-medium shrink-0">
-                Đổi file
-                <input type="file" className="hidden" accept="image/*"
-                  onChange={e => handleFileSelect(e, setter, errorKey)} />
-              </label>
-            </div>
-          )}
-        </div>
-      </div>
-      {errors[errorKey] && (
-        <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
-          <span className="w-1 h-1 bg-red-600 rounded-full inline-block"></span>
-          {errors[errorKey]}
-        </p>
-      )}
-    </div>
-  );
 
   // --- Stepper ---
   const steps = [
@@ -390,8 +404,8 @@ export function ShipperApplyPage() {
                   placeholder="Nhập số CMND hoặc CCCD"
                 />
 
-                <FileUploadField label="Ảnh CMND/CCCD Mặt trước" file={idFrontFile} errorKey="idFrontFile" setter={setIdFrontFile} />
-                <FileUploadField label="Ảnh CMND/CCCD Mặt sau" file={idBackFile} errorKey="idBackFile" setter={setIdBackFile} />
+                <FileUploadField label="Ảnh CMND/CCCD Mặt trước" file={idFrontFile} errorKey="idFrontFile" setter={setIdFrontFile} handleFileSelect={handleFileSelect} errors={errors} />
+                <FileUploadField label="Ảnh CMND/CCCD Mặt sau" file={idBackFile} errorKey="idBackFile" setter={setIdBackFile} handleFileSelect={handleFileSelect} errors={errors} />
 
                 <div className="flex gap-4 pt-4">
                   <Button type="button" variant="secondary" onClick={handleBack} className="w-1/3">
@@ -427,9 +441,9 @@ export function ShipperApplyPage() {
                   />
                 </div>
 
-                <FileUploadField label="Ảnh bằng lái xe" file={driverLicenseFile} errorKey="driverLicenseFile" setter={setDriverLicenseFile} />
-                <FileUploadField label="Ảnh giấy đăng ký xe (Cà vẹt)" file={vehicleRegFile} errorKey="vehicleRegFile" setter={setVehicleRegFile} />
-                <FileUploadField label="Ảnh chân dung / đại diện" file={avatarFile} errorKey="avatarFile" required={false} setter={setAvatarFile} />
+                <FileUploadField label="Ảnh bằng lái xe" file={driverLicenseFile} errorKey="driverLicenseFile" setter={setDriverLicenseFile} handleFileSelect={handleFileSelect} errors={errors} />
+                <FileUploadField label="Ảnh giấy đăng ký xe (Cà vẹt)" file={vehicleRegFile} errorKey="vehicleRegFile" setter={setVehicleRegFile} handleFileSelect={handleFileSelect} errors={errors} />
+                <FileUploadField label="Ảnh chân dung / đại diện" file={avatarFile} errorKey="avatarFile" required={false} setter={setAvatarFile} handleFileSelect={handleFileSelect} errors={errors} />
 
                 <div className="flex gap-4 pt-4">
                   <Button type="button" variant="secondary" onClick={handleBack} className="w-1/3">

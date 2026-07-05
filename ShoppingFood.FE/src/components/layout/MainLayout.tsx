@@ -1,6 +1,7 @@
-﻿import { Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import { Header } from './Header';
 import { Footer } from './Footer';
+import { LiveChatWidget } from '../chat/LiveChatWidget';
 
 /**
  * MainLayout â€” wraps pages with Header and Footer
@@ -14,6 +15,7 @@ export function MainLayout() {
         <Outlet />
       </main>
       <Footer />
+      <LiveChatWidget />
     </div>
   );
 }

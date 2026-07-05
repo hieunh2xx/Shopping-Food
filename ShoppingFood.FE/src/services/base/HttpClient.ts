@@ -64,6 +64,30 @@ class HttpClient {
       return /[a-zA-Z]/.test(msg) && !viRegex.test(msg);
     };
 
+    const translateError = (msg: string): string => {
+      if (!msg) return '';
+      const lower = msg.toLowerCase();
+      // Auth & Account
+      if (lower.includes('user already exists') || lower.includes('username already exists') || lower.includes('email already exists') || lower.includes('already exists')) return 'Thông tin tài khoản đã tồn tại';
+      if (lower.includes('invalid credential') || lower.includes('invalid password') || lower.includes('wrong password')) return 'Thông tin đăng nhập không chính xác';
+      if (lower.includes('not found') || lower.includes('does not exist')) return 'Không tìm thấy dữ liệu';
+      if (lower.includes('locked')) return 'Tài khoản đã bị khóa';
+      if (lower.includes('unauthorized') || lower.includes('forbidden') || lower.includes('access denied')) return 'Không có quyền truy cập';
+      if (lower.includes('token expired') || lower.includes('token is invalid')) return 'Phiên đăng nhập đã hết hạn';
+
+      // Validation & General
+      if (lower.includes('validation') || lower.includes('one or more validation errors')) return 'Dữ liệu không hợp lệ, vui lòng kiểm tra lại';
+      if (lower.includes('required') || lower.includes('not empty')) return 'Trường này không được bỏ trống';
+      if (lower.includes('valid e-mail') || lower.includes('invalid email')) return 'Email không hợp lệ';
+      if (lower.includes('at least')) return 'Dữ liệu quá ngắn';
+      if (lower.includes('exceed') || lower.includes('maximum')) return 'Dữ liệu quá dài';
+      if (lower.includes('do not match')) return 'Dữ liệu không khớp';
+      if (lower.includes('already in use') || lower.includes('taken')) return 'Đã được sử dụng';
+      if (lower.includes('format') || lower.includes('must contain') || lower.includes('digits')) return 'Định dạng không hợp lệ';
+
+      return msg; // Return original if not translated to avoid empty strings
+    };
+
     // Response interceptor: handle 401 unauthorized and filter English messages
     this.axiosInstance.interceptors.response.use(
       (response) => {
@@ -74,16 +98,43 @@ class HttpClient {
         return response;
       },
       async (error) => {
-        if (error.response?.data?.message && isEnglish(error.response.data.message)) {
-          error.response.data.message = ''; // Clear English error messages
+        if (error.response?.data) {
+          if (error.response.data.message && isEnglish(error.response.data.message)) {
+            const translated = translateError(error.response.data.message);
+            error.response.data.message = translated;
+          }
+          if (error.response.data.title && isEnglish(error.response.data.title)) {
+            const translated = translateError(error.response.data.title);
+            error.response.data.title = translated;
+          }
+          if (error.response.data.errors) {
+            Object.keys(error.response.data.errors).forEach(key => {
+              if (Array.isArray(error.response.data.errors[key])) {
+                error.response.data.errors[key] = error.response.data.errors[key].map((errItem: string) =>
+                  isEnglish(errItem) ? translateError(errItem) : errItem
+                );
+              }
+            });
+          } else if (Array.isArray(error.response.data.data) && error.response.data.data.length > 0 && error.response.data.data[0].property) {
+            // Map custom ApiResponse validation array into the errors dictionary
+            const mappedErrors: Record<string, string[]> = {};
+            error.response.data.data.forEach((item: any) => {
+              if (item.property && item.error) {
+                mappedErrors[item.property] = [isEnglish(item.error) ? translateError(item.error) : item.error];
+              }
+            });
+            error.response.data.errors = mappedErrors;
+          }
         }
         const originalRequest = error.config;
-        
+
         // Do not attempt to refresh token for auth endpoints
-        const isAuthEndpoint = originalRequest.url?.includes('/User/Login') || 
-                               originalRequest.url?.includes('/User/Register') ||
-                               originalRequest.url?.includes('/User/Send');
-                               
+        const urlLower = originalRequest.url?.toLowerCase() || '';
+        const isAuthEndpoint = urlLower.includes('/user/login') ||
+          urlLower.includes('/user/register') ||
+          urlLower.includes('/user/send') ||
+          urlLower.includes('/user/uploadimage');
+
         if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
           if (this.isRefreshing) {
             return new Promise((resolve) => {
@@ -109,7 +160,7 @@ class HttpClient {
 
               // Update authorization header for current request
               originalRequest.headers.Authorization = `Bearer ${response.data.token}`;
-              
+
               // Notify all subscribers
               this.refreshSubscribers.forEach((cb) => cb(response.data.token));
               this.refreshSubscribers = [];

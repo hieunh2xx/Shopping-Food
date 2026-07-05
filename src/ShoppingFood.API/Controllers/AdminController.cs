@@ -7,6 +7,7 @@ using ShoppingFood.Application.Features.LoyaltyPoints.Queries;
 using ShoppingFood.Application.Features.Notifications.Commands;
 using ShoppingFood.Application.Features.Products.GlobalMenuCategories.Commands;
 using ShoppingFood.Application.Features.Products.GlobalMenuCategories.Queries;
+using ShoppingFood.Application.Features.Support.Commands;
 using ShoppingFood.Core.Base;
 using System;
 using System.Threading.Tasks;
@@ -168,6 +169,15 @@ namespace ShoppingFood.API.Controllers
         public async Task<ActionResult<ApiResponse>> ModerateReview(Guid reportId, [FromBody] ModerateReviewCommand command)
         {
             if (userDto != null)
+                command.CurrentUserId = userDto.Id;
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpPost("support-tickets")]
+        public async Task<ActionResult<ApiResponse>> CreateSupportTicket([FromBody] CreateSupportTicketCommand command)
+        {
+            if(userDto != null)
                 command.CurrentUserId = userDto.Id;
             var response = await _mediator.Send(command);
             return StatusCode(response.Code, response);

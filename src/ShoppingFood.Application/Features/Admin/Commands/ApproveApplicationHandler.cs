@@ -111,7 +111,14 @@ namespace ShoppingFood.Application.Features.Admin.Commands
 
                 await _unitOfWork.SaveChangesAsync();
 
-                await SendEmailNotificationAsync(application, request.IsApproved);
+                try 
+                {
+                    await SendEmailNotificationAsync(application, request.IsApproved);
+                }
+                catch (Exception emailEx)
+                {
+                    await _unitOfWork.LogErrorAsync("ApproveSellerApplicationHandler.SendEmail", emailEx);
+                }
 
                 await transaction.CommitAsync(cancellationToken);
 

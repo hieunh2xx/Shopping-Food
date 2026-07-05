@@ -2,6 +2,8 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { ROUTES } from '../../routes/routeConfig';
 import { User, ShoppingBag, Store, Heart, MapPin, LogOut, Ticket, Award, ClipboardList } from 'lucide-react';
 import { useAuth } from '../../hooks';
+import { Header } from './Header';
+import { Footer } from './Footer';
 
 export function UserLayout() {
   const { user, logout } = useAuth();

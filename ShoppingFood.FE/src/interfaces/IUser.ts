@@ -113,3 +113,17 @@ export interface IChangePasswordRequest {
   newPassword?: string;
 }
 
+export interface IUserAddressDto {
+  id: string;
+  contactName: string;
+  contactPhone: string;
+  addressLine: string;
+  isDefault: boolean;
+}
+
+export interface IAddUserAddress {
+  contactName: string;
+  contactPhone: string;
+  addressLine: string;
+  isDefault: boolean;
+}

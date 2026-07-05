@@ -11,11 +11,19 @@ namespace ShoppingFood.Application.Features.Products.Commands
     public class DeleteProductCommandHandler : IRequestHandler<DeleteProductCommand, ApiResponse>
     {
         private readonly IProductRepository _productRepository;
+        private readonly ICartItemRepository _cartItemRepository;
+        private readonly IOrderRepository _orderRepository;
         private readonly IUnitOfWork _unitOfWork;
 
-        public DeleteProductCommandHandler(IProductRepository productRepository, IUnitOfWork unitOfWork)
+        public DeleteProductCommandHandler(
+            IProductRepository productRepository, 
+            ICartItemRepository cartItemRepository,
+            IOrderRepository orderRepository,
+            IUnitOfWork unitOfWork)
         {
             _productRepository = productRepository;
+            _cartItemRepository = cartItemRepository;
+            _orderRepository = orderRepository;
             _unitOfWork = unitOfWork;
         }
 
@@ -28,7 +36,9 @@ namespace ShoppingFood.Application.Features.Products.Commands
                 if (product == null) 
                     return ApiResponse.Failure(404, "This dish cannot be found.");
 
-                _productRepository.Delete(product);
+
+                product.IsDeleted = true;
+                _productRepository.Update(product);
                 await _unitOfWork.SaveChangesAsync();
 
                 return ApiResponse.Success(null, "Delete product successfully");

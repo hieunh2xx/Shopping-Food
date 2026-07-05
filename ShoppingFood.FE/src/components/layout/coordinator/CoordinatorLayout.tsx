@@ -5,7 +5,8 @@ import {
   ShieldCheck,
   UserCheck,
   ShieldAlert,
-  User
+  User,
+  MessageSquare
 } from 'lucide-react';
 import { useAuth } from '../../../hooks';
 import { ROUTES } from '../../../routes/routeConfig';
@@ -25,6 +26,7 @@ export function CoordinatorLayout() {
     { name: 'Giám sát Shipper', path: ROUTES.COORDINATOR_SHIPPERS, icon: ShieldAlert },
     { name: 'Lịch sử điều phối', path: ROUTES.COORDINATOR_HISTORY, icon: History },
     { name: 'Xử lý khiếu nại', path: ROUTES.COORDINATOR_INCIDENTS, icon: ShieldCheck },
+    { name: 'Live Chat', path: ROUTES.COORDINATOR_CHAT, icon: MessageSquare },
     { name: 'Hồ sơ cá nhân', path: '/coordinator/profile', icon: User },
   ];
 

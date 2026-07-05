@@ -1,15 +1,20 @@
 import { useState, useEffect } from 'react';
-import { ShieldAlert, CheckCircle, Search, User, Truck, HelpCircle, FileText, AlertTriangle, XCircle, FileWarning } from 'lucide-react';
+import { ShieldAlert, CheckCircle, Search, User, Truck, HelpCircle, FileText, AlertTriangle, XCircle, FileWarning, Plus } from 'lucide-react';
 import { Button, Loading, Modal, Pagination } from '../../components/common';
 import { coordinatorService } from '../../services/CoordinatorService';
+import { CreateTicketModal } from './components/CreateTicketModal';
 import type { IIncidentItemDto } from '../../interfaces';
 import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../routes/routeConfig';
 
 export function CoordinatorIncidentsPage() {
+  const navigate = useNavigate();
   const [incidents, setIncidents] = useState<IIncidentItemDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [incidentTypeFilter, setIncidentTypeFilter] = useState<string>(''); // empty for all
   const [searchTerm, setSearchTerm] = useState('');
+  const [isCreateTicketModalOpen, setIsCreateTicketModalOpen] = useState(false);
 
   // Resolution Modal
   const [resolutionModal, setResolutionModal] = useState<{
@@ -130,14 +135,23 @@ export function CoordinatorIncidentsPage() {
 
   return (
     <div className="p-6">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <ShieldAlert className="w-6 h-6 text-orange-500" />
-          Xử lý Sự cố & Khiếu nại
-        </h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Giám sát và giải quyết các khiếu nại từ khách hàng hoặc sự cố giao hàng.
-        </p>
+      <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <ShieldAlert className="w-6 h-6 text-orange-500" />
+            Xử lý Sự cố & Khiếu nại
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Giám sát và giải quyết các khiếu nại từ khách hàng hoặc sự cố giao hàng.
+          </p>
+        </div>
+        <Button 
+          className="flex items-center gap-2 whitespace-nowrap"
+          onClick={() => setIsCreateTicketModalOpen(true)}
+        >
+          <Plus className="w-5 h-5" />
+          Tạo phiếu hỗ trợ thủ công
+        </Button>
       </div>
 
       {/* Toolbar */}
@@ -297,6 +311,12 @@ export function CoordinatorIncidentsPage() {
           </div>
         </form>
       </Modal>
+
+      <CreateTicketModal
+        isOpen={isCreateTicketModalOpen}
+        onClose={() => setIsCreateTicketModalOpen(false)}
+        onSuccess={fetchIncidents}
+      />
     </div>
   );
 }

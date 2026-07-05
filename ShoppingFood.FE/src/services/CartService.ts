@@ -1,28 +1,6 @@
 import { httpClient } from './base/HttpClient';
 import { API_ENDPOINTS } from '../config/endpoints';
-import type { IApiResponse } from '../interfaces';
-
-export interface IAddToCartRequest {
-  productId: string;
-  quantity: number;
-  guestUserId?: string;
-  clearCartIfConflict?: boolean;
-}
-
-export interface IUpdateCartItemQuantityRequest {
-  productId: string;
-  quantity: number;
-  guestUserId?: string;
-}
-
-export interface IRemoveCartItemParams {
-  productId: string;
-  guestUserId?: string;
-}
-
-export interface IClearCartParams {
-  guestUserId?: string;
-}
+import type { IApiResponse, IAddToCartRequest, IUpdateCartItemQuantityRequest, IRemoveCartItemParams, IClearCartParams } from '../interfaces';
 
 class CartService {
   async addToCart(data: IAddToCartRequest): Promise<IApiResponse<any>> {

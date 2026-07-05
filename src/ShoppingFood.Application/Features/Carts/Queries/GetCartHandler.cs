@@ -37,7 +37,7 @@ namespace ShoppingFood.Application.Features.Carts.Queries
                 {
                     carts = await _cartRepository.GetAsync(
                         predicate: c => c.UserAccountId == request.CurrentUserId.Value,
-                        include: q => q.Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Images),
+                        include: q => q.IgnoreQueryFilters().Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Images).Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Restaurant),
                         disableTracking: true
                         );
                 }
@@ -45,7 +45,7 @@ namespace ShoppingFood.Application.Features.Carts.Queries
                 {
                     carts = await _cartRepository.GetAsync(
                         predicate: c => c.GuestUserId == request.GuestUserId.Value,
-                        include: q => q.Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Images),
+                        include: q => q.IgnoreQueryFilters().Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Images).Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Restaurant),
                         disableTracking: true
                         );
                 }

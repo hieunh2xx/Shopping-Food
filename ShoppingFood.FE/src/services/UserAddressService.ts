@@ -1,20 +1,5 @@
 import { httpClient } from './base/HttpClient';
-import type { IApiResponse } from '../interfaces';
-
-export interface IUserAddressDto {
-  id: string;
-  contactName: string;
-  contactPhone: string;
-  addressLine: string;
-  isDefault: boolean;
-}
-
-export interface IAddUserAddress {
-  contactName: string;
-  contactPhone: string;
-  addressLine: string;
-  isDefault: boolean;
-}
+import type { IApiResponse, IUserAddressDto, IAddUserAddress } from '../interfaces';
 
 class UserAddressService {
   private endpoint = '/UserAddress';

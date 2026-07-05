@@ -164,4 +164,17 @@ namespace ShoppingFood.Domain.Enums
         ByTier,
         SpecificCustomers
     }
+
+    public enum ChatSessionStatus
+    {
+        Open,
+        Closed
+    }
+
+    public enum ChatTopic
+    {
+        OrderIssue,
+        SystemIssue,
+        General
+    }
 }

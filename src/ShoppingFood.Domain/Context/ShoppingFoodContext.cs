@@ -51,6 +51,9 @@ namespace ShoppingFood.Domain.Context
         public DbSet<MemberTierConfig> MemberTierConfigs { get; set; } = null!;
         public DbSet<OrderDispatchHistory> OrderDispatchHistories { get; set; } = null!;
         public DbSet<ShipperReview> ShipperReviews { get; set; } = null!;
+        public DbSet<ChatSession> ChatSessions { get; set; } = null!;
+        public DbSet<ChatMessage> ChatMessages { get; set; } = null!;
+        public DbSet<Faq> Faqs { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -181,6 +184,9 @@ namespace ShoppingFood.Domain.Context
                 entity.Property(e => e.AvailableFrom);
                 entity.Property(e => e.AvailableTo);
                 entity.Property(e => e.Status).HasConversion<string>().IsRequired();
+                entity.Property(e => e.IsDeleted).IsRequired().HasDefaultValue(false);
+
+                entity.HasQueryFilter(p => !p.IsDeleted);
 
                 entity.HasOne(d => d.Restaurant)
                     .WithMany()
@@ -803,6 +809,52 @@ namespace ShoppingFood.Domain.Context
                     .WithMany()
                     .HasForeignKey(d => d.ReviewerAccountId)
                     .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<ChatSession>(entity =>
+            {
+                entity.ToTable("CHAT_SESSION");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Topic).HasConversion<string>().IsRequired();
+                entity.Property(e => e.Status).HasConversion<string>().IsRequired();
+
+
+                entity.HasOne(d => d.User)
+                    .WithMany()
+                    .HasForeignKey(d => d.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(d => d.Support)
+                    .WithMany()
+                    .HasForeignKey(d => d.SupportId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<ChatMessage>(entity =>
+            {
+                entity.ToTable("CHAT_MESSAGE");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Content).IsRequired().HasMaxLength(2000);
+                entity.Property(e => e.SenderRole).HasConversion<string>().IsRequired();
+
+                entity.HasOne(d => d.Session)
+                .WithMany(s => s.Messages)
+                .HasForeignKey(d => d.SessionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(d => d.Sender)
+                .WithMany()
+                .HasForeignKey(d => d.SenderId)
+                .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<Faq>(entity =>
+            {
+                entity.ToTable("FAQ");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Question).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.Answer).IsRequired();
+                entity.Property(e => e.IsActive).IsRequired();
             });
         }
     }

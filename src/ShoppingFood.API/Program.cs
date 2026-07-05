@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using ShoppingFood.API.Filters;
+using ShoppingFood.API.Hubs;
 using ShoppingFood.API.Workers;
 using ShoppingFood.Application;
 using ShoppingFood.Core.Middlewares;
@@ -17,11 +18,15 @@ builder.Services.AddControllers(options =>
 {
     options.Filters.Add<AuthenticationFilter>();
     options.Filters.Add<CheckSellerSuspensionAttribute>();
-}).AddNewtonsoftJson();
+}).AddNewtonsoftJson(options => 
+{
+    options.SerializerSettings.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter());
+});
 
 // Add clean architecture layer service registrations
 builder.Services.AddRepositoryServices(builder.Configuration);
 builder.Services.AddApplicationServices();
+builder.Services.AddSignalR();
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddHostedService<MemberTierEvaluationWorker>();
@@ -136,5 +141,6 @@ app.UseCors("AllowAll");
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<ChatHub>("/hubs/chat");
 
 app.Run();

@@ -171,6 +171,74 @@ namespace ShoppingFood.Domain.Migrations
                     b.ToTable("CART_ITEM", (string)null);
                 });
 
+            modelBuilder.Entity("ShoppingFood.Domain.Models.ChatMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("SenderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("SenderRole")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SenderId");
+
+                    b.HasIndex("SessionId");
+
+                    b.ToTable("CHAT_MESSAGE", (string)null);
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.ChatSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("SupportId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Topic")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SupportId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("CHAT_SESSION", (string)null);
+                });
+
             modelBuilder.Entity("ShoppingFood.Domain.Models.CustomerDiscount", b =>
                 {
                     b.Property<Guid>("Id")
@@ -279,6 +347,38 @@ namespace ShoppingFood.Domain.Migrations
                     b.HasIndex("RestaurantId");
 
                     b.ToTable("DISCOUNT", (string)null);
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.Faq", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Answer")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Question")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("FAQ", (string)null);
                 });
 
             modelBuilder.Entity("ShoppingFood.Domain.Models.FavoriteRestaurant", b =>
@@ -532,22 +632,22 @@ namespace ShoppingFood.Domain.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("0eada80e-25e2-4380-a667-07993d8deb2d"),
-                            CreatedAt = new DateTime(2026, 7, 2, 3, 39, 14, 981, DateTimeKind.Utc).AddTicks(2697),
+                            Id = new Guid("56343ff0-e9b4-4012-a01f-ce6b5445c1aa"),
+                            CreatedAt = new DateTime(2026, 7, 5, 14, 28, 38, 388, DateTimeKind.Utc).AddTicks(729),
                             MinPoints = 100,
                             Tier = "Silver"
                         },
                         new
                         {
-                            Id = new Guid("809c9d0e-788e-4c8a-8440-65e090ded7c2"),
-                            CreatedAt = new DateTime(2026, 7, 2, 3, 39, 14, 981, DateTimeKind.Utc).AddTicks(2699),
+                            Id = new Guid("4aa79c2e-9085-4823-9909-55de5d4a6f83"),
+                            CreatedAt = new DateTime(2026, 7, 5, 14, 28, 38, 388, DateTimeKind.Utc).AddTicks(731),
                             MinPoints = 500,
                             Tier = "Gold"
                         },
                         new
                         {
-                            Id = new Guid("ad9d72e0-5959-453f-ae82-1ca584cfb830"),
-                            CreatedAt = new DateTime(2026, 7, 2, 3, 39, 14, 981, DateTimeKind.Utc).AddTicks(2700),
+                            Id = new Guid("bdff881f-fdaa-4b1d-969c-ad0ac4756683"),
+                            CreatedAt = new DateTime(2026, 7, 5, 14, 28, 38, 388, DateTimeKind.Utc).AddTicks(733),
                             MinPoints = 1000,
                             Tier = "Diamond"
                         });
@@ -918,6 +1018,11 @@ namespace ShoppingFood.Domain.Migrations
 
                     b.Property<Guid?>("GlobalCategoryId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
                     b.Property<bool>("IsFreeship")
                         .HasColumnType("bit");
@@ -1782,6 +1887,43 @@ namespace ShoppingFood.Domain.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("ShoppingFood.Domain.Models.ChatMessage", b =>
+                {
+                    b.HasOne("ShoppingFood.Domain.Models.User", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ShoppingFood.Domain.Models.ChatSession", "Session")
+                        .WithMany("Messages")
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Sender");
+
+                    b.Navigation("Session");
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.ChatSession", b =>
+                {
+                    b.HasOne("ShoppingFood.Domain.Models.User", "Support")
+                        .WithMany()
+                        .HasForeignKey("SupportId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ShoppingFood.Domain.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Support");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("ShoppingFood.Domain.Models.CustomerDiscount", b =>
                 {
                     b.HasOne("ShoppingFood.Domain.Models.Discount", "Discount")
@@ -2258,6 +2400,11 @@ namespace ShoppingFood.Domain.Migrations
             modelBuilder.Entity("ShoppingFood.Domain.Models.Cart", b =>
                 {
                     b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.ChatSession", b =>
+                {
+                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("ShoppingFood.Domain.Models.GlobalMenuCategory", b =>

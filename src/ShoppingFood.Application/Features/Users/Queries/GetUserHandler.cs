@@ -48,7 +48,6 @@ namespace ShoppingFood.Application.Features.Users.Queries
 
             var userDtos = _mapper.Map<IReadOnlyList<UserDto>>(users);
 
-            // Map loyalty point data (tier, points) for each user
             var userIds = users.Select(u => u.Id).ToList();
             var loyaltyPoints = await _loyaltyPointRepository.GetAsync(
                 predicate: lp => userIds.Contains(lp.UserAccountId),

@@ -1,5 +1,6 @@
 import { useState, useEffect, type FormEvent } from 'react';
-import { userAddressService, type IUserAddressDto, type IAddUserAddress } from '../../services/UserAddressService';
+import { userAddressService } from '../../services/UserAddressService';
+import type { IUserAddressDto, IAddUserAddress } from '../../interfaces';
 import { Button, Input } from '../common';
 import { MapPin, Check, Trash2, Edit2, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';

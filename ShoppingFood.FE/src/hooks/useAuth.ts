@@ -63,7 +63,10 @@ export function useAuth() {
         return { success: false, message: response.message };
       }
     } catch (err: any) {
-      const message = err.response?.data?.message || err.response?.data?.title || err.message || 'Đăng nhập thất bại';
+      let message = err.response?.data?.message || err.response?.data?.title;
+      if (!message) {
+        message = (err.message && !err.message.includes('status code')) ? err.message : 'Đăng nhập thất bại';
+      }
       setError(message);
       toast.error(message);
       return { success: false, message };
@@ -161,7 +164,10 @@ export function useAuth() {
         return { success: false, errors: (response as any).errors };
       }
     } catch (err: any) {
-      const message = err.response?.data?.message || err.response?.data?.title || err.message || 'Lỗi kết nối server';
+      let message = err.response?.data?.message || err.response?.data?.title;
+      if (!message) {
+        message = (err.message && !err.message.includes('status code')) ? err.message : 'Dữ liệu không hợp lệ hoặc đã tồn tại';
+      }
       const validationErrors = err.response?.data?.errors;
       setError(message);
       toast.error(message);
@@ -185,7 +191,10 @@ export function useAuth() {
         return { success: false, errors: (response as any).errors };
       }
     } catch (err: any) {
-      const message = err.response?.data?.message || err.response?.data?.title || err.message || 'Lỗi kết nối server';
+      let message = err.response?.data?.message || err.response?.data?.title;
+      if (!message) {
+        message = (err.message && !err.message.includes('status code')) ? err.message : 'Dữ liệu không hợp lệ hoặc đã tồn tại';
+      }
       const validationErrors = err.response?.data?.errors;
       setError(message);
       toast.error(message);

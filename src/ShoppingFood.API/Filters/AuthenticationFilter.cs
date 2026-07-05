@@ -43,6 +43,7 @@ namespace ShoppingFood.API.Filters
                                 path.StartsWith("/api/User/Login", StringComparison.OrdinalIgnoreCase) ||
                                 path.StartsWith("/api/User/Register", StringComparison.OrdinalIgnoreCase) ||
                                 path.StartsWith("/api/User/RegisterShipper", StringComparison.OrdinalIgnoreCase) ||
+                                path.StartsWith("/api/User/UploadImage", StringComparison.OrdinalIgnoreCase) ||
                                 path.StartsWith("/api/User/RefreshToken", StringComparison.OrdinalIgnoreCase) ||
                                 path.StartsWith("/api/User/SendLoginOtp", StringComparison.OrdinalIgnoreCase) ||
                                 path.StartsWith("/api/User/VerifyLoginOtp", StringComparison.OrdinalIgnoreCase) ||
@@ -53,6 +54,9 @@ namespace ShoppingFood.API.Filters
                                 path.StartsWith("/api/User/ResetPassword", StringComparison.OrdinalIgnoreCase) ||
                                 path.StartsWith("/api/User/VerifyUnlockAccount", StringComparison.OrdinalIgnoreCase) ||
                                 path.StartsWith("/swagger", StringComparison.OrdinalIgnoreCase) ||
+                                path.StartsWith("/hubs/", StringComparison.OrdinalIgnoreCase) ||
+
+                                (method == "GET" && path.StartsWith("/api/Faq", StringComparison.OrdinalIgnoreCase)) ||
 
                                 (method == "GET" &&
                                     path.StartsWith("/api/Product", StringComparison.OrdinalIgnoreCase)) ||
@@ -335,7 +339,7 @@ namespace ShoppingFood.API.Filters
                     if (user.Profile?.Role != UserRole.Seller && user.Profile?.Role != UserRole.Mall)
                         throw new UnauthorizedAccessException("Only sellers can view discount statistics.");
                 }
-     
+
                 else if ((method == "POST" || method == "PUT" || method == "DELETE" || method == "PATCH") &&
                          !path.Equals("/api/Discount/apply", StringComparison.OrdinalIgnoreCase))
                 {
@@ -379,7 +383,7 @@ namespace ShoppingFood.API.Filters
             // Phân quyền: Notification cho phép tất cả các Role (chỉ cần đăng nhập)
             if (path.StartsWith("/api/Notification", StringComparison.OrdinalIgnoreCase))
             {
-                if (user.Profile == null)   
+                if (user.Profile == null)
                 {
                     throw new UnauthorizedAccessException("User profile is required to access notifications.");
                 }
@@ -403,6 +407,28 @@ namespace ShoppingFood.API.Filters
                     throw new UnauthorizedAccessException("Only sellers can register products for flash sales.");
                 }
             }
+
+            if (path.Equals("/api/Chat/sessions", StringComparison.OrdinalIgnoreCase) &&
+                method == "POST")
+            {
+                if (user.Profile?.Role != UserRole.Customer &&
+                    user.Profile?.Role != UserRole.Seller &&
+                    user.Profile?.Role != UserRole.Mall &&
+                    user.Profile?.Role != UserRole.Shipper)
+                {
+                    throw new UnauthorizedAccessException("Only customers, sellers, and shippers can start a chat session.");
+                }
+            }
+
+            if (path.StartsWith("/api/Faq", StringComparison.OrdinalIgnoreCase) &&
+                (method == "POST" || method == "PUT" || method == "DELETE"))
+            {
+                if (user.Profile?.Role != ShoppingFood.Domain.Enums.UserRole.Admin)
+                {
+                    throw new UnauthorizedAccessException("Only admin can perform this action.");
+                }
+            }
+
             // Inject CurrentUserId into Commands/Queries
             foreach (var arg in context.ActionArguments.Values)
             {

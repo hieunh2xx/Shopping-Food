@@ -1,16 +1,6 @@
 import { httpClient } from './base/HttpClient';
 import { API_ENDPOINTS } from '../config/endpoints';
-import type { IApiResponse } from '../interfaces';
-
-export interface INotificationDto {
-  id: string;
-  userId: string;
-  title: string;
-  message: string;
-  notificationType: string;
-  isRead: boolean;
-  createAt: string;
-}
+import type { IApiResponse, INotificationDto } from '../interfaces';
 
 class NotificationService {
   async getAll(): Promise<IApiResponse<INotificationDto[]>> {

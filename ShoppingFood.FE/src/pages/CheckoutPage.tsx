@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Store, MapPin, Phone, User, Mail, ShieldCheck, ArrowLeft, Loader2, X } from 'lucide-react';
 import { useCart, useAuth } from '../hooks';
 import { Button, Input } from '../components/common';
@@ -17,11 +17,17 @@ export function CheckoutPage() {
   const { items, clearCart } = useCart();
   const { user, isAuthenticated } = useAuth();
   
+  const [searchParams] = useSearchParams();
+  
   // Get guest ID from localStorage if not authenticated
   const guestUserId = !isAuthenticated ? localStorage.getItem('sf_guest_id') || undefined : undefined;
 
-  const restaurantId = items.length > 0 ? items[0].product.restaurantId : null;
-  const restaurantName = items.length > 0 ? items[0].product.restaurantName : '';
+  const urlRestaurantId = searchParams.get('restaurantId');
+  const fallbackRestaurantId = items.length > 0 ? items[0].product.restaurantId : null;
+  const restaurantId = urlRestaurantId || fallbackRestaurantId;
+  
+  const firstItemOfRestaurant = items.find(i => i.product.restaurantId === restaurantId);
+  const restaurantName = firstItemOfRestaurant ? firstItemOfRestaurant.product.restaurantName : '';
   const checkoutItems = items.filter(i => i.product.restaurantId === restaurantId);
   
   const checkoutTotal = useMemo(() => {
@@ -265,7 +271,7 @@ export function CheckoutPage() {
                       value={formData.note} 
                       onChange={handleInputChange} 
                       placeholder="Ghi chú thêm cho nhà hàng hoặc tài xế..." 
-                      className="w-full rounded-xl border-gray-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 min-h-[100px] p-3 text-sm"
+                      className="w-full rounded-xl border border-gray-300 bg-white text-gray-900 placeholder-gray-400 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 focus:outline-none min-h-[100px] p-4 text-base transition-all"
                     />
                   </div>
 

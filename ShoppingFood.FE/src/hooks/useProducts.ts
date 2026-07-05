@@ -14,7 +14,7 @@ export function useProducts() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchProducts = useCallback(async (params?: { filter?: string; skip?: number; take?: number }) => {
+  const fetchProducts = useCallback(async (params?: { filter?: string; skip?: number; take?: number; restaurantId?: string; categoryId?: string; status?: string }) => {
     setIsLoading(true);
     setError(null);
     try {
@@ -55,7 +55,7 @@ export function useProducts() {
     try {
       const response = await productService.search(query);
       if (!response.error) {
-        setProducts(response.data || []);
+        setProducts((response.data || []).filter(p => !p.isHidden));
         setTotal(response.total);
       } else {
         setError(response.message);
@@ -72,7 +72,7 @@ export function useProducts() {
     try {
       const response = await productService.getBestSellers(take);
       if (!response.error) {
-        setBestSellers(response.data || []);
+        setBestSellers((response.data || []).filter(p => !p.isHidden));
       }
     } catch {
       // Silent fail for best sellers

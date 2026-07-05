@@ -9,6 +9,7 @@ export interface ICartItem {
   selectedSize?: string;
   selectedToppings?: string[];
   note?: string;
+  isProductDeleted?: boolean;
 }
 
 /**
@@ -28,4 +29,26 @@ export interface ICartContext extends ICartState {
   removeItem: (productId: string, selectedSize?: string, selectedToppings?: string[]) => void;
   updateQuantity: (productId: string, quantity: number, selectedSize?: string, selectedToppings?: string[]) => void;
   clearCart: () => void;
+}
+
+export interface IAddToCartRequest {
+  productId: string;
+  quantity: number;
+  guestUserId?: string;
+  clearCartIfConflict?: boolean;
+}
+
+export interface IUpdateCartItemQuantityRequest {
+  productId: string;
+  quantity: number;
+  guestUserId?: string;
+}
+
+export interface IRemoveCartItemParams {
+  productId: string;
+  guestUserId?: string;
+}
+
+export interface IClearCartParams {
+  guestUserId?: string;
 }

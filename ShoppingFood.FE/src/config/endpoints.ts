@@ -100,6 +100,7 @@ export const API_ENDPOINTS = {
     BROADCAST_NOTIFICATION: '/Admin/notifications/broadcast', // POST
     REVIEW_REPORTS: '/Admin/review-reports', // GET
     MODERATE_REVIEW_REPORT: (reportId: string) => `/Admin/review-reports/${reportId}/moderate`, // POST
+    SUPPORT_TICKETS: '/Admin/support-tickets', // POST
   },
 
   // === Shipper (ShipperController) ===
@@ -207,6 +208,11 @@ export const API_ENDPOINTS = {
     APPEAL: '/Support/appeal',
     ORDER_COMPLAINT: '/Support/order-complaint', // POST
     SHIPPER_COMPLAINT: '/Support/shipper-complaint', // POST
+  },
+
+  FAQ: {
+    BASE: '/Faq',
+    BY_ID: (id: string) => `/Faq/${id}`,
   },
 } as const;
 

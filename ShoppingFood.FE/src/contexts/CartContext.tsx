@@ -63,14 +63,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
             
             return {
               quantity: apiItem.quantity,
+              isProductDeleted: apiItem.isProductDeleted,
               product: {
                 id: apiItem.productId,
                 itemName: apiItem.productName || 'Sản phẩm',
                 price: apiItem.priceAtAdded || 0,
                 primaryImageUrl: apiItem.productImageUrl,
                 // Default mock properties for IProductDto to satisfy UI
-                restaurantId: '',
-                restaurantName: '',
+                restaurantId: apiItem.restaurantId || '',
+                restaurantName: apiItem.restaurantName || '',
                 description: null,
                 categoryId: '',
                 categoryName: '',
@@ -127,6 +128,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     selectedToppings?: string[],
     note?: string
   ) => {
+    let isExisting = false;
+
     // Optimistic update
     setItems((prev) => {
       const existing = prev.find((item) => 
@@ -135,7 +138,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         JSON.stringify(item.selectedToppings?.sort() || []) === JSON.stringify(selectedToppings?.sort() || [])
       );
       if (existing) {
-        toast.success(`Đã cập nhật số lượng: ${product.itemName}`);
+        isExisting = true;
         return prev.map((item) =>
           item.product.id === product.id &&
           item.selectedSize === selectedSize &&
@@ -144,9 +147,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
             : item
         );
       }
-      toast.success(`Đã thêm vào giỏ: ${product.itemName}`);
       return [...prev, { product, quantity, selectedSize, selectedToppings, note }];
     });
+
+    // Timeout prevents React batching issues with the ref flag
+    setTimeout(() => {
+      if (isExisting) {
+        toast.success(`Đã cập nhật số lượng: ${product.itemName}`);
+      } else {
+        toast.success(`Đã thêm vào giỏ: ${product.itemName}`);
+      }
+    }, 0);
 
     // API call
     try {

@@ -1,7 +1,7 @@
 import { httpClient } from './base/HttpClient';
-import type { IApiResponse } from './base/HttpClient';
 import { API_ENDPOINTS } from '../config/endpoints';
 import type {
+  IApiResponse,
   ISubmitAppealRequest,
   ISubmitOrderComplaintRequest,
   ISubmitShipperComplaintRequest,

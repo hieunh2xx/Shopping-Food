@@ -29,6 +29,8 @@ import {
   AdminApprovalsPage,
   AdminDiscountsPage,
   AdminLoyaltyConfigPage,
+  AdminFaqPage,
+  AdminChatPage,
   NotFoundPage,
   ProfilePage,
   OrdersPage,
@@ -43,6 +45,7 @@ import {
   DispatchBoardPage,
   MonitorShippersPage,
   CoordinatorIncidentsPage,
+  CoordinatorChatPage,
   AdminReviewReportsPage,
   CheckoutPage,
   GuestOrderTrackingPage,
@@ -56,6 +59,7 @@ import {
   SellerFlashSalesPage,
   AuthShipperApplyPage,
   DashboardProfilePage,
+  UserReportIncidentPage,
 } from '../pages';
 
 /**
@@ -82,6 +86,7 @@ export function AppRoutes() {
         <Route path={ROUTES.CHECKOUT} element={<CheckoutPage />} />
         <Route path={ROUTES.GUEST_ORDER_TRACKING} element={<GuestOrderTrackingPage />} />
         <Route path={ROUTES.HELP_CENTER} element={<HelpCenterPage />} />
+        <Route path={ROUTES.REPORT_INCIDENT} element={<PrivateRoute><UserReportIncidentPage /></PrivateRoute>} />
         <Route path={ROUTES.TERMS_OF_USE} element={<TermsOfUsePage />} />
         <Route path={ROUTES.PRIVACY_POLICY} element={<PrivacyPolicyPage />} />
         
@@ -155,6 +160,8 @@ export function AppRoutes() {
         <Route path="notifications" element={<AdminNotificationsPage />} />
         <Route path="review-reports" element={<AdminReviewReportsPage />} />
         <Route path="incidents" element={<CoordinatorIncidentsPage />} />
+        <Route path="faq" element={<AdminFaqPage />} />
+        <Route path="chat" element={<AdminChatPage />} />
         <Route path="profile" element={<DashboardProfilePage />} />
       </Route>
 
@@ -172,6 +179,7 @@ export function AppRoutes() {
         <Route path="shippers" element={<MonitorShippersPage />} />
         <Route path="history" element={<DispatchHistoryPage />} />
         <Route path="incidents" element={<CoordinatorIncidentsPage />} />
+        <Route path="chat" element={<CoordinatorChatPage />} />
         <Route path="profile" element={<DashboardProfilePage />} />
       </Route>
 

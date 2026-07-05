@@ -35,6 +35,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             ${error ? 'border-red-500/50 focus:ring-red-500/40 focus:border-red-500/40' : ''}
             ${className}
           `}
+          onWheel={(e) => {
+            if (props.type === 'number') {
+              (e.target as HTMLInputElement).blur();
+            }
+          }}
           {...props}
         />
         {error && (

@@ -3,6 +3,7 @@ import { ShieldCheck, Store, Bike, UtensilsCrossed, CheckCircle, XCircle, FileTe
 import { Button, Modal, Loading, Pagination } from '../../components/common';
 import { adminService, productService } from '../../services';
 import { formatCurrency } from '../../utils/formatters';
+import { ENV } from '../../config/env';
 import toast from 'react-hot-toast';
 
 type TabType = 'sellers' | 'shippers' | 'products';
@@ -512,7 +513,14 @@ export function AdminApprovalsPage() {
         size="lg"
       >
         <div className="flex justify-center bg-gray-950 p-2 rounded-2xl overflow-hidden max-h-[80vh]">
-          <img src={photoModal.url} alt={photoModal.title} className="max-w-full max-h-[70vh] object-contain rounded-lg" />
+          <img 
+            src={photoModal.url?.startsWith('http') ? photoModal.url : `${ENV.API_BASE_URL}${photoModal.url?.startsWith('/') ? '' : '/'}${photoModal.url}`} 
+            alt={photoModal.title} 
+            className="max-w-full max-h-[70vh] object-contain rounded-lg" 
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Image+Not+Found';
+            }}
+          />
         </div>
       </Modal>
     </div>

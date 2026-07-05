@@ -429,7 +429,7 @@ function StockBadge({ status }: { status: string }) {
 export function SellerProductsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [take, setTake] = useState(10);
-  const { products, total, isLoading, searchProducts, toggleStatus, deleteProduct } = useProducts();
+  const { products, total, isLoading, fetchProducts, toggleStatus, deleteProduct } = useProducts();
   const [categories, setCategories] = useState<IMenuCategoryDto[]>([]);
 
   const [restaurantId, setRestaurantId] = useState<string>('');
@@ -474,14 +474,14 @@ export function SellerProductsPage() {
   // Load products when restaurantId, search, category, or page changes
   const loadProducts = useCallback(() => {
     if (!restaurantId) return;
-    searchProducts({
+    fetchProducts({
       restaurantId,
       filter: search.trim() || undefined,
       categoryId: selectedCategory || undefined,
       skip: (currentPage - 1) * take,
       take: take,
     });
-  }, [restaurantId, search, selectedCategory, currentPage, take, searchProducts]);
+  }, [restaurantId, search, selectedCategory, currentPage, take, fetchProducts]);
 
   useEffect(() => {
     loadProducts();
@@ -571,6 +571,19 @@ export function SellerProductsPage() {
     }
   };
 
+  const ApprovalBadge = ({ status }: { status: string }) => {
+    switch (status) {
+      case 'Approved':
+        return <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Đã duyệt</span>;
+      case 'Pending':
+        return <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">Đang chờ</span>;
+      case 'Rejected':
+        return <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">Từ chối</span>;
+      default:
+        return <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">{status}</span>;
+    }
+  };
+
   // ─── Empty state ────────────────────────────────────────────────────────────
   const EmptyState = () => (
     <div className="text-center py-16">
@@ -646,6 +659,7 @@ export function SellerProductsPage() {
                     <th className="py-4 px-6 font-medium">Sản phẩm</th>
                     <th className="py-4 px-6 font-medium">Danh mục</th>
                     <th className="py-4 px-6 font-medium">Giá bán</th>
+                    <th className="py-4 px-6 font-medium text-center">Trạng thái duyệt</th>
                     <th className="py-4 px-6 font-medium text-center">Kho</th>
                     <th className="py-4 px-6 font-medium text-center">Hiển thị</th>
                     <th className="py-4 px-6 font-medium text-right">Thao tác</th>
@@ -681,6 +695,11 @@ export function SellerProductsPage() {
                       {/* Price */}
                       <td className="py-4 px-6 text-sm font-semibold text-gray-900">
                         {product.price.toLocaleString('vi-VN')} đ
+                      </td>
+
+                      {/* Approval Status */}
+                      <td className="py-4 px-6 text-center">
+                        <ApprovalBadge status={product.status} />
                       </td>
 
                       {/* Stock status */}
