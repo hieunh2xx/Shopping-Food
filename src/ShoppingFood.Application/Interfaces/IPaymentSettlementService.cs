@@ -9,7 +9,7 @@ namespace ShoppingFood.Application.Interfaces
     {
         Task<PlatformFinanceConfig> GetConfigAsync();
         (decimal ItemsSubtotal, decimal PlatformCommission, decimal SellerPayout, decimal ShipperEarning) CalculateSplit(
-            decimal totalAmount, decimal shippingFee, decimal commissionRate, decimal shipperBonus);
+            decimal totalAmount, decimal shippingFee, decimal shipperIncome, decimal commissionRate);
         Task<Wallet> GetOrCreateWalletAsync(WalletOwnerType ownerType, Guid ownerId);
         Task RecordTransactionAsync(Wallet wallet, FinancialTransactionType type, decimal amount, string description, Guid? referenceId = null, string? referenceType = null);
         Task<string?> ProcessCheckoutPaymentAsync(Order order, Guid? userId, string? cardLastFour = null, string? cardBrand = null, EWalletProvider? provider = null);

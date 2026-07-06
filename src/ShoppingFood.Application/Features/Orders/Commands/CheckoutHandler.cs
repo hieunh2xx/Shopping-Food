@@ -35,6 +35,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
         private readonly IUnitOfWork _unitOfWork;
         private readonly ShoppingFoodContext _dbContext;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IPlatformFinanceConfigRepository _configRepository;
 
         public CheckoutHandler(
             ICartRepository cartRepository,
@@ -50,7 +51,8 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             IPaymentSettlementService paymentSettlementService,
             IUnitOfWork unitOfWork,
             ShoppingFoodContext dbContext,
-            IHttpContextAccessor httpContextAccessor
+            IHttpContextAccessor httpContextAccessor,
+            IPlatformFinanceConfigRepository configRepository
             )
         {
             _cartRepository = cartRepository;
@@ -67,6 +69,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             _unitOfWork = unitOfWork;
             _dbContext = dbContext;
             _httpContextAccessor = httpContextAccessor;
+            _configRepository = configRepository;
         }
         public async Task<ApiResponse> Handle(CheckoutCommand request, CancellationToken cancellationToken)
         {
@@ -143,7 +146,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 if (stockValidationResult != null)
                     return stockValidationResult;
 
-                var (totalAmount, shippingFee) = await CalculateTotalAmountAsync(cart.Items);
+                var (totalAmount, shippingFee, shipperIncome) = await CalculateTotalAmountAsync(cart.Items, request.DeliveryLatitude, request.DeliveryLongitude);
                 decimal itemsTotal = cart.Items.Sum(i => i.PriceAtAdded * i.Quantity);
                 var (discountAmount, appliedDiscountId, error) = await ApplyDiscountAsync(request, cart, itemsTotal);
                 if (error != null)
@@ -161,7 +164,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
 
                 totalAmount = Math.Max(0, totalAmount - discountAmount - tierDiscountAmount);
 
-                var order = CreateOrderEntity(request, totalAmount, shippingFee, itemsTotal);
+                var order = CreateOrderEntity(request, totalAmount, shippingFee, shipperIncome, itemsTotal);
                 order.AppliedDiscountId = appliedDiscountId;
                 PopulateOrderItems(order, cart.Items);
 
@@ -325,32 +328,78 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             return null;
         }
 
-        private async Task<(decimal TotalAmount, decimal ShippingFee)> CalculateTotalAmountAsync(IEnumerable<CartItem> items)
+        private async Task<(decimal TotalAmount, decimal ShippingFee, decimal ShipperIncome)> CalculateTotalAmountAsync(IEnumerable<CartItem> items, double? destLat, double? destLon)
         {
             var itemsList = items.ToList();
-
             decimal itemsTotal = itemsList.Sum(i => i.PriceAtAdded * i.Quantity);
-
             var restaurantIds = itemsList.Select(i => i.Product.RestaurantId).Distinct().ToList();
 
             decimal shippingFeeTotal = 0;
+            decimal shipperIncomeTotal = 0;
+
+            var configs = await _configRepository.GetAllAsync();
+            var config = configs.FirstOrDefault();
+            
+            bool isRushHour = false;
+            if (config != null)
+            {
+                var nowTime = DateTime.UtcNow.AddHours(7).TimeOfDay; // Vietnam time
+                if (nowTime >= config.RushHourStartTime && nowTime <= config.RushHourEndTime)
+                {
+                    isRushHour = true;
+                }
+            }
 
             foreach (var restaurantId in restaurantIds)
             {
-                bool hasFreeshipProduct = itemsList.Any(i => i.Product!.RestaurantId == restaurantId && i.Product.IsFreeship);
-
-                if (hasFreeshipProduct)
-                    continue;
-
                 var restaurant = await _restaurantProfileRepository.GetByIdAsync(restaurantId);
+                if (restaurant == null) continue;
 
-                if (restaurant != null)
-                    shippingFeeTotal += restaurant.ShippingFee;
+                bool hasFreeshipProduct = itemsList.Any(i => i.Product!.RestaurantId == restaurantId && i.Product.IsFreeship);
+                decimal feeForRestaurant = restaurant.ShippingFee;
+                decimal incomeForShipper = restaurant.ShippingFee; // default if no config
+
+                if (config != null && destLat.HasValue && destLon.HasValue && restaurant.Latitude.HasValue && restaurant.Longitude.HasValue)
+                {
+                    double dLat = (destLat.Value - restaurant.Latitude.Value) * Math.PI / 180.0;
+                    double dLon = (destLon.Value - restaurant.Longitude.Value) * Math.PI / 180.0;
+                    double a = Math.Pow(Math.Sin(dLat / 2.0), 2.0) + Math.Cos(restaurant.Latitude.Value * Math.PI / 180.0) * Math.Cos(destLat.Value * Math.PI / 180.0) * Math.Pow(Math.Sin(dLon / 2.0), 2.0);
+                    double c = 2.0 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1.0 - a));
+                    double distanceKm = 6371.0 * c;
+
+                    // Customer Shipping Fee
+                    if (distanceKm <= 5.0)
+                    {
+                        feeForRestaurant = config.BaseDeliveryFee;
+                    }
+                    else
+                    {
+                        feeForRestaurant = config.BaseDeliveryFee + (decimal)(distanceKm - 5.0) * config.FeePerKm;
+                    }
+                    if (isRushHour) feeForRestaurant *= config.RushHourMultiplier;
+
+                    // Shipper Income
+                    if (distanceKm <= 5.0)
+                    {
+                        incomeForShipper = config.ShipperBaseFee;
+                    }
+                    else
+                    {
+                        incomeForShipper = config.ShipperBaseFee + (decimal)(distanceKm - 5.0) * config.ShipperFeePerKm;
+                    }
+                    if (isRushHour) incomeForShipper = incomeForShipper * (1m + config.ShipperRushHourBonus / 100m);
+                }
+
+                if (!hasFreeshipProduct)
+                {
+                    shippingFeeTotal += Math.Round(feeForRestaurant, 0);
+                }
+                shipperIncomeTotal += Math.Round(incomeForShipper, 0); // Shipper still earns even if freeship!
             }
-            return (itemsTotal + shippingFeeTotal, shippingFeeTotal);
+            return (itemsTotal + shippingFeeTotal, shippingFeeTotal, shipperIncomeTotal);
         }
 
-        private Order CreateOrderEntity(CheckoutCommand request, decimal totalAmount, decimal shippingFee, decimal itemsSubtotal)
+        private Order CreateOrderEntity(CheckoutCommand request, decimal totalAmount, decimal shippingFee, decimal shipperIncome, decimal itemsSubtotal)
         {
             return new Order
             {
@@ -359,6 +408,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 GuestUserId = request.CurrentUserId.HasValue ? null : request.GuestUserId,
                 TotalAmount = totalAmount,
                 ShippingFee = shippingFee,
+                ShipperIncome = shipperIncome,
                 ItemsSubtotal = itemsSubtotal,
                 DeliveryAddress = request.DeliveryAddress,
                 ContactName = request.ContactName,

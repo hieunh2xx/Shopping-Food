@@ -1,4 +1,4 @@
-namespace ShoppingFood.Application.Interfaces
+namespace ShoppingFood.Core.Interfaces
 {
     public interface INotificationPushService
     {

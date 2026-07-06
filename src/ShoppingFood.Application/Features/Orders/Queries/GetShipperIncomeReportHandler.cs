@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
@@ -56,8 +56,8 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                 var dailyReports = orders.GroupBy(o => o.UpdatedAt.Date).Select(g =>
                 {
                     var ordersInDay = g.ToList();
-                    var dayShippingFee = ordersInDay.Sum(o => o.ShippingFee);
-                    var dayBonus = ordersInDay.Count * 5000m;
+                    var dayShippingFee = ordersInDay.Sum(o => o.ShipperIncome);
+                    var dayBonus = 0m;
                     return new DailyIncomeReportDto
                     {
                         Date = g.Key.ToString("yyyy-MM-dd"),

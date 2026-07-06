@@ -253,5 +253,33 @@ namespace ShoppingFood.API.Controllers
             var response = await _mediator.Send(command);
             return StatusCode(response.Code, response);
         }
+        [HttpGet("finance-config")]
+        public async Task<ActionResult<ApiResponse>> GetPlatformFinanceConfig([FromQuery] GetPlatformFinanceConfigQuery query)
+        {
+            var response = await _mediator.Send(query);
+            return Ok(ApiResponse.Success(response));
+        }
+
+        [HttpPut("finance-config")]
+        public async Task<ActionResult<ApiResponse>> UpdatePlatformFinanceConfig([FromBody] UpdatePlatformFinanceConfigCommand command)
+        {
+            var response = await _mediator.Send(command);
+            return Ok(ApiResponse.Success(response));
+        }
+
+        [HttpGet("finance-config/restaurants")]
+        public async Task<ActionResult<ApiResponse>> GetRestaurantCommissions([FromQuery] GetRestaurantCommissionsQuery query)
+        {
+            var response = await _mediator.Send(query);
+            return Ok(response);
+        }
+
+        [HttpPut("finance-config/restaurants/{id}")]
+        public async Task<ActionResult<ApiResponse>> UpdateRestaurantCommission(Guid id, [FromBody] UpdateRestaurantCommissionCommand command)
+        {
+            command.RestaurantId = id;
+            var response = await _mediator.Send(command);
+            return response ? Ok(ApiResponse.Success(null, "Cập nhật thành công")) : BadRequest(ApiResponse.Failure(400, "Cập nhật thất bại"));
+        }
     }
 }

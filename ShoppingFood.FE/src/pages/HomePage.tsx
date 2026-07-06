@@ -4,6 +4,8 @@ import { ArrowRight, ChefHat, Truck, Shield, Star, History, RotateCcw, MapPin } 
 import { useProducts, useCart, useAuth } from '../hooks';
 import { ProductList } from '../components/product/ProductList';
 import { RestaurantCard } from '../components/restaurant/RestaurantCard';
+import { FlashSaleSection } from '../components/promotions/FlashSaleSection';
+import { BuyXGetYSection } from '../components/promotions/BuyXGetYSection';
 import { restaurantService } from '../services/RestaurantService';
 import { orderService } from '../services/OrderService';
 import type { INearbyRestaurantDto } from '../interfaces';
@@ -148,6 +150,12 @@ export function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Flash Sale */}
+      <FlashSaleSection />
+
+      {/* Buy X Get Y */}
+      <BuyXGetYSection />
 
       {/* Features */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-16">

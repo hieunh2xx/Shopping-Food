@@ -101,6 +101,14 @@ export function Header() {
                           Quản trị hệ thống
                         </Link>
                       )}
+                      {user?.role === 'Coordinator' && (
+                        <Link
+                          to={ROUTES.COORDINATOR_DISPATCH}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600"
+                        >
+                          Kênh điều phối
+                        </Link>
+                      )}
                       {user?.role === 'Seller' && (
                         <Link
                           to={ROUTES.SELLER_DASHBOARD}

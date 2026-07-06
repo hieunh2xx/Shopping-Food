@@ -1,14 +1,15 @@
 import { ProductCard } from './ProductCard';
 import { Loading } from '../common';
-import type { IProductDto } from '../../interfaces';
+import type { IProductDto, IFlashSaleProduct } from '../../interfaces';
 
 interface ProductListProps {
   products: IProductDto[];
   isLoading: boolean;
   emptyMessage?: string;
+  flashSaleProducts?: IFlashSaleProduct[];
 }
 
-export function ProductList({ products, isLoading, emptyMessage = 'Không có sản phẩm nào.' }: ProductListProps) {
+export function ProductList({ products, isLoading, emptyMessage = 'Không có sản phẩm nào.', flashSaleProducts = [] }: ProductListProps) {
   if (isLoading) {
     return (
       <div className="py-20 flex justify-center">
@@ -31,9 +32,12 @@ export function ProductList({ products, isLoading, emptyMessage = 'Không có s�
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {products.map((product) => (
-        <ProductCard key={product.id} product={product} />
-      ))}
+      {products.map((product) => {
+        const flashSaleProduct = flashSaleProducts.find(fsp => fsp.productId === product.id);
+        return (
+          <ProductCard key={product.id} product={product} flashSaleProduct={flashSaleProduct} />
+        );
+      })}
     </div>
   );
 }

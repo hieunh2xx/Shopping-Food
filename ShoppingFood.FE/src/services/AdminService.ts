@@ -111,6 +111,23 @@ class AdminService extends BaseService<unknown> {
   async createSupportTicket(data: ICreateSupportTicketRequest): Promise<IApiResponse<any>> {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ADMIN.SUPPORT_TICKETS, data);
   }
+
+  // Finance Config
+  async getPlatformFinanceConfig(): Promise<IApiResponse<any>> {
+    return httpClient.get<IApiResponse<any>>(`${this.endpoint}/finance-config`);
+  }
+
+  async updatePlatformFinanceConfig(data: any): Promise<IApiResponse<any>> {
+    return httpClient.put<IApiResponse<any>>(`${this.endpoint}/finance-config`, data);
+  }
+
+  async getRestaurantCommissions(params?: { skip?: number; take?: number; filter?: string }): Promise<IApiResponse<any>> {
+    return httpClient.get<IApiResponse<any>>(`${this.endpoint}/finance-config/restaurants`, { params });
+  }
+
+  async updateRestaurantCommission(id: string, customCommissionRate: number | null): Promise<IApiResponse<any>> {
+    return httpClient.put<IApiResponse<any>>(`${this.endpoint}/finance-config/restaurants/${id}`, { customCommissionRate });
+  }
 }
 
 // Export singleton instance

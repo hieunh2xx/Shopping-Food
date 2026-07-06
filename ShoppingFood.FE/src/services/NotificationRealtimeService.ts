@@ -11,34 +11,47 @@ class NotificationRealtimeService {
   }
 
   async startConnection(token: string, userId: string): Promise<void> {
-    if (this.hubConnection?.state === 'Connected') return;
+    if (this.hubConnection?.state === 'Connected' || this.hubConnection?.state === 'Connecting') return;
 
-    this.hubConnection = new HubConnectionBuilder()
-      .withUrl(`${this.getHubBaseUrl()}/hubs/notifications`, { accessTokenFactory: () => token })
-      .configureLogging(import.meta.env.DEV ? LogLevel.Information : LogLevel.Warning)
-      .withAutomaticReconnect()
-      .build();
+    if (!this.hubConnection) {
+        this.hubConnection = new HubConnectionBuilder()
+        .withUrl(`${this.getHubBaseUrl()}/hubs/notifications`, { accessTokenFactory: () => token })
+        .configureLogging(import.meta.env.DEV ? LogLevel.Information : LogLevel.Warning)
+        .withAutomaticReconnect()
+        .build();
 
-    this.hubConnection.on('NotificationReceived', (raw: Record<string, unknown>) => {
-      const notification: INotificationDto = {
-        id: String(raw.id ?? ''),
-        title: String(raw.title ?? ''),
-        message: String(raw.message ?? ''),
-        notificationType: String(raw.notificationType ?? 'System'),
-        isRead: Boolean(raw.isRead ?? false),
-        createAt: String(raw.createAt ?? new Date().toISOString()),
-      };
-      this.callbacks.forEach(cb => cb(notification));
-    });
+        this.hubConnection.on('NotificationReceived', (raw: Record<string, unknown>) => {
+        const notification: INotificationDto = {
+            id: String(raw.id ?? ''),
+            userId: String(raw.userId ?? ''),
+            title: String(raw.title ?? ''),
+            message: String(raw.message ?? ''),
+            notificationType: String(raw.notificationType ?? 'System'),
+            isRead: Boolean(raw.isRead ?? false),
+            createAt: String(raw.createAt ?? new Date().toISOString()),
+        };
+        this.callbacks.forEach(cb => cb(notification));
+        });
+    }
 
-    await this.hubConnection.start();
-    await this.hubConnection.invoke('JoinUser', userId);
+    try {
+        if (this.hubConnection.state === 'Disconnected') {
+            await this.hubConnection.start();
+        }
+        if (this.hubConnection.state === 'Connected') {
+            await this.hubConnection.invoke('JoinUser', userId);
+        }
+    } catch {
+        // Ignore
+    }
   }
 
   async stopConnection(): Promise<void> {
-    if (this.hubConnection) {
-      await this.hubConnection.stop();
-      this.hubConnection = null;
+    const connectionToStop = this.hubConnection;
+    this.hubConnection = null; // Clear synchronously to avoid React strict mode race conditions
+    
+    if (connectionToStop && connectionToStop.state !== 'Disconnected') {
+        await connectionToStop.stop().catch(() => undefined);
     }
   }
 

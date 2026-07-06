@@ -13,9 +13,14 @@ namespace ShoppingFood.Repository
         {
             var connectionString = configuration.GetConnectionString("DefaultConnection") 
                 ?? "Server=(localdb)\\mssqllocaldb;Database=ShoppingFoodDb;Trusted_Connection=True;MultipleActiveResultSets=true";
+            services.AddSingleton<Interceptors.NotificationPushInterceptor>();
 
-            services.AddDbContext<ShoppingFoodContext>(options =>
-                options.UseSqlServer(connectionString));
+            services.AddDbContext<ShoppingFoodContext>((sp, options) =>
+            {
+                var interceptor = sp.GetRequiredService<Interceptors.NotificationPushInterceptor>();
+                options.UseSqlServer(connectionString)
+                       .AddInterceptors(interceptor);
+            });
 
             services.AddDbContext<LogContext>(options =>
                 options.UseSqlServer(connectionString));

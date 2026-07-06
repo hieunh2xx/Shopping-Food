@@ -58,6 +58,7 @@ export { DashboardProfilePage } from './shared/DashboardProfilePage';
 export { CustomerWalletPage } from './payment/CustomerWalletPage';
 export { SellerWalletPage, ShipperWalletPage } from './payment/PartnerWalletPages';
 export { AdminFinancePage } from './admin/AdminFinancePage';
+export { AdminFinanceOperationsPage } from './admin/AdminFinanceOperationsPage';
 export { SepayRedirectPage } from './payment/SepayRedirectPage';
 export { PaymentSuccessPage, PaymentErrorPage, PaymentCancelPage } from './payment/PaymentResultPages';
 export { PaymentHistoryPage } from './payment/PaymentHistoryPage';

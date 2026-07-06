@@ -297,6 +297,14 @@ namespace ShoppingFood.Application.Mappings
                 .ForMember(dest => dest.ShipperProfileId, opt => opt.Ignore());
 
             CreateMap<Faq, FaqDto>();
+            CreateMap<RestaurantProfile, ShoppingFood.Dto.Admin.RestaurantCommissionDto>()
+                .ForMember(dest => dest.RestaurantId, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.RestaurantName, opt => opt.MapFrom(src => src.RestaurantName))
+                .ForMember(dest => dest.CustomCommissionRate, opt => opt.MapFrom(src => src.CustomCommissionRate));
+
+            CreateMap<PlatformFinanceConfig, ShoppingFood.Dto.Admin.PlatformFinanceConfigDto>()
+                .ForMember(dest => dest.RushHourStartTime, opt => opt.MapFrom(src => src.RushHourStartTime.ToString(@"hh\:mm\:ss")))
+                .ForMember(dest => dest.RushHourEndTime, opt => opt.MapFrom(src => src.RushHourEndTime.ToString(@"hh\:mm\:ss")));
         }
     }
 }

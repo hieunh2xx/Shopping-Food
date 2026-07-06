@@ -7,9 +7,11 @@ using ShoppingFood.API.Filters;
 using ShoppingFood.API.Hubs;
 using ShoppingFood.API.Workers;
 using ShoppingFood.Application;
+using ShoppingFood.Core.Interfaces;
 using ShoppingFood.Core.Middlewares;
 using ShoppingFood.Domain.Context;
 using ShoppingFood.Repository;
+using ShoppingFood.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,7 +30,8 @@ builder.Services.AddControllers(options =>
 // Add clean architecture layer service registrations
 builder.Services.AddRepositoryServices(builder.Configuration);
 builder.Services.AddApplicationServices(builder.Configuration);
-builder.Services.AddScoped<ShoppingFood.Application.Interfaces.INotificationPushService, ShoppingFood.API.Services.NotificationPushService>();
+// SignalR Notification push service
+builder.Services.AddScoped<INotificationPushService, NotificationPushService>();
 builder.Services.AddSignalR();
 builder.Services.AddHttpContextAccessor();
 

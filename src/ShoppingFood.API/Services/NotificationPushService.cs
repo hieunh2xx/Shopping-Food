@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.SignalR;
 using ShoppingFood.API.Hubs;
-using ShoppingFood.Application.Interfaces;
+using ShoppingFood.Core.Interfaces;
 
 namespace ShoppingFood.API.Services
 {

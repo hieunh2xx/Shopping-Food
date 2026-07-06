@@ -4,6 +4,7 @@ import { Zap, Plus, Search } from 'lucide-react';
 import { flashSaleService } from '../../services/FlashSaleService';
 import type { IFlashSale } from '../../interfaces';
 import { productService } from '../../services/ProductService';
+import { authService } from '../../services/AuthService';
 import { Button, Input, Modal } from '../../components/common';
 import { formatDate } from '../../utils/formatters';
 
@@ -30,16 +31,28 @@ export function SellerFlashSalesPage() {
 
   const fetchData = async () => {
     try {
+      let restaurantId = '';
+      const profileRes = await authService.getProfile();
+      if (!profileRes.error && profileRes.data?.sellerInfo?.restaurantId) {
+        restaurantId = profileRes.data.sellerInfo.restaurantId;
+      }
+
+      if (!restaurantId) {
+        toast.error('Không tìm thấy thông tin nhà hàng');
+        setIsLoading(false);
+        return;
+      }
+
       const [fsRes, pRes] = await Promise.all([
         flashSaleService.getActiveFlashSales(),
-        productService.search({ skip: 0, take: 100 })
+        productService.search({ restaurantId, status: 'Approved', skip: 0, take: 100 })
       ]);
       
       if (!fsRes.error && fsRes.data) {
         setFlashSales(fsRes.data);
       }
       if (!pRes.error && pRes.data) {
-        setProducts(pRes.data);
+        setProducts(pRes.data.items || pRes.data); // in case search returns paginated response
       }
     } catch (error) {
       toast.error('Lỗi khi tải dữ liệu');

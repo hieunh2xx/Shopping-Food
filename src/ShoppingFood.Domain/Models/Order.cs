@@ -12,6 +12,7 @@ namespace ShoppingFood.Domain.Models
         public Guid? ShipperId { get; set; }
         public decimal TotalAmount { get; set; }
         public decimal ShippingFee { get; set; } = 0;
+        public decimal ShipperIncome { get; set; } = 0;
         public string DeliveryAddress { get; set; } = string.Empty;
         public string ContactName { get; set; } = string.Empty;
         public string ContactPhone { get; set; } = string.Empty;

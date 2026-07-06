@@ -4,13 +4,14 @@ import { Card } from '../common';
 import { formatCurrency } from '../../utils/formatters';
 import { getProductDetailPath } from '../../routes/routeConfig';
 import { useCart } from '../../hooks';
-import type { IProductDto } from '../../interfaces';
+import type { IProductDto, IFlashSaleProduct } from '../../interfaces';
 
 interface ProductCardProps {
   product: IProductDto;
+  flashSaleProduct?: IFlashSaleProduct;
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, flashSaleProduct }: ProductCardProps) {
   const navigate = useNavigate();
   const { addItem } = useCart();
 
@@ -43,11 +44,23 @@ export function ProductCard({ product }: ProductCardProps) {
         )}
 
         {/* Promo Badge - Example static UI */}
-        {product.stockStatus === 'InStock' && (
+        {product.stockStatus === 'InStock' && !flashSaleProduct && (
           <div className="absolute top-3 left-3 flex gap-2">
             <span className="px-2.5 py-1 rounded-lg bg-orange-500 text-white text-xs font-bold shadow-sm">
               Hot
             </span>
+          </div>
+        )}
+
+        {/* Flash Sale Badge */}
+        {flashSaleProduct && (
+          <div className="absolute top-0 right-0">
+            <div className="bg-gradient-to-br from-red-500 to-rose-600 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-xl shadow-lg flex flex-col items-center">
+              <span className="uppercase tracking-wider">⚡ Flash Sale</span>
+              <span className="text-yellow-200">
+                -{Math.round((1 - flashSaleProduct.flashSalePrice / product.price) * 100)}%
+              </span>
+            </div>
           </div>
         )}
       </div>
@@ -69,9 +82,16 @@ export function ProductCard({ product }: ProductCardProps) {
         </p>
 
         <div className="mt-auto flex items-center justify-between">
-          <span className="text-lg font-bold text-orange-600">
-            {formatCurrency(product.price)}
-          </span>
+          <div className="flex flex-col">
+            <span className="text-lg font-bold text-orange-600 leading-none">
+              {formatCurrency(flashSaleProduct ? flashSaleProduct.flashSalePrice : product.price)}
+            </span>
+            {flashSaleProduct && (
+              <span className="text-xs text-gray-400 line-through mt-1">
+                {formatCurrency(product.price)}
+              </span>
+            )}
+          </div>
           {product.availableFrom && (
             <span className="flex items-center gap-1 text-[11px] text-gray-500">
               <Clock className="w-3 h-3" />

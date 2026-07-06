@@ -34,6 +34,7 @@ import {
   AdminFaqPage,
   AdminChatPage,
   AdminFinancePage,
+  AdminFinanceOperationsPage,
   SellerWalletPage,
   ShipperWalletPage,
   NotFoundPage,
@@ -188,6 +189,7 @@ export function AppRoutes() {
         <Route path="faq" element={<AdminFaqPage />} />
         <Route path="chat" element={<AdminChatPage />} />
         <Route path="finance" element={<AdminFinancePage />} />
+        <Route path="finance-config" element={<AdminFinanceOperationsPage />} />
         <Route path="payments" element={<AdminPaymentDashboardPage />} />
         <Route path="profile" element={<DashboardProfilePage />} />
       </Route>

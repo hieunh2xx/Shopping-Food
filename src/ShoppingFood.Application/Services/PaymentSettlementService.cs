@@ -61,12 +61,12 @@ namespace ShoppingFood.Application.Services
         }
 
         public (decimal ItemsSubtotal, decimal PlatformCommission, decimal SellerPayout, decimal ShipperEarning) CalculateSplit(
-            decimal totalAmount, decimal shippingFee, decimal commissionRate, decimal shipperBonus)
+            decimal totalAmount, decimal shippingFee, decimal shipperIncome, decimal commissionRate)
         {
             var itemsSubtotal = Math.Max(0, totalAmount - shippingFee);
             var platformCommission = Math.Round(itemsSubtotal * commissionRate, 0);
             var sellerPayout = itemsSubtotal - platformCommission;
-            var shipperEarning = shippingFee + shipperBonus;
+            var shipperEarning = shipperIncome;
             return (itemsSubtotal, platformCommission, sellerPayout, shipperEarning);
         }
 
@@ -114,7 +114,7 @@ namespace ShoppingFood.Application.Services
         public async Task<string?> ProcessCheckoutPaymentAsync(Order order, Guid? userId, string? cardLastFour = null, string? cardBrand = null, EWalletProvider? provider = null)
         {
             var config = await GetConfigAsync();
-            var split = CalculateSplit(order.TotalAmount, order.ShippingFee, config.CommissionRate, config.ShipperDeliveryBonus);
+            var split = CalculateSplit(order.TotalAmount, order.ShippingFee, order.ShipperIncome, config.CommissionRate);
             order.ItemsSubtotal = split.ItemsSubtotal;
             order.PlatformCommission = split.PlatformCommission;
             order.SellerPayout = split.SellerPayout;
@@ -297,7 +297,7 @@ namespace ShoppingFood.Application.Services
             if (order.IsFinancialSettled) return;
 
             var config = await GetConfigAsync();
-            var split = CalculateSplit(order.TotalAmount, order.ShippingFee, config.CommissionRate, config.ShipperDeliveryBonus);
+            var split = CalculateSplit(order.TotalAmount, order.ShippingFee, order.ShipperIncome, config.CommissionRate);
             order.ItemsSubtotal = split.ItemsSubtotal;
             order.PlatformCommission = split.PlatformCommission;
             order.SellerPayout = split.SellerPayout;

@@ -106,8 +106,14 @@ export function NotificationBell() {
   };
 
   const formatTime = (dateStr: string) => {
+    if (!dateStr) return '';
     try {
-      const date = new Date(dateStr);
+      // Fix EF Core datetime2 stripping UTC kind: append Z if no timezone is provided
+      let parseStr = dateStr;
+      if (!parseStr.endsWith('Z') && !parseStr.includes('+') && parseStr.indexOf('-', 11) === -1) {
+        parseStr += 'Z';
+      }
+      const date = new Date(parseStr);
       const diffMs = new Date().getTime() - date.getTime();
       const diffMins = Math.floor(diffMs / 60000);
       if (diffMins < 1) return 'Vừa xong';

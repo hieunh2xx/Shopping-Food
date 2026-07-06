@@ -68,12 +68,9 @@ namespace ShoppingFood.Application.Features.Orders.Queries
 
                 double distance = CalculateDistanceBetweenShipperAndRestaurant(shipperProfile, restaurant);
 
-                bool isFreeShipping = order.Items.Any(i => i.Product != null && i.Product.IsFreeship);
-                decimal shippingFee = isFreeShipping ? 0 : restaurant.ShippingFee;
-
                 var dto = _mapper.Map<ProposedDeliveryOfferDto>(order);
                 dto.DistanceInKm = distance;
-                dto.ShippingFee = shippingFee;
+                dto.ShippingFee = order.ShipperIncome;
 
                 return ApiResponse.Success(dto, "Successfully retrieved the proposed delivery order details.");
             }

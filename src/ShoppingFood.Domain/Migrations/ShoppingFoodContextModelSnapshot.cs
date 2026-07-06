@@ -728,22 +728,22 @@ namespace ShoppingFood.Domain.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("e32310f6-1909-436a-9a78-49433a8e1c5c"),
-                            CreatedAt = new DateTime(2026, 7, 6, 6, 57, 1, 239, DateTimeKind.Utc).AddTicks(587),
+                            Id = new Guid("4a78632a-b501-4848-b56d-da40f280d6ed"),
+                            CreatedAt = new DateTime(2026, 7, 6, 14, 58, 31, 400, DateTimeKind.Utc).AddTicks(8153),
                             MinPoints = 100,
                             Tier = "Silver"
                         },
                         new
                         {
-                            Id = new Guid("018a4448-4535-44db-b905-ca38b7183315"),
-                            CreatedAt = new DateTime(2026, 7, 6, 6, 57, 1, 239, DateTimeKind.Utc).AddTicks(589),
+                            Id = new Guid("2cb28fee-5298-41e1-80d4-61cad1f48580"),
+                            CreatedAt = new DateTime(2026, 7, 6, 14, 58, 31, 400, DateTimeKind.Utc).AddTicks(8154),
                             MinPoints = 500,
                             Tier = "Gold"
                         },
                         new
                         {
-                            Id = new Guid("30fa7d4e-c028-433e-87b8-b1305fb989c6"),
-                            CreatedAt = new DateTime(2026, 7, 6, 6, 57, 1, 239, DateTimeKind.Utc).AddTicks(591),
+                            Id = new Guid("027a86cc-2640-4825-94ee-103168089e15"),
+                            CreatedAt = new DateTime(2026, 7, 6, 14, 58, 31, 400, DateTimeKind.Utc).AddTicks(8156),
                             MinPoints = 1000,
                             Tier = "Diamond"
                         });
@@ -904,6 +904,9 @@ namespace ShoppingFood.Domain.Migrations
 
                     b.Property<Guid?>("ShipperId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("ShipperIncome")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("ShippingFee")
                         .ValueGeneratedOnAdd()
@@ -1159,6 +1162,11 @@ namespace ShoppingFood.Domain.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<decimal>("BaseDeliveryFee")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(12,2)")
+                        .HasDefaultValue(15000m);
+
                     b.Property<decimal>("CommissionRate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("decimal(5,4)")
@@ -1168,6 +1176,11 @@ namespace ShoppingFood.Domain.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("decimal(12,2)")
                         .HasDefaultValue(5000000m);
+
+                    b.Property<decimal>("FeePerKm")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(12,2)")
+                        .HasDefaultValue(5000m);
 
                     b.Property<decimal>("LargeWithdrawalThreshold")
                         .ValueGeneratedOnAdd()
@@ -1179,7 +1192,28 @@ namespace ShoppingFood.Domain.Migrations
                         .HasColumnType("decimal(12,2)")
                         .HasDefaultValue(50000m);
 
-                    b.Property<decimal>("ShipperDeliveryBonus")
+                    b.Property<TimeSpan>("RushHourEndTime")
+                        .HasColumnType("time");
+
+                    b.Property<decimal>("RushHourMultiplier")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(5,2)")
+                        .HasDefaultValue(1.2m);
+
+                    b.Property<TimeSpan>("RushHourStartTime")
+                        .HasColumnType("time");
+
+                    b.Property<decimal>("ShipperBaseFee")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(12,2)")
+                        .HasDefaultValue(12000m);
+
+                    b.Property<decimal>("ShipperFeePerKm")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(12,2)")
+                        .HasDefaultValue(4000m);
+
+                    b.Property<decimal>("ShipperRushHourBonus")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("decimal(12,2)")
                         .HasDefaultValue(5000m);
@@ -1426,6 +1460,9 @@ namespace ShoppingFood.Domain.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<decimal?>("CustomCommissionRate")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -1827,7 +1864,7 @@ namespace ShoppingFood.Domain.Migrations
 
                     b.HasIndex("ShipperProfileId");
 
-                    b.ToTable("SHIPPER_REPUTATION_HISTORY");
+                    b.ToTable("SHIPPER_REPUTATION_HISTORY", (string)null);
                 });
 
             modelBuilder.Entity("ShoppingFood.Domain.Models.ShipperReview", b =>

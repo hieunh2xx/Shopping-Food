@@ -950,7 +950,12 @@ namespace ShoppingFood.Domain.Context
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.CommissionRate).HasColumnType("decimal(5,4)").HasDefaultValue(0.10m);
                 entity.Property(e => e.DefaultShipperDebtLimit).HasColumnType("decimal(12,2)").HasDefaultValue(5_000_000m);
-                entity.Property(e => e.ShipperDeliveryBonus).HasColumnType("decimal(12,2)").HasDefaultValue(5_000m);
+                entity.Property(e => e.BaseDeliveryFee).HasColumnType("decimal(12,2)").HasDefaultValue(15000m);
+                entity.Property(e => e.FeePerKm).HasColumnType("decimal(12,2)").HasDefaultValue(5000m);
+                entity.Property(e => e.RushHourMultiplier).HasColumnType("decimal(5,2)").HasDefaultValue(1.2m);
+                entity.Property(e => e.ShipperBaseFee).HasColumnType("decimal(12,2)").HasDefaultValue(12000m);
+                entity.Property(e => e.ShipperFeePerKm).HasColumnType("decimal(12,2)").HasDefaultValue(4000m);
+                entity.Property(e => e.ShipperRushHourBonus).HasColumnType("decimal(12,2)").HasDefaultValue(5000m);
                 entity.Property(e => e.MinWithdrawalAmount).HasColumnType("decimal(12,2)").HasDefaultValue(50_000m);
                 entity.Property(e => e.LargeWithdrawalThreshold).HasColumnType("decimal(12,2)").HasDefaultValue(5_000_000m);
             });
