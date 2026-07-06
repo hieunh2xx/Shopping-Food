@@ -1,11 +1,13 @@
 export type ChatSessionStatus = 'Open' | 'Closed';
-export type ChatTopic = 'OrderIssue' | 'SystemIssue' | 'General';
+export type ChatTopic = 'OrderIssue' | 'OrderCancellation' | 'SystemIssue' | 'General';
 export type UserRole = 'Customer' | 'Seller' | 'Shipper' | 'Admin' | 'Coordinator';
 
 export interface IChatSession {
   id: string;
   userId: string;
   supportId?: string;
+  orderId?: string;
+  restaurantId?: string;
   topic: ChatTopic;
   status: ChatSessionStatus;
   createdAt: string;

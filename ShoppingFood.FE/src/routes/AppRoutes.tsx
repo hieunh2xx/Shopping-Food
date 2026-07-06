@@ -63,6 +63,12 @@ import {
   AuthShipperApplyPage,
   DashboardProfilePage,
   UserReportIncidentPage,
+  SepayRedirectPage,
+  PaymentSuccessPage,
+  PaymentErrorPage,
+  PaymentCancelPage,
+  PaymentHistoryPage,
+  AdminPaymentDashboardPage,
 } from '../pages';
 
 /**
@@ -87,6 +93,15 @@ export function AppRoutes() {
         <Route path={ROUTES.RESTAURANT_DETAIL} element={<RestaurantDetailPage />} />
         <Route path={ROUTES.PROMOTIONS} element={<PromotionsPage />} />
         <Route path={ROUTES.CHECKOUT} element={<CheckoutPage />} />
+        <Route path={ROUTES.PAYMENT_SEPAY} element={<PrivateRoute><SepayRedirectPage /></PrivateRoute>} />
+        <Route path={ROUTES.PAYMENT_SUCCESS} element={<PaymentSuccessPage />} />
+        <Route path={ROUTES.PAYMENT_ERROR} element={<PaymentErrorPage />} />
+        <Route path={ROUTES.PAYMENT_CANCEL} element={<PaymentCancelPage />} />
+        <Route path={ROUTES.PAYMENT_HISTORY} element={
+          <PrivateRoute allowedRoles={['Customer', 'Seller', 'Admin', 'Mall', 'Shipper', 'Coordinator']}>
+            <PaymentHistoryPage />
+          </PrivateRoute>
+        } />
         <Route path={ROUTES.GUEST_ORDER_TRACKING} element={<GuestOrderTrackingPage />} />
         <Route path={ROUTES.HELP_CENTER} element={<HelpCenterPage />} />
         <Route path={ROUTES.REPORT_INCIDENT} element={<PrivateRoute><UserReportIncidentPage /></PrivateRoute>} />
@@ -167,6 +182,7 @@ export function AppRoutes() {
         <Route path="faq" element={<AdminFaqPage />} />
         <Route path="chat" element={<AdminChatPage />} />
         <Route path="finance" element={<AdminFinancePage />} />
+        <Route path="payments" element={<AdminPaymentDashboardPage />} />
         <Route path="profile" element={<DashboardProfilePage />} />
       </Route>
 

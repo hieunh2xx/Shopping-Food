@@ -216,6 +216,12 @@ namespace ShoppingFood.Domain.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<Guid?>("OrderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("RestaurantId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -722,22 +728,22 @@ namespace ShoppingFood.Domain.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("0b22ea39-cc1d-4141-82f3-bfd3881c0267"),
-                            CreatedAt = new DateTime(2026, 7, 6, 4, 26, 18, 311, DateTimeKind.Utc).AddTicks(2001),
+                            Id = new Guid("e32310f6-1909-436a-9a78-49433a8e1c5c"),
+                            CreatedAt = new DateTime(2026, 7, 6, 6, 57, 1, 239, DateTimeKind.Utc).AddTicks(587),
                             MinPoints = 100,
                             Tier = "Silver"
                         },
                         new
                         {
-                            Id = new Guid("d0d24f71-3b51-437b-a42d-ad5bbc900e80"),
-                            CreatedAt = new DateTime(2026, 7, 6, 4, 26, 18, 311, DateTimeKind.Utc).AddTicks(2004),
+                            Id = new Guid("018a4448-4535-44db-b905-ca38b7183315"),
+                            CreatedAt = new DateTime(2026, 7, 6, 6, 57, 1, 239, DateTimeKind.Utc).AddTicks(589),
                             MinPoints = 500,
                             Tier = "Gold"
                         },
                         new
                         {
-                            Id = new Guid("68876806-6642-472a-aa91-562e40ac08f1"),
-                            CreatedAt = new DateTime(2026, 7, 6, 4, 26, 18, 311, DateTimeKind.Utc).AddTicks(2006),
+                            Id = new Guid("30fa7d4e-c028-433e-87b8-b1305fb989c6"),
+                            CreatedAt = new DateTime(2026, 7, 6, 6, 57, 1, 239, DateTimeKind.Utc).AddTicks(591),
                             MinPoints = 1000,
                             Tier = "Diamond"
                         });
@@ -1105,12 +1111,28 @@ namespace ShoppingFood.Domain.Migrations
                     b.Property<DateTime>("ExpiresAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("ExternalTransactionId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("InvoiceNumber")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
                     b.Property<Guid?>("OrderId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("PaymentMethod")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SepayOrderId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("SepayPaymentMethod")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -1123,6 +1145,10 @@ namespace ShoppingFood.Domain.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("InvoiceNumber")
+                        .IsUnique()
+                        .HasFilter("[InvoiceNumber] IS NOT NULL");
 
                     b.ToTable("PAYMENT_SESSION", (string)null);
                 });
@@ -1557,6 +1583,48 @@ namespace ShoppingFood.Domain.Migrations
                     b.HasIndex("UserProfileId");
 
                     b.ToTable("SELLER_APPLICATION", (string)null);
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.SepayWebhookLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("EventKey")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsProcessed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<Guid?>("PaymentSessionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ProcessedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RawPayload")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventKey")
+                        .IsUnique();
+
+                    b.ToTable("SEPAY_WEBHOOK_LOG", (string)null);
                 });
 
             modelBuilder.Entity("ShoppingFood.Domain.Models.ShipperApplication", b =>

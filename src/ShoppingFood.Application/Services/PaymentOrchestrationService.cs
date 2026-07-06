@@ -1,0 +1,236 @@
+using Microsoft.Extensions.Options;
+using ShoppingFood.Application.Interfaces;
+using ShoppingFood.Application.Models;
+using ShoppingFood.Application.Options;
+using ShoppingFood.Core.Interfaces;
+using ShoppingFood.Domain.Enums;
+using ShoppingFood.Domain.Models;
+using ShoppingFood.Repository.Interfaces;
+
+namespace ShoppingFood.Application.Services
+{
+    public class PaymentOrchestrationService : IPaymentOrchestrationService
+    {
+        private readonly IPaymentCacheService _cache;
+        private readonly IPaymentMessageQueue _queue;
+        private readonly IPaymentSessionRepository _sessionRepository;
+        private readonly ISepayWebhookLogRepository _webhookLogRepository;
+        private readonly IPaymentSettlementService _paymentService;
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly ISepayService _sepayService;
+        private readonly SepayOptions _options;
+
+        public PaymentOrchestrationService(
+            IPaymentCacheService cache,
+            IPaymentMessageQueue queue,
+            IPaymentSessionRepository sessionRepository,
+            ISepayWebhookLogRepository webhookLogRepository,
+            IPaymentSettlementService paymentService,
+            IUnitOfWork unitOfWork,
+            ISepayService sepayService,
+            IOptions<SepayOptions> options)
+        {
+            _cache = cache;
+            _queue = queue;
+            _sessionRepository = sessionRepository;
+            _webhookLogRepository = webhookLogRepository;
+            _paymentService = paymentService;
+            _unitOfWork = unitOfWork;
+            _sepayService = sepayService;
+            _options = options.Value;
+        }
+
+        public Task RegisterPaymentCacheAsync(PaymentSession session, string? qrImageUrl = null)
+        {
+            _cache.Set(new PaymentCacheEntry
+            {
+                PaymentId = session.Id,
+                InvoiceNumber = session.InvoiceNumber ?? string.Empty,
+                Amount = session.Amount,
+                OrderId = session.OrderId,
+                UserId = session.UserAccountId,
+                Status = session.Status.ToString(),
+                CreatedAt = session.CreatedAt,
+                ExpiresAt = session.ExpiresAt,
+                QrImageUrl = qrImageUrl
+            });
+            return Task.CompletedTask;
+        }
+
+        public async Task<Guid> PersistWebhookAndEnqueueAsync(
+            string eventKey,
+            string eventType,
+            string rawPayload,
+            PaymentConfirmationMessage? confirmation = null)
+        {
+            var log = new SepayWebhookLog
+            {
+                Id = Guid.NewGuid(),
+                EventKey = eventKey,
+                EventType = eventType,
+                RawPayload = rawPayload,
+                IsProcessed = false,
+                CreatedAt = DateTime.UtcNow
+            };
+            _webhookLogRepository.Add(log);
+            await _unitOfWork.SaveChangesAsync();
+
+            if (confirmation != null)
+            {
+                confirmation.WebhookLogId = log.Id;
+                await _queue.EnqueueAsync(confirmation);
+            }
+
+            return log.Id;
+        }
+
+        public async Task<bool> ProcessConfirmationAsync(PaymentConfirmationMessage message)
+        {
+            var sessions = await _sessionRepository.GetAsync(
+                predicate: s => s.InvoiceNumber == message.InvoiceNumber,
+                disableTracking: false);
+            var session = sessions.FirstOrDefault();
+            if (session == null) return false;
+
+            if (session.Status == PaymentSessionStatus.Completed)
+            {
+                await MarkWebhookProcessedAsync(message.WebhookLogId, session.Id);
+                _cache.UpdateStatus(session.Id, "Paid");
+                return true;
+            }
+
+            if (session.Status == PaymentSessionStatus.Expired)
+                return false;
+
+            if (session.ExpiresAt < DateTime.UtcNow)
+            {
+                session.Status = PaymentSessionStatus.Expired;
+                session.UpdatedAt = DateTime.UtcNow;
+                _sessionRepository.Update(session);
+                _cache.UpdateStatus(session.Id, "Expired");
+                await _unitOfWork.SaveChangesAsync();
+                return false;
+            }
+
+            if (Math.Abs(message.Amount - session.Amount) > 1)
+                return false;
+
+            _cache.UpdateStatus(session.Id, "Processing");
+
+            var confirmed = await _paymentService.ConfirmPaymentSessionByInvoiceAsync(
+                message.InvoiceNumber, message.Amount, message.ExternalTransactionId);
+
+            if (confirmed)
+            {
+                session.SepayOrderId ??= message.ExternalTransactionId;
+                session.UpdatedAt = DateTime.UtcNow;
+                _sessionRepository.Update(session);
+                _cache.UpdateStatus(session.Id, "Paid");
+                await MarkWebhookProcessedAsync(message.WebhookLogId, session.Id);
+                await _unitOfWork.SaveChangesAsync();
+                return true;
+            }
+
+            return false;
+        }
+
+        public async Task ExpireStaleSessionsAsync()
+        {
+            var now = DateTime.UtcNow;
+            var sessions = await _sessionRepository.GetAsync(
+                predicate: s => s.Status == PaymentSessionStatus.Pending && s.ExpiresAt < now,
+                disableTracking: false);
+
+            foreach (var session in sessions)
+            {
+                session.Status = PaymentSessionStatus.Expired;
+                session.UpdatedAt = now;
+                _sessionRepository.Update(session);
+                _cache.UpdateStatus(session.Id, "Expired");
+            }
+
+            if (sessions.Any())
+                await _unitOfWork.SaveChangesAsync();
+        }
+
+        public async Task ReplayUnprocessedWebhooksAsync()
+        {
+            var logs = await _webhookLogRepository.GetAsync(
+                predicate: l => !l.IsProcessed,
+                orderBy: q => q.OrderBy(l => l.CreatedAt),
+                disableTracking: true);
+
+            foreach (var log in logs)
+            {
+                try
+                {
+                    var payload = Newtonsoft.Json.Linq.JObject.Parse(log.RawPayload);
+                    PaymentConfirmationMessage? msg = null;
+
+                    if (log.EventKey.StartsWith("ipn:", StringComparison.Ordinal))
+                    {
+                        var invoice = payload["order"]?["order_invoice_number"]?.ToString();
+                        var amountStr = payload["order"]?["order_amount"]?.ToString();
+                        if (!string.IsNullOrEmpty(invoice) && decimal.TryParse(amountStr, out var amt))
+                        {
+                            msg = new PaymentConfirmationMessage
+                            {
+                                EventKey = log.EventKey,
+                                InvoiceNumber = invoice,
+                                Amount = amt,
+                                Source = "Replay-IPN",
+                                ExternalTransactionId = payload["transaction"]?["transaction_id"]?.ToString(),
+                                WebhookLogId = log.Id
+                            };
+                        }
+                    }
+                    else if (log.EventKey.StartsWith("wh:", StringComparison.Ordinal))
+                    {
+                        var code = payload["code"]?.Type == Newtonsoft.Json.Linq.JTokenType.Null
+                            ? null
+                            : payload["code"]?.ToString();
+                        if (string.IsNullOrWhiteSpace(code))
+                            code = payload["content"]?.ToString();
+                        var amount = payload["transferAmount"]?.ToObject<decimal?>();
+                        if (!string.IsNullOrEmpty(code) && amount.HasValue)
+                        {
+                            var invoiceFromCode = _sepayService.ResolveInvoiceFromTransferCode(code) ?? code.Trim();
+                            msg = new PaymentConfirmationMessage
+                            {
+                                EventKey = log.EventKey,
+                                InvoiceNumber = invoiceFromCode,
+                                Amount = amount.Value,
+                                Source = "Replay-Webhook",
+                                ExternalTransactionId = payload["referenceCode"]?.ToString(),
+                                WebhookLogId = log.Id
+                            };
+                        }
+                    }
+
+                    if (msg != null)
+                        await _queue.EnqueueAsync(msg);
+                }
+                catch
+                {
+                    // skip malformed payloads
+                }
+            }
+        }
+
+        private async Task MarkWebhookProcessedAsync(Guid? webhookLogId, Guid sessionId)
+        {
+            if (!webhookLogId.HasValue) return;
+
+            var logs = await _webhookLogRepository.GetAsync(
+                predicate: l => l.Id == webhookLogId.Value,
+                disableTracking: false);
+            var log = logs.FirstOrDefault();
+            if (log == null) return;
+
+            log.IsProcessed = true;
+            log.ProcessedAt = DateTime.UtcNow;
+            log.PaymentSessionId = sessionId;
+            _webhookLogRepository.Update(log);
+        }
+    }
+}

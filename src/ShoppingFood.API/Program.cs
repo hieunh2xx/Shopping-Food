@@ -20,16 +20,20 @@ builder.Services.AddControllers(options =>
     options.Filters.Add<CheckSellerSuspensionAttribute>();
 }).AddNewtonsoftJson(options => 
 {
+    options.SerializerSettings.ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver();
     options.SerializerSettings.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter());
 });
 
 // Add clean architecture layer service registrations
 builder.Services.AddRepositoryServices(builder.Configuration);
-builder.Services.AddApplicationServices();
+builder.Services.AddApplicationServices(builder.Configuration);
+builder.Services.AddScoped<ShoppingFood.Application.Interfaces.INotificationPushService, ShoppingFood.API.Services.NotificationPushService>();
 builder.Services.AddSignalR();
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddHostedService<MemberTierEvaluationWorker>();
+builder.Services.AddHostedService<PaymentProcessingWorker>();
+builder.Services.AddHostedService<PaymentExpiryWorker>();
 
 // Add API documentation via Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
@@ -147,5 +151,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<ChatHub>("/hubs/chat");
+app.MapHub<NotificationHub>("/hubs/notifications");
 
 app.Run();

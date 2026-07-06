@@ -50,16 +50,29 @@ namespace ShoppingFood.Application.Features.Payments.Commands
     public class ConfirmPaymentSessionHandler : IRequestHandler<ConfirmPaymentSessionCommand, ApiResponse>
     {
         private readonly IPaymentSettlementService _paymentService;
+        private readonly IPaymentSessionRepository _sessionRepository;
         private readonly IUnitOfWork _unitOfWork;
 
-        public ConfirmPaymentSessionHandler(IPaymentSettlementService paymentService, IUnitOfWork unitOfWork)
+        public ConfirmPaymentSessionHandler(
+            IPaymentSettlementService paymentService,
+            IPaymentSessionRepository sessionRepository,
+            IUnitOfWork unitOfWork)
         {
             _paymentService = paymentService;
+            _sessionRepository = sessionRepository;
             _unitOfWork = unitOfWork;
         }
 
         public async Task<ApiResponse> Handle(ConfirmPaymentSessionCommand request, CancellationToken cancellationToken)
         {
+            var sessions = await _sessionRepository.GetAsync(predicate: s => s.Id == request.SessionId);
+            var session = sessions.FirstOrDefault();
+            if (session == null)
+                return ApiResponse.Failure(404, "Phiên thanh toán không tồn tại.");
+
+            if (session.PaymentMethod == PaymentMethod.Sepay)
+                return ApiResponse.Failure(400, "Thanh toán SePay chỉ được xác nhận sau khi ngân hàng gửi webhook.");
+
             await _paymentService.ConfirmPaymentSessionAsync(request.SessionId);
             await _unitOfWork.SaveChangesAsync();
             return ApiResponse.Success(null, "Thanh toán thành công.");

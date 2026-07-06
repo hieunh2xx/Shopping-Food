@@ -1,6 +1,6 @@
 
 export const ENV = {
-  API_BASE_URL: import.meta.env.VITE_API_BASE_URL as string,
+  API_BASE_URL: (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:5091/api',
   JWT_ISSUER: import.meta.env.VITE_JWT_ISSUER as string,
   APP_NAME: import.meta.env.VITE_APP_NAME as string,
   GOOGLE_CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID as string,

@@ -7,6 +7,7 @@ interface ModalProps {
   title?: string;
   children: ReactNode;
   size?: 'sm' | 'md' | 'lg';
+  closeOnBackdrop?: boolean;
 }
 
 const sizeClasses = {
@@ -15,7 +16,7 @@ const sizeClasses = {
   lg: 'max-w-2xl',
 };
 
-export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, size = 'md', closeOnBackdrop = true }: ModalProps) {
   // Close on Escape key
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -38,7 +39,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
-        onClick={onClose}
+        onClick={closeOnBackdrop ? onClose : undefined}
       />
 
       {/* Modal content */}

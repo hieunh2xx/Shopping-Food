@@ -161,7 +161,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
 
                 totalAmount = Math.Max(0, totalAmount - discountAmount - tierDiscountAmount);
 
-                var order = CreateOrderEntity(request, totalAmount, shippingFee);
+                var order = CreateOrderEntity(request, totalAmount, shippingFee, itemsTotal);
                 order.AppliedDiscountId = appliedDiscountId;
                 PopulateOrderItems(order, cart.Items);
 
@@ -186,9 +186,16 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 {
                     OrderId = order.Id,
                     totalAmount = order.TotalAmount,
+                    itemsSubtotal = order.ItemsSubtotal > 0 ? order.ItemsSubtotal : itemsTotal,
+                    shippingFee = order.ShippingFee,
+                    discountAmount = discountAmount + tierDiscountAmount,
                     paymentStatus = order.PaymentStatus.ToString(),
+                    paymentMethod = order.PaymentMethod.ToString(),
                     paymentSessionId = order.PaymentSessionId,
                     requiresPaymentConfirmation = order.PaymentSessionId.HasValue
+                        && order.PaymentMethod != PaymentMethod.Sepay,
+                    requiresSepayRedirect = order.PaymentMethod == PaymentMethod.Sepay
+                        && order.PaymentSessionId.HasValue
                 };
                 return ApiResponse.Success(responseData, "Checkout successful.");
             }
@@ -343,7 +350,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             return (itemsTotal + shippingFeeTotal, shippingFeeTotal);
         }
 
-        private Order CreateOrderEntity(CheckoutCommand request, decimal totalAmount, decimal shippingFee)
+        private Order CreateOrderEntity(CheckoutCommand request, decimal totalAmount, decimal shippingFee, decimal itemsSubtotal)
         {
             return new Order
             {
@@ -352,6 +359,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 GuestUserId = request.CurrentUserId.HasValue ? null : request.GuestUserId,
                 TotalAmount = totalAmount,
                 ShippingFee = shippingFee,
+                ItemsSubtotal = itemsSubtotal,
                 DeliveryAddress = request.DeliveryAddress,
                 ContactName = request.ContactName,
                 ContactPhone = request.ContactPhone,

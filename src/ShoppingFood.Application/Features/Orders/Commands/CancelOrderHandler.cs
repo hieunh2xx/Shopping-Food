@@ -36,7 +36,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     return ApiResponse.Failure(404, "Order not found");
 
                 if(order.Status != OrderStatus.Pending)
-                    return ApiResponse.Failure(400, "Only pending orders can be cancelled");
+                    return ApiResponse.Failure(400, "Chỉ hủy được khi người bán chưa xác nhận đơn. Sau khi xác nhận, vui lòng nhắn tin người bán để yêu cầu hủy.");
 
                 if (order.UserAccountId.HasValue)
                 {

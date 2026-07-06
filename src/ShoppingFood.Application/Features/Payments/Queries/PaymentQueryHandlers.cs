@@ -225,4 +225,140 @@ namespace ShoppingFood.Application.Features.Payments.Queries
             }, "Reconciliation report generated.");
         }
     }
+
+    public class GetPaymentHistoryQuery : IRequest<ApiResponse>
+    {
+        public Guid? CurrentUserId { get; set; }
+        public int Skip { get; set; }
+        public int Take { get; set; } = 50;
+    }
+
+    public class GetPaymentHistoryHandler : IRequestHandler<GetPaymentHistoryQuery, ApiResponse>
+    {
+        private readonly IPaymentSessionRepository _sessionRepository;
+        private readonly IOrderRepository _orderRepository;
+
+        public GetPaymentHistoryHandler(
+            IPaymentSessionRepository sessionRepository,
+            IOrderRepository orderRepository)
+        {
+            _sessionRepository = sessionRepository;
+            _orderRepository = orderRepository;
+        }
+
+        public async Task<ApiResponse> Handle(GetPaymentHistoryQuery request, CancellationToken cancellationToken)
+        {
+            if (!request.CurrentUserId.HasValue)
+                return ApiResponse.Failure(401, "Unauthorized.");
+
+            var sessions = await _sessionRepository.GetAsync(
+                predicate: s => s.UserAccountId == request.CurrentUserId,
+                orderBy: q => q.OrderByDescending(s => s.CreatedAt),
+                disableTracking: true);
+
+            var items = sessions.Skip(request.Skip).Take(request.Take).Select(s => new
+            {
+                paymentId = s.Id,
+                s.InvoiceNumber,
+                s.Amount,
+                status = s.Status.ToString(),
+                paymentMethod = s.PaymentMethod.ToString(),
+                s.OrderId,
+                s.CreatedAt,
+                s.ExpiresAt,
+                s.ExternalTransactionId,
+                isPaid = s.Status == PaymentSessionStatus.Completed
+            }).ToList();
+
+            return ApiResponse.Success(new { total = sessions.Count, items }, "Payment history.");
+        }
+    }
+
+    public class GetPaymentDashboardQuery : IRequest<ApiResponse>
+    {
+        public Guid? CurrentUserId { get; set; }
+        public DateTime? FromDate { get; set; }
+        public DateTime? ToDate { get; set; }
+    }
+
+    public class GetPaymentDashboardHandler : IRequestHandler<GetPaymentDashboardQuery, ApiResponse>
+    {
+        private readonly IPaymentSessionRepository _sessionRepository;
+        private readonly ISepayWebhookLogRepository _webhookLogRepository;
+        private readonly IPaymentMessageQueue _queue;
+        private readonly IUserRepository _userRepository;
+
+        public GetPaymentDashboardHandler(
+            IPaymentSessionRepository sessionRepository,
+            ISepayWebhookLogRepository webhookLogRepository,
+            IPaymentMessageQueue queue,
+            IUserRepository userRepository)
+        {
+            _sessionRepository = sessionRepository;
+            _webhookLogRepository = webhookLogRepository;
+            _queue = queue;
+            _userRepository = userRepository;
+        }
+
+        public async Task<ApiResponse> Handle(GetPaymentDashboardQuery request, CancellationToken cancellationToken)
+        {
+            if (!request.CurrentUserId.HasValue)
+                return ApiResponse.Failure(401, "Unauthorized.");
+
+            var users = await _userRepository.GetAsync(
+                predicate: u => u.Id == request.CurrentUserId.Value,
+                include: q => q.Include(u => u.Profile));
+            if (users.FirstOrDefault()?.Profile?.Role != UserRole.Admin)
+                return ApiResponse.Failure(403, "Forbidden.");
+
+            var from = request.FromDate ?? DateTime.UtcNow.AddDays(-7);
+            var to = request.ToDate ?? DateTime.UtcNow;
+
+            var sessions = await _sessionRepository.GetAsync(
+                predicate: s => s.CreatedAt >= from && s.CreatedAt <= to,
+                disableTracking: true);
+
+            var webhooks = await _webhookLogRepository.GetAsync(
+                predicate: l => l.CreatedAt >= from && l.CreatedAt <= to,
+                disableTracking: true);
+
+            return ApiResponse.Success(new
+            {
+                period = new { from, to },
+                summary = new
+                {
+                    totalSessions = sessions.Count,
+                    paid = sessions.Count(s => s.Status == PaymentSessionStatus.Completed),
+                    pending = sessions.Count(s => s.Status == PaymentSessionStatus.Pending),
+                    expired = sessions.Count(s => s.Status == PaymentSessionStatus.Expired),
+                    failed = sessions.Count(s => s.Status == PaymentSessionStatus.Failed),
+                    totalVolume = sessions.Where(s => s.Status == PaymentSessionStatus.Completed).Sum(s => s.Amount),
+                    sepayCount = sessions.Count(s => s.PaymentMethod == PaymentMethod.Sepay),
+                    queuePending = _queue.PendingCount,
+                    webhooksReceived = webhooks.Count,
+                    webhooksProcessed = webhooks.Count(w => w.IsProcessed)
+                },
+                recentSessions = sessions.OrderByDescending(s => s.CreatedAt).Take(20).Select(s => new
+                {
+                    paymentId = s.Id,
+                    s.InvoiceNumber,
+                    s.Amount,
+                    status = s.Status.ToString(),
+                    paymentMethod = s.PaymentMethod.ToString(),
+                    s.OrderId,
+                    s.CreatedAt,
+                    s.ExpiresAt
+                }),
+                recentWebhooks = webhooks.OrderByDescending(w => w.CreatedAt).Take(10).Select(w => new
+                {
+                    w.Id,
+                    w.EventKey,
+                    w.EventType,
+                    w.IsProcessed,
+                    w.ProcessedAt,
+                    w.CreatedAt
+                })
+            }, "Payment dashboard.");
+        }
+    }
 }

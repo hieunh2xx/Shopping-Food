@@ -8,9 +8,12 @@ import { formatCurrency } from '../utils/formatters';
 import { orderService } from '../services/OrderService';
 import { discountService } from '../services/DiscountService';
 import { paymentService, type IPaymentMethod } from '../services/PaymentService';
-import type { IDiscountDto } from '../interfaces';
+import { restaurantService } from '../services/RestaurantService';
+import { userAddressService } from '../services/UserAddressService';
+import type { IDiscountDto, IUserAddressDto } from '../interfaces';
 import toast from 'react-hot-toast';
 import { Modal } from '../components/common/Modal';
+import { SepayQrPaymentModal } from '../components/payment/SepayQrPaymentModal';
 import { Tag } from 'lucide-react';
 
 export function CheckoutPage() {
@@ -54,7 +57,7 @@ export function CheckoutPage() {
     contactEmail: user?.email || '',
     deliveryAddress: '',
     note: '',
-    paymentMethod: 'COD' as 'COD' | 'CreditCard' | 'EWallet' | 'SystemWallet',
+    paymentMethod: 'COD' as 'COD' | 'CreditCard' | 'EWallet' | 'SystemWallet' | 'Sepay',
     eWalletProvider: 'Momo' as 'Momo' | 'ZaloPay' | 'VNPay',
     cardLastFour: '',
     cardBrand: 'Visa',
@@ -72,13 +75,18 @@ export function CheckoutPage() {
   const [otpCode, setOtpCode] = useState('');
   const [step, setStep] = useState<1 | 2>(1); // 1: Info, 2: OTP (if guest)
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [sepaySessionId, setSepaySessionId] = useState<string | null>(null);
+  const [isSepayModalOpen, setIsSepayModalOpen] = useState(false);
+  const [restaurantShippingFee, setRestaurantShippingFee] = useState(0);
+  const [savedAddresses, setSavedAddresses] = useState<IUserAddressDto[]>([]);
+  const [saveAddress, setSaveAddress] = useState(true);
 
   useEffect(() => {
-    if (items.length === 0) {
+    if (items.length === 0 && !isSepayModalOpen && !sepaySessionId) {
       toast('Giỏ hàng trống, quay lại trang chủ');
       navigate(ROUTES.HOME);
     }
-  }, [items, navigate]);
+  }, [items, navigate, isSepayModalOpen, sepaySessionId]);
 
   useEffect(() => {
     if (restaurantId) {
@@ -89,6 +97,43 @@ export function CheckoutPage() {
       });
     }
   }, [restaurantId, checkoutTotal]);
+
+  const hasFreeshipItem = useMemo(
+    () => checkoutItems.some(item => item.product.isFreeship),
+    [checkoutItems]
+  );
+
+  const shippingFee = useMemo(
+    () => (hasFreeshipItem ? 0 : restaurantShippingFee),
+    [hasFreeshipItem, restaurantShippingFee]
+  );
+
+  useEffect(() => {
+    if (!restaurantId) return;
+    restaurantService.getDetail(restaurantId).then(res => {
+      if (!res.error && res.data) {
+        setRestaurantShippingFee(res.data.shippingFee ?? 0);
+      }
+    });
+  }, [restaurantId]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    userAddressService.getAddresses().then(res => {
+      if (!res.error && res.data?.length) {
+        setSavedAddresses(res.data);
+        const defaultAddr = res.data.find(a => a.isDefault) ?? res.data[0];
+        if (defaultAddr && !formData.deliveryAddress) {
+          setFormData(prev => ({
+            ...prev,
+            contactName: prev.contactName || defaultAddr.contactName,
+            contactPhone: prev.contactPhone || defaultAddr.contactPhone,
+            deliveryAddress: defaultAddr.addressLine,
+          }));
+        }
+      }
+    });
+  }, [isAuthenticated]);
 
   useEffect(() => {
     paymentService.getPaymentMethods().then(res => {
@@ -104,20 +149,27 @@ export function CheckoutPage() {
     }
   }, [isAuthenticated]);
 
-  const finalTotal = useMemo(() => {
-    if (!selectedDiscount) return checkoutTotal;
-    let discountAmount = 0;
+  const discountAmount = useMemo(() => {
+    if (!selectedDiscount) return 0;
+    if (selectedDiscount.type === 'FreeShipping') return shippingFee;
     if (selectedDiscount.type === 'Percentage') {
-      discountAmount = (checkoutTotal * selectedDiscount.value) / 100;
-      if (selectedDiscount.maxDiscountAmount && discountAmount > selectedDiscount.maxDiscountAmount) {
-        discountAmount = selectedDiscount.maxDiscountAmount;
+      let amt = (checkoutTotal * selectedDiscount.value) / 100;
+      if (selectedDiscount.maxDiscountAmount && amt > selectedDiscount.maxDiscountAmount) {
+        amt = selectedDiscount.maxDiscountAmount;
       }
-    } else if (selectedDiscount.type === 'FixedAmount') {
-      discountAmount = selectedDiscount.value;
+      return amt;
     }
-    // Note: FreeShipping logic would require shipping fee calculation first
-    return Math.max(0, checkoutTotal - discountAmount);
-  }, [checkoutTotal, selectedDiscount]);
+    if (selectedDiscount.type === 'FixedAmount') return selectedDiscount.value;
+    return 0;
+  }, [checkoutTotal, selectedDiscount, shippingFee]);
+
+  const finalTotal = useMemo(() => {
+    const subtotalWithShipping = checkoutTotal + shippingFee;
+    if (selectedDiscount?.type === 'FreeShipping') {
+      return Math.max(0, checkoutTotal - discountAmount);
+    }
+    return Math.max(0, subtotalWithShipping - discountAmount);
+  }, [checkoutTotal, shippingFee, discountAmount, selectedDiscount]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -178,6 +230,34 @@ export function CheckoutPage() {
     }
   };
 
+  const persistDeliveryAddress = async () => {
+    if (!isAuthenticated || !saveAddress) return;
+    const exists = savedAddresses.some(
+      a => a.addressLine.trim().toLowerCase() === formData.deliveryAddress.trim().toLowerCase()
+        && a.contactPhone === formData.contactPhone
+    );
+    if (exists) return;
+    try {
+      await userAddressService.addAddress({
+        contactName: formData.contactName,
+        contactPhone: formData.contactPhone,
+        addressLine: formData.deliveryAddress,
+        isDefault: savedAddresses.length === 0,
+      });
+    } catch {
+      // không chặn luồng đặt hàng
+    }
+  };
+
+  const handleSelectSavedAddress = (addr: IUserAddressDto) => {
+    setFormData(prev => ({
+      ...prev,
+      contactName: addr.contactName,
+      contactPhone: addr.contactPhone,
+      deliveryAddress: addr.addressLine,
+    }));
+  };
+
   const handleCheckout = async () => {
     if (!isAuthenticated && !otpCode) {
       toast.error('Vui lòng nhập mã OTP');
@@ -197,12 +277,23 @@ export function CheckoutPage() {
       };
       const res = await orderService.checkout(checkoutPayload);
       const orderId = res.data?.orderId || res.data?.OrderId || '';
-      const sessionId = res.data?.paymentSessionId;
+      const sessionId = res.data?.paymentSessionId || res.data?.PaymentSessionId || '';
+      const requiresSepay = res.data?.requiresSepayRedirect === true || res.data?.RequiresSepayRedirect === true;
+      const requiresConfirm = res.data?.requiresPaymentConfirmation === true || res.data?.RequiresPaymentConfirmation === true;
 
-      if (sessionId) {
+      if (requiresSepay && sessionId) {
+        await persistDeliveryAddress();
+        setSepaySessionId(sessionId);
+        setIsSepayModalOpen(true);
+        toast.success('Đơn hàng đã tạo. Quét mã QR bên dưới để thanh toán.');
+        return;
+      }
+
+      if (requiresConfirm && sessionId) {
         await paymentService.confirmPayment(sessionId);
       }
 
+      await persistDeliveryAddress();
       clearCart();
       if (isAuthenticated) {
         toast.success('Đặt hàng thành công!');
@@ -288,12 +379,42 @@ export function CheckoutPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
                       <MapPin className="w-4 h-4 mr-1.5 text-gray-400" /> Địa chỉ giao hàng
                     </label>
+                    {isAuthenticated && savedAddresses.length > 0 && (
+                      <div className="mb-2 flex flex-wrap gap-2">
+                        {savedAddresses.map(addr => (
+                          <button
+                            key={addr.id}
+                            type="button"
+                            onClick={() => handleSelectSavedAddress(addr)}
+                            className={`text-left text-xs px-3 py-2 rounded-lg border transition-colors max-w-full ${
+                              formData.deliveryAddress === addr.addressLine
+                                ? 'border-orange-500 bg-orange-50 text-orange-800'
+                                : 'border-gray-200 hover:border-orange-300'
+                            }`}
+                          >
+                            <span className="font-semibold block">{addr.contactName}</span>
+                            <span className="text-gray-500 line-clamp-1">{addr.addressLine}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                     <Input 
                       name="deliveryAddress" 
                       value={formData.deliveryAddress} 
                       onChange={handleInputChange} 
                       placeholder="Số nhà, tên đường, phường/xã, quận/huyện..." 
                     />
+                    {isAuthenticated && (
+                      <label className="mt-2 flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={saveAddress}
+                          onChange={e => setSaveAddress(e.target.checked)}
+                          className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                        />
+                        Lưu địa chỉ này để dùng lại lần sau
+                      </label>
+                    )}
                   </div>
                   
                   <div>
@@ -502,12 +623,21 @@ export function CheckoutPage() {
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Phí giao hàng</span>
-                  <span className="font-medium">---</span>
+                  <span className="font-medium">
+                    {hasFreeshipItem ? (
+                      <span className="text-green-600">Miễn phí</span>
+                    ) : (
+                      formatCurrency(shippingFee)
+                    )}
+                  </span>
                 </div>
-                {selectedDiscount && selectedDiscount.type !== 'FreeShipping' && (
+                {selectedDiscount && discountAmount > 0 && (
                   <div className="flex justify-between text-green-600">
-                    <span>Giảm giá ({selectedDiscount.code})</span>
-                    <span className="font-medium">-{formatCurrency(checkoutTotal - finalTotal)}</span>
+                    <span>
+                      Giảm giá ({selectedDiscount.code}
+                      {selectedDiscount.type === 'FreeShipping' ? ' — miễn ship' : ''})
+                    </span>
+                    <span className="font-medium">-{formatCurrency(discountAmount)}</span>
                   </div>
                 )}
                 
@@ -550,6 +680,22 @@ export function CheckoutPage() {
           </div>
         </div>
       </Modal>
+
+      <SepayQrPaymentModal
+        isOpen={isSepayModalOpen}
+        sessionId={sepaySessionId ?? ''}
+        onClose={() => {
+          setIsSepayModalOpen(false);
+          clearCart();
+          navigate(ROUTES.ORDERS);
+        }}
+        onPaid={(invoiceNumber) => {
+          setIsSepayModalOpen(false);
+          setSepaySessionId(null);
+          clearCart();
+          navigate(`${ROUTES.PAYMENT_SUCCESS}?invoice=${invoiceNumber}&sessionId=${sepaySessionId}`);
+        }}
+      />
     </div>
   );
 }

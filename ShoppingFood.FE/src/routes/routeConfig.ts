@@ -57,6 +57,12 @@ export const ROUTES = {
   COORDINATOR_HISTORY: '/coordinator/history',
   COORDINATOR_INCIDENTS: '/coordinator/incidents',
   COORDINATOR_CHAT: '/coordinator/chat',
+  PAYMENT_SEPAY: '/payment/sepay',
+  PAYMENT_SUCCESS: '/payment/success',
+  PAYMENT_ERROR: '/payment/error',
+  PAYMENT_CANCEL: '/payment/cancel',
+  PAYMENT_HISTORY: '/payment/history',
+  ADMIN_PAYMENTS: '/admin/payments',
 } as const;
 
 /**

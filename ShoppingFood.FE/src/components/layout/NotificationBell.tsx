@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { Bell, Check, Loader2, Info, AlertTriangle, ShieldCheck, Heart } from 'lucide-react';
 import { notificationService } from '../../services';
+import { notificationRealtimeService } from '../../services/NotificationRealtimeService';
+import { useAuth } from '../../hooks';
 import type { INotificationDto } from '../../interfaces';
 import toast from 'react-hot-toast';
 
 export function NotificationBell() {
+  const { user, token } = useAuth();
   const [notifications, setNotifications] = useState<INotificationDto[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -40,10 +43,26 @@ export function NotificationBell() {
 
   useEffect(() => {
     fetchNotifications();
-    // Poll notifications every 30 seconds for real-time updates
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
-  }, []);
+
+    if (!user?.id || !token) {
+      const interval = setInterval(fetchNotifications, 30000);
+      return () => clearInterval(interval);
+    }
+
+    const onRealtime = (n: INotificationDto) => {
+      setNotifications(prev => [n, ...prev.filter(x => x.id !== n.id)]);
+      setUnreadCount(prev => prev + 1);
+      toast(n.title, { icon: '🔔' });
+    };
+
+    notificationRealtimeService.onNotification(onRealtime);
+    notificationRealtimeService.startConnection(token, user.id).catch(() => undefined);
+
+    return () => {
+      notificationRealtimeService.offNotification(onRealtime);
+      notificationRealtimeService.stopConnection().catch(() => undefined);
+    };
+  }, [user?.id, token]);
 
   const handleToggle = () => {
     setIsOpen(!isOpen);

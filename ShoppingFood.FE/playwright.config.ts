@@ -7,6 +7,8 @@ import { defineConfig, devices } from '@playwright/test';
  *   npm run test:e2e          — headless
  *   npm run test:e2e:headed   — headed (watch)
  *   npm run test:e2e:ui       — interactive UI mode
+ *   npm run test:walkthrough    — headed walkthrough (all flows linked)
+ *   npm run test:walkthrough:ui — walkthrough in Playwright UI Mode
  */
 export default defineConfig({
   testDir: './e2e/tests',
@@ -57,6 +59,21 @@ export default defineConfig({
       name: 'desktop-chrome',
       use: { ...devices['Desktop Chrome'] },
       dependencies: ['auth-setup'],
+    },
+    // Headed walkthrough — links all business flows for visual review
+    {
+      name: 'walkthrough',
+      testDir: './e2e/walkthrough',
+      timeout: 600_000,
+      use: {
+        ...devices['Desktop Chrome'],
+        headless: false,
+        video: 'on',
+        trace: 'on',
+        launchOptions: {
+          slowMo: Number(process.env.WALKTHROUGH_SLOW_MO ?? 400),
+        },
+      },
     },
   ],
 });

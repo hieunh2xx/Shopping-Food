@@ -12,6 +12,8 @@ namespace ShoppingFood.Domain.Models
         public Guid Id { get; set; }
         public Guid UserId { get; set; }
         public Guid? SupportId { get; set; }
+        public Guid? OrderId { get; set; }
+        public Guid? RestaurantId { get; set; }
         public ChatTopic Topic { get; set; }
         public ChatSessionStatus Status { get; set; } = ChatSessionStatus.Open;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

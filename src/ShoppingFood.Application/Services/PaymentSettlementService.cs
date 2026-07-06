@@ -17,6 +17,9 @@ namespace ShoppingFood.Application.Services
         private readonly IRestaurantProfileRepository _restaurantProfileRepository;
         private readonly IShipperProfileRepository _shipperProfileRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ISepayService _sepayService;
+        private readonly IPaymentCacheService _paymentCache;
+        private readonly ISepayBankAccountResolver _bankAccountResolver;
 
         public PaymentSettlementService(
             IPlatformFinanceConfigRepository configRepository,
@@ -26,7 +29,10 @@ namespace ShoppingFood.Application.Services
             IOrderRepository orderRepository,
             IRestaurantProfileRepository restaurantProfileRepository,
             IShipperProfileRepository shipperProfileRepository,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            ISepayService sepayService,
+            IPaymentCacheService paymentCache,
+            ISepayBankAccountResolver bankAccountResolver)
         {
             _configRepository = configRepository;
             _walletRepository = walletRepository;
@@ -36,6 +42,9 @@ namespace ShoppingFood.Application.Services
             _restaurantProfileRepository = restaurantProfileRepository;
             _shipperProfileRepository = shipperProfileRepository;
             _unitOfWork = unitOfWork;
+            _sepayService = sepayService;
+            _paymentCache = paymentCache;
+            _bankAccountResolver = bankAccountResolver;
         }
 
         public async Task<PlatformFinanceConfig> GetConfigAsync()
@@ -151,6 +160,48 @@ namespace ShoppingFood.Application.Services
                     order.PaymentStatus = PaymentStatus.Pending;
                     return null;
 
+                case PaymentMethod.Sepay:
+                    if (!_sepayService.IsEnabled)
+                        return "Cổng thanh toán SePay chưa được cấu hình.";
+                    if (!userId.HasValue)
+                        return "Thanh toán online SePay yêu cầu đăng nhập.";
+                    var bank = await _bankAccountResolver.ResolveAsync();
+                    if (bank == null)
+                        return "Chưa cấu hình tài khoản ngân hàng SePay để tạo mã QR. Liên hệ quản trị viên.";
+                    var sepaySessionId = Guid.NewGuid();
+                    var invoiceNumber = _sepayService.GenerateInvoiceNumber(sepaySessionId);
+                    var qrUrl = _sepayService.BuildQrImageUrl(invoiceNumber, order.TotalAmount, bank);
+                    var sepaySession = new PaymentSession
+                    {
+                        Id = sepaySessionId,
+                        OrderId = order.Id,
+                        UserAccountId = userId,
+                        PaymentMethod = PaymentMethod.Sepay,
+                        Amount = order.TotalAmount,
+                        Status = PaymentSessionStatus.Pending,
+                        InvoiceNumber = invoiceNumber,
+                        ExpiresAt = DateTime.UtcNow.AddMinutes(10),
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+                    _paymentSessionRepository.Add(sepaySession);
+                    order.PaymentSessionId = sepaySession.Id;
+                    order.PaymentStatus = PaymentStatus.Pending;
+
+                    _paymentCache.Set(new Application.Models.PaymentCacheEntry
+                    {
+                        PaymentId = sepaySession.Id,
+                        InvoiceNumber = invoiceNumber,
+                        Amount = order.TotalAmount,
+                        OrderId = order.Id,
+                        UserId = userId,
+                        Status = "Pending",
+                        CreatedAt = sepaySession.CreatedAt,
+                        ExpiresAt = sepaySession.ExpiresAt,
+                        QrImageUrl = qrUrl
+                    });
+                    return null;
+
                 default:
                     return "Phương thức thanh toán không hợp lệ.";
             }
@@ -182,6 +233,63 @@ namespace ShoppingFood.Application.Services
                     _orderRepository.Update(order);
                 }
             }
+        }
+
+        public async Task<bool> ConfirmPaymentSessionByInvoiceAsync(
+            string invoiceNumber,
+            decimal? paidAmount = null,
+            string? externalTransactionId = null)
+        {
+            var resolvedInvoice = _sepayService.ResolveInvoiceFromTransferCode(invoiceNumber) ?? invoiceNumber.Trim();
+
+            var sessions = await _paymentSessionRepository.GetAsync(
+                predicate: s => s.InvoiceNumber == resolvedInvoice,
+                disableTracking: false);
+            var session = sessions.FirstOrDefault();
+            if (session == null)
+                return false;
+
+            if (session.Status == PaymentSessionStatus.Completed)
+                return true;
+
+            if (session.Status != PaymentSessionStatus.Pending)
+                return false;
+
+            if (session.Status == PaymentSessionStatus.Expired)
+                return false;
+
+            if (session.ExpiresAt < DateTime.UtcNow)
+            {
+                session.Status = PaymentSessionStatus.Expired;
+                session.UpdatedAt = DateTime.UtcNow;
+                _paymentSessionRepository.Update(session);
+                return false;
+            }
+
+            if (paidAmount.HasValue && Math.Abs(paidAmount.Value - session.Amount) > 1)
+                return false;
+
+            session.Status = PaymentSessionStatus.Completed;
+            session.UpdatedAt = DateTime.UtcNow;
+            if (!string.IsNullOrWhiteSpace(externalTransactionId))
+                session.ExternalTransactionId = externalTransactionId;
+            _paymentSessionRepository.Update(session);
+
+            if (session.OrderId.HasValue)
+            {
+                var orders = await _orderRepository.GetAsync(
+                    predicate: o => o.Id == session.OrderId.Value,
+                    disableTracking: false);
+                var order = orders.FirstOrDefault();
+                if (order != null)
+                {
+                    order.PaymentStatus = PaymentStatus.Paid;
+                    order.UpdatedAt = DateTime.UtcNow;
+                    _orderRepository.Update(order);
+                }
+            }
+
+            return true;
         }
 
         public async Task SettleOrderOnDeliveryAsync(Order order, ShipperProfile shipper)

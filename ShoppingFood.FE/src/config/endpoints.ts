@@ -228,6 +228,11 @@ export const API_ENDPOINTS = {
     REPAY_DEBT: '/Payment/shipper/repay-debt',
     DEBT_LIMIT: '/Payment/shipper/debt-limit',
     RECONCILIATION: '/Payment/reconciliation',
+    SEPAY_CHECKOUT: (sessionId: string) => `/Payment/sepay/checkout/${sessionId}`,
+    SEPAY_QR: (sessionId: string) => `/Payment/sepay/qr/${sessionId}`,
+    SEPAY_STATUS: '/Payment/sepay/session/status',
+    HISTORY: '/Payment/history',
+    DASHBOARD: '/Payment/dashboard',
   },
 } as const;
 

@@ -24,6 +24,7 @@ export interface IRestaurantProfileDto {
   isFavorite?: boolean;
   openingTime?: string;
   closingTime?: string;
+  shippingFee: number;
   products: IProductDto[];
 }
 

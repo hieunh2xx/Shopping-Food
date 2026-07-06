@@ -9,4 +9,5 @@ namespace ShoppingFood.Repository.Interfaces
     public interface IEInvoiceRequestRepository : IAsyncRepository<EInvoiceRequest> { }
     public interface IPlatformFinanceConfigRepository : IAsyncRepository<PlatformFinanceConfig> { }
     public interface IPaymentSessionRepository : IAsyncRepository<PaymentSession> { }
+    public interface ISepayWebhookLogRepository : IAsyncRepository<SepayWebhookLog> { }
 }

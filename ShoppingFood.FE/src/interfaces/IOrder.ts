@@ -4,6 +4,11 @@ export interface IOrderSummary {
   status: string;
   paymentMethod: string;
   createdAt: string;
+  canCancel?: boolean;
+  canMessageSeller?: boolean;
+  restaurantId?: string;
+  restaurantName?: string;
+  orderChatSessionId?: string;
 }
 
 export interface ISendCheckoutOtpRequest {

@@ -16,5 +16,6 @@ namespace ShoppingFood.Application.Interfaces
         Task SettleOrderOnDeliveryAsync(Order order, ShipperProfile shipper);
         Task<string?> ProcessRefundAsync(Order order);
         Task ConfirmPaymentSessionAsync(Guid sessionId);
+        Task<bool> ConfirmPaymentSessionByInvoiceAsync(string invoiceNumber, decimal? paidAmount = null, string? externalTransactionId = null);
     }
 }

@@ -63,7 +63,8 @@ namespace ShoppingFood.Domain.Enums
         COD,
         CreditCard,
         EWallet,
-        SystemWallet
+        SystemWallet,
+        Sepay
     }
 
     public enum PaymentStatus
@@ -236,6 +237,7 @@ namespace ShoppingFood.Domain.Enums
     public enum ChatTopic
     {
         OrderIssue,
+        OrderCancellation,
         SystemIssue,
         General
     }

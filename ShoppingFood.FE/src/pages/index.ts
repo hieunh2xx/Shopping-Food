@@ -55,3 +55,7 @@ export { DashboardProfilePage } from './shared/DashboardProfilePage';
 export { CustomerWalletPage } from './payment/CustomerWalletPage';
 export { SellerWalletPage, ShipperWalletPage } from './payment/PartnerWalletPages';
 export { AdminFinancePage } from './admin/AdminFinancePage';
+export { SepayRedirectPage } from './payment/SepayRedirectPage';
+export { PaymentSuccessPage, PaymentErrorPage, PaymentCancelPage } from './payment/PaymentResultPages';
+export { PaymentHistoryPage } from './payment/PaymentHistoryPage';
+export { AdminPaymentDashboardPage } from './admin/AdminPaymentDashboardPage';

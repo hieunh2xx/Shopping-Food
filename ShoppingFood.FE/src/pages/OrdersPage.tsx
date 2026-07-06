@@ -5,8 +5,9 @@ import { shipperService } from '../services/ShipperService';
 import { authService } from '../services/AuthService';
 import type { IOrderSummary } from '../interfaces';
 import toast from 'react-hot-toast';
-import { PackageOpen, XCircle, RefreshCw, AlertTriangle, Star } from 'lucide-react';
+import { PackageOpen, XCircle, RefreshCw, AlertTriangle, Star, MessageCircle } from 'lucide-react';
 import { Button, Input, Modal } from '../components/common';
+import { OrderSellerChatModal } from '../components/chat/OrderSellerChatModal';
 
 export function OrdersPage() {
   const [orders, setOrders] = useState<IOrderSummary[]>([]);
@@ -17,6 +18,13 @@ export function OrdersPage() {
   const [orderComplaintModal, setOrderComplaintModal] = useState({ isOpen: false, orderId: '', reason: '', description: '', evidenceImageUrl: '' });
   const [shipperComplaintModal, setShipperComplaintModal] = useState({ isOpen: false, orderId: '', reason: '', description: '', evidenceImageUrl: '' });
   const [shipperReviewModal, setShipperReviewModal] = useState({ isOpen: false, orderId: '', rating: 5, comment: '' });
+  const [sellerChat, setSellerChat] = useState<{
+    isOpen: boolean;
+    orderId: string;
+    sessionId?: string;
+    restaurantId?: string;
+    restaurantName?: string;
+  }>({ isOpen: false, orderId: '' });
 
   useEffect(() => {
     fetchOrders();
@@ -48,13 +56,28 @@ export function OrdersPage() {
     });
   };
 
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'Pending': return 'Chờ xác nhận';
+      case 'Confirmed': return 'Đã xác nhận';
+      case 'Preparing': return 'Đang chuẩn bị';
+      case 'WaitingForShipper': return 'Chờ tài xế';
+      case 'Shipping': return 'Đang giao';
+      case 'Delivered': return 'Đã giao';
+      case 'Cancelled': return 'Đã hủy';
+      default: return status;
+    }
+  };
+
   const getStatusColor = (status: string) => {
-    switch(status.toLowerCase()) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'processing': return 'bg-blue-100 text-blue-800';
-      case 'shipped': return 'bg-purple-100 text-purple-800';
-      case 'delivered': return 'bg-green-100 text-green-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
+    switch (status) {
+      case 'Pending': return 'bg-yellow-100 text-yellow-800';
+      case 'Confirmed': return 'bg-blue-100 text-blue-800';
+      case 'Preparing': return 'bg-indigo-100 text-indigo-800';
+      case 'WaitingForShipper': return 'bg-purple-100 text-purple-800';
+      case 'Shipping': return 'bg-orange-100 text-orange-800';
+      case 'Delivered': return 'bg-green-100 text-green-800';
+      case 'Cancelled': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -184,14 +207,14 @@ export function OrdersPage() {
                 <div className="flex items-center gap-3 mb-2">
                   <span className="font-semibold text-gray-800">Đơn hàng #{order.id.substring(0, 8)}</span>
                   <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusColor(order.status)}`}>
-                    {order.status}
+                    {getStatusLabel(order.status)}
                   </span>
                 </div>
                 <p className="text-sm text-gray-500">Ngày đặt: {formatDate(order.createdAt)}</p>
                 <p className="text-sm text-gray-500 mb-4">Thanh toán: {order.paymentMethod}</p>
                 
-                <div className="flex gap-2">
-                  {order.status.toLowerCase() === 'pending' && (
+                <div className="flex flex-wrap gap-2">
+                  {(order.canCancel ?? order.status === 'Pending') && (
                     <Button 
                       variant="outline" 
                       size="sm"
@@ -201,7 +224,24 @@ export function OrdersPage() {
                       <XCircle className="w-4 h-4 mr-1.5" /> Hủy đơn
                     </Button>
                   )}
-                  {['delivered', 'cancelled'].includes(order.status.toLowerCase()) && (
+                  {(order.canMessageSeller) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSellerChat({
+                        isOpen: true,
+                        orderId: order.id,
+                        sessionId: order.orderChatSessionId,
+                        restaurantId: order.restaurantId,
+                        restaurantName: order.restaurantName,
+                      })}
+                      className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                    >
+                      <MessageCircle className="w-4 h-4 mr-1.5" />
+                      Nhắn {order.restaurantName ? order.restaurantName : 'người bán'}
+                    </Button>
+                  )}
+                  {['Delivered', 'Cancelled'].includes(order.status) && (
                     <Button 
                       variant="outline" 
                       size="sm"
@@ -211,7 +251,7 @@ export function OrdersPage() {
                       <RefreshCw className="w-4 h-4 mr-1.5" /> Đặt lại
                     </Button>
                   )}
-                  {order.status.toLowerCase() !== 'pending' && (
+                  {order.status !== 'Pending' && !order.canMessageSeller && (
                     <Button 
                       variant="outline" 
                       size="sm"
@@ -220,7 +260,7 @@ export function OrdersPage() {
                       <AlertTriangle className="w-4 h-4 mr-1.5" /> Hỗ trợ đơn
                     </Button>
                   )}
-                  {['shipped', 'delivered'].includes(order.status.toLowerCase()) && (
+                  {['Shipping', 'Delivered'].includes(order.status) && (
                     <Button 
                       variant="outline" 
                       size="sm"
@@ -229,7 +269,7 @@ export function OrdersPage() {
                       <AlertTriangle className="w-4 h-4 mr-1.5 text-orange-500" /> Báo cáo TX
                     </Button>
                   )}
-                  {order.status.toLowerCase() === 'delivered' && (
+                  {order.status === 'Delivered' && (
                     <Button 
                       variant="outline" 
                       size="sm"
@@ -249,6 +289,15 @@ export function OrdersPage() {
           ))}
         </div>
       )}
+
+      <OrderSellerChatModal
+        isOpen={sellerChat.isOpen}
+        onClose={() => setSellerChat({ isOpen: false, orderId: '' })}
+        orderId={sellerChat.orderId}
+        sessionId={sellerChat.sessionId}
+        restaurantId={sellerChat.restaurantId}
+        title={sellerChat.restaurantName ? `Chat với ${sellerChat.restaurantName}` : undefined}
+      />
 
       {/* Modals */}
       <Modal

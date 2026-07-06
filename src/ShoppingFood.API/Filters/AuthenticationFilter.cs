@@ -76,7 +76,23 @@ namespace ShoppingFood.API.Filters
                                     path.Equals("/api/LoyaltyPoint/gifts", StringComparison.OrdinalIgnoreCase)) ||
 
                                 (method == "GET" &&
-                                    path.Equals("/api/Payment/methods", StringComparison.OrdinalIgnoreCase));
+                                    path.Equals("/api/Payment/methods", StringComparison.OrdinalIgnoreCase)) ||
+
+                                (method == "POST" &&
+                                    path.StartsWith("/api/Payment/sepay/ipn", StringComparison.OrdinalIgnoreCase)) ||
+
+                                ((method == "GET" || method == "HEAD") &&
+                                    path.Equals("/api/Payment/sepay/ipn", StringComparison.OrdinalIgnoreCase)) ||
+
+                                (method == "POST" &&
+                                    path.StartsWith("/api/Payment/sepay/webhook", StringComparison.OrdinalIgnoreCase)) ||
+
+                                ((method == "GET" || method == "HEAD") &&
+                                    (path.Equals("/api/Payment/sepay/webhook", StringComparison.OrdinalIgnoreCase) ||
+                                     path.StartsWith("/api/Payment/sepay/webhook/", StringComparison.OrdinalIgnoreCase))) ||
+
+                                (method == "GET" &&
+                                    path.StartsWith("/api/Payment/sepay/session/status", StringComparison.OrdinalIgnoreCase));
 
             bool isGuestCartRequest = (path.StartsWith("/api/Cart", StringComparison.OrdinalIgnoreCase) ||
                                        path.StartsWith("/api/Order/checkout", StringComparison.OrdinalIgnoreCase) ||

@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using MediatR;
 using ShoppingFood.Application.Features.Payments.Commands;
 using ShoppingFood.Application.Features.Payments.Queries;
-
 namespace ShoppingFood.API.Controllers
 {
     public class PaymentController : CommonController
@@ -98,6 +97,22 @@ namespace ShoppingFood.API.Controllers
 
         [HttpGet("reconciliation")]
         public async Task<IActionResult> GetReconciliation([FromQuery] GetReconciliationReportQuery query)
+        {
+            query.CurrentUserId = userDto?.Id;
+            var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpGet("history")]
+        public async Task<IActionResult> GetPaymentHistory([FromQuery] GetPaymentHistoryQuery query)
+        {
+            query.CurrentUserId = userDto?.Id;
+            var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpGet("dashboard")]
+        public async Task<IActionResult> GetPaymentDashboard([FromQuery] GetPaymentDashboardQuery query)
         {
             query.CurrentUserId = userDto?.Id;
             var response = await _mediator.Send(query);

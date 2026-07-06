@@ -65,6 +65,7 @@ namespace ShoppingFood.Domain.Context
         public DbSet<EInvoiceRequest> EInvoiceRequests { get; set; } = null!;
         public DbSet<PlatformFinanceConfig> PlatformFinanceConfigs { get; set; } = null!;
         public DbSet<PaymentSession> PaymentSessions { get; set; } = null!;
+        public DbSet<SepayWebhookLog> SepayWebhookLogs { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -957,6 +958,22 @@ namespace ShoppingFood.Domain.Context
                 entity.Property(e => e.Status).HasConversion<string>().IsRequired();
                 entity.Property(e => e.CardLastFour).HasMaxLength(4);
                 entity.Property(e => e.CardBrand).HasMaxLength(20);
+                entity.Property(e => e.InvoiceNumber).HasMaxLength(64);
+                entity.HasIndex(e => e.InvoiceNumber).IsUnique().HasFilter("[InvoiceNumber] IS NOT NULL");
+                entity.Property(e => e.SepayOrderId).HasMaxLength(100);
+                entity.Property(e => e.ExternalTransactionId).HasMaxLength(100);
+                entity.Property(e => e.SepayPaymentMethod).HasMaxLength(50);
+            });
+
+            modelBuilder.Entity<SepayWebhookLog>(entity =>
+            {
+                entity.ToTable("SEPAY_WEBHOOK_LOG");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.EventKey).HasMaxLength(200).IsRequired();
+                entity.HasIndex(e => e.EventKey).IsUnique();
+                entity.Property(e => e.EventType).HasMaxLength(50);
+                entity.Property(e => e.RawPayload).HasColumnType("nvarchar(max)");
+                entity.Property(e => e.IsProcessed).HasDefaultValue(false);
             });
         }
     }

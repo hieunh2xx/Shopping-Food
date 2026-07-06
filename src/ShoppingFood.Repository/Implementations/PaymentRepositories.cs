@@ -34,4 +34,9 @@ namespace ShoppingFood.Repository.Implementations
     {
         public PaymentSessionRepository(ShoppingFoodContext dbContext) : base(dbContext) { }
     }
+
+    public class SepayWebhookLogRepository : RepositoryBase<SepayWebhookLog>, ISepayWebhookLogRepository
+    {
+        public SepayWebhookLogRepository(ShoppingFoodContext dbContext) : base(dbContext) { }
+    }
 }
