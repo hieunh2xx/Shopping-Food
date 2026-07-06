@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { User, Send, Clock, AlertCircle } from 'lucide-react';
 import { chatService } from '../../services';
 import { useAuth } from '../../hooks';
@@ -12,6 +12,34 @@ export function SupportChatDashboard() {
   const [inputText, setInputText] = useState('');
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const handleReceiveMessage = useCallback((message: IChatMessage) => {
+    setMessages(prev => {
+      const sessionMsgs = prev[message.sessionId] || [];
+      if (sessionMsgs.some(m => m.id === message.id)) return prev;
+      const optimisticIndex = sessionMsgs.findIndex(m =>
+        m.senderId === message.senderId && m.content === message.content && m.id.length < 20
+      );
+      const updatedMsgs = optimisticIndex !== -1
+        ? sessionMsgs.map((m, i) => (i === optimisticIndex ? message : m))
+        : [...sessionMsgs, message];
+      return { ...prev, [message.sessionId]: updatedMsgs };
+    });
+  }, []);
+
+  const handleNewSession = useCallback((newSession: IChatSession) => {
+    setSessions(prev => (prev.find(s => s.id === newSession.id) ? prev : [newSession, ...prev]));
+    chatService.joinSession(newSession.id).catch(console.error);
+  }, []);
+
+  const handleSupportJoined = useCallback((sessId: string, supportId: string) => {
+    setSessions(prev => prev.map(s => (s.id === sessId ? { ...s, supportId } : s)));
+  }, []);
+
+  const handleSessionClosed = useCallback((sessId: string) => {
+    setSessions(prev => prev.filter(s => s.id !== sessId));
+    setActiveSessionId(prev => (prev === sessId ? null : prev));
+  }, []);
 
   useEffect(() => {
     fetchSessions();
@@ -35,68 +63,32 @@ export function SupportChatDashboard() {
     }
   };
 
-  // Connect SignalR globally for support
   useEffect(() => {
-    if (token) {
-      chatService.startConnection(token).then(() => {
-        chatService.joinSupportGroup().catch(console.error);
-      });
+    if (!token) return;
 
-      chatService.onReceiveMessage((message: IChatMessage) => {
-        setMessages(prev => {
-          const sessionMsgs = prev[message.sessionId] || [];
-          const existsById = sessionMsgs.some(m => m.id === message.id);
-          if (existsById) return prev;
+    const connect = async () => {
+      try {
+        await chatService.startConnection(token);
+        await chatService.joinSupportGroup();
+        chatService.onReceiveMessage(handleReceiveMessage);
+        chatService.onNewSession(handleNewSession);
+        chatService.onSupportJoined(handleSupportJoined);
+        chatService.onSessionClosed(handleSessionClosed);
+      } catch (err) {
+        console.error('Support chat SignalR failed', err);
+      }
+    };
 
-          const optimisticIndex = sessionMsgs.findIndex(m => 
-            m.senderId === message.senderId && 
-            m.content === message.content && 
-            m.id.length < 20
-          );
+    connect();
 
-          let updatedMsgs = [...sessionMsgs];
-          if (optimisticIndex !== -1) {
-            updatedMsgs[optimisticIndex] = message;
-          } else {
-            updatedMsgs.push(message);
-          }
-
-          return {
-            ...prev,
-            [message.sessionId]: updatedMsgs
-          };
-        });
-      });
-
-      chatService.onNewSession((newSession: IChatSession) => {
-        setSessions(prev => {
-          if (prev.find(s => s.id === newSession.id)) return prev;
-          return [newSession, ...prev];
-        });
-        // Automatically join the new session to receive its messages
-        chatService.joinSession(newSession.id).catch(console.error);
-      });
-
-      chatService.onSupportJoined((sessId, supportId) => {
-        setSessions(prev => prev.map(s => s.id === sessId ? { ...s, supportId } : s));
-      });
-
-      chatService.onSessionClosed((sessId) => {
-        setSessions(prev => prev.filter(s => s.id !== sessId));
-        if (activeSessionId === sessId) {
-          setActiveSessionId(null);
-        }
-      });
-
-      return () => {
-        chatService.offReceiveMessage(() => {});
-        chatService.offNewSession(() => {});
-        chatService.offSupportJoined(() => {});
-        chatService.offSessionClosed(() => {});
-        chatService.stopConnection();
-      };
-    }
-  }, [token, activeSessionId]);
+    return () => {
+      chatService.offReceiveMessage(handleReceiveMessage);
+      chatService.offNewSession(handleNewSession);
+      chatService.offSupportJoined(handleSupportJoined);
+      chatService.offSessionClosed(handleSessionClosed);
+      chatService.stopConnection();
+    };
+  }, [token, handleReceiveMessage, handleNewSession, handleSupportJoined, handleSessionClosed]);
 
   useEffect(() => {
     if (activeSessionId) {

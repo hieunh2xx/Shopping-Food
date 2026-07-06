@@ -16,6 +16,9 @@ import {
   User,
   HelpCircle,
   MessageSquare,
+  DollarSign,
+  CreditCard
+  MessageSquare,
   ServerCog
 } from 'lucide-react';
 import { useAuth } from '../../../hooks';
@@ -47,6 +50,9 @@ export function AdminLayout() {
     { name: 'Xử lý khiếu nại', path: ROUTES.ADMIN_INCIDENTS, icon: ShieldAlert },
     { name: 'Quản lý FAQ', path: ROUTES.ADMIN_FAQ, icon: HelpCircle },
     { name: 'Live Chat', path: ROUTES.ADMIN_CHAT, icon: MessageSquare },
+    { name: 'Tài chính', path: ROUTES.ADMIN_FINANCE, icon: DollarSign },
+    { name: 'Thanh toán', path: ROUTES.ADMIN_PAYMENTS, icon: CreditCard },
+    { name: 'Cấu hình hệ thống', path: '/admin/settings', icon: Settings },
     { name: 'Cấu hình danh mục', path: '/admin/settings', icon: Settings },
     { name: 'Thiết lập hệ thống', path: '/admin/system-config', icon: ServerCog },
     { name: 'Chính sách & Pháp lý', path: '/admin/legal-settings', icon: ShieldCheck },

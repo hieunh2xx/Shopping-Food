@@ -4,6 +4,7 @@ using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
 using ShoppingFood.Domain.Enums;
 using ShoppingFood.Domain.Models;
+using ShoppingFood.Application.Interfaces;
 using ShoppingFood.Repository.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -23,6 +24,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
         private readonly ILoyaltyPointHistoryRepository _loyaltyPointHistoryRepository;
         private readonly IMemberTierConfigRepository _memberTierConfigRepository;
         private readonly IShipperReputationHistoryRepository _reputationHistoryRepository;
+        private readonly IPaymentSettlementService _paymentSettlementService;
         private readonly IUnitOfWork _unitOfWork;
 
         public ConfirmDeliverySuccessHandler(
@@ -34,6 +36,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             ILoyaltyPointHistoryRepository loyaltyPointHistoryRepository,
             IMemberTierConfigRepository memberTierConfigRepository,
             IShipperReputationHistoryRepository reputationHistoryRepository,
+            IPaymentSettlementService paymentSettlementService,
             IUnitOfWork unitOfWork)
         {
             _orderRepository = orderRepository;
@@ -44,6 +47,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             _loyaltyPointHistoryRepository = loyaltyPointHistoryRepository;
             _memberTierConfigRepository = memberTierConfigRepository;
             _reputationHistoryRepository = reputationHistoryRepository;
+            _paymentSettlementService = paymentSettlementService;
             _unitOfWork = unitOfWork;
         }
 
@@ -83,6 +87,8 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 var oldScore = shipperProfile.ReputationScore;
                 shipperProfile.ReputationScore = Math.Min(100, shipperProfile.ReputationScore + 1);
                 
+                await _paymentSettlementService.SettleOrderOnDeliveryAsync(order, shipperProfile);
+
                 shipperProfile.Latitude = request.Latitude;
                 shipperProfile.Longitude = request.Longitude;
                 shipperProfile.UpdatedAt = DateTime.UtcNow;

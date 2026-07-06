@@ -10,6 +10,11 @@ namespace ShoppingFood.Domain.Context
         {
         }
 
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            base.OnConfiguring(optionsBuilder);
+        }
+
         public DbSet<User> Users { get; set; } = null!;
         public DbSet<UserProfile> UserProfiles { get; set; } = null!;
         public DbSet<SellerApplication> SellerApplications { get; set; } = null!;
@@ -55,6 +60,13 @@ namespace ShoppingFood.Domain.Context
         public DbSet<ChatSession> ChatSessions { get; set; } = null!;
         public DbSet<ChatMessage> ChatMessages { get; set; } = null!;
         public DbSet<Faq> Faqs { get; set; } = null!;
+        public DbSet<Wallet> Wallets { get; set; } = null!;
+        public DbSet<FinancialTransaction> FinancialTransactions { get; set; } = null!;
+        public DbSet<WithdrawalRequest> WithdrawalRequests { get; set; } = null!;
+        public DbSet<EInvoiceRequest> EInvoiceRequests { get; set; } = null!;
+        public DbSet<PlatformFinanceConfig> PlatformFinanceConfigs { get; set; } = null!;
+        public DbSet<PaymentSession> PaymentSessions { get; set; } = null!;
+        public DbSet<SepayWebhookLog> SepayWebhookLogs { get; set; } = null!;
         public DbSet<ShipperReputationHistory> ShipperReputationHistories { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -217,6 +229,8 @@ namespace ShoppingFood.Domain.Context
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.ImageUrl).IsRequired().HasMaxLength(255);
 
+                entity.HasQueryFilter(e => !e.Product.IsDeleted);
+
                 entity.HasOne(d => d.Product)
                     .WithMany(p => p.Images)
                     .HasForeignKey(d => d.ProductId)
@@ -268,6 +282,8 @@ namespace ShoppingFood.Domain.Context
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.PriceAtAdded).HasColumnType("decimal(12,2)").IsRequired();
 
+                entity.HasQueryFilter(e => !e.Product.IsDeleted);
+
                 entity.HasOne(d => d.Cart)
                     .WithMany(p => p.Items)
                     .HasForeignKey(d => d.CartId)
@@ -291,6 +307,11 @@ namespace ShoppingFood.Domain.Context
                 entity.Property(e => e.ContactPhone).IsRequired().HasMaxLength(15);
                 entity.Property(e => e.Status).HasConversion<string>().IsRequired();
                 entity.Property(e => e.PaymentMethod).HasConversion<string>().IsRequired();
+                entity.Property(e => e.PaymentStatus).HasConversion<string>().IsRequired().HasDefaultValue(PaymentStatus.Pending);
+                entity.Property(e => e.ItemsSubtotal).HasColumnType("decimal(12,2)").HasDefaultValue(0);
+                entity.Property(e => e.PlatformCommission).HasColumnType("decimal(12,2)").HasDefaultValue(0);
+                entity.Property(e => e.SellerPayout).HasColumnType("decimal(12,2)").HasDefaultValue(0);
+                entity.Property(e => e.IsFinancialSettled).HasDefaultValue(false);
                 entity.Property(e => e.IpAddress).IsRequired().HasMaxLength(45);
                 entity.Property(e => e.Note).HasMaxLength(500);
                 entity.Property(e => e.RejectReason).HasMaxLength(500);
@@ -370,6 +391,8 @@ namespace ShoppingFood.Domain.Context
                 entity.ToTable("PRODUCT_TOPPING");
                 entity.HasKey(e => new { e.ProductId, e.ToppingId });
 
+                entity.HasQueryFilter(e => !e.Product.IsDeleted);
+
                 entity.HasOne(d => d.Product)
                     .WithMany(p => p.ProductToppings)
                     .HasForeignKey(d => d.ProductId)
@@ -390,6 +413,8 @@ namespace ShoppingFood.Domain.Context
                 entity.Property(e => e.ExtraPrice).HasColumnType("decimal(12,2)").IsRequired();
                 entity.Property(e => e.IsDefault).IsRequired();
 
+                entity.HasQueryFilter(e => !e.Product.IsDeleted);
+
                 entity.HasOne(d => d.Product)
                     .WithMany(p => p.ProductSizes)
                     .HasForeignKey(d => d.ProductId)
@@ -405,6 +430,8 @@ namespace ShoppingFood.Domain.Context
                 entity.Property(e => e.SellerReply).HasMaxLength(1000);
                 entity.Property(e => e.SellerRepliedAt);
                 entity.Property(e => e.CreatedAt).IsRequired();
+
+                entity.HasQueryFilter(e => !e.Product.IsDeleted);
 
                 entity.HasOne(d => d.Product)
                     .WithMany(p => p.Reviews)
@@ -587,6 +614,8 @@ namespace ShoppingFood.Domain.Context
                 entity.Property(e => e.IsOnline).IsRequired().HasDefaultValue(false);
                 entity.Property(e => e.Status).HasConversion<string>().IsRequired();
                 entity.Property(e => e.WalletBalance).HasColumnType("decimal(12,2)").IsRequired().HasDefaultValue(0);
+                entity.Property(e => e.CodCollectedAmount).HasColumnType("decimal(12,2)").IsRequired().HasDefaultValue(0);
+                entity.Property(e => e.DebtLimit).HasColumnType("decimal(12,2)").IsRequired().HasDefaultValue(5_000_000m);
                 entity.Property(e => e.ReputationScore).IsRequired().HasDefaultValue(100);
                 entity.Property(e => e.Rating).IsRequired().HasDefaultValue(5.0);
                 entity.Property(e => e.OperatingLatitude);
@@ -721,6 +750,8 @@ namespace ShoppingFood.Domain.Context
                 entity.Property(e => e.GiftQuantity).IsRequired().HasDefaultValue(1);
                 entity.Property(e => e.IsActive).IsRequired().HasDefaultValue(true);
 
+                entity.HasQueryFilter(e => !e.TriggerProduct.IsDeleted && !e.GiftProduct.IsDeleted);
+
                 entity.HasOne(d => d.Restaurant)
                     .WithMany()
                     .HasForeignKey(d => d.RestaurantId)
@@ -768,7 +799,7 @@ namespace ShoppingFood.Domain.Context
                     .HasForeignKey(d => d.ProductId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                entity.HasQueryFilter(fsp => !fsp.FlashSale.IsDeleted);
+                entity.HasQueryFilter(fsp => !fsp.FlashSale.IsDeleted && !fsp.Product.IsDeleted);
             });
 
             modelBuilder.Entity<MemberTierConfig>(entity =>
@@ -862,6 +893,94 @@ namespace ShoppingFood.Domain.Context
                 entity.Property(e => e.Question).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.Answer).IsRequired();
                 entity.Property(e => e.IsActive).IsRequired();
+            });
+
+            modelBuilder.Entity<Wallet>(entity =>
+            {
+                entity.ToTable("WALLET");
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => new { e.OwnerType, e.OwnerId }).IsUnique();
+                entity.Property(e => e.OwnerType).HasConversion<string>().IsRequired();
+                entity.Property(e => e.Balance).HasColumnType("decimal(12,2)").HasDefaultValue(0);
+                entity.Property(e => e.BankName).HasMaxLength(100);
+                entity.Property(e => e.BankAccountNumber).HasMaxLength(30);
+                entity.Property(e => e.BankAccountHolder).HasMaxLength(100);
+            });
+
+            modelBuilder.Entity<FinancialTransaction>(entity =>
+            {
+                entity.ToTable("FINANCIAL_TRANSACTION");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Type).HasConversion<string>().IsRequired();
+                entity.Property(e => e.Amount).HasColumnType("decimal(12,2)").IsRequired();
+                entity.Property(e => e.BalanceAfter).HasColumnType("decimal(12,2)").IsRequired();
+                entity.Property(e => e.Description).HasMaxLength(500);
+                entity.Property(e => e.ReferenceType).HasMaxLength(50);
+                entity.HasOne(d => d.Wallet).WithMany().HasForeignKey(d => d.WalletId).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<WithdrawalRequest>(entity =>
+            {
+                entity.ToTable("WITHDRAWAL_REQUEST");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Amount).HasColumnType("decimal(12,2)").IsRequired();
+                entity.Property(e => e.BankName).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.BankAccountNumber).IsRequired().HasMaxLength(30);
+                entity.Property(e => e.BankAccountHolder).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Status).HasConversion<string>().IsRequired();
+                entity.Property(e => e.RejectReason).HasMaxLength(500);
+                entity.HasOne(d => d.Wallet).WithMany().HasForeignKey(d => d.WalletId).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<EInvoiceRequest>(entity =>
+            {
+                entity.ToTable("E_INVOICE_REQUEST");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.TaxCode).IsRequired().HasMaxLength(20);
+                entity.Property(e => e.CompanyName).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.CompanyAddress).HasMaxLength(500);
+                entity.Property(e => e.Email).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Status).HasConversion<string>().IsRequired();
+                entity.HasOne(d => d.Order).WithMany().HasForeignKey(d => d.OrderId).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<PlatformFinanceConfig>(entity =>
+            {
+                entity.ToTable("PLATFORM_FINANCE_CONFIG");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.CommissionRate).HasColumnType("decimal(5,4)").HasDefaultValue(0.10m);
+                entity.Property(e => e.DefaultShipperDebtLimit).HasColumnType("decimal(12,2)").HasDefaultValue(5_000_000m);
+                entity.Property(e => e.ShipperDeliveryBonus).HasColumnType("decimal(12,2)").HasDefaultValue(5_000m);
+                entity.Property(e => e.MinWithdrawalAmount).HasColumnType("decimal(12,2)").HasDefaultValue(50_000m);
+                entity.Property(e => e.LargeWithdrawalThreshold).HasColumnType("decimal(12,2)").HasDefaultValue(5_000_000m);
+            });
+
+            modelBuilder.Entity<PaymentSession>(entity =>
+            {
+                entity.ToTable("PAYMENT_SESSION");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.PaymentMethod).HasConversion<string>().IsRequired();
+                entity.Property(e => e.EWalletProvider).HasConversion<string>();
+                entity.Property(e => e.Amount).HasColumnType("decimal(12,2)").IsRequired();
+                entity.Property(e => e.Status).HasConversion<string>().IsRequired();
+                entity.Property(e => e.CardLastFour).HasMaxLength(4);
+                entity.Property(e => e.CardBrand).HasMaxLength(20);
+                entity.Property(e => e.InvoiceNumber).HasMaxLength(64);
+                entity.HasIndex(e => e.InvoiceNumber).IsUnique().HasFilter("[InvoiceNumber] IS NOT NULL");
+                entity.Property(e => e.SepayOrderId).HasMaxLength(100);
+                entity.Property(e => e.ExternalTransactionId).HasMaxLength(100);
+                entity.Property(e => e.SepayPaymentMethod).HasMaxLength(50);
+            });
+
+            modelBuilder.Entity<SepayWebhookLog>(entity =>
+            {
+                entity.ToTable("SEPAY_WEBHOOK_LOG");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.EventKey).HasMaxLength(200).IsRequired();
+                entity.HasIndex(e => e.EventKey).IsUnique();
+                entity.Property(e => e.EventType).HasMaxLength(50);
+                entity.Property(e => e.RawPayload).HasColumnType("nvarchar(max)");
+                entity.Property(e => e.IsProcessed).HasDefaultValue(false);
             });
 
             modelBuilder.Entity<SystemConfig>(entity =>

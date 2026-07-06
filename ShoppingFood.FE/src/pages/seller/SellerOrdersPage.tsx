@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { orderService } from '../../services/OrderService';
-import toast from 'react-hot-toast';
+import { authService } from '../../services/AuthService';
+import { chatService } from '../../services/ChatService';
+import { useAuth } from '../../hooks';
 import {
   ShoppingBag,
   Clock,
@@ -11,9 +13,12 @@ import {
   X,
   Utensils,
   Truck,
-  AlertCircle
+  AlertCircle,
+  MessageCircle
 } from 'lucide-react';
 import { Card, Button } from '../../components/common';
+import { OrderSellerChatModal } from '../../components/chat/OrderSellerChatModal';
+import toast from 'react-hot-toast';
 
 const STATUS_TABS = [
   { label: 'Tất cả', value: '' },
@@ -27,12 +32,21 @@ const STATUS_TABS = [
 ];
 
 export function SellerOrdersPage() {
+  const { token } = useAuth();
   const [orders, setOrders] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [restaurantId, setRestaurantId] = useState<string | null>(null);
+  const [orderChatMap, setOrderChatMap] = useState<Record<string, string>>({});
+  const [sellerChat, setSellerChat] = useState<{ isOpen: boolean; orderId: string; sessionId?: string }>({
+    isOpen: false,
+    orderId: '',
+  });
+
+  const messageableStatuses = ['Confirmed', 'Preparing', 'WaitingForShipper', 'Shipping'];
 
   // Pagination states
   const [page, setPage] = useState(1);
@@ -41,6 +55,30 @@ export function SellerOrdersPage() {
   useEffect(() => {
     fetchOrders();
   }, [activeTab, page]);
+
+  useEffect(() => {
+    authService.getProfile().then(res => {
+      if (!res.error && res.data?.sellerInfo?.restaurantId) {
+        setRestaurantId(res.data.sellerInfo.restaurantId);
+      }
+    });
+    chatService.getSellerOrderChats().then(res => {
+      if (!res.error && res.data) {
+        const map: Record<string, string> = {};
+        res.data.forEach(c => {
+          if (c.orderId) map[c.orderId] = c.id;
+        });
+        setOrderChatMap(map);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!token || !restaurantId) return;
+    chatService.startConnection(token)
+      .then(() => chatService.joinSellerInbox(restaurantId))
+      .catch(() => undefined);
+  }, [token, restaurantId]);
 
   const fetchOrders = async () => {
     setIsLoading(true);
@@ -324,6 +362,23 @@ export function SellerOrdersPage() {
                       </Button>
                     )}
 
+                    {messageableStatuses.includes(order.status) && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSellerChat({
+                            isOpen: true,
+                            orderId: order.id,
+                            sessionId: orderChatMap[order.id],
+                          });
+                        }}
+                      >
+                        <MessageCircle className="w-4 h-4 mr-1" /> Chat khách
+                      </Button>
+                    )}
+
                     {['Pending', 'Confirmed', 'Preparing'].includes(order.status) && (
                       <Button
                         variant="danger"
@@ -515,6 +570,15 @@ export function SellerOrdersPage() {
           </div>
         </div>
       )}
+
+      <OrderSellerChatModal
+        isOpen={sellerChat.isOpen}
+        onClose={() => setSellerChat({ isOpen: false, orderId: '' })}
+        orderId={sellerChat.orderId}
+        sessionId={sellerChat.sessionId}
+        restaurantId={restaurantId ?? undefined}
+        isSeller
+      />
     </div>
   );
 }

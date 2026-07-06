@@ -62,7 +62,70 @@ namespace ShoppingFood.Domain.Enums
     {
         COD,
         CreditCard,
-        EWallet
+        EWallet,
+        SystemWallet,
+        Sepay
+    }
+
+    public enum PaymentStatus
+    {
+        Pending,
+        Paid,
+        Failed,
+        Refunded,
+        Settled
+    }
+
+    public enum WalletOwnerType
+    {
+        Customer,
+        Seller,
+        Shipper,
+        Platform
+    }
+
+    public enum FinancialTransactionType
+    {
+        TopUp,
+        Payment,
+        Refund,
+        Withdrawal,
+        Commission,
+        SellerPayout,
+        ShipperEarning,
+        CodCollection,
+        CodRemittance,
+        Adjustment
+    }
+
+    public enum WithdrawalStatus
+    {
+        Pending,
+        Approved,
+        Rejected,
+        Completed
+    }
+
+    public enum InvoiceStatus
+    {
+        Pending,
+        Issued,
+        Rejected
+    }
+
+    public enum EWalletProvider
+    {
+        Momo,
+        ZaloPay,
+        VNPay
+    }
+
+    public enum PaymentSessionStatus
+    {
+        Pending,
+        Completed,
+        Failed,
+        Expired
     }
 
     public enum VehicleType
@@ -174,6 +237,7 @@ namespace ShoppingFood.Domain.Enums
     public enum ChatTopic
     {
         OrderIssue,
+        OrderCancellation,
         SystemIssue,
         General
     }

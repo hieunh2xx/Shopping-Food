@@ -39,6 +39,11 @@ export const ROUTES = {
   ADMIN_INCIDENTS: '/admin/incidents',
   ADMIN_FAQ: '/admin/faq',
   ADMIN_CHAT: '/admin/chat',
+  ADMIN_FINANCE: '/admin/finance',
+  CUSTOMER_WALLET: '/profile?tab=wallet',
+  SELLER_WALLET: '/seller/wallet',
+  SHIPPER_WALLET: '/shipper/wallet',
+  SELLER_PROMOTIONS: '/seller/promotions',
   PROFILE: '/profile',
   ORDERS: '/orders',
   SHIPPER_APPLY: '/shipper/apply',
@@ -52,6 +57,12 @@ export const ROUTES = {
   COORDINATOR_HISTORY: '/coordinator/history',
   COORDINATOR_INCIDENTS: '/coordinator/incidents',
   COORDINATOR_CHAT: '/coordinator/chat',
+  PAYMENT_SEPAY: '/payment/sepay',
+  PAYMENT_SUCCESS: '/payment/success',
+  PAYMENT_ERROR: '/payment/error',
+  PAYMENT_CANCEL: '/payment/cancel',
+  PAYMENT_HISTORY: '/payment/history',
+  ADMIN_PAYMENTS: '/admin/payments',
 } as const;
 
 /**

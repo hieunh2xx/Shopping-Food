@@ -4,6 +4,11 @@ export interface IOrderSummary {
   status: string;
   paymentMethod: string;
   createdAt: string;
+  canCancel?: boolean;
+  canMessageSeller?: boolean;
+  restaurantId?: string;
+  restaurantName?: string;
+  orderChatSessionId?: string;
 }
 
 export interface ISendCheckoutOtpRequest {
@@ -21,7 +26,10 @@ export interface ICheckoutRequest {
   contactEmail: string;
   otpCode: string;
   discountCode?: string;
-  paymentMethod: 'COD' | 'CreditCard' | 'EWallet';
+  paymentMethod: 'COD' | 'CreditCard' | 'EWallet' | 'SystemWallet';
+  eWalletProvider?: 'Momo' | 'ZaloPay' | 'VNPay';
+  cardLastFour?: string;
+  cardBrand?: string;
   note?: string;
   guestUserId?: string;
   deliveryLatitude?: number;

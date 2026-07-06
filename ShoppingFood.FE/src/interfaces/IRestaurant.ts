@@ -25,6 +25,7 @@ export interface IRestaurantProfileDto {
   isVerified?: boolean;
   openingTime?: string;
   closingTime?: string;
+  shippingFee: number;
   products: IProductDto[];
 }
 

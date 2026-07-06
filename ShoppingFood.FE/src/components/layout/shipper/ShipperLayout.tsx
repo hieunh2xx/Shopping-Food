@@ -24,6 +24,7 @@ export function ShipperLayout() {
     { name: 'Tổng quan', path: ROUTES.SHIPPER_DASHBOARD, icon: LayoutDashboard },
     { name: 'Lịch sử giao hàng', path: ROUTES.SHIPPER_HISTORY, icon: History },
     { name: 'Thu nhập', path: ROUTES.SHIPPER_INCOME, icon: TrendingUp },
+    { name: 'Ví & Công nợ COD', path: ROUTES.SHIPPER_WALLET, icon: FileText },
     { name: 'Thông tin tài xế', path: ROUTES.SHIPPER_PROFILE, icon: User },
   ];
 

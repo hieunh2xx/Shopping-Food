@@ -24,12 +24,44 @@ namespace ShoppingFood.API.Controllers
                 command.CurrentUserId = userDto.Id;
             var response = await _mediator.Send(command);
 
-            // Broadcast new session to Support group if successful
             if (!response.Error && response.Data != null)
             {
                 await _hubContext.Clients.Group("Support").SendAsync("NewSession", response.Data);
             }
 
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpPost("sessions/order/{orderId:guid}")]
+        public async Task<ActionResult<ApiResponse>> CreateOrderSession(Guid orderId)
+        {
+            var command = new CreateOrderChatSessionCommand { OrderId = orderId };
+            if (userDto != null)
+                command.CurrentUserId = userDto.Id;
+            var response = await _mediator.Send(command);
+
+            if (!response.Error && response.Data != null)
+            {
+                await _hubContext.Clients.Group("Support").SendAsync("NewOrderChat", response.Data);
+                var data = Newtonsoft.Json.Linq.JObject.FromObject(response.Data);
+                var restaurantId = data["restaurantId"]?.ToString();
+                if (!string.IsNullOrEmpty(restaurantId))
+                {
+                    await _hubContext.Clients.Group($"seller_{restaurantId}")
+                        .SendAsync("NewOrderChat", response.Data);
+                }
+            }
+
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpGet("sessions/seller/orders")]
+        public async Task<ActionResult<ApiResponse>> GetSellerOrderChats()
+        {
+            var query = new GetSellerOrderChatsQuery();
+            if (userDto != null)
+                query.CurrentUserId = userDto.Id;
+            var response = await _mediator.Send(query);
             return StatusCode(response.Code, response);
         }
         [HttpGet("sessions")]

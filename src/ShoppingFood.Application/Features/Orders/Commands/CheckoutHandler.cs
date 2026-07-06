@@ -7,6 +7,7 @@ using ShoppingFood.Core.Interfaces;
 using ShoppingFood.Domain.Context;
 using ShoppingFood.Domain.Enums;
 using ShoppingFood.Domain.Models;
+using ShoppingFood.Application.Interfaces;
 using ShoppingFood.Repository.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -30,6 +31,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
         private readonly ICustomerDiscountRepository _customerDiscountRepository;
         private readonly ILoyaltyPointRepository _loyaltyPointRepository;
         private readonly IFlashSaleProductRepository _flashSaleProductRepository;
+        private readonly IPaymentSettlementService _paymentSettlementService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ShoppingFoodContext _dbContext;
         private readonly IHttpContextAccessor _httpContextAccessor;
@@ -45,6 +47,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             ICustomerDiscountRepository customerDiscountRepository,
             ILoyaltyPointRepository loyaltyPointRepository,
             IFlashSaleProductRepository flashSaleProductRepository,
+            IPaymentSettlementService paymentSettlementService,
             IUnitOfWork unitOfWork,
             ShoppingFoodContext dbContext,
             IHttpContextAccessor httpContextAccessor
@@ -60,6 +63,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             _customerDiscountRepository = customerDiscountRepository;
             _loyaltyPointRepository = loyaltyPointRepository;
             _flashSaleProductRepository = flashSaleProductRepository;
+            _paymentSettlementService = paymentSettlementService;
             _unitOfWork = unitOfWork;
             _dbContext = dbContext;
             _httpContextAccessor = httpContextAccessor;
@@ -157,19 +161,43 @@ namespace ShoppingFood.Application.Features.Orders.Commands
 
                 totalAmount = Math.Max(0, totalAmount - discountAmount - tierDiscountAmount);
 
-                var order = CreateOrderEntity(request, totalAmount, shippingFee);
+                var order = CreateOrderEntity(request, totalAmount, shippingFee, itemsTotal);
                 order.AppliedDiscountId = appliedDiscountId;
                 PopulateOrderItems(order, cart.Items);
 
                 _orderRepository.Add(order);
                 await _unitOfWork.SaveChangesAsync();
 
+                var paymentError = await _paymentSettlementService.ProcessCheckoutPaymentAsync(
+                    order, request.CurrentUserId, request.CardLastFour, request.CardBrand, request.EWalletProvider);
+                if (paymentError != null)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    return ApiResponse.Failure(400, paymentError);
+                }
+                _orderRepository.Update(order);
+
                 ClearCartItems(cart.Items);
                 await _unitOfWork.SaveChangesAsync();
 
                 await transaction.CommitAsync(cancellationToken);
 
-                return ApiResponse.Success(new { OrderId = order.Id, totalAmount = order.TotalAmount }, "Checkout successful.");
+                var responseData = new
+                {
+                    OrderId = order.Id,
+                    totalAmount = order.TotalAmount,
+                    itemsSubtotal = order.ItemsSubtotal > 0 ? order.ItemsSubtotal : itemsTotal,
+                    shippingFee = order.ShippingFee,
+                    discountAmount = discountAmount + tierDiscountAmount,
+                    paymentStatus = order.PaymentStatus.ToString(),
+                    paymentMethod = order.PaymentMethod.ToString(),
+                    paymentSessionId = order.PaymentSessionId,
+                    requiresPaymentConfirmation = order.PaymentSessionId.HasValue
+                        && order.PaymentMethod != PaymentMethod.Sepay,
+                    requiresSepayRedirect = order.PaymentMethod == PaymentMethod.Sepay
+                        && order.PaymentSessionId.HasValue
+                };
+                return ApiResponse.Success(responseData, "Checkout successful.");
             }
             catch (Exception ex)
             {
@@ -322,7 +350,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             return (itemsTotal + shippingFeeTotal, shippingFeeTotal);
         }
 
-        private Order CreateOrderEntity(CheckoutCommand request, decimal totalAmount, decimal shippingFee)
+        private Order CreateOrderEntity(CheckoutCommand request, decimal totalAmount, decimal shippingFee, decimal itemsSubtotal)
         {
             return new Order
             {
@@ -331,6 +359,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 GuestUserId = request.CurrentUserId.HasValue ? null : request.GuestUserId,
                 TotalAmount = totalAmount,
                 ShippingFee = shippingFee,
+                ItemsSubtotal = itemsSubtotal,
                 DeliveryAddress = request.DeliveryAddress,
                 ContactName = request.ContactName,
                 ContactPhone = request.ContactPhone,

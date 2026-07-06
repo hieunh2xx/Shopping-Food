@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using ShoppingFood.Application.Interfaces;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
 using ShoppingFood.Domain.Enums;
@@ -17,16 +18,22 @@ namespace ShoppingFood.Application.Features.Orders.Commands
     {
         private readonly IOrderRepository _orderRepository;
         private readonly IRestaurantProfileRepository _restaurantProfileRepository;
+        private readonly INotificationRepository _notificationRepository;
+        private readonly INotificationPushService _notificationPushService;
         private readonly IUnitOfWork _unitOfWork;
 
         public AcceptOrderHandler(
             IOrderRepository orderRepository,
             IRestaurantProfileRepository restaurantProfileRepository,
+            INotificationRepository notificationRepository,
+            INotificationPushService notificationPushService,
             IUnitOfWork unitOfWork
             ) 
         {
             _orderRepository = orderRepository;
             _restaurantProfileRepository = restaurantProfileRepository;
+            _notificationRepository = notificationRepository;
+            _notificationPushService = notificationPushService;
             _unitOfWork = unitOfWork;
         }
         public async Task<ApiResponse> Handle(AcceptOrderCommand request, CancellationToken cancellationToken)
@@ -60,7 +67,36 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 order.UpdatedAt = DateTime.UtcNow;
 
                 _orderRepository.Update(order);
-                await _unitOfWork.SaveChangesAsync();
+
+                if (order.UserAccountId.HasValue)
+                {
+                    var notification = new Notification
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = order.UserAccountId.Value,
+                        Title = "Đơn hàng đã được xác nhận",
+                        Message = $"Nhà hàng đã xác nhận đơn #{order.Id.ToString()[..8]}. Bạn không thể tự hủy — nhắn tin người bán nếu cần hủy.",
+                        NotificationType = NotificationType.Order,
+                        IsRead = false,
+                        CreateAt = DateTime.UtcNow
+                    };
+                    _notificationRepository.Add(notification);
+                    await _unitOfWork.SaveChangesAsync();
+
+                    await _notificationPushService.PushToUserAsync(order.UserAccountId.Value, new
+                    {
+                        id = notification.Id,
+                        title = notification.Title,
+                        message = notification.Message,
+                        notificationType = notification.NotificationType.ToString(),
+                        isRead = false,
+                        createAt = notification.CreateAt
+                    });
+                }
+                else
+                {
+                    await _unitOfWork.SaveChangesAsync();
+                }
 
                 return ApiResponse.Success(null, "Accept order successfully");
 

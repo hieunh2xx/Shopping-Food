@@ -47,7 +47,9 @@ namespace ShoppingFood.Application.Features.Chat.Commands
                 return ApiResponse.Failure(403, "Forbidden.");
 
             var existingSessions = await _chatSessionRepository.GetAsync(
-                predicate: s => s.UserId == request.CurrentUserId.Value && s.Status == Domain.Enums.ChatSessionStatus.Open,
+                predicate: s => s.UserId == request.CurrentUserId.Value
+                    && s.Status == Domain.Enums.ChatSessionStatus.Open
+                    && s.OrderId == null,
                 include: q => q.Include(s => s.Messages)
             );
             var existingSession = existingSessions.FirstOrDefault();

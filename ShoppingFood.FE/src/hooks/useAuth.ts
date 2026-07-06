@@ -10,7 +10,7 @@ import { StorageUtil } from '../utils/storage';
  * SRP: UI components don't need to know about authService directly
  */
 export function useAuth() {
-  const { login: ctxLogin, logout: ctxLogout, user, isAuthenticated, isLoading: ctxLoading } = useAuthContext();
+  const { login: ctxLogin, logout: ctxLogout, user, token, isAuthenticated, isLoading: ctxLoading } = useAuthContext();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -335,6 +335,7 @@ export function useAuth() {
 
   return {
     user,
+    token,
     isAuthenticated,
     isLoading: isLoading || ctxLoading,
     error,

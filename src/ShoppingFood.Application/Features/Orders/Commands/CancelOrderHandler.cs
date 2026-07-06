@@ -2,6 +2,7 @@
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
 using ShoppingFood.Domain.Enums;
+using ShoppingFood.Application.Interfaces;
 using ShoppingFood.Repository.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -14,13 +15,16 @@ namespace ShoppingFood.Application.Features.Orders.Commands
     public class CancelOrderHandler : IRequestHandler<CancelOrderCommand, ApiResponse>
     {
         private readonly IOrderRepository _orderRepository;
+        private readonly IPaymentSettlementService _paymentSettlementService;
         private readonly IUnitOfWork _unitOfWork;
 
         public CancelOrderHandler(
             IOrderRepository orderRepository,
+            IPaymentSettlementService paymentSettlementService,
             IUnitOfWork unitOfWork) 
         {
             _orderRepository = orderRepository;
+            _paymentSettlementService = paymentSettlementService;
             _unitOfWork = unitOfWork;
         }
         public async Task<ApiResponse> Handle(CancelOrderCommand request, CancellationToken cancellationToken)
@@ -32,7 +36,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     return ApiResponse.Failure(404, "Order not found");
 
                 if(order.Status != OrderStatus.Pending)
-                    return ApiResponse.Failure(400, "Only pending orders can be cancelled");
+                    return ApiResponse.Failure(400, "Chỉ hủy được khi người bán chưa xác nhận đơn. Sau khi xác nhận, vui lòng nhắn tin người bán để yêu cầu hủy.");
 
                 if (order.UserAccountId.HasValue)
                 {
@@ -49,6 +53,8 @@ namespace ShoppingFood.Application.Features.Orders.Commands
 
                 order.Status = OrderStatus.Cancelled;
                 order.UpdatedAt = DateTime.UtcNow;
+
+                await _paymentSettlementService.ProcessRefundAsync(order);
 
                 _orderRepository.Update(order);
                 await _unitOfWork.SaveChangesAsync();
