@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Users, 
-  Settings, 
+import {
+  LayoutDashboard,
+  Users,
+  Settings,
   Store,
   ChefHat,
   ShieldCheck,
@@ -17,8 +17,7 @@ import {
   HelpCircle,
   MessageSquare,
   DollarSign,
-  CreditCard
-  MessageSquare,
+  CreditCard,
   ServerCog
 } from 'lucide-react';
 import { useAuth } from '../../../hooks';
