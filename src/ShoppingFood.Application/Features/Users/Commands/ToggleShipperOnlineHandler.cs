@@ -62,6 +62,10 @@ namespace ShoppingFood.Application.Features.Users.Commands
                     }
                     else
                     {
+                        if (shipperProfile.SuspendedUntil.Value == DateTime.MaxValue)
+                        {
+                            return ApiResponse.Failure(403, $"Tài khoản của bạn đã bị khóa. Lý do: {shipperProfile.SuspendedReason}");
+                        }
                         var remainingTime = Math.Max(0, Math.Round((shipperProfile.SuspendedUntil.Value - DateTime.UtcNow).TotalMinutes));
                         return ApiResponse.Failure(403, $"Your account is temporarily suspended from accepting orders. Time remaining: {remainingTime} minutes. Reason: {shipperProfile.SuspendedReason}");
                     }

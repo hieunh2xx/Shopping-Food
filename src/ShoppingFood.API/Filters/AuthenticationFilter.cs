@@ -56,6 +56,7 @@ namespace ShoppingFood.API.Filters
                                 path.StartsWith("/swagger", StringComparison.OrdinalIgnoreCase) ||
                                 path.StartsWith("/hubs/", StringComparison.OrdinalIgnoreCase) ||
 
+                                (method == "GET" && path.StartsWith("/api/System", StringComparison.OrdinalIgnoreCase)) ||
                                 (method == "GET" && path.StartsWith("/api/Faq", StringComparison.OrdinalIgnoreCase)) ||
 
                                 (method == "GET" &&

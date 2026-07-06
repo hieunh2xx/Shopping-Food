@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Star, Clock, Truck } from 'lucide-react';
+import { Star, Clock, Truck, ShieldCheck } from 'lucide-react';
 import type { INearbyRestaurantDto } from '../../interfaces';
 import { formatCurrency } from '../../utils/formatters';
 
@@ -9,14 +9,14 @@ interface Props {
 
 export function RestaurantCard({ restaurant }: Props) {
   return (
-    <Link 
+    <Link
       to={`/restaurant/${restaurant.id}`}
       className="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-xl hover:shadow-orange-500/10 transition-all duration-300 flex flex-col"
     >
       <div className="relative h-40 bg-gray-100 overflow-hidden">
         {restaurant.logoUrl ? (
-          <img 
-            src={restaurant.logoUrl} 
+          <img
+            src={restaurant.logoUrl}
             alt={restaurant.restaurantName}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
@@ -34,13 +34,16 @@ export function RestaurantCard({ restaurant }: Props) {
           {restaurant.distanceKm.toFixed(1)} km
         </div>
       </div>
-      
+
       <div className="p-4 flex flex-col flex-1">
-        <h3 className="font-bold text-gray-900 text-lg line-clamp-1 mb-1 group-hover:text-orange-600 transition-colors">
+        <h3 className="font-bold text-gray-900 text-lg line-clamp-1 mb-1 group-hover:text-orange-600 transition-colors flex items-center gap-1.5">
           {restaurant.restaurantName}
+          {restaurant.isVerified && (
+            <ShieldCheck className="w-5 h-5 text-blue-500 flex-shrink-0" title="Quán Ăn Chuẩn" />
+          )}
         </h3>
-        <div className="mb-3"></div>
-        
+        <div className="mb-3 text-sm text-gray-500 line-clamp-1">{restaurant.restaurantAddress}</div>
+
         <div className="mt-auto pt-3 border-t border-gray-50 flex items-center justify-between text-xs text-gray-600">
           <div className="flex items-center gap-1.5">
             <Clock className="w-4 h-4 text-orange-500" />

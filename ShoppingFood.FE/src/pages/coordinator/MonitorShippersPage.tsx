@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Search, ShieldAlert, CheckCircle2, AlertOctagon, UserMinus, ShieldCheck } from 'lucide-react';
+import { Search, ShieldAlert, CheckCircle2, AlertOctagon, UserMinus, ShieldCheck, Ban } from 'lucide-react';
 import { Button, Input, Modal } from '../../components/common';
 import { coordinatorService } from '../../services';
+import { adminService } from '../../services/AdminService';
+import { useAuth } from '../../hooks';
 import toast from 'react-hot-toast';
+import { AdjustReputationModal } from './components/AdjustReputationModal';
 
 export default function MonitorShippersPage() {
   const [shippers, setShippers] = useState<any[]>([]);
@@ -18,6 +21,10 @@ export default function MonitorShippersPage() {
   const [suspendReason, setSuspendReason] = useState('');
   const [suspendDuration, setSuspendDuration] = useState('60'); // Minutes
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Reputation Modal
+  const [isReputationOpen, setIsReputationOpen] = useState(false);
+  const [selectedShipperForReputation, setSelectedShipperForReputation] = useState<any | null>(null);
 
   useEffect(() => {
     fetchShippers();
@@ -54,6 +61,11 @@ export default function MonitorShippersPage() {
     setIsSuspendOpen(true);
   };
 
+  const handleOpenReputationModal = (shipper: any) => {
+    setSelectedShipperForReputation(shipper);
+    setIsReputationOpen(true);
+  };
+
   const handleSuspendShipper = async () => {
     if (!selectedShipper || !suspendReason) {
       toast.error('Vui lòng nhập lý do khóa shipper');
@@ -75,6 +87,27 @@ export default function MonitorShippersPage() {
       }
     } catch {
       toast.error('Lỗi kết nối khi tạm khóa shipper');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const { user } = useAuth();
+  
+  const handleToggleAdminLock = async (shipper: any, isLocked: boolean) => {
+    if (!window.confirm(isLocked ? `Bạn có chắc chắn muốn khóa tài khoản tài xế ${shipper.fullName} vô thời hạn?` : `Bạn có chắc chắn muốn mở khóa cho tài xế ${shipper.fullName}?`)) return;
+    
+    setIsSubmitting(true);
+    try {
+      const res = await adminService.toggleShipperStatus(shipper.shipperId, isLocked);
+      if (!res.error) {
+        toast.success(isLocked ? `Đã khóa tài khoản tài xế ${shipper.fullName}` : `Đã mở khóa tài khoản tài xế ${shipper.fullName}`);
+        fetchShippers();
+      } else {
+        toast.error(res.message || 'Lỗi cập nhật trạng thái');
+      }
+    } catch {
+      toast.error('Lỗi kết nối khi cập nhật trạng thái');
     } finally {
       setIsSubmitting(false);
     }
@@ -183,28 +216,68 @@ export default function MonitorShippersPage() {
                     </td>
                     <td className="py-4 px-6 text-center">
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-semibold ${
+                        shipper.isLocked ? 'bg-red-50 text-red-700 border border-red-200' :
                         shipper.status === 'Active' ? 'bg-green-50 text-green-700 border border-green-200' : 
                         shipper.status === 'Blocked' ? 'bg-red-50 text-red-700 border border-red-200' :
                         'bg-amber-50 text-amber-700 border border-amber-200'
                       }`}>
-                        {shipper.status === 'Active' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertOctagon className="w-3.5 h-3.5" />}
-                        {shipper.status === 'Active' ? 'Hoạt động' : shipper.status === 'Blocked' ? 'Khóa' : shipper.status}
+                        {!shipper.isLocked && shipper.status === 'Active' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertOctagon className="w-3.5 h-3.5" />}
+                        {shipper.isLocked ? 'Bị khóa (Admin)' : shipper.status === 'Active' ? 'Hoạt động' : shipper.status === 'Blocked' ? 'Khóa' : shipper.status}
                       </span>
                     </td>
                     <td className="py-4 px-6 text-center">
-                      {shipper.status === 'Active' ? (
+                      <div className="flex items-center justify-center gap-2">
+                        {!shipper.isLocked && shipper.status === 'Active' ? (
+                          <>
+                            {user?.role === 'Admin' && (
+                              <Button
+                                size="xs"
+                                variant="outline"
+                                onClick={() => handleToggleAdminLock(shipper, true)}
+                                className="text-red-600 hover:bg-red-50 border-red-200 flex items-center gap-1"
+                                disabled={isSubmitting}
+                              >
+                                <Ban className="w-3.5 h-3.5" />
+                                Khóa
+                              </Button>
+                            )}
+                            <Button
+                              size="xs"
+                              variant="outline"
+                              onClick={() => handleOpenSuspendModal(shipper)}
+                              className="text-red-600 hover:bg-red-50 border-red-200 flex items-center gap-1"
+                            >
+                              <UserMinus className="w-3.5 h-3.5" />
+                              Tạm khóa
+                            </Button>
+                          </>
+                        ) : (
+                          user?.role === 'Admin' && shipper.isLocked ? (
+                            <Button
+                              size="xs"
+                              variant="outline"
+                              onClick={() => handleToggleAdminLock(shipper, false)}
+                              className="text-green-600 hover:bg-green-50 border-green-200 flex items-center gap-1"
+                              disabled={isSubmitting}
+                            >
+                              <ShieldCheck className="w-3.5 h-3.5" />
+                              Mở khóa
+                            </Button>
+                          ) : (
+                            <span className="text-xs text-gray-400">-</span>
+                          )
+                        )}
+                        
                         <Button
                           size="xs"
                           variant="outline"
-                          onClick={() => handleOpenSuspendModal(shipper)}
-                          className="text-red-600 hover:bg-red-50 border-red-200 flex items-center gap-1 mx-auto"
+                          onClick={() => handleOpenReputationModal(shipper)}
+                          className="text-orange-600 hover:bg-orange-50 border-orange-200 flex items-center gap-1"
                         >
-                          <UserMinus className="w-3.5 h-3.5" />
-                          Khóa tạm thời
+                          <ShieldAlert className="w-3.5 h-3.5" />
+                          Điểm
                         </Button>
-                      ) : (
-                        <span className="text-xs text-gray-400">-</span>
-                      )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -272,6 +345,14 @@ export default function MonitorShippersPage() {
           </div>
         </div>
       </Modal>
+
+      {isReputationOpen && selectedShipperForReputation && (
+        <AdjustReputationModal
+          shipper={selectedShipperForReputation}
+          onClose={() => setIsReputationOpen(false)}
+          onSuccess={fetchShippers}
+        />
+      )}
     </div>
   );
 }

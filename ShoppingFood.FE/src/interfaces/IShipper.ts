@@ -64,7 +64,7 @@ export interface IConfirmDeliverySuccessRequest{
   orderId: string;
   latitude: number;
   longitude: number;
-  deliveryProofImageUrl?: string;
+  deliveryProofImageUrl: string;
 }
 
 export interface IConfirmDeliveryFailedRequest {

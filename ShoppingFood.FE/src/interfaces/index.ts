@@ -6,6 +6,7 @@ export type { IApproveApplicationRequest, IApproveProductRequest, ICreateSupport
 export type { IAuthState, IAuthContext } from './IAuth';
 export type { ICartItem, ICartState, ICartContext, IAddToCartRequest, IUpdateCartItemQuantityRequest, IRemoveCartItemParams, IClearCartParams } from './ICart';
 export type { IDeliveryRouteDto, IProposedDeliveryOfferDto, IToggleShipperOnlineRequest, IAcceptDeliveryOfferRequest, IConfirmArrivedRequest, IConfirmPickedUpRequest, IUpdateShipperLocationRequest, IConfirmDeliveryFailedRequest, IConfirmDeliverySuccessRequest } from './IShipper';
+export type { IShipperReputationHistory } from './IShipperReputationHistory';
 export type { IRestaurantProfileDto, IUpdateRestaurantBasicInfo, IUpdateRestaurantOperatingHours, IUpdateRestaurantStatus, IUpdateRestaurantDeliveryRadius, IUpdateRestaurantShippingFee, INearbyRestaurantDto, IFavoriteRestaurantDto } from './IRestaurant';
 export type { IToppingDto, ICreateToppingRequest, IUpdateToppingRequest } from './ITopping';
 export type {

@@ -177,6 +177,12 @@ class HttpClient {
             this.isRefreshing = false;
           }
         }
+
+        // Handle 503 Service Unavailable (Maintenance Mode)
+        if (error.response?.status === 503 && window.location.pathname !== '/maintenance') {
+          window.location.href = '/maintenance';
+        }
+
         return Promise.reject(error);
       }
     );

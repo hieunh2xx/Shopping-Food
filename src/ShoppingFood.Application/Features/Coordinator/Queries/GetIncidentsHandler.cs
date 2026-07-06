@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
@@ -79,6 +79,8 @@ namespace ShoppingFood.Application.Features.Coordinator.Queries
                 targetTypes.Add(ReportTargetType.Order);
             if (request.IncidentType == null || request.IncidentType == "ShipperComplaint")
                 targetTypes.Add(ReportTargetType.Shipper);
+            if (request.IncidentType == null || request.IncidentType == "RestaurantComplaint")
+                targetTypes.Add(ReportTargetType.Restaurant);
 
             if (targetTypes.Any())
             {
@@ -94,7 +96,9 @@ namespace ShoppingFood.Application.Features.Coordinator.Queries
 
                     dto.IncidentType = r.TargetType == ReportTargetType.Order
                         ? "OrderComplaint"
-                        : "ShipperComplaint";
+                        : r.TargetType == ReportTargetType.Shipper 
+                            ? "ShipperComplaint" 
+                            : "RestaurantComplaint";
                     dto.ContactName = r.Reporter?.FullName ?? string.Empty;
                     dto.ShipperProfileId = r.TargetType == ReportTargetType.Shipper ? r.TargetId : null;
                     result.Add(dto);

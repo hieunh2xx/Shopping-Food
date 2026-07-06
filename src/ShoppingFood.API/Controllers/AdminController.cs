@@ -147,6 +147,24 @@ namespace ShoppingFood.API.Controllers
             return Ok(response);
         }
 
+        [HttpPost("Restaurants/{id}/toggle-verification")]
+        public async Task<ActionResult<ApiResponse>> ToggleRestaurantVerification(Guid id)
+        {
+            var response = await _mediator.Send(new ToggleRestaurantVerificationCommand { RestaurantId = id });
+            return Ok(response);
+        }
+
+        [HttpPut("shippers/{id}/suspend")]
+        public async Task<ActionResult<ApiResponse>> SuspendShipper(Guid id, [FromBody] AdminSuspendShipperCommand command)
+        {
+            command.ShipperId = id;
+            var response = await _mediator.Send(command);
+            if (response.Error)
+                return StatusCode(response.Code, response);
+
+            return Ok(response);
+        }
+
         [HttpPost("notifications/broadcast")]
         public async Task<ActionResult<ApiResponse>> BroadcastNotification([FromBody] BroadcastNotificationCommand command)
         {
@@ -179,6 +197,59 @@ namespace ShoppingFood.API.Controllers
         {
             if(userDto != null)
                 command.CurrentUserId = userDto.Id;
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpGet("users/{id}/complaints")]
+        public async Task<ActionResult<ApiResponse>> GetUserComplaintHistory(Guid id)
+        {
+            var query = new GetUserComplaintHistoryQuery { UserId = id };
+            var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
+        }
+        [HttpGet("dashboard/stats")]
+        public async Task<ActionResult<ApiResponse>> GetAdminDashboardStats([FromQuery] int days = 7)
+        {
+            var query = new GetAdminDashboardStatsQuery { Days = days };
+            var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpGet("dashboard/heatmap")]
+        public async Task<ActionResult<ApiResponse>> GetOrderHeatmap([FromQuery] int days = 30)
+        {
+            var query = new GetOrderHeatmapQuery { Days = days };
+            var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpGet("reports/financial")]
+        public async Task<IActionResult> ExportFinancialReport([FromQuery] int days = 30, [FromQuery] string format = "excel")
+        {
+            var query = new ExportFinancialReportQuery { Days = days, Format = format };
+            var result = await _mediator.Send(query);
+            return File(result.FileContent, result.ContentType, result.FileName);
+        }
+
+        [HttpGet("system/maintenance")]
+        public async Task<ActionResult<ApiResponse>> GetMaintenanceSettings()
+        {
+            var query = new GetMaintenanceSettingsQuery();
+            var response = await _mediator.Send(query);
+            return Ok(ApiResponse.Success(response, "Thành công"));
+        }
+
+        [HttpPost("system/maintenance")]
+        public async Task<ActionResult<ApiResponse>> UpdateMaintenanceSettings([FromBody] UpdateMaintenanceSettingsCommand command)
+        {
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpPost("system/legal")]
+        public async Task<ActionResult<ApiResponse>> UpdateLegalSettings([FromBody] UpdateLegalSettingsCommand command)
+        {
             var response = await _mediator.Send(command);
             return StatusCode(response.Code, response);
         }

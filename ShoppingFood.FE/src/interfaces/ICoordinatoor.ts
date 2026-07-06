@@ -85,7 +85,8 @@ export interface IMonitorShipperDto {
   reputationScore: number;
   rating: number;
   isBusy: boolean;
-  completedOrdersCount: number;
+  completedOrderCount: number; // Also fix this from completedOrdersCount to completedOrderCount as it's returned by API
+  isLocked: boolean;
 }
 
 export interface ISuspendShipperRequest {

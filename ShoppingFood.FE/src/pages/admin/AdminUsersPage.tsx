@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Shield, Ban, CheckCircle2, Award, ChevronLeft, ChevronRight, Loader2, Star } from 'lucide-react';
+import { Search, Shield, Ban, CheckCircle2, Award, ChevronLeft, ChevronRight, Loader2, Star, AlertCircle } from 'lucide-react';
 import { Input, Button, Pagination } from '../../components/common';
 import { Modal } from '../../components/common/Modal';
 import { userService } from '../../services/UserService';
@@ -37,6 +37,11 @@ export function AdminUsersPage() {
   const [newTier, setNewTier] = useState('Bronze');
   const [isUpdating, setIsUpdating] = useState(false);
 
+  // Complaint History Modal
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [historyItems, setHistoryItems] = useState<any[]>([]);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+
   useEffect(() => {
     fetchUsers();
   }, [page, take]);
@@ -69,6 +74,26 @@ export function AdminUsersPage() {
     setSelectedUser(user);
     setNewTier(user.tier || 'Bronze');
     setIsTierModalOpen(true);
+  };
+
+  const handleOpenHistoryModal = async (user: IUserDto) => {
+    setSelectedUser(user);
+    setIsHistoryModalOpen(true);
+    setIsHistoryLoading(true);
+    try {
+      const res = await userService.getUserComplaintHistory(user.id);
+      if (!res.error && res.data) {
+        setHistoryItems(res.data);
+      } else {
+        toast.error(res.message || 'Không thể tải lịch sử khiếu nại');
+        setHistoryItems([]);
+      }
+    } catch {
+      toast.error('Có lỗi xảy ra');
+      setHistoryItems([]);
+    } finally {
+      setIsHistoryLoading(false);
+    }
   };
 
   const handleSubmitTier = async () => {
@@ -196,6 +221,13 @@ export function AdminUsersPage() {
                     </td>
                     <td className="py-4 px-6 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        <button
+                          className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                          title="Xem lịch sử khiếu nại"
+                          onClick={() => handleOpenHistoryModal(user)}
+                        >
+                          <AlertCircle className="w-4 h-4" />
+                        </button>
                         {user.role === 'Customer' && (
                           <button
                             className="p-2 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
@@ -313,6 +345,63 @@ export function AdminUsersPage() {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* History Modal */}
+      <Modal isOpen={isHistoryModalOpen} onClose={() => setIsHistoryModalOpen(false)} title={`Lịch sử khiếu nại của ${selectedUser?.fullName || selectedUser?.userName}`}>
+        <div className="space-y-4">
+          <div className="p-4 bg-purple-50 rounded-xl border border-purple-100 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <AlertCircle className="w-5 h-5 text-purple-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-purple-900">Tổng số khiếu nại</h3>
+                <p className="text-sm text-purple-700">Người dùng này đã gửi tổng cộng {historyItems.length} khiếu nại.</p>
+              </div>
+            </div>
+            <div className="text-2xl font-bold text-purple-700">{historyItems.length}</div>
+          </div>
+
+          {isHistoryLoading ? (
+            <div className="py-8 text-center text-gray-500">
+              <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-purple-500" />
+              Đang tải lịch sử...
+            </div>
+          ) : historyItems.length === 0 ? (
+            <div className="py-8 text-center text-gray-500 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+              Chưa ghi nhận khiếu nại nào từ người dùng này.
+            </div>
+          ) : (
+            <div className="max-h-[400px] overflow-y-auto space-y-3 pr-2">
+              {historyItems.map((item, index) => (
+                <div key={index} className="p-3 bg-white border border-gray-200 rounded-xl">
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="font-medium text-gray-900 text-sm">{item.title}</span>
+                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                      item.status === 'Resolved' ? 'bg-green-100 text-green-700' :
+                      item.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
+                      'bg-gray-100 text-gray-700'
+                    }`}>
+                      {item.status === 'Resolved' ? 'Đã giải quyết' : item.status === 'Pending' ? 'Chờ xử lý' : item.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-2 whitespace-pre-wrap">{item.description}</p>
+                  <div className="flex justify-between items-center text-[11px] text-gray-500">
+                    <span className="bg-gray-100 px-2 py-1 rounded">
+                      Loại: {item.incidentType === 'OrderComplaint' ? 'Đơn hàng' : item.incidentType === 'RestaurantComplaint' ? 'Nhà hàng' : item.incidentType === 'ShipperComplaint' ? 'Tài xế' : item.incidentType}
+                    </span>
+                    <span>{new Date(item.createdAt).toLocaleString('vi-VN')}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="flex justify-end pt-2">
+            <Button type="button" onClick={() => setIsHistoryModalOpen(false)}>Đóng</Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

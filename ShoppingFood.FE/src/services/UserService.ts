@@ -15,6 +15,10 @@ class UserService extends BaseService<IUserDto, IRegisterRequest> {
   async changePassword(data: IChangePasswordRequest): Promise<IApiResponse<any>> {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.USER.CHANGE_PASSWORD, data);
   }
+
+  async getUserComplaintHistory(userId: string): Promise<IApiResponse<any>> {
+    return httpClient.get<IApiResponse<any>>(`/Admin/users/${userId}/complaints`);
+  }
 }
 
 // Export singleton instance

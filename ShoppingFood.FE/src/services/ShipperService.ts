@@ -10,7 +10,8 @@ import type {
   IConfirmPickedUpRequest, 
   IUpdateShipperLocationRequest,
   IConfirmDeliveryFailedRequest,
-  IConfirmDeliverySuccessRequest
+  IConfirmDeliverySuccessRequest,
+  IShipperReputationHistory
 } from '../interfaces';
 import type { IRejectDeliveryOfferRequest, IShipperIncomeReportDto, IShipperScheduleAndAreaDto, IUpdateShipperScheduleAndAreaRequest } from '../interfaces/IShipper';
 
@@ -76,6 +77,14 @@ class ShipperService {
 
   async reviewShipper(data: { orderId: string; rating: number; comment?: string }): Promise<IApiResponse<any>>{
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.SHIPPER.REVIEW, data);
+  }
+
+  async getReputationHistory(): Promise<IApiResponse<IShipperReputationHistory[]>> {
+    return httpClient.get<IApiResponse<IShipperReputationHistory[]>>(API_ENDPOINTS.SHIPPER.REPUTATION_HISTORY);
+  }
+
+  async reportOrderIncident(orderId: string, data: { targetType: number, title: string, content: string }): Promise<IApiResponse<any>> {
+    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.SHIPPER.REPORT_INCIDENT(orderId), data);
   }
 }
 

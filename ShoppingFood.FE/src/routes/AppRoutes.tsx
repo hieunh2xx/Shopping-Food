@@ -26,6 +26,8 @@ import {
   AdminUsersPage,
   AdminRestaurantsPage,
   AdminSettingsPage,
+  AdminSystemConfigPage,
+  AdminLegalSettingsPage,
   AdminApprovalsPage,
   AdminDiscountsPage,
   AdminLoyaltyConfigPage,
@@ -60,6 +62,7 @@ import {
   AuthShipperApplyPage,
   DashboardProfilePage,
   UserReportIncidentPage,
+  MaintenancePage,
 } from '../pages';
 
 /**
@@ -74,6 +77,7 @@ export function AppRoutes() {
       <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
       <Route path={ROUTES.REGISTER_SELLER} element={<RegisterPage isSeller />} />
       <Route path={ROUTES.REGISTER_SHIPPER} element={<ShipperApplyPage />} />
+      <Route path="/maintenance" element={<MaintenancePage />} />
 
       {/* Routes with layout */}
       <Route element={<MainLayout />}>
@@ -149,10 +153,12 @@ export function AppRoutes() {
         <Route path="users" element={<AdminUsersPage />} />
         <Route path="restaurants" element={<AdminRestaurantsPage />} />
         <Route path="permissions" element={<AdminPermissionsPage />} />
+        <Route path="settings" element={<AdminSettingsPage />} />
+        <Route path="system-config" element={<AdminSystemConfigPage />} />
+        <Route path="legal-settings" element={<AdminLegalSettingsPage />} />
         <Route path="approvals" element={<AdminApprovalsPage />} />
         <Route path="discounts" element={<AdminDiscountsPage />} />
         <Route path="loyalty" element={<AdminLoyaltyConfigPage />} />
-        <Route path="settings" element={<AdminSettingsPage />} />
         <Route path="dispatch" element={<DispatchBoardPage />} />
         <Route path="shippers" element={<MonitorShippersPage />} />
         <Route path="dispatch-history" element={<DispatchHistoryPage />} />

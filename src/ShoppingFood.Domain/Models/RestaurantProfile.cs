@@ -23,6 +23,7 @@ namespace ShoppingFood.Domain.Models
         public decimal ShippingFee { get; set; } = 0;
         public double AverageRating { get; set; } = 0.0;
         public int ReviewCount { get; set; } = 0;
+        public bool IsVerified { get; set; } = false;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

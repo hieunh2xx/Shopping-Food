@@ -222,7 +222,7 @@ export function CoordinatorIncidentsPage() {
                       </div>
                     </td>
                     <td className="py-4 px-6">
-                      <span className="font-mono text-xs text-gray-700">{incident.orderId.substring(0, 8)}...</span>
+                      <span className="font-mono text-xs text-gray-700">{incident.orderId ? incident.orderId.substring(0, 8) + '...' : 'N/A'}</span>
                     </td>
                     <td className="py-4 px-6 text-center">
                       {getStatusBadge(incident.status)}

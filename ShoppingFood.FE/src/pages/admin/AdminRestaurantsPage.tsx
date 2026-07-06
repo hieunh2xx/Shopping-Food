@@ -76,6 +76,24 @@ export function AdminRestaurantsPage() {
     }
   };
 
+  const handleToggleVerification = async (restaurantId: string) => {
+    if (!confirm('Bạn có chắc muốn cấp/hủy nhãn Quán Ăn Chuẩn cho nhà hàng này không?')) return;
+    setIsUpdating(true);
+    try {
+      const res = await httpClient.post<any>(API_ENDPOINTS.ADMIN.TOGGLE_VERIFICATION(restaurantId), {});
+      if (!res.error) {
+        toast.success('Đã cập nhật nhãn tín nhiệm');
+        fetchRestaurants();
+      } else {
+        toast.error(res.message || 'Lỗi khi cập nhật nhãn');
+      }
+    } catch {
+      toast.error('Lỗi kết nối máy chủ');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -124,6 +142,7 @@ export function AdminRestaurantsPage() {
                 <th className="py-4 px-6 font-medium">Email / SĐT</th>
                 <th className="py-4 px-6 font-medium">Địa chỉ</th>
                 <th className="py-4 px-6 font-medium text-center">Trạng thái</th>
+                <th className="py-4 px-6 font-medium text-center">Tín nhiệm</th>
                 <th className="py-4 px-6 font-medium text-right">Thao tác</th>
               </tr>
             </thead>
@@ -157,26 +176,46 @@ export function AdminRestaurantsPage() {
                       {rest.status === 'Active' ? 'Hoạt động' : rest.status === 'Suspended' ? 'Bị khóa' : rest.status}
                     </span>
                   </td>
+                  <td className="py-4 px-6 text-center">
+                    {rest.isVerified ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium border bg-blue-50 text-blue-700 border-blue-200">
+                        <ShieldCheck className="w-3.5 h-3.5" /> Chuẩn
+                      </span>
+                    ) : (
+                      <span className="text-xs text-gray-400">-</span>
+                    )}
+                  </td>
                   <td className="py-4 px-6 text-right">
-                    <Button
-                      variant={rest.status === 'Suspended' ? 'outline' : 'secondary'}
-                      size="sm"
-                      onClick={() => handleToggleSuspend(rest.id, rest.status)}
-                      disabled={isUpdating}
-                      className={rest.status === 'Suspended' ? 'text-green-600 border-green-600 hover:bg-green-50' : 'text-red-600 hover:bg-red-50'}
-                    >
-                      {rest.status === 'Suspended' ? (
-                        <>
-                          <ShieldCheck className="w-4 h-4 mr-1" />
-                          Mở khóa
-                        </>
-                      ) : (
-                        <>
-                          <ShieldAlert className="w-4 h-4 mr-1" />
-                          Khóa
-                        </>
-                      )}
-                    </Button>
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        variant={rest.isVerified ? 'outline' : 'primary'}
+                        size="sm"
+                        onClick={() => handleToggleVerification(rest.id)}
+                        disabled={isUpdating}
+                        className={rest.isVerified ? 'text-gray-600' : ''}
+                      >
+                        {rest.isVerified ? 'Hủy nhãn' : 'Cấp nhãn'}
+                      </Button>
+                      <Button
+                        variant={rest.status === 'Suspended' ? 'outline' : 'secondary'}
+                        size="sm"
+                        onClick={() => handleToggleSuspend(rest.id, rest.status)}
+                        disabled={isUpdating}
+                        className={rest.status === 'Suspended' ? 'text-green-600 border-green-600 hover:bg-green-50' : 'text-red-600 hover:bg-red-50'}
+                      >
+                        {rest.status === 'Suspended' ? (
+                          <>
+                            <ShieldCheck className="w-4 h-4 mr-1" />
+                            Mở khóa
+                          </>
+                        ) : (
+                          <>
+                            <ShieldAlert className="w-4 h-4 mr-1" />
+                            Khóa
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}

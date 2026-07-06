@@ -216,7 +216,8 @@ namespace ShoppingFood.Application.Mappings
                 .ForMember(dest => dest.VehicleType, opt => opt.MapFrom(src => src.VehicleType.ToString()))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
                 .ForMember(dest => dest.IsBusy, opt => opt.Ignore())
-                .ForMember(dest => dest.CompletedOrderCount, opt => opt.Ignore());
+                .ForMember(dest => dest.CompletedOrderCount, opt => opt.Ignore())
+                .ForMember(dest => dest.IsLocked, opt => opt.MapFrom(src => src.SuspendedUntil.HasValue && src.SuspendedUntil.Value == DateTime.MaxValue));
 
             CreateMap<CreateDiscountCommand, Discount>();
             CreateMap<Discount, DiscountDto>()
@@ -289,7 +290,7 @@ namespace ShoppingFood.Application.Mappings
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
                 .ForMember(dest => dest.ReportId, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src =>
-                    src.TargetType == ReportTargetType.Order ? src.TargetId : (Guid?)null))
+                    (src.TargetType == ReportTargetType.Order || src.TargetType == ReportTargetType.Restaurant) ? src.TargetId : (Guid?)null))
                 .ForMember(dest => dest.IncidentType, opt => opt.Ignore())
                 .ForMember(dest => dest.ContactName, opt => opt.Ignore())
                 .ForMember(dest => dest.ContactPhone, opt => opt.Ignore())

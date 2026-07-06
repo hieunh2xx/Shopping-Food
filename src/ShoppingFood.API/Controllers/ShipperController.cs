@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Application.Features.Users.Commands;
 using ShoppingFood.Application.Features.Shippers.Commands;
+using ShoppingFood.Application.Features.Shippers.Queries;
 using System.Threading.Tasks;
 using ShoppingFood.Application.Features.Orders.Commands;
 using ShoppingFood.Application.Features.Orders.Queries;
@@ -179,6 +180,29 @@ namespace ShoppingFood.API.Controllers
         {
             if (userDto != null)
                 command.CurrentUserId = userDto.Id;
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpGet("ReputationHistory")]
+        public async Task<ActionResult<ApiResponse>> GetReputationHistory()
+        {
+            var query = new GetReputationHistoryQuery();
+            if (userDto != null)
+            {
+                query.CurrentUserId = userDto.Id;
+            }
+            var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpPost("Orders/{orderId}/report")]
+        public async Task<ActionResult<ApiResponse>> ReportOrderIncident(Guid orderId, [FromBody] ReportOrderIncidentCommand command)
+        {
+            command.OrderId = orderId;
+            if (userDto != null)
+                command.CurrentUserId = userDto.Id;
+            
             var response = await _mediator.Send(command);
             return StatusCode(response.Code, response);
         }

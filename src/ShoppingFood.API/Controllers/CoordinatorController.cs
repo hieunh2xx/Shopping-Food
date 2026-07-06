@@ -130,6 +130,14 @@ namespace ShoppingFood.API.Controllers
             return StatusCode(response.Code, response);
         }
 
+        [HttpPost("shippers/{shipperId}/adjust-reputation")]
+        public async Task<IActionResult> AdjustShipperReputation(Guid shipperId, [FromBody] AdjustShipperReputationCommand command)
+        {
+            command.ShipperId = shipperId;
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
+
         [HttpGet("orders/{orderId}/dispatch-history")]
         public async Task<IActionResult> GetDispatchHistory(Guid orderId)
         {

@@ -15,6 +15,7 @@ import {
 import { useAuth } from '../../hooks';
 import { shipperService } from '../../services';
 import type { IShipperScheduleAndAreaDto, IWorkingScheduleItemDto } from '../../interfaces/IShipper';
+import { ShipperReputationTab } from './components/ShipperReputationTab';
 
 export function ShipperProfilePage() {
   const { user } = useAuth();
@@ -145,6 +146,15 @@ export function ShipperProfilePage() {
         >
           Lịch & Khu vực
           {activeTab === 'Schedule' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-500" />}
+        </button>
+        <button
+          onClick={() => setActiveTab("Reputation")}
+          className={`pb-4 text-sm font-bold transition-all relative ${
+            activeTab === 'Reputation' ? 'text-orange-500' : 'text-gray-500 hover:text-gray-900'
+          }`}
+        >
+          Điểm Uy Tín
+          {activeTab === 'Reputation' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-500" />}
         </button>
       </div>
 
@@ -338,6 +348,9 @@ export function ShipperProfilePage() {
           </div>
         )}
 
+        {activeTab === 'Reputation' && (
+          <ShipperReputationTab />
+        )}
       </div>
 
     </div>

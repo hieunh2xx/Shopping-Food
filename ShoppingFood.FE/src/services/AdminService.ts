@@ -17,6 +17,34 @@ class AdminService extends BaseService<unknown> {
     return httpClient.post<IApiResponse<void>>(`${this.endpoint}/ApproveSellerApplication`, data);
   }
 
+  async getDashboardStats(days: number = 7): Promise<IApiResponse<any>> {
+    return httpClient.get<IApiResponse<any>>(`${this.endpoint}/dashboard/stats`, { params: { days } });
+  }
+
+  async getOrderHeatmap(days: number = 30): Promise<IApiResponse<any>> {
+    return httpClient.get<IApiResponse<any>>(`${this.endpoint}/dashboard/heatmap`, { params: { days } });
+  }
+
+  async getMaintenanceSettings(): Promise<IApiResponse<any>> {
+    return httpClient.get<IApiResponse<any>>(`${this.endpoint}/system/maintenance`);
+  }
+
+  async updateMaintenanceSettings(data: any): Promise<IApiResponse<any>> {
+    return httpClient.post<IApiResponse<any>>(`${this.endpoint}/system/maintenance`, data);
+  }
+
+  async updateLegalSettings(data: { termsOfUse: string, privacyPolicy: string }): Promise<IApiResponse<any>> {
+    return httpClient.post<IApiResponse<any>>(`${this.endpoint}/system/legal`, data);
+  }
+
+  async exportFinancialReport(days: number = 30, format: 'excel' | 'pdf' = 'excel'): Promise<Blob> {
+    const response = await httpClient.get(`${this.endpoint}/reports/financial`, {
+      params: { days, format },
+      responseType: 'blob'
+    });
+    return response as unknown as Blob;
+  }
+
   async getSellerApplications(params?: { status?: string; skip?: number; take?: number }): Promise<IApiResponse<any>> {
     return httpClient.get<IApiResponse<any>>(API_ENDPOINTS.ADMIN.SELLER_APPLICATIONS, { params });
   }
@@ -31,6 +59,10 @@ class AdminService extends BaseService<unknown> {
    */
   async approveProduct(data: IApproveProductRequest): Promise<IApiResponse<void>> {
     return httpClient.post<IApiResponse<void>>(`${this.endpoint}/ApproveProduct`, data);
+  }
+
+  async toggleShipperStatus(id: string, isLocked: boolean): Promise<IApiResponse<any>> {
+    return httpClient.put<IApiResponse<any>>(API_ENDPOINTS.ADMIN.SUSPEND_SHIPPER(id), { isLocked });
   }
 
   async approveShipperApplication(data: { applicationId: string; isApproved: boolean; rejectionReason?: string }): Promise<IApiResponse<any>> {

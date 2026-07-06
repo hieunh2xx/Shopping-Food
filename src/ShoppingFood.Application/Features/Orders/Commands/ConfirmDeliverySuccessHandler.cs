@@ -22,6 +22,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
         private readonly ILoyaltyPointRepository _loyaltyPointRepository;
         private readonly ILoyaltyPointHistoryRepository _loyaltyPointHistoryRepository;
         private readonly IMemberTierConfigRepository _memberTierConfigRepository;
+        private readonly IShipperReputationHistoryRepository _reputationHistoryRepository;
         private readonly IUnitOfWork _unitOfWork;
 
         public ConfirmDeliverySuccessHandler(
@@ -32,6 +33,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             ILoyaltyPointRepository loyaltyPointRepository, 
             ILoyaltyPointHistoryRepository loyaltyPointHistoryRepository,
             IMemberTierConfigRepository memberTierConfigRepository,
+            IShipperReputationHistoryRepository reputationHistoryRepository,
             IUnitOfWork unitOfWork)
         {
             _orderRepository = orderRepository;
@@ -41,6 +43,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             _loyaltyPointRepository = loyaltyPointRepository;
             _loyaltyPointHistoryRepository = loyaltyPointHistoryRepository;
             _memberTierConfigRepository = memberTierConfigRepository;
+            _reputationHistoryRepository = reputationHistoryRepository;
             _unitOfWork = unitOfWork;
         }
 
@@ -76,10 +79,28 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 if (order.UserAccountId.HasValue)
                     await AccumulateLoyaltyPointsAsync(order);
 
+                // Reward 1 point for successful delivery
+                var oldScore = shipperProfile.ReputationScore;
+                shipperProfile.ReputationScore = Math.Min(100, shipperProfile.ReputationScore + 1);
+                
                 shipperProfile.Latitude = request.Latitude;
                 shipperProfile.Longitude = request.Longitude;
                 shipperProfile.UpdatedAt = DateTime.UtcNow;
                 _shipperProfileRepository.Update(shipperProfile);
+
+                var actualChange = shipperProfile.ReputationScore - oldScore;
+                if (actualChange > 0)
+                {
+                    _reputationHistoryRepository.Add(new ShipperReputationHistory
+                    {
+                        Id = Guid.NewGuid(),
+                        ShipperProfileId = shipperProfile.Id,
+                        OrderId = order.Id,
+                        PointChange = actualChange,
+                        Reason = "Giao hàng thành công",
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
 
                 AddDeliveryNotification(order, shipperProfile.UserProfile.FullName);
 

@@ -1,13 +1,13 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, UploadCloud, CheckCircle2, ChevronRight, ChevronLeft } from 'lucide-react';
-import { Button, Input, DocumentViewerModal } from '../common';
+import { Button, Input, DocumentViewerModal, Modal, Loading } from '../common';
 import { useAuth } from '../../hooks';
 import { ROUTES } from '../../routes/routeConfig';
 import toast from 'react-hot-toast';
 import { auth } from '../../config/firebase';
 import { RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult } from 'firebase/auth';
-
+import { supportService } from '../../services/SupportService';
 interface RegisterFormProps {
   isSeller?: boolean;
 }
@@ -41,6 +41,38 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedShopFile, setSelectedShopFile] = useState<File | null>(null);
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [legalModalState, setLegalModalState] = useState({
+    isOpen: false,
+    title: '',
+    content: '',
+    isLoading: false,
+  });
+
+  const handleOpenLegalModal = async (e: React.MouseEvent, type: 'terms' | 'privacy') => {
+    e.preventDefault();
+    setLegalModalState({
+      isOpen: true,
+      title: type === 'terms' ? 'Điều khoản dịch vụ' : 'Chính sách bảo mật',
+      content: '',
+      isLoading: true,
+    });
+
+    try {
+      const response = await supportService.getLegalSettings();
+      if (!response.error && response.data) {
+        setLegalModalState(prev => ({
+          ...prev,
+          content: type === 'terms' ? (response.data.termsOfUse || 'Chưa có nội dung') : (response.data.privacyPolicy || 'Chưa có nội dung'),
+          isLoading: false
+        }));
+      } else {
+        setLegalModalState(prev => ({ ...prev, content: 'Không thể tải nội dung.', isLoading: false }));
+      }
+    } catch (error) {
+      setLegalModalState(prev => ({ ...prev, content: 'Lỗi kết nối. Vui lòng thử lại sau.', isLoading: false }));
+    }
+  };
 
   useEffect(() => {
     // Initialize recaptcha if not already initialized
@@ -145,6 +177,8 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
 
     if (!form.phone.trim()) newErrors.phone = 'Vui lòng nhập số điện thoại';
     else if (!/^\d{9,15}$/.test(form.phone)) newErrors.phone = 'Số điện thoại 9-15 chữ số';
+
+    if (!agreedToTerms) newErrors.agreedToTerms = 'Bạn phải đồng ý với Điều khoản và Chính sách';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -336,6 +370,41 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
               error={errors.confirmPassword}
               placeholder="Nhập lại mật khẩu"
             />
+          </div>
+
+          <div className="mt-4">
+            <label className="flex items-start gap-2 cursor-pointer group">
+              <div className="relative flex items-center mt-1">
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500 cursor-pointer peer"
+                  checked={agreedToTerms}
+                  onChange={(e) => {
+                    setAgreedToTerms(e.target.checked);
+                    if (e.target.checked && errors.agreedToTerms) {
+                      setErrors((prev) => {
+                        const next = { ...prev };
+                        delete next.agreedToTerms;
+                        return next;
+                      });
+                    }
+                  }}
+                />
+              </div>
+              <span className="text-sm text-gray-600 select-none">
+                Tôi đã đọc và đồng ý với{' '}
+                <a href="#" onClick={(e) => handleOpenLegalModal(e, 'terms')} className="text-orange-600 hover:underline font-medium">
+                  Điều khoản dịch vụ
+                </a>{' '}
+                và{' '}
+                <a href="#" onClick={(e) => handleOpenLegalModal(e, 'privacy')} className="text-orange-600 hover:underline font-medium">
+                  Chính sách bảo mật
+                </a>
+              </span>
+            </label>
+            {errors.agreedToTerms && (
+              <p className="mt-1 text-sm text-red-600">{errors.agreedToTerms}</p>
+            )}
           </div>
 
           {isSeller ? (
@@ -569,6 +638,26 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
         fileType={selectedShopFile?.type || null}
         fileName={selectedShopFile?.name || null}
       />
+      {/* Legal Modal */}
+      <Modal
+        isOpen={legalModalState.isOpen}
+        onClose={() => setLegalModalState(prev => ({ ...prev, isOpen: false }))}
+        title={legalModalState.title}
+        size="lg"
+      >
+        <div className="p-4 max-h-[70vh] overflow-y-auto">
+          {legalModalState.isLoading ? (
+            <div className="flex justify-center items-center h-32">
+              <Loading size="md" />
+            </div>
+          ) : (
+            <div
+              className="prose prose-orange max-w-none text-gray-600"
+              dangerouslySetInnerHTML={{ __html: legalModalState.content }}
+            />
+          )}
+        </div>
+      </Modal>
     </div>
   );
 }

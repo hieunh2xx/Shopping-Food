@@ -19,6 +19,10 @@ export class SupportService {
   public async submitShipperComplaint(data: ISubmitShipperComplaintRequest): Promise<IApiResponse<any>> {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.SUPPORT.SHIPPER_COMPLAINT, data);
   }
+
+  public async getLegalSettings(): Promise<IApiResponse<any>> {
+    return httpClient.get<IApiResponse<any>>('/system/legal');
+  }
 }
 
 export const supportService = new SupportService();

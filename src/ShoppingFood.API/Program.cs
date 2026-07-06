@@ -17,6 +17,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<AuthenticationFilter>();
+    options.Filters.Add<MaintenanceFilter>();
     options.Filters.Add<CheckSellerSuspensionAttribute>();
 }).AddNewtonsoftJson(options => 
 {
@@ -138,6 +139,7 @@ if (app.Environment.IsDevelopment() || true) // always enable for user demo/test
 
 app.UseCors("AllowAll");
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

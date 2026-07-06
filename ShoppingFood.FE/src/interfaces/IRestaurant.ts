@@ -22,6 +22,7 @@ export interface IRestaurantProfileDto {
   reviewCount: number;
   createdAt: string;
   isFavorite?: boolean;
+  isVerified?: boolean;
   openingTime?: string;
   closingTime?: string;
   products: IProductDto[];
@@ -41,6 +42,7 @@ export interface INearbyRestaurantDto {
   maxDeliveryRadius?: number;
   shippingFee: number;
   distanceKm: number;
+  isVerified?: boolean;
 }
 
 export interface IUpdateRestaurantBasicInfo {

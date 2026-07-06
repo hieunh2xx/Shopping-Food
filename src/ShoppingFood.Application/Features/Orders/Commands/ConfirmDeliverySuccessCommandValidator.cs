@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,6 +21,8 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             RuleFor(x => x.Longitude)
                 .InclusiveBetween(-180.0, 180.0).WithMessage("Longitude must be between -180 and 180.");
 
+            RuleFor(x => x.DeliveryProofImageUrl)
+                .NotEmpty().WithMessage("Delivery proof image is required.");
         }
     }
 }

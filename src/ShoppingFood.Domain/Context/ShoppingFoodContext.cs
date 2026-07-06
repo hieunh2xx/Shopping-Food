@@ -33,6 +33,7 @@ namespace ShoppingFood.Domain.Context
         public DbSet<ProductReview> ProductReviews { get; set; } = null!;
         public DbSet<GlobalMenuCategory> GlobalMenuCategories { get; set; } = null!;
         public DbSet<SystemReport> SystemReports { get; set; } = null!;
+        public DbSet<SystemConfig> SystemConfigs { get; set; } = null!;
         public DbSet<Notification> Notifications { get; set; } = null!;
         public DbSet<FavoriteRestaurant> FavoriteRestaurants { get; set; } = null!;
         public DbSet<UserAddress> UserAddresses { get; set; } = null!;
@@ -54,9 +55,15 @@ namespace ShoppingFood.Domain.Context
         public DbSet<ChatSession> ChatSessions { get; set; } = null!;
         public DbSet<ChatMessage> ChatMessages { get; set; } = null!;
         public DbSet<Faq> Faqs { get; set; } = null!;
+        public DbSet<ShipperReputationHistory> ShipperReputationHistories { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<ShipperReputationHistory>(entity =>
+            {
+                entity.ToTable("SHIPPER_REPUTATION_HISTORY");
+            });
 
             // User Entity
             modelBuilder.Entity<User>(entity =>
@@ -855,6 +862,13 @@ namespace ShoppingFood.Domain.Context
                 entity.Property(e => e.Question).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.Answer).IsRequired();
                 entity.Property(e => e.IsActive).IsRequired();
+            });
+
+            modelBuilder.Entity<SystemConfig>(entity =>
+            {
+                entity.ToTable("SYSTEM_CONFIG");
+                entity.HasKey(e => e.Key);
+                entity.Property(e => e.Key).HasMaxLength(100);
             });
         }
     }

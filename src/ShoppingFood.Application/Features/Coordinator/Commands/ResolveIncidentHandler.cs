@@ -20,6 +20,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
         private readonly IOrderRepository _orderRepository;
         private readonly IShipperProfileRepository _shipperProfileRepository;
         private readonly INotificationRepository _notificationRepository;
+        private readonly IShipperReputationHistoryRepository _reputationHistoryRepository;
         private readonly IUnitOfWork _unitOfWork;
 
         public ResolveIncidentHandler(
@@ -27,12 +28,14 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
             IOrderRepository orderRepository,
             IShipperProfileRepository shipperProfileRepository,
             INotificationRepository notificationRepository,
+            IShipperReputationHistoryRepository reputationHistoryRepository,
             IUnitOfWork unitOfWork)
         {
             _userRepository = userRepository;
             _orderRepository = orderRepository;
             _shipperProfileRepository = shipperProfileRepository;
             _notificationRepository = notificationRepository;
+            _reputationHistoryRepository = reputationHistoryRepository;
             _unitOfWork = unitOfWork;
         }
 
@@ -114,9 +117,25 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
             if (shipper == null)
                 return ApiResponse.Failure(404, "Shipper profile not found to apply penalty.");
 
+            var oldScore = shipper.ReputationScore;
             shipper.ReputationScore = Math.Max(0, shipper.ReputationScore - penaltyScore);
             shipper.UpdatedAt = DateTime.UtcNow;
             _shipperProfileRepository.Update(shipper);
+
+            var actualChange = shipper.ReputationScore - oldScore;
+            if (actualChange != 0)
+            {
+                var history = new ShipperReputationHistory
+                {
+                    Id = Guid.NewGuid(),
+                    ShipperProfileId = shipper.Id,
+                    OrderId = order.Id,
+                    PointChange = actualChange,
+                    Reason = $"Sự cố đơn hàng: Lỗi do tài xế.",
+                    CreatedAt = DateTime.UtcNow
+                };
+                _reputationHistoryRepository.Add(history);
+            }
 
             return null;
         }

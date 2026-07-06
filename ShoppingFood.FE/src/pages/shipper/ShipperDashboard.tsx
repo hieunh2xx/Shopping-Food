@@ -19,6 +19,8 @@ import {
 import { useAuth } from '../../hooks';
 import { shipperService } from '../../services';
 import type { IProposedDeliveryOfferDto, IShipperIncomeReportDto } from '../../interfaces/IShipper';
+import { ReportIncidentModal } from './components/ReportIncidentModal';
+import { SuccessDeliveryModal } from './components/SuccessDeliveryModal';
 
 export function ShipperDashboard() {
   const { user } = useAuth();
@@ -33,6 +35,8 @@ export function ShipperDashboard() {
 
   // Available offers from API
   const [availableOffers, setAvailableOffers] = useState<IProposedDeliveryOfferDto[]>([]);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   
   // Active delivery (locally tracked after accept)
   const [activeDelivery, setActiveDelivery] = useState<{
@@ -48,7 +52,26 @@ export function ShipperDashboard() {
     note?: string;
     step: 'accepted' | 'arrived' | 'picked_up';
     googleMapNavigationUrl?: string;
-  } | null>(null);
+  } | null>(() => {
+    const saved = localStorage.getItem('shipper_active_delivery');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
+
+  // Save activeDelivery to localStorage whenever it changes
+  useEffect(() => {
+    if (activeDelivery) {
+      localStorage.setItem('shipper_active_delivery', JSON.stringify(activeDelivery));
+    } else {
+      localStorage.removeItem('shipper_active_delivery');
+    }
+  }, [activeDelivery]);
 
   // Income report from API
   const [incomeReport, setIncomeReport] = useState<IShipperIncomeReportDto | null>(null);
@@ -90,12 +113,20 @@ export function ShipperDashboard() {
   // Initial load
   useEffect(() => {
     const loadData = async () => {
-      setLoading(true);
-      await Promise.all([
-        fetchAvailableOffers(),
-        fetchIncomeReport()
-      ]);
-      setLoading(false);
+      // Only show full screen loader on initial render
+      if (loading) {
+        await Promise.all([
+          fetchAvailableOffers(),
+          fetchIncomeReport()
+        ]);
+        setLoading(false);
+      } else {
+        // Just fetch in background without full screen loader
+        await Promise.all([
+          fetchAvailableOffers(),
+          fetchIncomeReport()
+        ]);
+      }
     };
     loadData();
   }, [fetchAvailableOffers, fetchIncomeReport]);
@@ -175,7 +206,13 @@ export function ShipperDashboard() {
     setTogglingOnline(true);
     try {
       const newStatus = !isOnline;
-      await shipperService.toggleOnline({ isOnline: newStatus });
+      const res = await shipperService.toggleOnline({ isOnline: newStatus });
+      
+      if (res && res.error) {
+        toast.error(res.message || 'Không thể thay đổi trạng thái.');
+        return;
+      }
+      
       setIsOnline(newStatus);
       localStorage.setItem('shipper_is_online', newStatus ? 'true' : 'false');
       toast.success(newStatus ? 'Bạn đã BẬT trạng thái trực tuyến!' : 'Bạn đã TẮT trạng thái trực tuyến!');
@@ -183,8 +220,8 @@ export function ShipperDashboard() {
         // Refresh offers when going online
         fetchAvailableOffers();
       }
-    } catch (err) {
-      toast.error('Không thể thay đổi trạng thái. Vui lòng thử lại.');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Không thể thay đổi trạng thái. Vui lòng thử lại.');
     } finally {
       setTogglingOnline(false);
     }
@@ -287,26 +324,15 @@ export function ShipperDashboard() {
   };
 
   // Complete delivery
-  const handleDeliverySuccess = async () => {
+  const handleDeliverySuccess = () => {
     if (!activeDelivery) return;
-    
-    setActionLoading('success');
-    try {
-      await shipperService.confirmDelivered({
-        orderId: activeDelivery.orderId,
-        latitude: coords.lat,
-        longitude: coords.lng
-      });
-      setActiveDelivery(null);
-      toast.success('Chúc mừng! Giao hàng thành công.');
-      // Refresh data after completing a delivery
-      fetchIncomeReport();
-      fetchAvailableOffers();
-    } catch (err) {
-      toast.error('Không thể xác nhận giao hàng thành công.');
-    } finally {
-      setActionLoading(null);
-    }
+    setIsSuccessModalOpen(true);
+  };
+
+  const handleDeliverySuccessComplete = () => {
+    setActiveDelivery(null);
+    fetchIncomeReport();
+    fetchAvailableOffers();
   };
 
   // Failed delivery
@@ -551,6 +577,17 @@ export function ShipperDashboard() {
                       </>
                     )}
                   </div>
+                  
+                  {/* Báo cáo sự cố */}
+                  <div className="pt-3 border-t border-gray-100 mt-2">
+                    <button
+                      onClick={() => setIsReportModalOpen(true)}
+                      className="w-full py-2.5 px-4 bg-gray-50 border border-gray-200 hover:bg-red-50 hover:border-red-200 hover:text-red-600 text-gray-600 font-medium rounded-xl transition-all flex items-center justify-center gap-2 text-sm"
+                    >
+                      <AlertTriangle className="w-4 h-4" />
+                      Báo cáo sự cố (Khách hàng/Nhà hàng)
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-3xl flex flex-col items-center">
@@ -654,8 +691,26 @@ export function ShipperDashboard() {
           </div>
 
         </div>
-
       </div>
+
+      {/* Modals */}
+      {activeDelivery && (
+        <>
+          <ReportIncidentModal
+            isOpen={isReportModalOpen}
+            onClose={() => setIsReportModalOpen(false)}
+            orderId={activeDelivery.orderId}
+          />
+          <SuccessDeliveryModal
+            isOpen={isSuccessModalOpen}
+            onClose={() => setIsSuccessModalOpen(false)}
+            orderId={activeDelivery.orderId}
+            latitude={coords?.lat || 0}
+            longitude={coords?.lng || 0}
+            onSuccess={handleDeliverySuccessComplete}
+          />
+        </>
+      )}
     </div>
   );
 }

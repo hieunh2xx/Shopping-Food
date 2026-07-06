@@ -96,11 +96,13 @@ export const API_ENDPOINTS = {
     POINT_GIFT_CONFIG: '/Admin/point-gift-config',
     POINT_GIFT_CONFIG_BY_ID: (id: string) => `/Admin/point-gift-config/${id}`,
     RESTAURANTS: '/Admin/Restaurants', // GET
+    TOGGLE_VERIFICATION: (id: string) => `/Admin/Restaurants/${id}/toggle-verification`, // POST
     SUSPEND_RESTAURANT: '/Admin/suspend-restaurant', // POST (assuming it exists or will be added, wait I should check if it exists in API)
     BROADCAST_NOTIFICATION: '/Admin/notifications/broadcast', // POST
     REVIEW_REPORTS: '/Admin/review-reports', // GET
     MODERATE_REVIEW_REPORT: (reportId: string) => `/Admin/review-reports/${reportId}/moderate`, // POST
     SUPPORT_TICKETS: '/Admin/support-tickets', // POST
+    SUSPEND_SHIPPER: (id: string) => `/Admin/shippers/${id}/suspend`, // PUT
   },
 
   // === Shipper (ShipperController) ===
@@ -120,6 +122,8 @@ export const API_ENDPOINTS = {
     REJECT_OFFER: '/Shipper/reject-offers',
     DELIVERY_ROUTE: (orderId: string) => `/Shipper/delivery-route/${orderId}`, // GET
     REVIEW: '/Shipper/review', // POST
+    REPUTATION_HISTORY: '/Shipper/ReputationHistory', // GET
+    REPORT_INCIDENT: (orderId: string) => `/Shipper/Orders/${orderId}/report`, // POST
   },
 
   // === Cart (CartController) ===
@@ -164,6 +168,7 @@ export const API_ENDPOINTS = {
     ORDER_DISPATCH_HISTORY: (orderId: string) => `/Coordinator/orders/${orderId}/dispatch-history`,
     INCIDENTS: '/Coordinator/incidents',
     RESOLVE_COMPLAINT: (id: string) => `/Coordinator/complaint/${id}/resolve`,
+    ADJUST_SHIPPER_REPUTATION: (shipperId: string) => `/Coordinator/shippers/${shipperId}/adjust-reputation`,
   },
 
   DISCOUNT: {
