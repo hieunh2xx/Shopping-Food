@@ -31,6 +31,9 @@ import {
   AdminLoyaltyConfigPage,
   AdminFaqPage,
   AdminChatPage,
+  AdminFinancePage,
+  SellerWalletPage,
+  ShipperWalletPage,
   NotFoundPage,
   ProfilePage,
   OrdersPage,
@@ -133,6 +136,7 @@ export function AppRoutes() {
         <Route path="discounts" element={<SellerDiscountsPage />} />
         <Route path="promotions" element={<SellerPromotionsPage />} />
         <Route path="flash-sales" element={<SellerFlashSalesPage />} />
+        <Route path="wallet" element={<SellerWalletPage />} />
         <Route path="appeal" element={<SellerAppealPage />} />
       </Route>
 
@@ -162,6 +166,7 @@ export function AppRoutes() {
         <Route path="incidents" element={<CoordinatorIncidentsPage />} />
         <Route path="faq" element={<AdminFaqPage />} />
         <Route path="chat" element={<AdminChatPage />} />
+        <Route path="finance" element={<AdminFinancePage />} />
         <Route path="profile" element={<DashboardProfilePage />} />
       </Route>
 
@@ -195,6 +200,7 @@ export function AppRoutes() {
         <Route index element={<ShipperDashboard />} />
         <Route path="history" element={<ShipperHistoryPage />} />
         <Route path="income" element={<ShipperIncomePage />} />
+        <Route path="wallet" element={<ShipperWalletPage />} />
         <Route path="profile" element={<ShipperProfilePage />} />
       </Route>
 

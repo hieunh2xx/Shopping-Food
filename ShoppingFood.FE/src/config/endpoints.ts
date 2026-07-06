@@ -214,5 +214,20 @@ export const API_ENDPOINTS = {
     BASE: '/Faq',
     BY_ID: (id: string) => `/Faq/${id}`,
   },
+
+  PAYMENT: {
+    METHODS: '/Payment/methods',
+    WALLET: '/Payment/wallet',
+    TOP_UP: '/Payment/wallet/top-up',
+    CONFIRM: '/Payment/confirm',
+    WITHDRAW: '/Payment/withdraw',
+    WITHDRAWALS: '/Payment/withdrawals',
+    APPROVE_WITHDRAWAL: '/Payment/withdrawals/approve',
+    TRANSACTIONS: '/Payment/transactions',
+    INVOICE: '/Payment/invoice',
+    REPAY_DEBT: '/Payment/shipper/repay-debt',
+    DEBT_LIMIT: '/Payment/shipper/debt-limit',
+    RECONCILIATION: '/Payment/reconciliation',
+  },
 } as const;
 

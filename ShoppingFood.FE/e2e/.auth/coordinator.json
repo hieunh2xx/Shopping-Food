@@ -1,0 +1,47 @@
+{
+  "cookies": [
+    {
+      "name": "g_state",
+      "value": "{\"i_l\":0,\"i_ll\":1783314778319,\"i_b\":\"lUHjxFVnDp64rexbdtV+eZwHHHjmlMT8QgglN8yTxlw\",\"i_e\":{\"enable_itp_optimization\":24},\"i_et\":1783314778319}",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1798866778,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "refreshToken",
+      "value": "FBdpe9Y7DfSdc3vazw7eww6i5BUqMJJKBayRIRHuWsA%3D",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1783919578.859892,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    }
+  ],
+  "origins": [
+    {
+      "origin": "http://localhost:5173",
+      "localStorage": [
+        {
+          "name": "sf_user",
+          "value": "{\"id\":\"65a63165-ae32-4a8b-9376-88b5c4878008\",\"userName\":\"testcoord\",\"fullName\":\"Test Coordinator\",\"role\":\"Coordinator\",\"status\":\"Active\",\"email\":\"testcoord@test.com\",\"isEmailActive\":false,\"phone\":\"0900000004\",\"avatarUrl\":null,\"gender\":null,\"dateOfBirth\":null,\"createdAt\":\"2026-07-06T04:52:40.3209824\",\"tier\":null,\"totalEarnedPoints\":0,\"pointsBalance\":0,\"sellerInfo\":null}"
+        },
+        {
+          "name": "sf_token",
+          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0Y29vcmQiLCJ1bmlxdWVfbmFtZSI6InRlc3Rjb29yZCIsIm5iZiI6MTc4MzMxNDc3OCwiZXhwIjoxNzgzMzE1Njc4LCJpYXQiOjE3ODMzMTQ3NzgsImlzcyI6IlNob3BwaW5nRm9vZEFQSSIsImF1ZCI6IlNob3BwaW5nRm9vZENsaWVudCJ9.S94uv4YcDF46PAvIa4k4KRCExkMXzfeKmJpGVk6kF2I"
+        },
+        {
+          "name": "sf_guest_id",
+          "value": "ace2fd95-d65c-4c59-b827-c8823512b606"
+        },
+        {
+          "name": "sf_cart",
+          "value": "[]"
+        }
+      ]
+    }
+  ]
+}

@@ -4,6 +4,7 @@ using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
 using ShoppingFood.Domain.Enums;
 using ShoppingFood.Domain.Models;
+using ShoppingFood.Application.Interfaces;
 using ShoppingFood.Repository.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -22,6 +23,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
         private readonly ILoyaltyPointRepository _loyaltyPointRepository;
         private readonly ILoyaltyPointHistoryRepository _loyaltyPointHistoryRepository;
         private readonly IMemberTierConfigRepository _memberTierConfigRepository;
+        private readonly IPaymentSettlementService _paymentSettlementService;
         private readonly IUnitOfWork _unitOfWork;
 
         public ConfirmDeliverySuccessHandler(
@@ -32,6 +34,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             ILoyaltyPointRepository loyaltyPointRepository, 
             ILoyaltyPointHistoryRepository loyaltyPointHistoryRepository,
             IMemberTierConfigRepository memberTierConfigRepository,
+            IPaymentSettlementService paymentSettlementService,
             IUnitOfWork unitOfWork)
         {
             _orderRepository = orderRepository;
@@ -41,6 +44,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             _loyaltyPointRepository = loyaltyPointRepository;
             _loyaltyPointHistoryRepository = loyaltyPointHistoryRepository;
             _memberTierConfigRepository = memberTierConfigRepository;
+            _paymentSettlementService = paymentSettlementService;
             _unitOfWork = unitOfWork;
         }
 
@@ -75,6 +79,8 @@ namespace ShoppingFood.Application.Features.Orders.Commands
 
                 if (order.UserAccountId.HasValue)
                     await AccumulateLoyaltyPointsAsync(order);
+
+                await _paymentSettlementService.SettleOrderOnDeliveryAsync(order, shipperProfile);
 
                 shipperProfile.Latitude = request.Latitude;
                 shipperProfile.Longitude = request.Longitude;

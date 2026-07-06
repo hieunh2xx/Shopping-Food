@@ -15,7 +15,8 @@ import {
   BellRing,
   User,
   HelpCircle,
-  MessageSquare
+  MessageSquare,
+  DollarSign
 } from 'lucide-react';
 import { useAuth } from '../../../hooks';
 import { ROUTES } from '../../../routes/routeConfig';
@@ -46,6 +47,7 @@ export function AdminLayout() {
     { name: 'Xử lý khiếu nại', path: ROUTES.ADMIN_INCIDENTS, icon: ShieldAlert },
     { name: 'Quản lý FAQ', path: ROUTES.ADMIN_FAQ, icon: HelpCircle },
     { name: 'Live Chat', path: ROUTES.ADMIN_CHAT, icon: MessageSquare },
+    { name: 'Tài chính', path: ROUTES.ADMIN_FINANCE, icon: DollarSign },
     { name: 'Cấu hình hệ thống', path: '/admin/settings', icon: Settings },
     { name: 'Hồ sơ cá nhân', path: '/admin/profile', icon: User },
   ];

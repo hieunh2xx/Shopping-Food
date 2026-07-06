@@ -1,0 +1,47 @@
+{
+  "cookies": [
+    {
+      "name": "g_state",
+      "value": "{\"i_l\":0,\"i_ll\":1783314773817,\"i_b\":\"83mzhP3YDSUiaq5nPidq18NPsoRAWVoJ3k26+JOzS08\",\"i_e\":{\"enable_itp_optimization\":24},\"i_et\":1783314773817}",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1798866773,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "refreshToken",
+      "value": "54y0QgOhrZr7EU7ukHx2DZZv42aSUCnYKj1Ja5wjLvk%3D",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1783919574.315878,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    }
+  ],
+  "origins": [
+    {
+      "origin": "http://localhost:5173",
+      "localStorage": [
+        {
+          "name": "sf_user",
+          "value": "{\"id\":\"6c218369-de19-4be6-b6e2-512870eae63f\",\"userName\":\"admin\",\"fullName\":\"System Admin\",\"role\":\"Admin\",\"status\":\"Active\",\"email\":\"admin@test.com\",\"isEmailActive\":false,\"phone\":\"0900000000\",\"avatarUrl\":null,\"gender\":null,\"dateOfBirth\":null,\"createdAt\":\"2026-07-06T04:52:39.7872496\",\"tier\":null,\"totalEarnedPoints\":0,\"pointsBalance\":0,\"sellerInfo\":null}"
+        },
+        {
+          "name": "sf_token",
+          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInVuaXF1ZV9uYW1lIjoiYWRtaW4iLCJuYmYiOjE3ODMzMTQ3NzQsImV4cCI6MTc4MzMxNTY3NCwiaWF0IjoxNzgzMzE0Nzc0LCJpc3MiOiJTaG9wcGluZ0Zvb2RBUEkiLCJhdWQiOiJTaG9wcGluZ0Zvb2RDbGllbnQifQ.eOvz6hs2fWWRWdN1ku0kO-7Fd8nyv7gGqU1AZkqrfIs"
+        },
+        {
+          "name": "sf_guest_id",
+          "value": "49759f36-e89e-4322-a786-9069f0f42822"
+        },
+        {
+          "name": "sf_cart",
+          "value": "[]"
+        }
+      ]
+    }
+  ]
+}

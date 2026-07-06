@@ -31,6 +31,7 @@ namespace ShoppingFood.Application
             services.AddHttpClient<ShoppingFood.Application.Interfaces.IStringeeService, ShoppingFood.Application.Services.StringeeService>();
             services.AddTransient<ShoppingFood.Application.Interfaces.IEmailService, ShoppingFood.Application.Services.EmailService>();
             services.AddTransient<ShoppingFood.Application.Interfaces.IPhotoService, ShoppingFood.Application.Services.PhotoService>();
+            services.AddScoped<ShoppingFood.Application.Interfaces.IPaymentSettlementService, ShoppingFood.Application.Services.PaymentSettlementService>();
             return services;
         }
     }

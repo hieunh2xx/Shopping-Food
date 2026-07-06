@@ -52,3 +52,6 @@ export { AdminReviewReportsPage } from './admin/AdminReviewReportsPage';
 export { SellerFlashSalesPage } from './seller/SellerFlashSalesPage';
 export { AuthShipperApplyPage } from './shipper/AuthShipperApplyPage';
 export { DashboardProfilePage } from './shared/DashboardProfilePage';
+export { CustomerWalletPage } from './payment/CustomerWalletPage';
+export { SellerWalletPage, ShipperWalletPage } from './payment/PartnerWalletPages';
+export { AdminFinancePage } from './admin/AdminFinancePage';

@@ -73,7 +73,10 @@ namespace ShoppingFood.API.Filters
                                     path.Equals("/api/FlashSale/active", StringComparison.OrdinalIgnoreCase)) ||
 
                                 (method == "GET" &&
-                                    path.Equals("/api/LoyaltyPoint/gifts", StringComparison.OrdinalIgnoreCase));
+                                    path.Equals("/api/LoyaltyPoint/gifts", StringComparison.OrdinalIgnoreCase)) ||
+
+                                (method == "GET" &&
+                                    path.Equals("/api/Payment/methods", StringComparison.OrdinalIgnoreCase));
 
             bool isGuestCartRequest = (path.StartsWith("/api/Cart", StringComparison.OrdinalIgnoreCase) ||
                                        path.StartsWith("/api/Order/checkout", StringComparison.OrdinalIgnoreCase) ||

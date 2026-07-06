@@ -18,6 +18,9 @@ namespace ShoppingFood.Application.Features.Orders.Commands
         public string OtpCode { get; set; } = string.Empty;
         public string? DiscountCode { get; set; } 
         public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.COD;
+        public EWalletProvider? EWalletProvider { get; set; }
+        public string? CardLastFour { get; set; }
+        public string? CardBrand { get; set; }
         public string? Note { get; set; }
         public Guid? GuestUserId { get; set; }
         public double? DeliveryLatitude { get; set; }

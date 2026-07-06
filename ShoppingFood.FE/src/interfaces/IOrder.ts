@@ -21,7 +21,10 @@ export interface ICheckoutRequest {
   contactEmail: string;
   otpCode: string;
   discountCode?: string;
-  paymentMethod: 'COD' | 'CreditCard' | 'EWallet';
+  paymentMethod: 'COD' | 'CreditCard' | 'EWallet' | 'SystemWallet';
+  eWalletProvider?: 'Momo' | 'ZaloPay' | 'VNPay';
+  cardLastFour?: string;
+  cardBrand?: string;
   note?: string;
   guestUserId?: string;
   deliveryLatitude?: number;

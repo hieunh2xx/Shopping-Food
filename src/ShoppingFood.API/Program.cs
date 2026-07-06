@@ -114,6 +114,11 @@ using (var scope = app.Services.CreateScope())
         logContext.Database.Migrate();
         
         Console.WriteLine("Database migrations applied successfully!");
+
+        if (app.Environment.IsDevelopment())
+        {
+            await ShoppingFood.API.Data.E2eDataSeeder.SeedAsync(context);
+        }
     }
     catch (Exception ex)
     {

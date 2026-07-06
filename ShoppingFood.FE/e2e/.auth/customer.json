@@ -1,0 +1,47 @@
+{
+  "cookies": [
+    {
+      "name": "g_state",
+      "value": "{\"i_l\":0,\"i_ll\":1783314768918,\"i_b\":\"/6zTKdfl6Ad7p/ThY6GWOTUuj7Q7ODElSTyg++ZL4zc\",\"i_e\":{\"enable_itp_optimization\":24},\"i_et\":1783314768918}",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1798866768,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "refreshToken",
+      "value": "Y4c7l57sWXiHTHVAVwEvkn%2B8FHe2I6zxMls4CUlcScM%3D",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1783919569.882335,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    }
+  ],
+  "origins": [
+    {
+      "origin": "http://localhost:5173",
+      "localStorage": [
+        {
+          "name": "sf_user",
+          "value": "{\"id\":\"6d576f61-6b4b-4f3d-99d4-fc5bc9d74271\",\"userName\":\"testcustomer\",\"fullName\":\"Test Customer\",\"role\":\"Customer\",\"status\":\"Active\",\"email\":\"testcustomer@test.com\",\"isEmailActive\":false,\"phone\":\"0900000001\",\"avatarUrl\":null,\"gender\":null,\"dateOfBirth\":null,\"createdAt\":\"2026-07-06T04:52:39.9452531\",\"tier\":null,\"totalEarnedPoints\":0,\"pointsBalance\":0,\"sellerInfo\":null}"
+        },
+        {
+          "name": "sf_token",
+          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0Y3VzdG9tZXIiLCJ1bmlxdWVfbmFtZSI6InRlc3RjdXN0b21lciIsIm5iZiI6MTc4MzMxNDc2OSwiZXhwIjoxNzgzMzE1NjY5LCJpYXQiOjE3ODMzMTQ3NjksImlzcyI6IlNob3BwaW5nRm9vZEFQSSIsImF1ZCI6IlNob3BwaW5nRm9vZENsaWVudCJ9.lTF571xpMpf-sZw2FlhX3n4aHrjPGD3UzvY5V9Bb0DM"
+        },
+        {
+          "name": "sf_guest_id",
+          "value": "a4510f9d-ef37-42fd-8d46-deef50f7a910"
+        },
+        {
+          "name": "sf_cart",
+          "value": "[]"
+        }
+      ]
+    }
+  ]
+}

@@ -15,6 +15,7 @@ import { ROUTES } from '../routes/routeConfig';
 import { FavoriteRestaurants } from '../components/profile/FavoriteRestaurants';
 import { CustomerVouchers } from '../components/profile/CustomerVouchers';
 import { CustomerLoyalty } from '../components/profile/CustomerLoyalty';
+import { CustomerWalletPage } from './payment/CustomerWalletPage';
 
 export function ProfilePage() {
   const navigate = useNavigate();
@@ -207,6 +208,7 @@ export function ProfilePage() {
         {activeTab === 'favorites' && 'Quán ăn yêu thích'}
         {activeTab === 'vouchers' && 'Ví Voucher'}
         {activeTab === 'loyalty' && 'Điểm thưởng'}
+        {activeTab === 'wallet' && 'Ví tích lũy'}
       </h1>
 
       {activeTab === 'info' && (
@@ -455,6 +457,12 @@ export function ProfilePage() {
       {activeTab === 'loyalty' && (
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
           <CustomerLoyalty />
+        </div>
+      )}
+
+      {activeTab === 'wallet' && (
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+          <CustomerWalletPage />
         </div>
       )}
 

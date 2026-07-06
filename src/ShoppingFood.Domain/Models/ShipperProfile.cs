@@ -19,6 +19,8 @@ namespace ShoppingFood.Domain.Models
         public double? Latitude { get; set; }
         public double? Longitude { get; set; }
         public decimal WalletBalance { get; set; } = 0;
+        public decimal CodCollectedAmount { get; set; } = 0;
+        public decimal DebtLimit { get; set; } = 5_000_000m;
         public double ReputationScore { get; set; } = 100;
         public double Rating { get; set; } = 5.0;
         public double? OperatingLatitude { get; set; }

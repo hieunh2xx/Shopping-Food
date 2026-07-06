@@ -1,0 +1,47 @@
+{
+  "cookies": [
+    {
+      "name": "g_state",
+      "value": "{\"i_l\":0,\"i_ll\":1783314771668,\"i_b\":\"HWILXqIoCLQqbCGGcK8b7yvhJGMVEAwqPaJup/Ig3s8\",\"i_e\":{\"enable_itp_optimization\":24},\"i_et\":1783314771668}",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1798866771,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "refreshToken",
+      "value": "OJceVGl3hm08lRBS3JVwRUWpg4T96UlZimt8umEBc6M%3D",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1783919572.237791,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    }
+  ],
+  "origins": [
+    {
+      "origin": "http://localhost:5173",
+      "localStorage": [
+        {
+          "name": "sf_user",
+          "value": "{\"id\":\"5265b761-c674-4481-af41-a10344073051\",\"userName\":\"testseller\",\"fullName\":\"Test Seller\",\"role\":\"Seller\",\"status\":\"Active\",\"email\":\"testseller@test.com\",\"isEmailActive\":false,\"phone\":\"0900000002\",\"avatarUrl\":null,\"gender\":null,\"dateOfBirth\":null,\"createdAt\":\"2026-07-06T04:52:39.9648367\",\"tier\":null,\"totalEarnedPoints\":0,\"pointsBalance\":0,\"sellerInfo\":{\"restaurantId\":\"52db4763-d3d6-4567-9f78-2dd7e368223d\",\"restaurantName\":\"Test Restaurant E2E\",\"status\":\"Active\",\"address\":\"123 Test Street, HCM\",\"averageRating\":0,\"reviewCount\":0,\"logoUrl\":null}}"
+        },
+        {
+          "name": "sf_token",
+          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0c2VsbGVyIiwidW5pcXVlX25hbWUiOiJ0ZXN0c2VsbGVyIiwibmJmIjoxNzgzMzE0NzcyLCJleHAiOjE3ODMzMTU2NzIsImlhdCI6MTc4MzMxNDc3MiwiaXNzIjoiU2hvcHBpbmdGb29kQVBJIiwiYXVkIjoiU2hvcHBpbmdGb29kQ2xpZW50In0.QgCbsKDfqE-SfuiHIEcSABSamT3wOQsrHymjLMU9qtM"
+        },
+        {
+          "name": "sf_guest_id",
+          "value": "59d98a01-88cc-41af-93cc-0e27b3a2ebce"
+        },
+        {
+          "name": "sf_cart",
+          "value": "[]"
+        }
+      ]
+    }
+  ]
+}

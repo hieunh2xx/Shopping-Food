@@ -34,6 +34,7 @@ export function SellerLayout() {
     { name: 'Mã giảm giá', path: '/seller/discounts', icon: Ticket },
     { name: 'Mua X Tặng Y', path: '/seller/promotions', icon: Gift },
     { name: 'Flash Sale', path: ROUTES.SELLER_FLASH_SALES, icon: Zap },
+    { name: 'Ví & Rút tiền', path: ROUTES.SELLER_WALLET, icon: Ticket },
     { name: 'Thông tin cửa hàng', path: '/seller/settings', icon: Settings },
   ];
 

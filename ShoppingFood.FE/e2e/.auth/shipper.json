@@ -1,0 +1,47 @@
+{
+  "cookies": [
+    {
+      "name": "g_state",
+      "value": "{\"i_l\":0,\"i_ll\":1783314776388,\"i_b\":\"GTyZHPP37FG6ks2z8eehak4jAPx040jG5WcxZB/mHgY\",\"i_e\":{\"enable_itp_optimization\":24},\"i_et\":1783314776388}",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1798866776,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "refreshToken",
+      "value": "TbfCA5ia2lTyCdlQzd0uL%2B3PL4YQRLmdXqBioBD0VJ4%3D",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1783919576.883378,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    }
+  ],
+  "origins": [
+    {
+      "origin": "http://localhost:5173",
+      "localStorage": [
+        {
+          "name": "sf_user",
+          "value": "{\"id\":\"4a69aabb-02ab-4cc7-a758-e714a06d9be1\",\"userName\":\"testshipper\",\"fullName\":\"Test Shipper\",\"role\":\"Shipper\",\"status\":\"Active\",\"email\":\"testshipper@test.com\",\"isEmailActive\":false,\"phone\":\"0900000003\",\"avatarUrl\":null,\"gender\":null,\"dateOfBirth\":null,\"createdAt\":\"2026-07-06T04:52:40.17447\",\"tier\":null,\"totalEarnedPoints\":0,\"pointsBalance\":0,\"sellerInfo\":null}"
+        },
+        {
+          "name": "sf_token",
+          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0c2hpcHBlciIsInVuaXF1ZV9uYW1lIjoidGVzdHNoaXBwZXIiLCJuYmYiOjE3ODMzMTQ3NzYsImV4cCI6MTc4MzMxNTY3NiwiaWF0IjoxNzgzMzE0Nzc2LCJpc3MiOiJTaG9wcGluZ0Zvb2RBUEkiLCJhdWQiOiJTaG9wcGluZ0Zvb2RDbGllbnQifQ.WYuaLUZ9294D51wWtCMFXa5Lav_BzRO9iLxnHs_xQfg"
+        },
+        {
+          "name": "sf_guest_id",
+          "value": "22809a4f-1530-4d23-a3a2-c620c2cefea6"
+        },
+        {
+          "name": "sf_cart",
+          "value": "[]"
+        }
+      ]
+    }
+  ]
+}

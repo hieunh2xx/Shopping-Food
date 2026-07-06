@@ -20,6 +20,12 @@ namespace ShoppingFood.Domain.Models
         public string? DeliveryProofImageUrl { get; set; }
         public OrderStatus Status { get; set; } = OrderStatus.Pending;
         public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.COD;
+        public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.Pending;
+        public decimal ItemsSubtotal { get; set; } = 0;
+        public decimal PlatformCommission { get; set; } = 0;
+        public decimal SellerPayout { get; set; } = 0;
+        public bool IsFinancialSettled { get; set; } = false;
+        public Guid? PaymentSessionId { get; set; }
         public string IpAddress { get; set; } = string.Empty;
         public double? DeliveryLatitude { get; set; }
         public double? DeliveryLongitude { get; set; }

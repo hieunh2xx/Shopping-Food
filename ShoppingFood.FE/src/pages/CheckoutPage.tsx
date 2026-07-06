@@ -7,6 +7,7 @@ import { ROUTES } from '../routes/routeConfig';
 import { formatCurrency } from '../utils/formatters';
 import { orderService } from '../services/OrderService';
 import { discountService } from '../services/DiscountService';
+import { paymentService, type IPaymentMethod } from '../services/PaymentService';
 import type { IDiscountDto } from '../interfaces';
 import toast from 'react-hot-toast';
 import { Modal } from '../components/common/Modal';
@@ -53,9 +54,16 @@ export function CheckoutPage() {
     contactEmail: user?.email || '',
     deliveryAddress: '',
     note: '',
-    paymentMethod: 'COD' as 'COD' | 'CreditCard' | 'EWallet',
+    paymentMethod: 'COD' as 'COD' | 'CreditCard' | 'EWallet' | 'SystemWallet',
+    eWalletProvider: 'Momo' as 'Momo' | 'ZaloPay' | 'VNPay',
+    cardLastFour: '',
+    cardBrand: 'Visa',
     discountCode: ''
   });
+
+  const [paymentMethods, setPaymentMethods] = useState<IPaymentMethod[]>([]);
+  const [eWalletProviders, setEWalletProviders] = useState<{ code: string; name: string }[]>([]);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
 
   const [availableDiscounts, setAvailableDiscounts] = useState<IDiscountDto[]>([]);
   const [selectedDiscount, setSelectedDiscount] = useState<IDiscountDto | null>(null);
@@ -81,6 +89,20 @@ export function CheckoutPage() {
       });
     }
   }, [restaurantId, checkoutTotal]);
+
+  useEffect(() => {
+    paymentService.getPaymentMethods().then(res => {
+      if (!res.error && res.data) {
+        setPaymentMethods(res.data.methods || []);
+        setEWalletProviders(res.data.eWalletProviders || []);
+      }
+    });
+    if (isAuthenticated) {
+      paymentService.getWallet().then(res => {
+        if (!res.error && res.data) setWalletBalance(res.data.balance);
+      });
+    }
+  }, [isAuthenticated]);
 
   const finalTotal = useMemo(() => {
     if (!selectedDiscount) return checkoutTotal;
@@ -136,7 +158,7 @@ export function CheckoutPage() {
     try {
       const res = await discountService.applyDiscount({
         code: formData.discountCode,
-        restaurantId,
+        restaurantId: restaurantId ?? undefined,
         cartAmount: checkoutTotal
       });
       if (!res.error && res.data) {
@@ -164,13 +186,23 @@ export function CheckoutPage() {
 
     setIsSubmitting(true);
     try {
-      await orderService.checkout({
+      const checkoutPayload: any = {
         ...formData,
         otpCode: isAuthenticated ? '' : otpCode,
         guestUserId,
-        discountCode: selectedDiscount?.code || formData.discountCode
-      });
+        discountCode: selectedDiscount?.code || formData.discountCode,
+        eWalletProvider: formData.paymentMethod === 'EWallet' ? formData.eWalletProvider : undefined,
+        cardLastFour: formData.paymentMethod === 'CreditCard' ? formData.cardLastFour : undefined,
+        cardBrand: formData.paymentMethod === 'CreditCard' ? formData.cardBrand : undefined,
+      };
+      const res = await orderService.checkout(checkoutPayload);
       const orderId = res.data?.orderId || res.data?.OrderId || '';
+      const sessionId = res.data?.paymentSessionId;
+
+      if (sessionId) {
+        await paymentService.confirmPayment(sessionId);
+      }
+
       clearCart();
       if (isAuthenticated) {
         toast.success('Đặt hàng thành công!');
@@ -277,12 +309,17 @@ export function CheckoutPage() {
 
                   <div className="pt-4">
                     <label className="block text-sm font-medium text-gray-700 mb-3">Phương thức thanh toán</label>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      {['COD', 'CreditCard', 'EWallet'].map((method) => (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {(paymentMethods.length > 0 ? paymentMethods : [
+                        { code: 'COD', name: 'Tiền mặt', requiresAuth: false },
+                        { code: 'CreditCard', name: 'Thẻ tín dụng', requiresAuth: true },
+                        { code: 'EWallet', name: 'Ví điện tử', requiresAuth: true },
+                        { code: 'SystemWallet', name: 'Ví tích lũy', requiresAuth: true },
+                      ] as IPaymentMethod[]).filter(m => !m.requiresAuth || isAuthenticated).map((method) => (
                         <label 
-                          key={method}
+                          key={method.code}
                           className={`flex items-center justify-center p-3 border rounded-xl cursor-pointer transition-all ${
-                            formData.paymentMethod === method 
+                            formData.paymentMethod === method.code 
                               ? 'border-orange-500 bg-orange-50 text-orange-700 ring-1 ring-orange-500' 
                               : 'border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50'
                           }`}
@@ -290,17 +327,34 @@ export function CheckoutPage() {
                           <input 
                             type="radio" 
                             name="paymentMethod" 
-                            value={method} 
-                            checked={formData.paymentMethod === method}
+                            value={method.code} 
+                            checked={formData.paymentMethod === method.code}
                             onChange={handleInputChange}
                             className="sr-only" 
                           />
-                          <span className="font-medium text-sm">
-                            {method === 'COD' ? 'Tiền mặt' : method === 'CreditCard' ? 'Thẻ tín dụng' : 'Ví điện tử'}
-                          </span>
+                          <span className="font-medium text-sm">{method.name}</span>
                         </label>
                       ))}
                     </div>
+                    {formData.paymentMethod === 'SystemWallet' && walletBalance !== null && (
+                      <p className="text-sm text-gray-500 mt-2">Số dư ví: {formatCurrency(walletBalance)}</p>
+                    )}
+                    {formData.paymentMethod === 'EWallet' && (
+                      <div className="mt-3 flex gap-2">
+                        {eWalletProviders.map(p => (
+                          <label key={p.code} className={`px-3 py-2 border rounded-lg cursor-pointer text-sm ${formData.eWalletProvider === p.code ? 'border-orange-500 bg-orange-50' : 'border-gray-200'}`}>
+                            <input type="radio" name="eWalletProvider" value={p.code} checked={formData.eWalletProvider === p.code} onChange={handleInputChange} className="sr-only" />
+                            {p.name}
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                    {formData.paymentMethod === 'CreditCard' && (
+                      <div className="mt-3 grid grid-cols-2 gap-3">
+                        <Input name="cardBrand" value={formData.cardBrand} onChange={handleInputChange} placeholder="Loại thẻ (Visa/Mastercard)" />
+                        <Input name="cardLastFour" value={formData.cardLastFour} onChange={handleInputChange} placeholder="4 số cuối thẻ" maxLength={4} />
+                      </div>
+                    )}
                   </div>
 
                   <Button 
