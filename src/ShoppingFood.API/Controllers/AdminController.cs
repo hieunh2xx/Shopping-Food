@@ -281,5 +281,41 @@ namespace ShoppingFood.API.Controllers
             var response = await _mediator.Send(command);
             return response ? Ok(ApiResponse.Success(null, "Cập nhật thành công")) : BadRequest(ApiResponse.Failure(400, "Cập nhật thất bại"));
         }
+
+        [HttpPost("users/staff")]
+        public async Task<ActionResult<ApiResponse>> CreateStaff([FromBody] CreateStaffCommand command)
+        {
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpPut("users/{userId}/toggle-status")]
+        public async Task<IActionResult> ToggleUserStatus(Guid userId)
+        {
+            var response = await _mediator.Send(new ToggleUserStatusCommand { UserId = userId });
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpGet("permissions/endpoints")]
+        public async Task<ActionResult<ApiResponse>> GetApiEndpoints()
+        {
+            var response = await _mediator.Send(new GetApiEndpointsQuery());
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpGet("permissions/role/{role}")]
+        public async Task<ActionResult<ApiResponse>> GetRolePermissions(ShoppingFood.Domain.Enums.UserRole role)
+        {
+            var response = await _mediator.Send(new GetRolePermissionsQuery { Role = role });
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpPut("permissions/role/{role}")]
+        public async Task<ActionResult<ApiResponse>> UpdateRolePermissions(ShoppingFood.Domain.Enums.UserRole role, [FromBody] UpdateRolePermissionsCommand command)
+        {
+            command.Role = role;
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
     }
 }

@@ -18,6 +18,7 @@ using ShoppingFood.Domain.Enums;
 using ShoppingFood.Domain.Models;
 using ShoppingFood.Dto.Cart;
 using ShoppingFood.Repository.Interfaces;
+using ShoppingFood.Application.Interfaces;
 using Xunit;
 
 namespace ShoppingFood.Tests.Features.Carts
@@ -32,6 +33,7 @@ namespace ShoppingFood.Tests.Features.Carts
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
         private readonly Mock<IMapper> _mapperMock;
         private readonly Mock<IHttpContextAccessor> _httpContextAccessorMock;
+        private readonly Mock<IFlashSalePricingService> _flashSalePricingServiceMock;
         private readonly AddToCartHandler _handler;
 
         public AddToCartHandlerTests()
@@ -52,6 +54,7 @@ namespace ShoppingFood.Tests.Features.Carts
             _unitOfWorkMock = new Mock<IUnitOfWork>();
             _mapperMock = new Mock<IMapper>();
             _httpContextAccessorMock = new Mock<IHttpContextAccessor>();
+            _flashSalePricingServiceMock = new Mock<IFlashSalePricingService>();
 
             _handler = new AddToCartHandler(
                 _cartRepositoryMock.Object,
@@ -60,7 +63,8 @@ namespace ShoppingFood.Tests.Features.Carts
                 _unitOfWorkMock.Object,
                 _mapperMock.Object,
                 _dbContext,
-                _httpContextAccessorMock.Object
+                _httpContextAccessorMock.Object,
+                _flashSalePricingServiceMock.Object
             );
         }
 

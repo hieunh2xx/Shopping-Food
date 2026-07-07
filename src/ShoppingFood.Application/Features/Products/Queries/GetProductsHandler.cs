@@ -12,6 +12,7 @@ using ShoppingFood.Domain.Models;
 using ShoppingFood.Domain.Enums;
 using ShoppingFood.Dto.Product;
 using ShoppingFood.Repository.Interfaces;
+using ShoppingFood.Application.Interfaces;
 
 namespace ShoppingFood.Application.Features.Products.Queries
 {
@@ -20,12 +21,18 @@ namespace ShoppingFood.Application.Features.Products.Queries
         private readonly IProductRepository _productRepository;
         private readonly IUserRepository _userRepository;
         private readonly IMapper _mapper;
+        private readonly IFlashSalePricingService _flashSalePricingService;
 
-        public GetProductsHandler(IProductRepository productRepository, IUserRepository userRepository, IMapper mapper)
+        public GetProductsHandler(
+            IProductRepository productRepository, 
+            IUserRepository userRepository, 
+            IMapper mapper,
+            IFlashSalePricingService flashSalePricingService)
         {
             _productRepository = productRepository;
             _userRepository = userRepository;
             _mapper = mapper;
+            _flashSalePricingService = flashSalePricingService;
         }
 
         public async Task<ApiResponse> Handle(GetProductsQuery request, CancellationToken cancellationToken)
@@ -61,6 +68,7 @@ namespace ShoppingFood.Application.Features.Products.Queries
                 include: q => q.Include(p => p.Restaurant)
                                .Include(p => p.Images)
                                .Include(p => p.Category)
+                               .Include(p => p.GlobalCategory)
                                .Include(p => p.ProductToppings)
                                    .ThenInclude(pt => pt.Topping)
                                .Include(p => p.ProductSizes)
@@ -72,6 +80,8 @@ namespace ShoppingFood.Application.Features.Products.Queries
 
             var total = await _productRepository.GetCountAsync(predicate);
             var productDtos = _mapper.Map<IReadOnlyList<ProductDto>>(products);
+
+            await _flashSalePricingService.AttachFlashSalePricesAsync(productDtos);
 
             return ApiResponse.Success(productDtos, "Products retrieved successfully", total);
         }

@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import { ROUTES } from './routeConfig';
 import { PrivateRoute } from './PrivateRoute';
+import { BuyXGetYPage } from '../pages';
 
 // Layout
 import { MainLayout, AdminLayout, SellerLayout, UserLayout, ShipperLayout, CoordinatorLayout } from '../components/layout';
@@ -54,6 +55,7 @@ import {
   CoordinatorChatPage,
   AdminReviewReportsPage,
   CheckoutPage,
+  FlashSalePage,
   GuestOrderTrackingPage,
   RestaurantsPage,
   PromotionsPage,
@@ -97,6 +99,8 @@ export function AppRoutes() {
         <Route path={ROUTES.RESTAURANTS} element={<RestaurantsPage />} />
         <Route path={ROUTES.RESTAURANT_DETAIL} element={<RestaurantDetailPage />} />
         <Route path={ROUTES.PROMOTIONS} element={<PromotionsPage />} />
+        <Route path={ROUTES.FLASH_SALE_PAGE} element={<FlashSalePage />} />
+        <Route path={ROUTES.BUY_X_GET_Y} element={<BuyXGetYPage />} />
         <Route path={ROUTES.CHECKOUT} element={<CheckoutPage />} />
         <Route path={ROUTES.PAYMENT_SEPAY} element={<PrivateRoute><SepayRedirectPage /></PrivateRoute>} />
         <Route path={ROUTES.PAYMENT_SUCCESS} element={<PaymentSuccessPage />} />

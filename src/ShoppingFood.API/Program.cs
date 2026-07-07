@@ -125,8 +125,11 @@ using (var scope = app.Services.CreateScope())
 
         if (app.Environment.IsDevelopment())
         {
-            await ShoppingFood.API.Data.E2eDataSeeder.SeedAsync(context);
+            // Seed logic goes here if needed
         }
+        
+        // Tự động quét và nạp API Endpoints vào DB
+        await ShoppingFood.API.Data.ApiEndpointSeeder.SeedAsync(app.Services);
     }
     catch (Exception ex)
     {

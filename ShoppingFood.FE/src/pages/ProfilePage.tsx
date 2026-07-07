@@ -54,6 +54,16 @@ export function ProfilePage() {
     fetchProfile();
   }, []);
 
+  useEffect(() => {
+    const handleNotification = (e: CustomEvent) => {
+      // Reload profile if there's any notification that might change user's status/role
+      fetchProfile();
+    };
+
+    window.addEventListener('ON_REALTIME_NOTIFICATION', handleNotification as EventListener);
+    return () => window.removeEventListener('ON_REALTIME_NOTIFICATION', handleNotification as EventListener);
+  }, []);
+
   const fetchProfile = async () => {
     setIsLoading(true);
     try {

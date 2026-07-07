@@ -9,8 +9,8 @@ using ShoppingFood.Repository.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using ShoppingFood.Application.Interfaces;
 
 namespace ShoppingFood.Application.Features.Carts.Commands
 {
@@ -20,17 +20,20 @@ namespace ShoppingFood.Application.Features.Carts.Commands
         private readonly ICartItemRepository _cartItemRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IFlashSalePricingService _flashSalePricingService;
 
         public UpdateCartItemQuantityHandler(
             ICartRepository cartRepository,
             ICartItemRepository cartItemRepository,
             IUnitOfWork unitOfWork,
-            IMapper mapper)
+            IMapper mapper,
+            IFlashSalePricingService flashSalePricingService)
         {
             _cartRepository = cartRepository;
             _cartItemRepository = cartItemRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _flashSalePricingService = flashSalePricingService;
         }
         public async Task<ApiResponse> Handle(UpdateCartItemQuantityCommand request, CancellationToken cancellationToken)
         {
@@ -53,7 +56,10 @@ namespace ShoppingFood.Application.Features.Carts.Commands
                 }
                 else
                 {
+                    var fspPrice = await _flashSalePricingService.GetActiveFlashSalePriceAsync(request.ProductId);
                     cartItem.Quantity = request.Quantity;
+                    cartItem.PriceAtAdded = fspPrice ?? cartItem.Product?.Price ?? cartItem.PriceAtAdded; // keep if product is null, but we can query it
+                    
                     _cartItemRepository.Update(cartItem);
                 }
 
@@ -74,6 +80,7 @@ namespace ShoppingFood.Application.Features.Carts.Commands
         {
             var existingCartItem = await _cartItemRepository.GetAsync(
                 predicate: i => i.CartId == cartId && i.ProductId == productId,
+                include: q => q.Include(i => i.Product),
                 disableTracking: false
             );
             return existingCartItem.FirstOrDefault();

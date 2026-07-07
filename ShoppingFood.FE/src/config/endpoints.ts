@@ -53,7 +53,7 @@ export const API_ENDPOINTS = {
     CREATE: '/Product',        // POST
     UPDATE: (id: string) => `/Product/${id}`,     // PUT
     DELETE: (id: string) => `/Product/${id}`,     // DELETE
-    SEARCH: '/Product',                            // GET
+    SEARCH: '/Product/Search',                            // GET
     BEST_SELLERS: '/Product/BestSellers',          // GET ?take=
     CATEGORIES: '/Product/Categories',             // GET
     STOCK_STATUS: (id: string) => `/Product/StockStatus/${id}`,       // PATCH
@@ -103,6 +103,24 @@ export const API_ENDPOINTS = {
     MODERATE_REVIEW_REPORT: (reportId: string) => `/Admin/review-reports/${reportId}/moderate`, // POST
     SUPPORT_TICKETS: '/Admin/support-tickets', // POST
     SUSPEND_SHIPPER: (id: string) => `/Admin/shippers/${id}/suspend`, // PUT
+    CREATE_STAFF: '/Admin/users/staff', // POST
+    PERMISSIONS_ENDPOINTS: '/Admin/permissions/endpoints', // GET
+    TOGGLE_USER_STATUS: (userId: string) => `/Admin/users/${userId}/toggle-status`, // PUT
+    ROLE_PERMISSIONS: (role: number) => `/Admin/permissions/role/${role}`, // GET, PUT
+    DASHBOARD_STATS: '/Admin/dashboard/stats', // GET
+    DASHBOARD_HEATMAP: '/Admin/dashboard/heatmap', // GET
+    SYSTEM_MAINTENANCE: '/Admin/system/maintenance', // GET, POST
+    SYSTEM_LEGAL: '/Admin/system/legal', // POST
+    REPORTS_FINANCIAL: '/Admin/reports/financial', // GET
+    FINANCE_CONFIG: '/Admin/finance-config', // GET, PUT
+    FINANCE_CONFIG_RESTAURANTS: '/Admin/finance-config/restaurants', // GET
+    FINANCE_CONFIG_RESTAURANT_BY_ID: (id: string) => `/Admin/finance-config/restaurants/${id}`, // PUT
+  },
+
+  // === System (SystemController) ===
+  SYSTEM: {
+    GLOBAL_MENU_CATEGORY: '/System/global-menu-category', // GET
+    LEGAL: '/System/legal', // GET
   },
 
   // === Shipper (ShipperController) ===

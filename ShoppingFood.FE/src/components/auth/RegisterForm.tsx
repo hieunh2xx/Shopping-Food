@@ -63,7 +63,7 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
       if (!response.error && response.data) {
         setLegalModalState(prev => ({
           ...prev,
-          content: type === 'terms' ? (response.data.termsOfUse || 'Chưa có nội dung') : (response.data.privacyPolicy || 'Chưa có nội dung'),
+          content: type === 'terms' ? (isSeller ? response.data.termsOfUseSeller : response.data.termsOfUseCustomer) || 'Chưa có nội dung' : (response.data.privacyPolicy || 'Chưa có nội dung'),
           isLoading: false
         }));
       } else {
@@ -178,7 +178,7 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
     if (!form.phone.trim()) newErrors.phone = 'Vui lòng nhập số điện thoại';
     else if (!/^\d{9,15}$/.test(form.phone)) newErrors.phone = 'Số điện thoại 9-15 chữ số';
 
-    if (!agreedToTerms) newErrors.agreedToTerms = 'Bạn phải đồng ý với Điều khoản và Chính sách';
+    if (!isSeller && !agreedToTerms) newErrors.agreedToTerms = 'Bạn phải đồng ý với Điều khoản và Chính sách';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -191,6 +191,7 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
     if (!form.contactInfo.trim()) newErrors.contactInfo = 'Vui lòng nhập thông tin liên hệ';
     if (!selectedFile) newErrors.businessLicenseUrl = 'Vui lòng tải lên Hợp đồng/Giấy phép';
     if (!selectedShopFile) newErrors.shopImageUrl = 'Vui lòng tải lên Ảnh chụp mặt tiền cửa hàng';
+    if (!agreedToTerms) newErrors.agreedToTerms = 'Bạn phải đồng ý với Điều khoản và Chính sách';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -372,40 +373,43 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
             />
           </div>
 
-          <div className="mt-4">
-            <label className="flex items-start gap-2 cursor-pointer group">
-              <div className="relative flex items-center mt-1">
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500 cursor-pointer peer"
-                  checked={agreedToTerms}
-                  onChange={(e) => {
-                    setAgreedToTerms(e.target.checked);
-                    if (e.target.checked && errors.agreedToTerms) {
-                      setErrors((prev) => {
-                        const next = { ...prev };
-                        delete next.agreedToTerms;
-                        return next;
-                      });
-                    }
-                  }}
-                />
-              </div>
-              <span className="text-sm text-gray-600 select-none">
-                Tôi đã đọc và đồng ý với{' '}
-                <a href="#" onClick={(e) => handleOpenLegalModal(e, 'terms')} className="text-orange-600 hover:underline font-medium">
-                  Điều khoản dịch vụ
-                </a>{' '}
-                và{' '}
-                <a href="#" onClick={(e) => handleOpenLegalModal(e, 'privacy')} className="text-orange-600 hover:underline font-medium">
-                  Chính sách bảo mật
-                </a>
-              </span>
-            </label>
-            {errors.agreedToTerms && (
-              <p className="mt-1 text-sm text-red-600">{errors.agreedToTerms}</p>
-            )}
-          </div>
+          {!isSeller && (
+            <div className="pt-2 pb-2 border-t border-gray-100 mt-4">
+              <label className="flex items-start gap-2 cursor-pointer group">
+                <div className="pt-0.5">
+                  <input
+                    type="checkbox"
+                    name="agreedToTerms"
+                    className="w-4 h-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500 cursor-pointer peer"
+                    checked={agreedToTerms}
+                    onChange={(e) => {
+                      setAgreedToTerms(e.target.checked);
+                      if (e.target.checked && errors.agreedToTerms) {
+                        setErrors((prev) => {
+                          const next = { ...prev };
+                          delete next.agreedToTerms;
+                          return next;
+                        });
+                      }
+                    }}
+                  />
+                </div>
+                <span className="text-sm text-gray-600 select-none">
+                  Tôi đã đọc và đồng ý với{' '}
+                  <a href="#" onClick={(e) => handleOpenLegalModal(e, 'terms')} className="text-orange-600 hover:underline font-medium">
+                    Điều khoản dịch vụ
+                  </a>{' '}
+                  và{' '}
+                  <a href="#" onClick={(e) => handleOpenLegalModal(e, 'privacy')} className="text-orange-600 hover:underline font-medium">
+                    Chính sách bảo mật
+                  </a>
+                </span>
+              </label>
+              {errors.agreedToTerms && (
+                <p className="mt-1 text-sm text-red-600">{errors.agreedToTerms}</p>
+              )}
+            </div>
+          )}
 
           {isSeller ? (
             <Button type="button" onClick={handleNext} className="w-full mt-6" size="lg">
@@ -576,6 +580,42 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
                   <span className="w-1 h-1 bg-red-600 rounded-full inline-block"></span>
                   {errors.shopImageUrl}
                 </p>
+              )}
+            </div>
+
+            <div className="pt-2 pb-2 border-t border-gray-100 mt-4">
+              <label className="flex items-start gap-2 cursor-pointer group">
+                <div className="pt-0.5">
+                  <input
+                    type="checkbox"
+                    name="agreedToTerms"
+                    className="w-4 h-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500 cursor-pointer peer"
+                    checked={agreedToTerms}
+                    onChange={(e) => {
+                      setAgreedToTerms(e.target.checked);
+                      if (e.target.checked && errors.agreedToTerms) {
+                        setErrors((prev) => {
+                          const next = { ...prev };
+                          delete next.agreedToTerms;
+                          return next;
+                        });
+                      }
+                    }}
+                  />
+                </div>
+                <span className="text-sm text-gray-600 select-none">
+                  Tôi đã đọc và đồng ý với{' '}
+                  <a href="#" onClick={(e) => handleOpenLegalModal(e, 'terms')} className="text-orange-600 hover:underline font-medium">
+                    Điều khoản dịch vụ
+                  </a>{' '}
+                  và{' '}
+                  <a href="#" onClick={(e) => handleOpenLegalModal(e, 'privacy')} className="text-orange-600 hover:underline font-medium">
+                    Chính sách bảo mật
+                  </a>
+                </span>
+              </label>
+              {errors.agreedToTerms && (
+                <p className="mt-1 text-sm text-red-600">{errors.agreedToTerms}</p>
               )}
             </div>
 

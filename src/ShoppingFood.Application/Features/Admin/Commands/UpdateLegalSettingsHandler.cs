@@ -30,7 +30,9 @@ namespace ShoppingFood.Application.Features.Admin.Commands
             
             var settingsDto = new LegalSettingsDto
             {
-                TermsOfUse = request.TermsOfUse,
+                TermsOfUseCustomer = request.TermsOfUseCustomer,
+                TermsOfUseSeller = request.TermsOfUseSeller,
+                TermsOfUseShipper = request.TermsOfUseShipper,
                 PrivacyPolicy = request.PrivacyPolicy
             };
             var newValue = JsonSerializer.Serialize(settingsDto);

@@ -103,7 +103,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const totalItems = items.reduce((sum, item) => sum + (item?.quantity || 0), 0);
   const totalPrice = items.reduce((sum, item) => {
     if (!item || !item.product) return sum;
-    let itemPrice = item.product.price || 0;
+    let itemPrice = item.product.flashSalePrice ?? item.product.price ?? 0;
     if (item.selectedSize) {
       const sizeOpt = item.product.sizes?.find(s => s.sizeName === item.selectedSize);
       if (sizeOpt) {

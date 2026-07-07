@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Bike, UploadCloud } from 'lucide-react';
 import { Button, Input } from '../../components/common';
 import { authService } from '../../services/AuthService';
@@ -156,10 +156,10 @@ export function AuthShipperApplyPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Loại phương tiện</label>
-              <select className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 bg-gray-50" value={form.vehicleType} onChange={(e) => setForm({ ...form, vehicleType: e.target.value })}>
+              <select className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 bg-gray-50 text-gray-900" value={form.vehicleType} onChange={(e) => setForm({ ...form, vehicleType: e.target.value })}>
                 <option value="Motorcycle">Xe máy</option>
+                <option value="ElectricMotorbike">Xe điện</option>
                 <option value="Car">Ô tô</option>
-                <option value="Bicycle">Xe đạp</option>
               </select>
             </div>
             <div>
@@ -173,7 +173,7 @@ export function AuthShipperApplyPage() {
             <FileUploadField label="Giấy đăng ký xe" file={vehicleRegFile} setter={setVehicleRegFile} handleFileSelect={handleFileSelect} />
           </div>
 
-          <div className="pt-6 border-t border-gray-100 flex justify-end gap-4 mt-8">
+          <div className="pt-6 border-t border-gray-100 flex justify-end gap-4 mt-2">
             <Button type="button" variant="outline" onClick={() => navigate(-1)}>Hủy bỏ</Button>
             <Button type="submit" disabled={loading} className="px-8">{loading ? 'Đang gửi...' : 'Gửi yêu cầu'}</Button>
           </div>

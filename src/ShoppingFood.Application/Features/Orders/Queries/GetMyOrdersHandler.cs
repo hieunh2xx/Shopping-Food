@@ -18,29 +18,23 @@ namespace ShoppingFood.Application.Features.Orders.Queries
         };
 
         private readonly IOrderRepository _orderRepository;
-        private readonly IUserRepository _userRepository;
         private readonly IChatSessionRepository _chatSessionRepository;
 
         public GetMyOrdersHandler(
             IOrderRepository orderRepository,
-            IUserRepository userRepository,
             IChatSessionRepository chatSessionRepository)
         {
             _orderRepository = orderRepository;
-            _userRepository = userRepository;
             _chatSessionRepository = chatSessionRepository;
         }
 
         public async Task<ApiResponse> Handle(GetMyOrdersQuery request, CancellationToken cancellationToken)
         {
-            var userList = await _userRepository.GetAsync(u => u.UserName == request.Username);
-            var user = userList.FirstOrDefault();
-
-            if (user == null)
-                return ApiResponse.Failure(404, "User not found.");
+            if (!request.CurrentUserId.HasValue)
+                return ApiResponse.Failure(401, "Unauthorized.");
 
             var orders = await _orderRepository.GetAsync(
-                predicate: o => o.UserAccountId == user.Id,
+                predicate: o => o.UserAccountId == request.CurrentUserId.Value,
                 include: q => q.Include(o => o.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Restaurant),
                 orderBy: q => q.OrderByDescending(o => o.CreatedAt),
                 skip: request.Skip,

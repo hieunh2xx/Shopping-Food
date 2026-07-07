@@ -12,6 +12,8 @@ export const ROUTES = {
   GUEST_ORDER_TRACKING: '/order-tracking',
   PRODUCTS: '/products',
   PROMOTIONS: '/promotions',
+  FLASH_SALE_PAGE: '/flash-sale',
+  BUY_X_GET_Y: '/buy-x-get-y',
   PRODUCT_DETAIL: '/products/:id',
   RESTAURANTS: '/restaurants',
   HELP_CENTER: '/help',

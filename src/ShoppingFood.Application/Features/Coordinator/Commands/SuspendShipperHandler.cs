@@ -63,16 +63,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
             {
                 return ApiResponse.Failure(401, "Unauthorized access.");
             }
-            var users = await _userRepository.GetAsync(
-                predicate: u => u.Id == currentUserId.Value,
-                include: q => q.Include(u => u.Profile),
-                disableTracking: true
-            );
-            var user = users.FirstOrDefault();
-            if (user == null || (user.Profile?.Role != UserRole.Coordinator && user.Profile?.Role != UserRole.Admin))
-            {
-                return ApiResponse.Failure(403, "Access denied. Only coordinators and admins can suspend shippers.");
-            }
+
             return null;
         }
         private async Task<ShipperProfile?> GetShipperProfileAsync(Guid shipperId)

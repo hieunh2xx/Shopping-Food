@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
@@ -62,8 +62,7 @@ namespace ShoppingFood.Application.Features.Discounts.Commands
                 if (restaurant == null || discount.RestaurantId != restaurant.Id)
                     return ApiResponse.Failure(403, "Access denied. You can only delete discounts belonging to your restaurant.");
             }
-            else if (user.Profile.Role != UserRole.Admin)
-                return ApiResponse.Failure(403, "Access denied. Only admin and seller can delete discounts");
+
 
             discount.IsDeleted = true;
             discount.DeletedAt = DateTime.UtcNow;

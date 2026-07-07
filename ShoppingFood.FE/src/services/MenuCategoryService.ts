@@ -16,6 +16,10 @@ class MenuCategoryService extends BaseService<IMenuCategoryDto, IAddMenuCategory
     return httpClient.get<IApiResponse<IMenuCategoryDto[]>>(API_ENDPOINTS.MENU_CATEGORY.BY_RESTAURANT(restaurantId));
   }
 
+  async getGlobalCategories(): Promise<IApiResponse<any>> {
+    return httpClient.get<IApiResponse<any>>(API_ENDPOINTS.SYSTEM.GLOBAL_MENU_CATEGORY);
+  }
+
   override async update(id: string, data: IUpdateMenuCategoryRequest): Promise<IApiResponse<IMenuCategoryDto>> {
     return httpClient.put<IApiResponse<IMenuCategoryDto>>(this.endpoint, { ...data, id });
   }

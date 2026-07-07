@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
@@ -33,14 +33,7 @@ namespace ShoppingFood.Application.Features.FlashSales.Queries
             if (!request.CurrentUserId.HasValue)
                 return ApiResponse.Failure(401, "Unauthorized.");
 
-            var users = await _userRepository.GetAsync(
-                predicate: u => u.Id == request.CurrentUserId.Value,
-                include: q => q.Include(u => u.Profile),
-                disableTracking: true
-                );
-            var userProfile = users.FirstOrDefault()?.Profile;
-            if (userProfile == null || userProfile.Role != Domain.Enums.UserRole.Admin)
-                return ApiResponse.Failure(403, "Forbidden. Only admin can access flash sale management.");
+
 
             var flashSales = await _flashSaleRepository.GetAsync(
                 predicate: fs => !fs.IsDeleted &&

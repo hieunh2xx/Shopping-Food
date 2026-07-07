@@ -10,6 +10,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ShoppingFood.Application.Interfaces;
+using ShoppingFood.Core.Interfaces;
 
 namespace ShoppingFood.Application.Features.Carts.Queries
 {
@@ -17,13 +19,19 @@ namespace ShoppingFood.Application.Features.Carts.Queries
     {
         private readonly ICartRepository _cartRepository;
         private readonly IMapper _mapper;
+        private readonly IFlashSalePricingService _flashSalePricingService;
+        private readonly IUnitOfWork _unitOfWork;
 
         public GetCartHandler(
             ICartRepository cartRepository,
-            IMapper mapper) 
+            IMapper mapper,
+            IFlashSalePricingService flashSalePricingService,
+            IUnitOfWork unitOfWork) 
         {
             _cartRepository = cartRepository;
             _mapper = mapper;
+            _flashSalePricingService = flashSalePricingService;
+            _unitOfWork = unitOfWork;
         }
         public async Task<ApiResponse> Handle(GetCartQuery request, CancellationToken cancellationToken)
         {
@@ -38,7 +46,7 @@ namespace ShoppingFood.Application.Features.Carts.Queries
                     carts = await _cartRepository.GetAsync(
                         predicate: c => c.UserAccountId == request.CurrentUserId.Value,
                         include: q => q.IgnoreQueryFilters().Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Images).Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Restaurant),
-                        disableTracking: true
+                        disableTracking: false
                         );
                 }
                 else
@@ -46,7 +54,7 @@ namespace ShoppingFood.Application.Features.Carts.Queries
                     carts = await _cartRepository.GetAsync(
                         predicate: c => c.GuestUserId == request.GuestUserId.Value,
                         include: q => q.IgnoreQueryFilters().Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Images).Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Restaurant),
-                        disableTracking: true
+                        disableTracking: false
                         );
                 }
                 var cart = carts.FirstOrDefault();
@@ -60,6 +68,9 @@ namespace ShoppingFood.Application.Features.Carts.Queries
                     };
                     return ApiResponse.Success(emptyCartDto, "Cart is empty.");
                 }
+
+                await _flashSalePricingService.SyncCartItemPricesAsync(cart);
+                await _unitOfWork.SaveChangesAsync();
 
                 var dto = _mapper.Map<CartDto>(cart);
                 return ApiResponse.Success(dto, "Get cart details successfully");

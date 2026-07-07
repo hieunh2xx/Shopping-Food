@@ -1,4 +1,5 @@
 import { X, FileText, Download, ExternalLink } from 'lucide-react';
+import { createPortal } from 'react-dom';
 
 interface DocumentViewerModalProps {
   isOpen: boolean;
@@ -24,7 +25,7 @@ export function DocumentViewerModal({
   // Kiểm tra xem URL có phải là Public Link không (bắt đầu bằng http/https)
   const isPublicUrl = fileUrl.startsWith('http://') || fileUrl.startsWith('https://');
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
       {/* Backdrop */}
       <div 
@@ -131,6 +132,7 @@ export function DocumentViewerModal({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

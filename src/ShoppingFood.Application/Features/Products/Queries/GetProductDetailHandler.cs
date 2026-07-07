@@ -19,15 +19,18 @@ namespace ShoppingFood.Application.Features.Products.Queries
         private readonly IProductRepository _productRepository;
         private readonly IUserRepository _userRepository;
         private readonly IMapper _mapper;
+        private readonly IFlashSaleProductRepository _flashSaleProductRepository;
 
         public GetProductDetailHandler(
             IProductRepository productRepository,
             IUserRepository userRepository,
-            IMapper mapper)
+            IMapper mapper,
+            IFlashSaleProductRepository flashSaleProductRepository)
         {
             _productRepository = productRepository;
             _userRepository = userRepository;
             _mapper = mapper;
+            _flashSaleProductRepository = flashSaleProductRepository;
         }
 
         public async Task<ApiResponse> Handle(GetProductDetailQuery request, CancellationToken cancellationToken)
@@ -94,6 +97,22 @@ namespace ShoppingFood.Application.Features.Products.Queries
             }
 
             var productDto = _mapper.Map<ProductDto>(product);
+
+            var now = DateTime.UtcNow;
+            var activeFlashSale = await _flashSaleProductRepository.GetAsync(
+                predicate: fsp => fsp.ProductId == product.Id && 
+                                  fsp.Status == FlashSaleProductStatus.Approved &&
+                                  fsp.FlashSale.StartDate <= now && 
+                                  fsp.FlashSale.EndDate >= now &&
+                                  !fsp.FlashSale.IsDeleted,
+                include: q => q.Include(fsp => fsp.FlashSale)
+            );
+
+            var fspItem = activeFlashSale.FirstOrDefault();
+            if (fspItem != null)
+            {
+                productDto.FlashSalePrice = fspItem.FlashSalePrice;
+            }
 
             return ApiResponse.Success(productDto, "Product detail retrieved successfully");
         }

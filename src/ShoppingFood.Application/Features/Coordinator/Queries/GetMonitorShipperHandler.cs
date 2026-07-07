@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
@@ -72,8 +72,8 @@ namespace ShoppingFood.Application.Features.Coordinator.Queries
                 disableTracking: true
                 );
             var user = users.FirstOrDefault();
-            if (user == null || (user.Profile.Role != UserRole.Coordinator && user.Profile.Role != UserRole.Admin))
-                return ApiResponse.Failure(403, "Access denied. Only coordinators and admins can monitor shippers.");
+            if (user == null)
+                return ApiResponse.Failure(401, "User not found.");
 
             return null;
         }

@@ -25,7 +25,9 @@ namespace ShoppingFood.Application.Features.Admin.Queries
             
             var settingsDto = new LegalSettingsDto
             {
-                TermsOfUse = "<h2>Điều khoản sử dụng</h2><p>Chưa có nội dung.</p>",
+                TermsOfUseCustomer = "<h2>Điều khoản sử dụng (Khách hàng)</h2><p>Chưa có nội dung.</p>",
+                TermsOfUseSeller = "<h2>Điều khoản sử dụng (Người bán)</h2><p>Chưa có nội dung.</p>",
+                TermsOfUseShipper = "<h2>Điều khoản sử dụng (Tài xế)</h2><p>Chưa có nội dung.</p>",
                 PrivacyPolicy = "<h2>Chính sách bảo mật</h2><p>Chưa có nội dung.</p>"
             };
 

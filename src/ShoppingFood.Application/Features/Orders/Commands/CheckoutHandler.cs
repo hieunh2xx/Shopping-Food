@@ -36,6 +36,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
         private readonly ShoppingFoodContext _dbContext;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IPlatformFinanceConfigRepository _configRepository;
+        private readonly IFlashSalePricingService _flashSalePricingService;
 
         public CheckoutHandler(
             ICartRepository cartRepository,
@@ -52,7 +53,8 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             IUnitOfWork unitOfWork,
             ShoppingFoodContext dbContext,
             IHttpContextAccessor httpContextAccessor,
-            IPlatformFinanceConfigRepository configRepository
+            IPlatformFinanceConfigRepository configRepository,
+            IFlashSalePricingService flashSalePricingService
             )
         {
             _cartRepository = cartRepository;
@@ -70,6 +72,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             _dbContext = dbContext;
             _httpContextAccessor = httpContextAccessor;
             _configRepository = configRepository;
+            _flashSalePricingService = flashSalePricingService;
         }
         public async Task<ApiResponse> Handle(CheckoutCommand request, CancellationToken cancellationToken)
         {
@@ -141,6 +144,8 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 var cart = await GetCartWithItemsAsync(request.CurrentUserId, request.GuestUserId);
                 if (cart == null || !cart.Items.Any())
                     return ApiResponse.Failure(400, "Your cart is empty.");
+
+                await _flashSalePricingService.SyncCartItemPricesAsync(cart);
 
                 var stockValidationResult = ValidateCartStock(cart.Items);
                 if (stockValidationResult != null)

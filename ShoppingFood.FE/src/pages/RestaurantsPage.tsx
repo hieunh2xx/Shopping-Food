@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { restaurantService } from '../services/RestaurantService';
 import type { INearbyRestaurantDto } from '../interfaces';
 import { RestaurantCard } from '../components/restaurant/RestaurantCard';
-import { MapPin, Search } from 'lucide-react';
+import { MapPin, Search, ArrowLeft } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ROUTES } from '../routes/routeConfig';
 import { Input, Pagination } from '../components/common';
 
 export function RestaurantsPage() {
@@ -56,8 +58,8 @@ export function RestaurantsPage() {
   };
 
   const filteredRestaurants = restaurants.filter(r => 
-    r.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    r.address.toLowerCase().includes(searchQuery.toLowerCase())
+    r.restaurantName?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    r.restaurantAddress?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredRestaurants.length / take);
@@ -71,6 +73,9 @@ export function RestaurantsPage() {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <Link to={ROUTES.HOME} className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-orange-600 mb-6 transition-colors font-medium">
+          <ArrowLeft className="w-4 h-4" /> Về trang chủ
+        </Link>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">

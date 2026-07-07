@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, ChevronRight, ChevronLeft, ChefHat, CheckCircle2, UploadCloud } from 'lucide-react';
-import { Button, Input } from '../components/common';
+import { Button, Input, Modal, Loading } from '../components/common';
 import { authService } from '../services/AuthService';
 import { toast } from 'react-hot-toast';
+import { supportService } from '../services/SupportService';
 import { ROUTES } from '../routes/routeConfig';
+import { useAuth } from '../hooks/useAuth';
 
 // --- File Upload UI ---
 const FileUploadField = ({
@@ -64,6 +66,14 @@ const FileUploadField = ({
 
 export function ShipperApplyPage() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/shipper/apply'); // Adjust the route to AuthShipperApplyPage if needed
+    }
+  }, [isAuthenticated, navigate]);
+
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -86,6 +96,38 @@ export function ShipperApplyPage() {
   const [driverLicenseFile, setDriverLicenseFile] = useState<File | null>(null);
   const [vehicleRegFile, setVehicleRegFile] = useState<File | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+
+  const [legalModalState, setLegalModalState] = useState({
+    isOpen: false,
+    title: '',
+    content: '',
+    isLoading: false,
+  });
+
+  const handleOpenLegalModal = async (e: React.MouseEvent, type: 'terms' | 'privacy') => {
+    e.preventDefault();
+    setLegalModalState({
+      isOpen: true,
+      title: type === 'terms' ? 'Điều khoản dịch vụ' : 'Chính sách bảo mật',
+      content: '',
+      isLoading: true,
+    });
+
+    try {
+      const response = await supportService.getLegalSettings();
+      if (!response.error && response.data) {
+        setLegalModalState(prev => ({
+          ...prev,
+          content: type === 'terms' ? (response.data.termsOfUseShipper || 'Chưa có nội dung') : (response.data.privacyPolicy || 'Chưa có nội dung'),
+          isLoading: false
+        }));
+      } else {
+        setLegalModalState(prev => ({ ...prev, content: 'Không thể tải nội dung.', isLoading: false }));
+      }
+    } catch (error) {
+      setLegalModalState(prev => ({ ...prev, content: 'Lỗi kết nối. Vui lòng thử lại sau.', isLoading: false }));
+    }
+  };
 
   const updateField = (field: string, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -425,7 +467,7 @@ export function ShipperApplyPage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Loại phương tiện <span className="text-red-500">*</span></label>
                     <select value={form.vehicleType} onChange={e => updateField('vehicleType', e.target.value)}
-                      className="block w-full rounded-xl border-gray-300 border shadow-sm bg-gray-50 p-2.5 text-sm focus:border-orange-500 focus:ring-orange-500">
+                      className="block w-full rounded-xl border-gray-300 border shadow-sm bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-orange-500 focus:ring-orange-500">
                       <option value="Motorcycle">Xe máy</option>
                       <option value="ElectricMotorbike">Xe điện</option>
                       <option value="Car">Ô tô</option>
@@ -444,6 +486,15 @@ export function ShipperApplyPage() {
                 <FileUploadField label="Ảnh bằng lái xe" file={driverLicenseFile} errorKey="driverLicenseFile" setter={setDriverLicenseFile} handleFileSelect={handleFileSelect} errors={errors} />
                 <FileUploadField label="Ảnh giấy đăng ký xe (Cà vẹt)" file={vehicleRegFile} errorKey="vehicleRegFile" setter={setVehicleRegFile} handleFileSelect={handleFileSelect} errors={errors} />
                 <FileUploadField label="Ảnh chân dung / đại diện" file={avatarFile} errorKey="avatarFile" required={false} setter={setAvatarFile} handleFileSelect={handleFileSelect} errors={errors} />
+
+                <div className="pt-2 pb-2">
+                  <label className="flex items-start gap-3 cursor-pointer group">
+                    <input type="checkbox" required className="mt-1 w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500 transition-colors cursor-pointer" />
+                    <span className="text-sm text-gray-600 leading-relaxed">
+                      Tôi xác nhận các thông tin trên là chính xác và đồng ý với <a href="#" onClick={(e) => handleOpenLegalModal(e, 'terms')} className="text-orange-500 font-medium hover:underline">Điều khoản dịch vụ</a> và <a href="#" onClick={(e) => handleOpenLegalModal(e, 'privacy')} className="text-orange-500 font-medium hover:underline">Chính sách bảo mật</a> của ShoppingFood dành cho Đối tác Giao hàng.
+                    </span>
+                  </label>
+                </div>
 
                 <div className="flex gap-4 pt-4">
                   <Button type="button" variant="secondary" onClick={handleBack} className="w-1/3">
@@ -477,6 +528,26 @@ export function ShipperApplyPage() {
           </div>
         </div>
       </div>
+
+      <Modal
+        isOpen={legalModalState.isOpen}
+        onClose={() => setLegalModalState(prev => ({ ...prev, isOpen: false }))}
+        title={legalModalState.title}
+        size="lg"
+      >
+        <div className="p-4 max-h-[70vh] overflow-y-auto">
+          {legalModalState.isLoading ? (
+            <div className="flex justify-center items-center h-32">
+              <Loading size="md" />
+            </div>
+          ) : (
+            <div
+              className="prose prose-orange max-w-none text-gray-600"
+              dangerouslySetInnerHTML={{ __html: legalModalState.content }}
+            />
+          )}
+        </div>
+      </Modal>
     </div>
   );
 }

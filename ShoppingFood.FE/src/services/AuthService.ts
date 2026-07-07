@@ -65,7 +65,7 @@ class AuthService extends BaseService<IUserDto, IRegisterRequest> {
   }
 
   async applyShipper(data: any): Promise<IApiResponse<any>> {
-    return httpClient.post<IApiResponse<any>>('/User/ApplyShipper', data);
+    return httpClient.post<IApiResponse<any>>('/User/apply-shipper', data);
   }
 
   async getSellerApplicationStatus(): Promise<IApiResponse<any>> {

@@ -21,6 +21,7 @@ import { shipperService } from '../../services';
 import type { IProposedDeliveryOfferDto, IShipperIncomeReportDto } from '../../interfaces/IShipper';
 import { ReportIncidentModal } from './components/ReportIncidentModal';
 import { SuccessDeliveryModal } from './components/SuccessDeliveryModal';
+import { OrderProposalPopup } from './components/OrderProposalPopup';
 
 export function ShipperDashboard() {
   const { user } = useAuth();
@@ -33,11 +34,13 @@ export function ShipperDashboard() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  // Available offers from API
   const [availableOffers, setAvailableOffers] = useState<IProposedDeliveryOfferDto[]>([]);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   
+  // State cho Popup đề xuất 60s
+  const [proposalPopupOffer, setProposalPopupOffer] = useState<IProposedDeliveryOfferDto | null>(null);
+
   // Active delivery (locally tracked after accept)
   const [activeDelivery, setActiveDelivery] = useState<{
     orderId: string;
@@ -141,6 +144,114 @@ export function ShipperDashboard() {
 
     return () => clearInterval(interval);
   }, [isOnline, fetchAvailableOffers]);
+
+  // Lắng nghe sự kiện thông báo hệ thống real-time để hiển thị popup hoặc nhận đơn Force Assign
+  useEffect(() => {
+    const handleNotification = async (e: CustomEvent) => {
+      const n = e.detail;
+      // 1. Nếu có đề xuất giao hàng mới
+      if (n.title === 'Đề xuất giao hàng mới' && n.message) {
+        const match = n.message.match(/'([a-fA-F0-9\-]{36})'/);
+        if (match && match[1]) {
+          const orderId = match[1];
+          try {
+            const res = await shipperService.getProposedOffer(orderId);
+            if (res.data) {
+              setProposalPopupOffer(res.data);
+            }
+          } catch (err) {
+             console.error('Lỗi khi lấy thông tin đề xuất:', err);
+          }
+        }
+      }
+      // 2. Nếu bị gán bắt buộc (Force Assign)
+      else if (n.title === 'Đơn hàng gán bắt buộc' && n.message) {
+        toast.success(`Nhận được thông báo Force Assign! Message: ${n.message}`, { duration: 5000 });
+        const match = n.message.match(/'([a-fA-F0-9\-]{36})'/);
+        if (match && match[1]) {
+          const orderId = match[1];
+          try {
+            toast.success(`Bắt đầu lấy thông tin đơn: ${orderId}`, { duration: 3000 });
+            const res = await shipperService.getProposedOffer(orderId);
+            if (res.data) {
+              // Tự động ghi đè và gán thành active delivery
+              setActiveDelivery({
+                orderId: res.data.orderId,
+                restaurantName: res.data.restaurantName,
+                restaurantAddress: res.data.restaurantAddress,
+                deliveryAddress: res.data.deliveryAddress,
+                distanceInKm: res.data.distanceInKm,
+                shippingFee: res.data.shippingFee,
+                totalAmount: res.data.totalAmount,
+                contactName: res.data.contactName,
+                contactPhone: res.data.contactPhone,
+                step: 'accepted'
+              });
+              toast.success('Bạn vừa được điều phối viên gán trực tiếp một đơn hàng mới!');
+              // Ẩn popup đề xuất nếu đang hiển thị cho đơn này
+              setProposalPopupOffer(prev => prev?.orderId === orderId ? null : prev);
+            } else {
+              toast.error(`API trả về nhưng không có data. Lỗi: ${res.message}`);
+            }
+          } catch (err: any) {
+             console.error('Lỗi khi lấy thông tin force assign:', err);
+             toast.error(`Lỗi API GetProposedOffer: ${err?.message || 'Không rõ'}`);
+          }
+        } else {
+          toast.error(`Không thể trích xuất orderId từ message: ${n.message}`);
+        }
+      }
+    };
+
+    window.addEventListener('ON_REALTIME_NOTIFICATION', handleNotification as EventListener);
+    return () => window.removeEventListener('ON_REALTIME_NOTIFICATION', handleNotification as EventListener);
+  }, []);
+
+  // Handlers cho Proposal Popup
+  const handleAcceptProposal = async (orderId: string) => {
+    if (!proposalPopupOffer) return;
+    try {
+      await shipperService.acceptOffer({
+        orderId,
+        latitude: coords.lat,
+        longitude: coords.lng
+      });
+      setActiveDelivery({
+        orderId: proposalPopupOffer.orderId,
+        restaurantName: proposalPopupOffer.restaurantName,
+        restaurantAddress: proposalPopupOffer.restaurantAddress,
+        deliveryAddress: proposalPopupOffer.deliveryAddress,
+        distanceInKm: proposalPopupOffer.distanceInKm,
+        shippingFee: proposalPopupOffer.shippingFee,
+        totalAmount: proposalPopupOffer.totalAmount,
+        contactName: proposalPopupOffer.contactName,
+        contactPhone: proposalPopupOffer.contactPhone,
+        step: 'accepted'
+      });
+      setProposalPopupOffer(null);
+      toast.success('Nhận đơn thành công!');
+      fetchAvailableOffers();
+    } catch (err) {
+      toast.error('Không thể nhận đơn. Có thể đơn đã bị hủy hoặc người khác đã nhận.');
+      setProposalPopupOffer(null);
+      fetchAvailableOffers();
+    }
+  };
+
+  const handleRejectProposal = async (orderId: string) => {
+    try {
+      await shipperService.rejectOffer({ orderId, reason: 'Shipper từ chối' });
+    } catch (e) {} // ignore
+    setProposalPopupOffer(null);
+  };
+
+  const handleTimeoutProposal = async (orderId: string) => {
+    try {
+      await shipperService.rejectOffer({ orderId, reason: 'Quá thời gian phản hồi' });
+    } catch (e) {} // ignore
+    setProposalPopupOffer(null);
+    toast.error('Đã hết thời gian phản hồi đề xuất.');
+  };
 
   // Update live GPS location to backend periodically when online
   useEffect(() => {
@@ -701,7 +812,7 @@ export function ShipperDashboard() {
             onClose={() => setIsReportModalOpen(false)}
             orderId={activeDelivery.orderId}
           />
-          <SuccessDeliveryModal
+          <SuccessDeliveryModal 
             isOpen={isSuccessModalOpen}
             onClose={() => setIsSuccessModalOpen(false)}
             orderId={activeDelivery.orderId}
@@ -710,6 +821,16 @@ export function ShipperDashboard() {
             onSuccess={handleDeliverySuccessComplete}
           />
         </>
+      )}
+
+      {/* Popup Đề xuất đơn hàng */}
+      {proposalPopupOffer && (
+        <OrderProposalPopup 
+          offer={proposalPopupOffer}
+          onAccept={handleAcceptProposal}
+          onReject={handleRejectProposal}
+          onTimeout={handleTimeoutProposal}
+        />
       )}
     </div>
   );

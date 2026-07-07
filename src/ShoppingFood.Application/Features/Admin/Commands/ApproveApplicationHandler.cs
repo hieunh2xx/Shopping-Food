@@ -57,7 +57,7 @@ namespace ShoppingFood.Application.Features.Admin.Commands
 
                 var adminProfile = await GetAdminProfileAsync(request.CurrentUserId.Value);
                 if (adminProfile == null)
-                    return ApiResponse.Failure(403, "Forbidden. Only administrator can review seller applications.");
+                    return ApiResponse.Failure(401, "User profile not found.");
 
                 var applications = await _sellerApplicationRepository.GetAsync(
                     predicate: a => a.Id == request.ApplicationId,
@@ -144,7 +144,7 @@ namespace ShoppingFood.Application.Features.Admin.Commands
                 include: q => q.Include(u => u.Profile)
             );
             var admin = adminUser.FirstOrDefault();
-            return admin?.Profile != null && admin.Profile.Role == UserRole.Admin ? admin.Profile : null;
+            return admin?.Profile;
         }
 
         private RestaurantProfile CreateRestaurantProfileEntity(SellerApplication application)

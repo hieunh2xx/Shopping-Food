@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
 import { AppRoutes } from './routes/AppRoutes';
+import { ScrollToTop } from './components/common/ScrollToTop';
 
 /**
  * App Root Component
@@ -14,6 +15,7 @@ import { AppRoutes } from './routes/AppRoutes';
 function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <AuthProvider>
         <Toaster
           position="top-right"

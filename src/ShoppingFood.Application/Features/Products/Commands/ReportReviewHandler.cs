@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
@@ -45,11 +45,8 @@ namespace ShoppingFood.Application.Features.Products.Commands
                 disableTracking: true
             );
             var userProfile = users.FirstOrDefault()?.Profile;
-            if (userProfile == null ||
-                (userProfile.Role != UserRole.Seller &&
-                 userProfile.Role != UserRole.Mall &&
-                 userProfile.Role != UserRole.Customer))
-                return ApiResponse.Failure(403, "You do not have permission to report a review.");
+            if (userProfile == null)
+                return ApiResponse.Failure(401, "User profile not found.");
 
             var review = await _productReviewRepository.GetByIdAsync(request.ReviewId);
             if (review == null)

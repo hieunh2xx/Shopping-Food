@@ -53,8 +53,6 @@ namespace ShoppingFood.Application.Features.Admin.Commands
                 if (!request.CurrentUserId.HasValue)
                     return ApiResponse.Failure(401, "User is unauthorized.");
 
-                if (!await IsAdminUserAsync(request.CurrentUserId.Value))
-                    return ApiResponse.Failure(403, "Forbidden. Only administrator can review products.");
 
                 var products = await _productRepository.GetAsync(
                     predicate: p => p.Id == request.ProductId,
@@ -96,15 +94,7 @@ namespace ShoppingFood.Application.Features.Admin.Commands
             }
         }
 
-        private async Task<bool> IsAdminUserAsync(Guid userId)
-        {
-            var adminUser = await _userRepository.GetAsync(
-                predicate: u => u.Id == userId,
-                include: q => q.Include(u => u.Profile)
-            );
-            var admin = adminUser.FirstOrDefault();
-            return admin?.Profile != null && admin.Profile.Role == UserRole.Admin;
-        }
+
 
         private void UpdateProductStatus(Product product, bool isApproved)
         {

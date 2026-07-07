@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
@@ -75,10 +75,7 @@ namespace ShoppingFood.Application.Features.Discounts.Commands
                 {
                     discount.RestaurantId = request.RestaurantId;
                 }
-                else
-                {
-                    return ApiResponse.Failure(403, "Forbidden. Only admins and sellers can perform this action.");
-                }
+
 
                 _discountRepository.Add(discount);
 

@@ -1,12 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { Gift, ArrowRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Gift, Tag } from 'lucide-react';
 import { promotionService } from '../../services/PromotionService';
-import type { IBuyXGetYPromotionDto } from '../../interfaces';
+import { productService } from '../../services/ProductService';
+import { restaurantService } from '../../services/RestaurantService';
+import type { IBuyXGetYPromotionDto, IProductDto, IRestaurantDto } from '../../interfaces';
+import { formatCurrency } from '../../utils/formatters';
+import { Link, useNavigate } from 'react-router-dom';
+import { SectionHeader } from '../ui/SectionHeader';
+import { CarouselSlider } from '../ui/CarouselSlider';
+import { useCart } from '../../hooks';
 import { ROUTES } from '../../routes/routeConfig';
 
 export function BuyXGetYSection() {
-  const [promotions, setPromotions] = useState<IBuyXGetYPromotionDto[]>([]);
+  const navigate = useNavigate();
+  const { addItem } = useCart();
+  const [promotions, setPromotions] = useState<Array<{ promo: IBuyXGetYPromotionDto, p: IProductDto | null, r: IRestaurantDto | null }>>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -18,7 +26,31 @@ export function BuyXGetYSection() {
     try {
       const res = await promotionService.getPromotions({ isActive: true });
       if (!res.error && res.data) {
-        setPromotions(res.data.slice(0, 4)); // Giới hạn hiển thị 4 promotion
+        const topPromos = res.data.slice(0, 4);
+        
+        // Fetch product and restaurant details to match UI requirements
+        const combined = await Promise.all(topPromos.map(async (promo) => {
+          let p: IProductDto | null = null;
+          let r: IRestaurantDto | null = null;
+          
+          try {
+            // Lấy thông tin nhà hàng (restaurantName)
+            const rRes = await restaurantService.getDetail(promo.restaurantId);
+            if (!rRes.error && rRes.data) r = rRes.data;
+
+            // Lấy thông tin product (price, image)
+            const pRes = await productService.getById(promo.triggerProductId);
+            if (!pRes.error && pRes.data) {
+               p = pRes.data;
+            }
+          } catch (e) {
+            console.error(e);
+          }
+          
+          return { promo, p, r };
+        }));
+
+        setPromotions(combined);
       }
     } catch (err) {
       console.error(err);
@@ -31,51 +63,76 @@ export function BuyXGetYSection() {
     return null;
   }
 
+  // Define some gradient colors for cards to make them vibrant
+  const colors = [
+    "from-orange-500 to-red-500",
+    "from-purple-500 to-pink-500",
+    "from-green-500 to-teal-500",
+    "from-blue-500 to-cyan-500"
+  ];
+
   return (
-    <section className="py-12 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center">
-              <Gift className="w-5 h-5 text-pink-600" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">Mua X Tặng Y</h2>
-              <p className="text-sm text-gray-500 mt-1">Ưu đãi kép cực hời</p>
-            </div>
-          </div>
-        </div>
+    <section>
+      <SectionHeader
+        icon={<div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center"><Gift className="w-4 h-4 text-white" /></div>}
+        title="Chương trình Mua X Tặng Y"
+        sub="Ưu đãi cực hot — mua 1 tặng 1, mua 2 tặng 1 và nhiều hơn nữa"
+        action="Xem tất cả ưu đãi"
+        onActionClick={() => navigate(ROUTES.BUY_X_GET_Y)}
+      />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {promotions.map((promo) => (
-            <div key={promo.id} className="relative bg-gradient-to-br from-pink-50 to-purple-50 rounded-2xl border border-pink-100 p-5 overflow-hidden group hover:shadow-lg transition-all duration-300">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-pink-500/10 rounded-full blur-2xl group-hover:bg-pink-500/20 transition-all" />
-              
-              <div className="relative z-10">
-                <span className="inline-block px-3 py-1 bg-white/80 backdrop-blur-sm text-pink-600 text-xs font-bold rounded-lg mb-3 shadow-sm">
-                  {promo.buyQuantity} tặng {promo.giftQuantity}
+      <CarouselSlider itemWidth="w-[85%] sm:w-1/2 lg:w-1/4">
+        {promotions.map((item, index) => {
+          const colorClass = colors[index % colors.length];
+          const btnColor = colorClass.split(' ')[0].replace('from-', 'bg-');
+          return (
+            <Link to={`/restaurant/${item.promo.restaurantId}`} key={item.promo.id} className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-lg transition-all group flex flex-col h-full">
+              {/* Top gradient tag */}
+              <div className={`bg-gradient-to-r ${colorClass} px-4 py-2.5 flex items-center justify-between shrink-0`}>
+                <span className="text-white font-extrabold text-sm shadow-sm drop-shadow-sm truncate">
+                  Mua {item.promo.buyQuantity} Tặng {item.promo.giftQuantity}
                 </span>
-                
-                <h3 className="font-bold text-gray-900 mb-1 line-clamp-2">
-                  Mua {promo.triggerProductName}
-                </h3>
-                <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                  Tặng ngay {promo.giftProductName}
-                </p>
-
-                <div className="flex items-center justify-end mt-auto pt-4 border-t border-pink-100/50">
-                  <Link 
-                    to={`/restaurant/${promo.restaurantId}`}
-                    className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-pink-600 text-white hover:bg-pink-700 transition-colors"
+                <Tag className="w-4 h-4 text-white/90 drop-shadow-sm shrink-0 ml-2" />
+              </div>
+              
+              {/* Image */}
+              <div className="relative h-44 overflow-hidden bg-gray-100 shrink-0">
+                {item.p?.primaryImageUrl ? (
+                   <img src={item.p.primaryImageUrl} alt={item.promo.triggerProductName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                ) : (
+                   <div className="w-full h-full flex items-center justify-center text-5xl opacity-50 bg-gray-50 group-hover:scale-105 transition-transform duration-300">🎁</div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+              </div>
+              
+              {/* Info */}
+              <div className="p-4 flex flex-col flex-1">
+                <p className="text-xs text-orange-500 font-medium truncate">{item.r?.restaurantName || 'Nhà hàng'}</p>
+                <p className="font-bold text-gray-800 text-sm mt-0.5 line-clamp-1">{item.promo.triggerProductName}</p>
+                <p className="text-xs text-gray-500 mt-1.5 leading-relaxed line-clamp-2">Mua {item.promo.buyQuantity} {item.promo.triggerProductName} tặng ngay {item.promo.giftQuantity} {item.promo.giftProductName}</p>
+                <div className="flex items-center justify-between mt-auto pt-4">
+                  <span className="text-orange-500 font-bold">{item.p?.price ? formatCurrency(item.p.price) : 'Liên hệ'}</span>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (item.p) {
+                        addItem(item.p, item.promo.buyQuantity);
+                      } else {
+                        console.warn("Product not found", item);
+                        alert("Không tìm thấy thông tin sản phẩm");
+                      }
+                    }}
+                    className={`text-xs font-semibold px-4 py-2 rounded-full ${btnColor} text-white hover:opacity-90 transition-opacity shadow-sm`}
                   >
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
+                    Thêm vào giỏ
+                  </button>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </div>
+            </Link>
+          );
+        })}
+      </CarouselSlider>
     </section>
   );
 }

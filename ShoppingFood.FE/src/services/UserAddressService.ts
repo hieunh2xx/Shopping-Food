@@ -12,16 +12,16 @@ class UserAddressService {
     return httpClient.post<IApiResponse<IUserAddressDto>>(this.endpoint, data);
   }
 
-  async updateAddress(id: string, data: IAddUserAddress): Promise<IApiResponse<IUserAddressDto>> {
+  async update(id: string, data: Partial<IUserAddressDto>): Promise<IApiResponse<IUserAddressDto>> {
     return httpClient.put<IApiResponse<IUserAddressDto>>(`${this.endpoint}/${id}`, { id, ...data });
   }
 
-  async deleteAddress(id: string): Promise<IApiResponse<any>> {
+  async delete(id: string): Promise<IApiResponse<any>> {
     return httpClient.delete<IApiResponse<any>>(`${this.endpoint}/${id}`);
   }
 
-  async setDefaultAddress(id: string): Promise<IApiResponse<any>> {
-    return httpClient.put<IApiResponse<any>>(`${this.endpoint}/${id}/SetDefault`, {});
+  async setDefault(id: string): Promise<IApiResponse<any>> {
+    return httpClient.put<IApiResponse<any>>(API_ENDPOINTS.USER_ADDRESS.SET_DEFAULT(id), {});
   }
 }
 

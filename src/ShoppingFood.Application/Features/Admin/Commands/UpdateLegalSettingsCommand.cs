@@ -6,7 +6,9 @@ namespace ShoppingFood.Application.Features.Admin.Commands
 {
     public class UpdateLegalSettingsCommand : IRequest<ApiResponse>
     {
-        public string TermsOfUse { get; set; } = string.Empty;
+        public string TermsOfUseCustomer { get; set; } = string.Empty;
+        public string TermsOfUseSeller { get; set; } = string.Empty;
+        public string TermsOfUseShipper { get; set; } = string.Empty;
         public string PrivacyPolicy { get; set; } = string.Empty;
     }
 }

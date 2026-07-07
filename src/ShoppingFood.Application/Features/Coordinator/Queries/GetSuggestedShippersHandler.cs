@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
@@ -39,14 +39,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Queries
                 if (!request.CurrentUserId.HasValue)
                     return ApiResponse.Failure(401, "Unauthorized.");
 
-                var users = await _userRepository.GetAsync(
-                    predicate: u => u.Id == request.CurrentUserId.Value,
-                    include: q => q.Include(u => u.Profile),
-                    disableTracking: true
-                    );
-                var user = users.FirstOrDefault();
-                if (user == null || (user.Profile?.Role != Domain.Enums.UserRole.Coordinator && user.Profile?.Role != Domain.Enums.UserRole.Admin))
-                    return ApiResponse.Failure(403, "Access denied. Only coordinators and admins can access suggested shipper.");
+
 
                 var orders = await _orderRepository.GetAsync(
                     predicate: o => o.Id == request.OrderId,

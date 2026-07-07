@@ -50,10 +50,10 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                 if (order == null)
                     return ApiResponse.Failure(404, "Order not found.");
 
-                if (order.ShipperId.HasValue)
+                if (order.ShipperId.HasValue && order.ShipperId != shipperProfile.Id)
                     return ApiResponse.Failure(400, "This order has already been accepted by another driver.");
 
-                if (order.Status != OrderStatus.WaitingForShipper)
+                if (order.Status != OrderStatus.WaitingForShipper && order.Status != OrderStatus.Shipping)
                     return ApiResponse.Failure(400, $"The order is not in waiting for shipper status. Current status: {order.Status}.");
 
                 var firstItem = order.Items?.FirstOrDefault();

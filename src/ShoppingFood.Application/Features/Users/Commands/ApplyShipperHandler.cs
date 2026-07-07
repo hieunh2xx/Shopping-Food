@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
@@ -16,15 +16,18 @@ namespace ShoppingFood.Application.Features.Users.Commands
     {
         private readonly IUserRepository _userRepository;
         private readonly IShipperApplicationRepository _shipperApplicationRepository;
+        private readonly INotificationRepository _notificationRepository;
         private readonly IUnitOfWork _unitOfWork;
 
         public ApplyShipperHandler(
             IUserRepository userRepository,
             IShipperApplicationRepository shipperApplicationRepository,
+            INotificationRepository notificationRepository,
             IUnitOfWork unitOfWork)
         {
             _userRepository = userRepository;
             _shipperApplicationRepository = shipperApplicationRepository;
+            _notificationRepository = notificationRepository;
             _unitOfWork = unitOfWork;
         }
 
@@ -53,8 +56,34 @@ namespace ShoppingFood.Application.Features.Users.Commands
 
             var application = CreateApplication(userProfile.Id, request);
             _shipperApplicationRepository.Add(application);
+
+            await NotifyAdminsAsync(userProfile.FullName);
+
             await _unitOfWork.SaveChangesAsync();
             return ApiResponse.Success(new {ApplicationId = application.Id}, "Shipper application submitted successfully. Pending admin review");
+        }
+
+        private async Task NotifyAdminsAsync(string fullName)
+        {
+            var admins = await _userRepository.GetAsync(
+                predicate: u => u.Profile != null && u.Profile.Role == Domain.Enums.UserRole.Admin,
+                include: q => q.Include(u => u.Profile),
+                disableTracking: true
+                );
+
+            foreach (var admin in admins)
+            {
+                _notificationRepository.Add(new Notification
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = admin.Id,
+                    Title = "Đăng ký Tài xế mới",
+                    Message = $"Người dùng {fullName} vừa gửi yêu cầu đăng ký làm Tài xế. Vui lòng kiểm tra và duyệt.",
+                    NotificationType = Domain.Enums.NotificationType.System,
+                    IsRead = false,
+                    CreateAt = DateTime.UtcNow,
+                });
+            }
         }
 
         private ShipperApplication CreateApplication(Guid id, ApplyShipperCommand request)

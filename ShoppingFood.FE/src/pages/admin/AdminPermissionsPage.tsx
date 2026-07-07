@@ -1,95 +1,111 @@
-import { useState } from 'react';
-import { Layout, Database, Check, ShieldCheck, Search, Users } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Database, Check, ShieldCheck, Search, Users, Loader2 } from 'lucide-react';
 import { Button, Input } from '../../components/common';
+import { adminService } from '../../services/AdminService';
+import toast from 'react-hot-toast';
 
-type Role = { id: string; name: string; description: string; userCount: number; color: string };
-type PermissionItem = { id: string; name: string; description: string };
-type PermissionGroup = { id: string; title: string; type: 'UI' | 'API'; items: PermissionItem[] };
-
-const MOCK_ROLES: Role[] = [
-  { id: 'r1', name: 'Admin', description: 'Quản trị viên cấp cao, toàn quyền truy cập hệ thống.', userCount: 3, color: 'bg-purple-500' },
-  { id: 'r2', name: 'Seller', description: 'Đối tác bán hàng, quản lý cửa hàng và đơn hàng.', userCount: 156, color: 'bg-blue-500' },
-  { id: 'r3', name: 'Customer', description: 'Khách hàng tiêu chuẩn, truy cập ứng dụng mua hàng.', userCount: 15420, color: 'bg-green-500' },
-  { id: 'r4', name: 'Staff', description: 'Nhân viên kiểm duyệt nội dung và hỗ trợ.', userCount: 12, color: 'bg-orange-500' },
-];
-
-const MOCK_PERMISSIONS: PermissionGroup[] = [
-  {
-    id: 'ui_group',
-    title: 'Giao diện hiển thị (Pages)',
-    type: 'UI',
-    items: [
-      { id: 'ui_admin_dashboard', name: 'Admin Dashboard', description: 'Truy cập trang Tổng quan quản trị' },
-      { id: 'ui_admin_users', name: 'User Management', description: 'Truy cập trang Quản lý người dùng' },
-      { id: 'ui_admin_approvals', name: 'Partner Approvals', description: 'Truy cập trang Duyệt đối tác' },
-      { id: 'ui_seller_dashboard', name: 'Seller Dashboard', description: 'Truy cập trang Tổng quan cửa hàng' },
-      { id: 'ui_seller_products', name: 'Product Management', description: 'Truy cập trang Quản lý thực đơn' },
-    ]
-  },
-  {
-    id: 'api_group_users',
-    title: 'API Người dùng (Users Endpoint)',
-    type: 'API',
-    items: [
-      { id: 'api_users_read', name: 'GET /api/users', description: 'Lấy danh sách tất cả người dùng' },
-      { id: 'api_users_write', name: 'POST, PUT /api/users', description: 'Tạo, sửa thông tin người dùng' },
-      { id: 'api_users_delete', name: 'DELETE /api/users', description: 'Khóa hoặc xóa tài khoản' },
-    ]
-  },
-  {
-    id: 'api_group_products',
-    title: 'API Món ăn (Products Endpoint)',
-    type: 'API',
-    items: [
-      { id: 'api_products_read', name: 'GET /api/products', description: 'Lấy danh sách món ăn (Public)' },
-      { id: 'api_products_write', name: 'POST, PUT /api/products', description: 'Đăng món ăn mới hoặc cập nhật' },
-      { id: 'api_products_delete', name: 'DELETE /api/products', description: 'Xóa món ăn khỏi hệ thống' },
-    ]
-  }
+// 0: Admin, 1: Seller, 2: Mall, 3: Customer, 4: Shipper, 5: Coordinator
+const ROLES = [
+  { id: 0, name: 'Admin', description: 'Quản trị viên cấp cao, toàn quyền truy cập hệ thống (Đã Bypass Filter).', color: 'bg-purple-500' },
+  { id: 5, name: 'Coordinator', description: 'Nhân viên điều phối và hỗ trợ.', color: 'bg-orange-500' },
+  { id: 1, name: 'Seller', description: 'Đối tác nhà hàng tiêu chuẩn.', color: 'bg-blue-500' },
+  { id: 2, name: 'Mall', description: 'Đối tác nhà hàng Mall.', color: 'bg-indigo-500' },
+  { id: 4, name: 'Shipper', description: 'Tài xế giao hàng.', color: 'bg-yellow-500' },
+  { id: 3, name: 'Customer', description: 'Khách hàng mua hàng.', color: 'bg-green-500' },
 ];
 
 export function AdminPermissionsPage() {
-  const [selectedRole, setSelectedRole] = useState<Role>(MOCK_ROLES[0]);
+  const [selectedRole, setSelectedRole] = useState(ROLES[0]);
   const [search, setSearch] = useState('');
   const [searchPermission, setSearchPermission] = useState('');
   
-  // Trạng thái lưu trữ quyền đang được bật của từng Role (Mock)
-  const [rolePermissions, setRolePermissions] = useState<Record<string, string[]>>({
-    'r1': ['ui_admin_dashboard', 'ui_admin_users', 'ui_admin_approvals', 'api_users_read', 'api_users_write', 'api_users_delete', 'api_products_read', 'api_products_write', 'api_products_delete'],
-    'r2': ['ui_seller_dashboard', 'ui_seller_products', 'api_products_read', 'api_products_write', 'api_products_delete'],
-    'r3': ['api_products_read'],
-    'r4': ['ui_admin_dashboard', 'ui_admin_approvals', 'api_users_read', 'api_products_read'],
-  });
+  const [endpoints, setEndpoints] = useState<any[]>([]);
+  const [rolePermissions, setRolePermissions] = useState<string[]>([]);
+  const [isLoadingEndpoints, setIsLoadingEndpoints] = useState(true);
+  const [isLoadingRole, setIsLoadingRole] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleTogglePermission = (permissionId: string) => {
+  useEffect(() => {
+    fetchEndpoints();
+  }, []);
+
+  useEffect(() => {
+    fetchRolePermissions(selectedRole.id);
+  }, [selectedRole.id]);
+
+  const fetchEndpoints = async () => {
+    setIsLoadingEndpoints(true);
+    try {
+      const res = await adminService.getApiEndpoints();
+      if (!res.error && res.data) {
+        setEndpoints(res.data);
+      }
+    } catch {
+      toast.error('Lỗi khi tải danh sách API Endpoints');
+    } finally {
+      setIsLoadingEndpoints(false);
+    }
+  };
+
+  const fetchRolePermissions = async (roleId: number) => {
+    setIsLoadingRole(true);
+    try {
+      const res = await adminService.getRolePermissions(roleId);
+      if (!res.error && res.data) {
+        setRolePermissions(res.data);
+      }
+    } catch {
+      toast.error('Lỗi khi tải danh sách quyền của Role');
+    } finally {
+      setIsLoadingRole(false);
+    }
+  };
+
+  const handleTogglePermission = (endpointId: string) => {
     setRolePermissions(prev => {
-      const currentRolePerms = prev[selectedRole.id] || [];
-      const hasPerm = currentRolePerms.includes(permissionId);
-      
-      return {
-        ...prev,
-        [selectedRole.id]: hasPerm 
-          ? currentRolePerms.filter(id => id !== permissionId)
-          : [...currentRolePerms, permissionId]
-      };
+      if (prev.includes(endpointId)) {
+        return prev.filter(id => id !== endpointId);
+      } else {
+        return [...prev, endpointId];
+      }
     });
   };
 
-  const handleSave = () => {
-    // Gọi API lưu xuống Backend ở đây
-    console.log('Saved permissions for role:', selectedRole.name, rolePermissions[selectedRole.id]);
-    alert('Đã lưu cấu hình phân quyền thành công!');
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const res = await adminService.updateRolePermissions(selectedRole.id, rolePermissions);
+      if (!res.error) {
+        toast.success(`Đã lưu cấu hình phân quyền cho ${selectedRole.name}`);
+      } else {
+        toast.error(res.message || 'Lỗi lưu cấu hình');
+      }
+    } catch {
+      toast.error('Có lỗi xảy ra khi lưu cấu hình');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
+  const groupedEndpoints = useMemo(() => {
+    const groups: Record<string, any[]> = {};
+    endpoints.forEach(ep => {
+      const key = ep.controllerName || 'Other';
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(ep);
+    });
+    return groups;
+  }, [endpoints]);
+
   return (
-    <div className="p-6 h-full flex flex-col">
-      <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="p-6 flex flex-col" style={{ height: 'calc(100vh - 4rem)' }}>
+      <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Phân quyền Hệ thống</h1>
-          <p className="text-sm text-gray-500 mt-1">Cấp quyền truy cập giao diện và API cho từng Vai trò (Roles).</p>
+          <p className="text-sm text-gray-500 mt-1">Cấp quyền truy cập API Endpoints cho từng Vai trò (Roles).</p>
         </div>
-        <Button onClick={handleSave} className="shadow-lg shadow-orange-500/20">
-          <ShieldCheck className="w-5 h-5 mr-2" />
+        <Button onClick={handleSave} disabled={isSaving || isLoadingEndpoints || isLoadingRole} className="shadow-lg shadow-orange-500/20 bg-orange-500 hover:bg-orange-600 text-white">
+          {isSaving ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <ShieldCheck className="w-5 h-5 mr-2" />}
           Lưu cấu hình
         </Button>
       </div>
@@ -97,7 +113,7 @@ export function AdminPermissionsPage() {
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-0">
         
         {/* Left Column: Roles List */}
-        <div className="lg:col-span-4 bg-white rounded-2xl border border-gray-200 p-4 flex flex-col">
+        <div className="lg:col-span-4 bg-white rounded-2xl border border-gray-200 p-4 flex flex-col min-h-0">
           <h2 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
             <Users className="w-5 h-5 text-orange-600" />
             Danh sách Vai trò
@@ -114,7 +130,7 @@ export function AdminPermissionsPage() {
           </div>
 
           <div className="flex-1 overflow-y-auto space-y-2 pr-2">
-            {MOCK_ROLES.filter(r => r.name.toLowerCase().includes(search.toLowerCase())).map(role => {
+            {ROLES.filter(r => r.name.toLowerCase().includes(search.toLowerCase())).map(role => {
               const isSelected = selectedRole.id === role.id;
               return (
                 <button
@@ -133,9 +149,6 @@ export function AdminPermissionsPage() {
                         {role.name}
                       </span>
                     </div>
-                    <span className="text-xs font-medium text-gray-500 bg-white px-2 py-1 rounded-md border border-gray-200">
-                      {role.userCount} users
-                    </span>
                   </div>
                   <p className="text-sm text-gray-500 line-clamp-2">
                     {role.description}
@@ -147,18 +160,18 @@ export function AdminPermissionsPage() {
         </div>
 
         {/* Right Column: Permission Matrix */}
-        <div className="lg:col-span-8 bg-white rounded-2xl border border-gray-200 p-6 flex flex-col">
-          <div className="mb-6 pb-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="lg:col-span-8 bg-white rounded-2xl border border-gray-200 p-6 flex flex-col min-h-0">
+          <div className="mb-6 pb-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
             <div>
               <h2 className="text-lg font-bold text-gray-900">
                 Chi tiết quyền: <span className="text-orange-600">{selectedRole.name}</span>
               </h2>
-              <p className="text-sm text-gray-500 mt-1">Bật tắt các công tắc để cấp quyền hoặc thu hồi quyền tương ứng.</p>
+              <p className="text-sm text-gray-500 mt-1">Bật tắt các công tắc để cấp quyền hoặc thu hồi quyền truy cập API.</p>
             </div>
             
             <div className="relative w-full sm:w-64">
               <Input 
-                placeholder="Tìm quyền hoặc endpoint..." 
+                placeholder="Tìm endpoint..." 
                 value={searchPermission}
                 onChange={(e) => setSearchPermission(e.target.value)}
                 className="pl-10"
@@ -168,63 +181,70 @@ export function AdminPermissionsPage() {
           </div>
 
           <div className="flex-1 overflow-y-auto pr-2 space-y-8">
-            {MOCK_PERMISSIONS.map(group => {
-              // Lọc các item dựa vào search
-              const filteredItems = group.items.filter(item => 
-                item.name.toLowerCase().includes(searchPermission.toLowerCase()) || 
-                item.description.toLowerCase().includes(searchPermission.toLowerCase())
+            {isLoadingEndpoints || isLoadingRole ? (
+              <div className="flex flex-col items-center justify-center h-40 text-gray-500">
+                <Loader2 className="w-8 h-8 animate-spin mb-4 text-orange-500" />
+                Đang tải dữ liệu phân quyền...
+              </div>
+            ) : Object.keys(groupedEndpoints).map(groupName => {
+              const items = groupedEndpoints[groupName].filter(item => 
+                item.path.toLowerCase().includes(searchPermission.toLowerCase()) || 
+                item.name?.toLowerCase().includes(searchPermission.toLowerCase()) ||
+                item.module?.toLowerCase().includes(searchPermission.toLowerCase())
               );
               
-              if (filteredItems.length === 0) return null;
+              if (items.length === 0) return null;
 
               return (
-                <div key={group.id}>
+                <div key={groupName}>
                   <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2 text-sm uppercase tracking-wider">
-                    {group.type === 'UI' ? (
-                      <Layout className="w-4 h-4 text-blue-500" />
-                    ) : (
-                      <Database className="w-4 h-4 text-purple-500" />
-                    )}
-                    {group.title}
+                    <Database className="w-4 h-4 text-purple-500" />
+                    {groupName} Controller
                   </h3>
                   
                   <div className="bg-gray-50 rounded-xl border border-gray-100 overflow-hidden divide-y divide-gray-100">
-                    {filteredItems.map(item => {
-                      const isGranted = (rolePermissions[selectedRole.id] || []).includes(item.id);
+                    {items.map(item => {
+                      const isGranted = rolePermissions.includes(item.id);
                     
-                    return (
-                      <div key={item.id} className="p-4 flex items-center justify-between hover:bg-gray-100/50 transition-colors">
-                        <div className="pr-4">
-                          <p className="font-medium text-gray-900">{item.name}</p>
-                          <p className="text-sm text-gray-500 mt-0.5">{item.description}</p>
-                        </div>
-                        
-                        {/* Toggle Switch */}
-                        <button
-                          type="button"
-                          onClick={() => handleTogglePermission(item.id)}
-                          className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 ${
-                            isGranted ? 'bg-orange-500' : 'bg-gray-200'
-                          }`}
-                          role="switch"
-                          aria-checked={isGranted}
-                        >
-                          <span
-                            aria-hidden="true"
-                            className={`pointer-events-none flex h-5 w-5 transform items-center justify-center rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                              isGranted ? 'translate-x-5' : 'translate-x-0'
+                      return (
+                        <div key={item.id} className="p-4 flex items-center justify-between hover:bg-gray-100/50 transition-colors">
+                          <div className="pr-4">
+                            <p className="font-medium text-gray-900">{item.method} {item.path}</p>
+                            <p className="text-sm text-gray-500 mt-0.5">{item.name || item.module || 'Không có mô tả'}</p>
+                          </div>
+                          
+                          {/* Toggle Switch */}
+                          <button
+                            type="button"
+                            onClick={() => handleTogglePermission(item.id)}
+                            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 ${
+                              isGranted ? 'bg-orange-500' : 'bg-gray-200'
                             }`}
+                            role="switch"
+                            aria-checked={isGranted}
                           >
-                            {isGranted && <Check className="w-3 h-3 text-orange-500" />}
-                          </span>
-                        </button>
-                      </div>
-                    );
-                  })}
+                            <span
+                              aria-hidden="true"
+                              className={`pointer-events-none flex h-5 w-5 transform items-center justify-center rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                isGranted ? 'translate-x-5' : 'translate-x-0'
+                              }`}
+                            >
+                              {isGranted && <Check className="w-3 h-3 text-orange-500" />}
+                            </span>
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
+              );
+            })}
+            
+            {!isLoadingEndpoints && endpoints.length === 0 && (
+              <div className="text-center py-10 text-gray-500 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                Chưa có dữ liệu API Endpoints trong hệ thống.
               </div>
-            );
-          })}
+            )}
           </div>
         </div>
         

@@ -23,6 +23,7 @@ namespace ShoppingFood.Tests.Features.Products
         private readonly Mock<IProductRepository> _productRepositoryMock;
         private readonly Mock<IUserRepository> _userRepositoryMock;
         private readonly Mock<IMapper> _mapperMock;
+        private readonly Mock<IFlashSaleProductRepository> _flashSaleProductRepositoryMock;
         private readonly GetProductDetailHandler _handler;
 
         public GetProductDetailHandlerTests()
@@ -30,11 +31,13 @@ namespace ShoppingFood.Tests.Features.Products
             _productRepositoryMock = new Mock<IProductRepository>();
             _userRepositoryMock = new Mock<IUserRepository>();
             _mapperMock = new Mock<IMapper>();
+            _flashSaleProductRepositoryMock = new Mock<IFlashSaleProductRepository>();
 
             _handler = new GetProductDetailHandler(
                 _productRepositoryMock.Object,
                 _userRepositoryMock.Object,
-                _mapperMock.Object
+                _mapperMock.Object,
+                _flashSaleProductRepositoryMock.Object
             );
         }
 

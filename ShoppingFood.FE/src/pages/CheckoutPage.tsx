@@ -15,6 +15,32 @@ import toast from 'react-hot-toast';
 import { Modal } from '../components/common/Modal';
 import { SepayQrPaymentModal } from '../components/payment/SepayQrPaymentModal';
 import { Tag } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+// Fix Leaflet marker icon issue
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+function ChangeView({ center, zoom }: { center: [number, number], zoom: number }) {
+  const map = useMap();
+  map.flyTo(center, zoom, { duration: 1.5 });
+  return null;
+}
+
+function MapEvents({ onLocationSelected }: { onLocationSelected: (lat: number, lng: number) => void }) {
+  useMapEvents({
+    click(e) {
+      onLocationSelected(e.latlng.lat, e.latlng.lng);
+    },
+  });
+  return null;
+}
 
 export function CheckoutPage() {
   const navigate = useNavigate();
@@ -36,7 +62,7 @@ export function CheckoutPage() {
   
   const checkoutTotal = useMemo(() => {
     return checkoutItems.reduce((sum, item) => {
-      let itemPrice = item.product.price;
+      let itemPrice = item.product.flashSalePrice ?? item.product.price;
       if (item.selectedSize) {
         const sizeOpt = item.product.sizes?.find(s => s.sizeName === item.selectedSize);
         if (sizeOpt) itemPrice += sizeOpt.extraPrice;
@@ -56,6 +82,8 @@ export function CheckoutPage() {
     contactPhone: user?.phone || '',
     contactEmail: user?.email || '',
     deliveryAddress: '',
+    deliveryLatitude: null as number | null,
+    deliveryLongitude: null as number | null,
     note: '',
     paymentMethod: 'COD' as 'COD' | 'CreditCard' | 'EWallet' | 'SystemWallet' | 'Sepay',
     eWalletProvider: 'Momo' as 'Momo' | 'ZaloPay' | 'VNPay',
@@ -249,6 +277,54 @@ export function CheckoutPage() {
     }
   };
 
+  const fetchAddressFromCoordinates = async (lat: number, lng: number) => {
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=vi`);
+      const data = await response.json();
+      if (data && data.display_name) {
+        const parts = data.display_name.split(',').map((p: string) => p.trim());
+        const filteredParts = parts.filter((p: string) => {
+          const lower = p.toLowerCase();
+          if (lower === 'việt nam' || lower === 'vietnam') return false;
+          if (/^\d+$/.test(p)) return false; // Loại bỏ mã bưu điện (các con số)
+          return true;
+        });
+
+        setFormData(prev => ({
+          ...prev,
+          deliveryAddress: filteredParts.join(', ')
+        }));
+      }
+    } catch (error) {
+      console.error("Lỗi khi chuyển đổi tọa độ thành địa chỉ", error);
+    }
+  };
+
+  const handleLocationSelected = (lat: number, lng: number) => {
+    setFormData(prev => ({
+      ...prev,
+      deliveryLatitude: lat,
+      deliveryLongitude: lng
+    }));
+    fetchAddressFromCoordinates(lat, lng);
+  };
+
+  const handleGetLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          handleLocationSelected(position.coords.latitude, position.coords.longitude);
+          toast.success('Đã lấy vị trí hiện tại');
+        },
+        () => {
+          toast.error('Không thể lấy vị trí. Vui lòng kiểm tra quyền truy cập vị trí của trình duyệt.');
+        }
+      );
+    } else {
+      toast.error('Trình duyệt của bạn không hỗ trợ định vị.');
+    }
+  };
+
   const handleSelectSavedAddress = (addr: IUserAddressDto) => {
     setFormData(prev => ({
       ...prev,
@@ -404,6 +480,50 @@ export function CheckoutPage() {
                       onChange={handleInputChange} 
                       placeholder="Số nhà, tên đường, phường/xã, quận/huyện..." 
                     />
+                    
+                    <div className="mt-4 mb-2 border rounded-xl overflow-hidden bg-gray-50">
+                      <div className="p-3 border-b flex justify-between items-center bg-white">
+                        <span className="text-sm font-medium text-gray-700">Chọn vị trí giao hàng trên bản đồ</span>
+                        <Button type="button" variant="outline" size="sm" onClick={handleGetLocation}>
+                          <MapPin className="w-4 h-4 mr-1" /> Vị trí hiện tại
+                        </Button>
+                      </div>
+                      <div className="h-[250px] w-full relative z-0">
+                        <MapContainer 
+                          center={[formData.deliveryLatitude || 10.762622, formData.deliveryLongitude || 106.660172]} 
+                          zoom={15} 
+                          style={{ height: '100%', width: '100%' }}
+                        >
+                          {(formData.deliveryLatitude && formData.deliveryLongitude) ? (
+                            <ChangeView center={[formData.deliveryLatitude, formData.deliveryLongitude]} zoom={16} />
+                          ) : null}
+                          <TileLayer
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                          />
+                          <MapEvents onLocationSelected={handleLocationSelected} />
+                          {formData.deliveryLatitude && formData.deliveryLongitude && (
+                            <Marker 
+                              position={[formData.deliveryLatitude, formData.deliveryLongitude]} 
+                              draggable={true}
+                              eventHandlers={{
+                                dragend: (e) => {
+                                  const marker = e.target;
+                                  const position = marker.getLatLng();
+                                  handleLocationSelected(position.lat, position.lng);
+                                }
+                              }}
+                            />
+                          )}
+                        </MapContainer>
+                      </div>
+                      {(!formData.deliveryLatitude || !formData.deliveryLongitude) && (
+                        <div className="p-2 text-xs text-orange-600 bg-orange-50 text-center">
+                          Vui lòng chọn vị trí trên bản đồ để shipper tìm đến dễ dàng hơn!
+                        </div>
+                      )}
+                    </div>
+
                     {isAuthenticated && (
                       <label className="mt-2 flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
                         <input
@@ -549,7 +669,7 @@ export function CheckoutPage() {
 
               <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-200">
                 {checkoutItems.map((item, idx) => {
-                  let itemUnitPrice = item.product.price;
+                  let itemUnitPrice = item.product.flashSalePrice ?? item.product.price;
                   if (item.selectedSize) {
                     const sizeOpt = item.product.sizes?.find(s => s.sizeName === item.selectedSize);
                     if (sizeOpt) itemUnitPrice += sizeOpt.extraPrice;

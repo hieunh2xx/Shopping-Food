@@ -14,31 +14,51 @@ class AdminService extends BaseService<unknown> {
    * Approve or reject a seller application
    */
   async approveSellerApplication(data: IApproveApplicationRequest): Promise<IApiResponse<void>> {
-    return httpClient.post<IApiResponse<void>>(`${this.endpoint}/ApproveSellerApplication`, data);
+    return httpClient.post<IApiResponse<void>>(API_ENDPOINTS.ADMIN.APPROVE_SELLER, data);
+  }
+
+  async createStaff(data: any): Promise<IApiResponse<any>> {
+    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ADMIN.CREATE_STAFF, data);
+  }
+
+  async getApiEndpoints(): Promise<IApiResponse<any[]>> {
+    return httpClient.get<IApiResponse<any[]>>(API_ENDPOINTS.ADMIN.PERMISSIONS_ENDPOINTS);
+  }
+
+  async toggleUserStatus(userId: string): Promise<IApiResponse<any>> {
+    return httpClient.put<IApiResponse<any>>(API_ENDPOINTS.ADMIN.TOGGLE_USER_STATUS(userId), {});
+  }
+
+  async getRolePermissions(role: number): Promise<IApiResponse<string[]>> {
+    return httpClient.get<IApiResponse<string[]>>(API_ENDPOINTS.ADMIN.ROLE_PERMISSIONS(role));
+  }
+
+  async updateRolePermissions(role: number, endpointIds: string[]): Promise<IApiResponse<any>> {
+    return httpClient.put<IApiResponse<any>>(API_ENDPOINTS.ADMIN.ROLE_PERMISSIONS(role), { apiEndpointIds: endpointIds });
   }
 
   async getDashboardStats(days: number = 7): Promise<IApiResponse<any>> {
-    return httpClient.get<IApiResponse<any>>(`${this.endpoint}/dashboard/stats`, { params: { days } });
+    return httpClient.get<IApiResponse<any>>(API_ENDPOINTS.ADMIN.DASHBOARD_STATS, { params: { days } });
   }
 
   async getOrderHeatmap(days: number = 30): Promise<IApiResponse<any>> {
-    return httpClient.get<IApiResponse<any>>(`${this.endpoint}/dashboard/heatmap`, { params: { days } });
+    return httpClient.get<IApiResponse<any>>(API_ENDPOINTS.ADMIN.DASHBOARD_HEATMAP, { params: { days } });
   }
 
   async getMaintenanceSettings(): Promise<IApiResponse<any>> {
-    return httpClient.get<IApiResponse<any>>(`${this.endpoint}/system/maintenance`);
+    return httpClient.get<IApiResponse<any>>(API_ENDPOINTS.ADMIN.SYSTEM_MAINTENANCE);
   }
 
   async updateMaintenanceSettings(data: any): Promise<IApiResponse<any>> {
-    return httpClient.post<IApiResponse<any>>(`${this.endpoint}/system/maintenance`, data);
+    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ADMIN.SYSTEM_MAINTENANCE, data);
   }
 
-  async updateLegalSettings(data: { termsOfUse: string, privacyPolicy: string }): Promise<IApiResponse<any>> {
-    return httpClient.post<IApiResponse<any>>(`${this.endpoint}/system/legal`, data);
+  async updateLegalSettings(data: { termsOfUseCustomer: string, termsOfUseSeller: string, termsOfUseShipper: string, privacyPolicy: string }): Promise<IApiResponse<any>> {
+    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ADMIN.SYSTEM_LEGAL, data);
   }
 
   async exportFinancialReport(days: number = 30, format: 'excel' | 'pdf' = 'excel'): Promise<Blob> {
-    const response = await httpClient.get(`${this.endpoint}/reports/financial`, {
+    const response = await httpClient.get(API_ENDPOINTS.ADMIN.REPORTS_FINANCIAL, {
       params: { days, format },
       responseType: 'blob'
     });
@@ -58,7 +78,7 @@ class AdminService extends BaseService<unknown> {
    * Approve or reject a product
    */
   async approveProduct(data: IApproveProductRequest): Promise<IApiResponse<void>> {
-    return httpClient.post<IApiResponse<void>>(`${this.endpoint}/ApproveProduct`, data);
+    return httpClient.post<IApiResponse<void>>(API_ENDPOINTS.ADMIN.APPROVE_PRODUCT, data);
   }
 
   async toggleShipperStatus(id: string, isLocked: boolean): Promise<IApiResponse<any>> {
@@ -114,19 +134,19 @@ class AdminService extends BaseService<unknown> {
 
   // Finance Config
   async getPlatformFinanceConfig(): Promise<IApiResponse<any>> {
-    return httpClient.get<IApiResponse<any>>(`${this.endpoint}/finance-config`);
+    return httpClient.get<IApiResponse<any>>(API_ENDPOINTS.ADMIN.FINANCE_CONFIG);
   }
 
   async updatePlatformFinanceConfig(data: any): Promise<IApiResponse<any>> {
-    return httpClient.put<IApiResponse<any>>(`${this.endpoint}/finance-config`, data);
+    return httpClient.put<IApiResponse<any>>(API_ENDPOINTS.ADMIN.FINANCE_CONFIG, data);
   }
 
   async getRestaurantCommissions(params?: { skip?: number; take?: number; filter?: string }): Promise<IApiResponse<any>> {
-    return httpClient.get<IApiResponse<any>>(`${this.endpoint}/finance-config/restaurants`, { params });
+    return httpClient.get<IApiResponse<any>>(API_ENDPOINTS.ADMIN.FINANCE_CONFIG_RESTAURANTS, { params });
   }
 
   async updateRestaurantCommission(id: string, customCommissionRate: number | null): Promise<IApiResponse<any>> {
-    return httpClient.put<IApiResponse<any>>(`${this.endpoint}/finance-config/restaurants/${id}`, { customCommissionRate });
+    return httpClient.put<IApiResponse<any>>(API_ENDPOINTS.ADMIN.FINANCE_CONFIG_RESTAURANT_BY_ID(id), { customCommissionRate });
   }
 }
 

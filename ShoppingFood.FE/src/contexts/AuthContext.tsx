@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import type { IAuthContext, IUserDto } from '../interfaces';
 import { StorageUtil } from '../utils/storage';
+import { authService } from '../services/AuthService';
 
 /**
  * Auth Context — DIP (Dependency Inversion)
@@ -30,6 +31,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
     setIsLoading(false);
   }, []);
+
+  // Lắng nghe sự kiện thông báo hệ thống để tự động tải lại Profile (ví dụ khi được phê duyệt làm người bán)
+  useEffect(() => {
+    const handleNotification = async (e: CustomEvent) => {
+      // Có thể lọc các thông báo cụ thể (e.g. e.detail.title chứa 'phê duyệt')
+      // Nhưng để an toàn và luôn cập nhật, ta fetch lại profile mỗi khi có thông báo hệ thống
+      if (token) {
+        try {
+          const res = await authService.getProfile();
+          if (!res.error && res.data) {
+            setUser(res.data);
+            StorageUtil.setUser(res.data);
+          }
+        } catch (error) {
+          // Ignore
+        }
+      }
+    };
+
+    window.addEventListener('ON_REALTIME_NOTIFICATION', handleNotification as EventListener);
+    return () => window.removeEventListener('ON_REALTIME_NOTIFICATION', handleNotification as EventListener);
+  }, [token]);
 
   const login = useCallback((newToken: string, newUser: IUserDto) => {
     setToken(newToken);

@@ -43,8 +43,8 @@ namespace ShoppingFood.Application.Features.Coordinator.Queries
                 disableTracking: true
                 );
             var userProfile = users.FirstOrDefault()?.Profile;
-            if (userProfile == null || (userProfile.Role != Domain.Enums.UserRole.Admin && userProfile.Role != Domain.Enums.UserRole.Coordinator))
-                return ApiResponse.Failure(403, "Forbidden.");
+            if (userProfile == null)
+                return ApiResponse.Failure(401, "User profile not found.");
 
             var result = new List<IncidentItemDto>();
 

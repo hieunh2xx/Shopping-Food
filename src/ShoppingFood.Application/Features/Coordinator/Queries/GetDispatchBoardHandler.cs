@@ -47,8 +47,8 @@ namespace ShoppingFood.Application.Features.Coordinator.Queries
                     disableTracking: true
                     );
                 var user = users.FirstOrDefault();
-                if (user == null || (user.Profile.Role != UserRole.Coordinator && user.Profile.Role != UserRole.Admin))
-                    return ApiResponse.Failure(403, "Forbidden. Only admin and coordinator can access this board.");
+                if (user == null)
+                    return ApiResponse.Failure(401, "User not found.");
 
                 var todayUtc = DateTime.UtcNow.Date;
                 Expression<Func<Order, bool>> predicate = o => o.CreatedAt >= todayUtc;

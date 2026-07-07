@@ -62,7 +62,7 @@ export function ProductDetailPage() {
 
   // Calculate dynamic display price
   const getDisplayPrice = () => {
-    let price = product.price;
+    let price = product.flashSalePrice ?? product.price;
     if (selectedSize) {
       const sizeOpt = product.sizes?.find((s) => s.sizeName === selectedSize);
       if (sizeOpt) price += sizeOpt.extraPrice;
@@ -164,6 +164,11 @@ export function ProductDetailPage() {
               <span className="text-3xl font-black text-orange-600">
                 {formatCurrency(getDisplayPrice())}
               </span>
+              {product.flashSalePrice && (
+                <span className="text-lg text-gray-400 line-through ml-2">
+                  {formatCurrency(product.price)}
+                </span>
+              )}
               {(selectedSize || selectedToppings.length > 0) && (
                 <span className="text-xs text-gray-400 font-medium">
                   (Giá thay đổi theo tùy chọn)

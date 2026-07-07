@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { User, LogOut, ChefHat, Search, ClipboardList } from 'lucide-react';
-import { useAuth } from '../../hooks';
+import { User, LogOut, ChefHat, Search, ClipboardList, MapPin, ChevronDown } from 'lucide-react';
+import { useAuth, useUserLocation } from '../../hooks';
 import { CartDrawer } from './CartDrawer';
 import { NotificationBell } from './NotificationBell';
 import { ROUTES } from '../../routes/routeConfig';
@@ -8,6 +8,7 @@ import { useState } from 'react';
 
 export function Header() {
   const { user, isAuthenticated, logout } = useAuth();
+  const { address, fullAddress, isLoading: isLocationLoading } = useUserLocation();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -36,6 +37,34 @@ export function Header() {
               Shopping Food
             </span>
           </Link>
+
+          {/* Location Pill */}
+          <div className="hidden lg:block relative group ml-6">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 rounded-full border border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors">
+              <MapPin className="w-4 h-4 text-orange-500" />
+              <span className="text-sm font-medium text-gray-700 truncate max-w-[150px]">
+                {isLocationLoading ? "Đang định vị..." : address}
+              </span>
+              <ChevronDown className="w-3.5 h-3.5 text-gray-400 group-hover:rotate-180 transition-transform duration-200" />
+            </div>
+
+            {/* Dropdown Menu */}
+            {!isLocationLoading && fullAddress && (
+              <div className="absolute left-0 top-full mt-2 w-72 p-4 bg-white rounded-2xl shadow-xl border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-left z-50">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center shrink-0 mt-0.5">
+                    <MapPin className="w-4 h-4 text-orange-500" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-gray-900 mb-1">Vị trí hiện tại</h4>
+                    <p className="text-xs text-gray-500 leading-relaxed">
+                      {fullAddress}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Search Bar - Hidden on small mobile */}
           <div className="hidden md:flex flex-1 max-w-md mx-8">

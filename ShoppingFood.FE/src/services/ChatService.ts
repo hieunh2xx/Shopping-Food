@@ -53,7 +53,7 @@ class ChatService {
   }
 
   async createSession(data: ICreateChatSessionRequest): Promise<IApiResponse<IChatSession>> {
-    const res = await httpClient.post<IApiResponse<IChatSession>>(`${this.endpoint}/sessions`, data);
+    const res = await httpClient.post<IApiResponse<IChatSession>>(API_ENDPOINTS.CHAT.CREATE_SESSION, data);
     if (res.data) {
       res.data = normalizeSession(res.data as unknown as Record<string, unknown>);
     }
@@ -61,7 +61,7 @@ class ChatService {
   }
 
   async getHistory(sessionId: string): Promise<IApiResponse<IChatMessage[]>> {
-    const res = await httpClient.get<IApiResponse<IChatMessage[]>>(`${this.endpoint}/sessions/${sessionId}/messages`);
+    const res = await httpClient.get<IApiResponse<IChatMessage[]>>(API_ENDPOINTS.CHAT.GET_MESSAGES(sessionId));
     if (res.data) {
       res.data = res.data.map(m => normalizeMessage(m as unknown as Record<string, unknown>));
     }
@@ -69,7 +69,7 @@ class ChatService {
   }
 
   async getOpenSessions(): Promise<IApiResponse<IChatSession[]>> {
-    const res = await httpClient.get<IApiResponse<IChatSession[]>>(`${this.endpoint}/sessions`);
+    const res = await httpClient.get<IApiResponse<IChatSession[]>>(API_ENDPOINTS.CHAT.GET_SESSIONS);
     if (res.data) {
       res.data = res.data.map(s => normalizeSession(s as unknown as Record<string, unknown>));
     }
@@ -77,7 +77,7 @@ class ChatService {
   }
 
   async getCurrentSession(): Promise<IApiResponse<IChatSession | null>> {
-    const res = await httpClient.get<IApiResponse<IChatSession | null>>(`${this.endpoint}/sessions/current`);
+    const res = await httpClient.get<IApiResponse<IChatSession | null>>(API_ENDPOINTS.CHAT.GET_CURRENT_SESSION);
     if (res.data) {
       res.data = normalizeSession(res.data as unknown as Record<string, unknown>);
     }
@@ -85,7 +85,7 @@ class ChatService {
   }
 
   async createOrderSession(orderId: string): Promise<IApiResponse<IChatSession>> {
-    const res = await httpClient.post<IApiResponse<IChatSession>>(`${this.endpoint}/sessions/order/${orderId}`, {});
+    const res = await httpClient.post<IApiResponse<IChatSession>>(API_ENDPOINTS.CHAT.CREATE_ORDER_SESSION(orderId), {});
     if (res.data) {
       res.data = normalizeSession(res.data as unknown as Record<string, unknown>);
     }
@@ -93,7 +93,7 @@ class ChatService {
   }
 
   async getSellerOrderChats(): Promise<IApiResponse<ISellerOrderChatSummary[]>> {
-    return httpClient.get(`${this.endpoint}/sessions/seller/orders`);
+    return httpClient.get(API_ENDPOINTS.CHAT.GET_SELLER_ORDERS);
   }
 
   async joinSellerInbox(restaurantId: string): Promise<void> {
@@ -197,9 +197,9 @@ class ChatService {
 
   async claimSession(sessionId: string, supportId: string): Promise<void> {
     try {
-      await httpClient.post(`${this.endpoint}/sessions/${sessionId}/claim`, { supportId });
-    } catch (err) {
-      console.error('HTTP claimSession failed, falling back to SignalR', err);
+      await httpClient.post(API_ENDPOINTS.CHAT.CLAIM_SESSION(sessionId), { supportId });
+    } catch (error) {
+      console.error('HTTP claimSession failed, falling back to SignalR', error);
     }
     await this.ensureConnected();
     await this.hubConnection!.invoke('ClaimSession', sessionId, supportId);

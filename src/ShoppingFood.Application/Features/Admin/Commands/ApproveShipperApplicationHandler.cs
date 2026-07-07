@@ -51,7 +51,7 @@ namespace ShoppingFood.Application.Features.Admin.Commands
 
                 var adminProfile = await GetAdminProfileAsync(request.CurrentUserId.Value);
                 if (adminProfile == null)
-                    return ApiResponse.Failure(403, "Forbidden. Only administrator can review shipper application.");
+                    return ApiResponse.Failure(401, "User profile not found.");
 
                 var application = await GetApplicationWithDetailAsync(request.ApplicationId);
                 if (application == null)
@@ -103,7 +103,7 @@ namespace ShoppingFood.Application.Features.Admin.Commands
                 include: q => q.Include(u => u.Profile)
                 );
             var user = users.FirstOrDefault();
-            return user?.Profile != null && user.Profile.Role == UserRole.Admin ? user.Profile : null;
+            return user?.Profile;
         }
 
         private async Task<ShipperApplication?> GetApplicationWithDetailAsync(Guid applicationId)

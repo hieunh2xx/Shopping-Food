@@ -265,14 +265,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
             if (!currentUserId.HasValue)
                 return ApiResponse.Failure(401, "Unauthorized.");
 
-            var users = await _userRepository.GetAsync(
-                predicate: u => u.Id == currentUserId.Value,
-                include: q => q.Include(u => u.Profile),
-                disableTracking: true
-                );
-            var user = users.FirstOrDefault();
-            if (user == null || (user.Profile?.Role != UserRole.Coordinator && user.Profile?.Role != UserRole.Admin))
-                return ApiResponse.Failure(403, "Access denied. Only coordinators or admins can release order.");
+
 
             return null;
         }

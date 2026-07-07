@@ -59,6 +59,7 @@ namespace ShoppingFood.Repository.Implementations
             return await _dbContext.Set<Product>()
                 .Include(p => p.Restaurant)
                 .Include(p => p.Category)
+                .Include(p => p.GlobalCategory)
                 .Include(p => p.Images)
                 .Include(p => p.ProductToppings)
                     .ThenInclude(pt => pt.Topping)

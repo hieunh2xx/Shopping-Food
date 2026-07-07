@@ -14,6 +14,7 @@ namespace ShoppingFood.Application.Features.Products.Commands
         public string? Description { get; set; }
         public decimal Price { get; set; }
         public Guid CategoryId { get; set; }
+        public Guid? GlobalCategoryId { get; set; }
         
         public List<string>? ImageUrls { get; set; }
         public List<Guid>? ToppingIds { get; set; }

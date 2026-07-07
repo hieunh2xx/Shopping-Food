@@ -49,15 +49,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
             if (!request.CurrentUserId.HasValue)
                 return ApiResponse.Failure(401, "Unauthorized.");
 
-            var users = await _userRepository.GetAsync(
-                predicate: u => u.Id == request.CurrentUserId.Value,
-                include: q => q.Include(u => u.Profile),
-                disableTracking: true
-                );
-            var userProfile = users.FirstOrDefault()?.Profile;
-            if (userProfile == null ||
-                (userProfile.Role != Domain.Enums.UserRole.Admin && userProfile.Role != Domain.Enums.UserRole.Coordinator))
-                return ApiResponse.Failure(403, "Forbidden.");
+
 
             var reports = await _systemReportRepository.GetAsync(
                 predicate: r => r.Id == request.ReportId,

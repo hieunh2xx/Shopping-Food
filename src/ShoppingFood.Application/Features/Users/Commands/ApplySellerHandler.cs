@@ -16,15 +16,18 @@ namespace ShoppingFood.Application.Features.Users.Commands
     {
         private readonly ISellerApplicationRepository _sellerApplicationRepository;
         private readonly IUserRepository _userRepository;
+        private readonly INotificationRepository _notificationRepository;
         private readonly IUnitOfWork _unitOfWork;
 
         public ApplySellerHandler(
             ISellerApplicationRepository sellerApplicationRepository,
             IUserRepository userRepository,
+            INotificationRepository notificationRepository,
             IUnitOfWork unitOfWork)
         {
             _sellerApplicationRepository = sellerApplicationRepository;
             _userRepository = userRepository;
+            _notificationRepository = notificationRepository;
             _unitOfWork = unitOfWork;
         }
 
@@ -71,6 +74,9 @@ namespace ShoppingFood.Application.Features.Users.Commands
                 };
 
                 _sellerApplicationRepository.Add(application);
+
+                await NotifyAdminsAsync(request.BusinessName);
+
                 await _unitOfWork.SaveChangesAsync();
 
                 return ApiResponse.Success(null, "Seller application submitted successfully.");
@@ -79,6 +85,29 @@ namespace ShoppingFood.Application.Features.Users.Commands
             {
                 await _unitOfWork.LogErrorAsync("ApplySellerHandler.Handle", ex);
                 return ApiResponse.Failure(400, $"An error occurred: {ex.Message}");
+            }
+        }
+
+        private async Task NotifyAdminsAsync(string businessName)
+        {
+            var admins = await _userRepository.GetAsync(
+                predicate: u => u.Profile != null && u.Profile.Role == Domain.Enums.UserRole.Admin,
+                include: q => q.Include(u => u.Profile),
+                disableTracking: true
+                );
+
+            foreach (var admin in admins)
+            {
+                _notificationRepository.Add(new Notification
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = admin.Id,
+                    Title = "Đăng ký Cửa hàng mới",
+                    Message = $"Cửa hàng {businessName} vừa gửi yêu cầu đăng ký Đối tác bán hàng. Vui lòng kiểm tra và duyệt.",
+                    NotificationType = Domain.Enums.NotificationType.System,
+                    IsRead = false,
+                    CreateAt = DateTime.UtcNow,
+                });
             }
         }
     }

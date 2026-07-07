@@ -11,8 +11,11 @@ namespace ShoppingFood.Dto.Product
         public string ItemName { get; set; } = string.Empty;
         public string? Description { get; set; }
         public decimal Price { get; set; }
+        public decimal? FlashSalePrice { get; set; }
         public Guid CategoryId { get; set; }
         public string CategoryName { get; set; } = string.Empty;
+        public Guid? GlobalCategoryId { get; set; }
+        public string? GlobalCategoryName { get; set; }
         public string StockStatus { get; set; } = string.Empty;
         public string? PrimaryImageUrl { get; set; }
         public List<string> Images { get; set; } = new List<string>();

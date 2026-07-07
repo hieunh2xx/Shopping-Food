@@ -53,6 +53,9 @@ export function NotificationBell() {
       setNotifications(prev => [n, ...prev.filter(x => x.id !== n.id)]);
       setUnreadCount(prev => prev + 1);
       toast(n.title, { icon: '🔔' });
+
+      // Phát sự kiện toàn cục để các trang có thể lắng nghe và cập nhật UI (vd: trạng thái duyệt sản phẩm)
+      window.dispatchEvent(new CustomEvent('ON_REALTIME_NOTIFICATION', { detail: n }));
     };
 
     notificationRealtimeService.onNotification(onRealtime);

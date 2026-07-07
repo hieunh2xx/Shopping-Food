@@ -54,7 +54,7 @@ export function CartDrawer() {
   const selectedTotal = useMemo(() => {
     if (!selectedProvider || !groupedItems[selectedProvider]) return 0;
     return groupedItems[selectedProvider].items.reduce((sum, item) => {
-      let itemPrice = item.product.price;
+      let itemPrice = item.product.flashSalePrice ?? item.product.price;
       if (item.selectedSize) {
         const sizeOpt = item.product.sizes?.find(s => s.sizeName === item.selectedSize);
         if (sizeOpt) itemPrice += sizeOpt.extraPrice;
@@ -187,7 +187,7 @@ export function CartDrawer() {
 
                       <ul className="p-2 space-y-2">
                         {group.items.map((item) => {
-                          let itemUnitPrice = item.product.price;
+                          let itemUnitPrice = item.product.flashSalePrice ?? item.product.price;
                           if (item.selectedSize) {
                             const sizeOpt = item.product.sizes?.find(s => s.sizeName === item.selectedSize);
                             if (sizeOpt) itemUnitPrice += sizeOpt.extraPrice;
@@ -226,6 +226,18 @@ export function CartDrawer() {
                                   </button>
                                 </div>
 
+                                {(item.selectedSize || (item.selectedToppings && item.selectedToppings.length > 0)) && (
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-900 mt-1">
+                                      {(item.product.flashSalePrice ?? item.product.price).toLocaleString()} đ
+                                    </p>
+                                    {(item.product.flashSalePrice) && (
+                                      <p className="text-xs text-gray-400 line-through">
+                                        {item.product.price.toLocaleString()} đ
+                                      </p>
+                                    )}
+                                  </div>
+                                )}
                                 {(item.selectedSize || (item.selectedToppings && item.selectedToppings.length > 0)) && (
                                   <div className="flex flex-wrap gap-1 mb-2">
                                     {item.selectedSize && (

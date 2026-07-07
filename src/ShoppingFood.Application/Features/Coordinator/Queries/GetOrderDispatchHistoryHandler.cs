@@ -39,8 +39,8 @@ namespace ShoppingFood.Application.Features.Coordinator.Queries
                 disableTracking: true
             );
             var user = users.FirstOrDefault();
-            if (user == null || (user.Profile?.Role != UserRole.Coordinator && user.Profile?.Role != UserRole.Admin))
-                return ApiResponse.Failure(403, "Access denied. Only coordinators and admins can view dispatch history.");
+            if (user == null)
+                return ApiResponse.Failure(401, "User not found.");
 
             var histories = await _orderDispatchHistoryRepository.GetAsync(
                 predicate: h => h.OrderId == request.OrderId,

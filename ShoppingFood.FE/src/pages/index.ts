@@ -31,6 +31,8 @@ export { AdminChatPage } from './admin/AdminChatPage';
 export { SellerDiscountsPage } from './seller/SellerDiscountsPage';
 export { SellerPromotionsPage } from './seller/SellerPromotionsPage';
 export { PromotionsPage } from './PromotionsPage';
+export { BuyXGetYPage } from './BuyXGetYPage';
+export * from './FlashSalePage';
 export { ProfilePage } from './ProfilePage';
 export { default as MaintenancePage } from './shared/MaintenancePage';
 export { OrdersPage } from './OrdersPage';

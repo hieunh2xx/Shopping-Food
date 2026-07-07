@@ -8,6 +8,7 @@ export interface IProductDto {
   itemName: string;
   description: string | null;
   price: number;
+  flashSalePrice?: number | null;
   categoryId: string;
   categoryName: string;
   stockStatus: string;

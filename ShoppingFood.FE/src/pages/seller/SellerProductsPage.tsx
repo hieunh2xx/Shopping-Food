@@ -26,6 +26,8 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState<number>(0);
   const [categoryId, setCategoryId] = useState('');
+  const [globalCategoryId, setGlobalCategoryId] = useState('');
+  const [globalCategories, setGlobalCategories] = useState<{ id: string; name: string }[]>([]);
   const [imageUrl, setImageUrl] = useState('');
   const [sizes, setSizes] = useState<IProductSizeDto[]>([]);
   const [availableToppings, setAvailableToppings] = useState<IToppingDto[]>([]);
@@ -72,6 +74,21 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
     loadToppings();
   }, [isOpen, restaurantId]);
 
+  // Load global categories
+  useEffect(() => {
+    const loadGlobalCategories = async () => {
+      if (isOpen) {
+        try {
+          const res = await menuCategoryService.getGlobalCategories();
+          if (!res.error && res.data) {
+            setGlobalCategories(res.data);
+          }
+        } catch { /* silent */ }
+      }
+    };
+    loadGlobalCategories();
+  }, [isOpen]);
+
   // Populate form on open
   useEffect(() => {
     if (product) {
@@ -79,6 +96,7 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
       setDescription(product.description || '');
       setPrice(product.price);
       setCategoryId(product.categoryId);
+      setGlobalCategoryId(product.globalCategoryId || '');
       setImageUrl(product.primaryImageUrl || '');
       setSizes(product.sizes || []);
       setSelectedToppings(product.toppings?.map(t => t.id) || []);
@@ -88,7 +106,8 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
       setItemName('');
       setDescription('');
       setPrice(0);
-      setCategoryId(categories[0]?.id || '');
+      setCategoryId('');
+      setGlobalCategoryId('');
       setImageUrl('');
       setSizes([]);
       setSelectedToppings([]);
@@ -135,6 +154,7 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
           description: description.trim() || undefined,
           price,
           categoryId,
+          globalCategoryId: globalCategoryId || undefined,
           imageUrls: imageUrl.trim() ? [imageUrl.trim()] : undefined,
           sizes: sizes.filter(s => s.sizeName.trim()).map(s => {
             const isExisting = product.sizes?.some(orig => orig.id === s.id);
@@ -169,6 +189,7 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
           description: description.trim() || undefined,
           price,
           categoryId,
+          globalCategoryId: globalCategoryId || undefined,
           imageUrls: imageUrl.trim() ? [imageUrl.trim()] : undefined,
           sizes: sizes.filter(s => s.sizeName.trim()).map(s => ({
             sizeName: s.sizeName,
@@ -210,7 +231,7 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
         </div>
 
         {/* Price & Category row */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Giá bán (VNĐ) <span className="text-red-500">*</span></label>
             <Input type="number" value={price || ''} onChange={(e) => setPrice(Number(e.target.value))} placeholder="55000" min={0} />
@@ -225,6 +246,19 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
               <option value="">-- Chọn danh mục --</option>
               {categories.map(c => (
                 <option key={c.id} value={c.id}>{c.title}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Danh mục hệ thống</label>
+            <select
+              value={globalCategoryId}
+              onChange={(e) => setGlobalCategoryId(e.target.value)}
+              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+            >
+              <option value="">-- Không chọn --</option>
+              {globalCategories.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
           </div>
@@ -485,6 +519,18 @@ export function SellerProductsPage() {
 
   useEffect(() => {
     loadProducts();
+  }, [loadProducts]);
+
+  // Lắng nghe sự kiện notification real-time để tự động tải lại trạng thái
+  useEffect(() => {
+    const handleNotification = (e: CustomEvent) => {
+      // Nếu có thông báo (VD: phê duyệt sản phẩm), tải lại danh sách
+      // Có thể check kỹ hơn e.detail.title/message nếu cần, ở đây ta gọi loadProducts để luôn cập nhật nhất
+      loadProducts();
+    };
+
+    window.addEventListener('ON_REALTIME_NOTIFICATION', handleNotification as EventListener);
+    return () => window.removeEventListener('ON_REALTIME_NOTIFICATION', handleNotification as EventListener);
   }, [loadProducts]);
 
   const totalPages = Math.ceil(total / take);

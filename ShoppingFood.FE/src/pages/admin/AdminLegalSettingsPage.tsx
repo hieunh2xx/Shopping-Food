@@ -8,7 +8,9 @@ import toast from 'react-hot-toast';
 export function AdminLegalSettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [termsOfUse, setTermsOfUse] = useState('');
+  const [termsOfUseCustomer, setTermsOfUseCustomer] = useState('');
+  const [termsOfUseSeller, setTermsOfUseSeller] = useState('');
+  const [termsOfUseShipper, setTermsOfUseShipper] = useState('');
   const [privacyPolicy, setPrivacyPolicy] = useState('');
 
   useEffect(() => {
@@ -20,7 +22,9 @@ export function AdminLegalSettingsPage() {
       setIsLoading(true);
       const response = await supportService.getLegalSettings();
       if (!response.error && response.data) {
-        setTermsOfUse(response.data.termsOfUse || '');
+        setTermsOfUseCustomer(response.data.termsOfUseCustomer || '');
+        setTermsOfUseSeller(response.data.termsOfUseSeller || '');
+        setTermsOfUseShipper(response.data.termsOfUseShipper || '');
         setPrivacyPolicy(response.data.privacyPolicy || '');
       }
     } catch (error) {
@@ -34,7 +38,9 @@ export function AdminLegalSettingsPage() {
     try {
       setIsSaving(true);
       const response = await adminService.updateLegalSettings({
-        termsOfUse,
+        termsOfUseCustomer,
+        termsOfUseSeller,
+        termsOfUseShipper,
         privacyPolicy
       });
       if (!response.error) {
@@ -77,16 +83,56 @@ export function AdminLegalSettingsPage() {
               <FileText className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-900">Điều khoản sử dụng</h2>
-              <p className="text-sm text-gray-500">Nội dung hiển thị tại trang Điều khoản sử dụng. Hỗ trợ HTML.</p>
+              <h2 className="text-lg font-bold text-gray-900">Điều khoản sử dụng (Khách hàng)</h2>
+              <p className="text-sm text-gray-500">Nội dung hiển thị tại trang đăng ký Khách hàng.</p>
             </div>
           </div>
           <div className="p-6">
             <textarea
               className="w-full h-64 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-shadow resize-y"
-              value={termsOfUse}
-              onChange={(e) => setTermsOfUse(e.target.value)}
-              placeholder="<h1>Điều khoản sử dụng</h1><p>Nội dung...</p>"
+              value={termsOfUseCustomer}
+              onChange={(e) => setTermsOfUseCustomer(e.target.value)}
+              placeholder="<h1>Điều khoản Khách hàng</h1><p>Nội dung...</p>"
+            />
+          </div>
+        </div>
+
+        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-gray-100 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center">
+              <FileText className="w-5 h-5 text-orange-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">Điều khoản sử dụng (Người bán)</h2>
+              <p className="text-sm text-gray-500">Nội dung hiển thị tại trang đăng ký Đối tác bán hàng.</p>
+            </div>
+          </div>
+          <div className="p-6">
+            <textarea
+              className="w-full h-64 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-shadow resize-y"
+              value={termsOfUseSeller}
+              onChange={(e) => setTermsOfUseSeller(e.target.value)}
+              placeholder="<h1>Điều khoản Đối tác bán hàng</h1><p>Nội dung...</p>"
+            />
+          </div>
+        </div>
+
+        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-gray-100 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center">
+              <FileText className="w-5 h-5 text-purple-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">Điều khoản sử dụng (Tài xế)</h2>
+              <p className="text-sm text-gray-500">Nội dung hiển thị tại trang đăng ký Đối tác giao hàng.</p>
+            </div>
+          </div>
+          <div className="p-6">
+            <textarea
+              className="w-full h-64 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-shadow resize-y"
+              value={termsOfUseShipper}
+              onChange={(e) => setTermsOfUseShipper(e.target.value)}
+              placeholder="<h1>Điều khoản Đối tác giao hàng</h1><p>Nội dung...</p>"
             />
           </div>
         </div>

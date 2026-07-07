@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
@@ -52,8 +52,8 @@ namespace ShoppingFood.Application.Features.FlashSales.Commands
                 disableTracking: true
                 );
             var userProfile = users.FirstOrDefault()?.Profile;
-            if(userProfile == null || (userProfile.Role != UserRole.Mall && userProfile.Role != UserRole.Seller))
-                return ApiResponse.Failure(403, "Forbidden. Only sellers can register for flash sales.");
+            if(userProfile == null)
+                return ApiResponse.Failure(401, "User profile not found.");
 
             var restaurants = await _restaurantProfileRepository.GetAsync(
                 predicate: r => r.OwnerId == userProfile.Id,

@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
@@ -37,14 +37,7 @@ namespace ShoppingFood.Application.Features.FlashSales.Commands
             if(!request.CurrentUserId.HasValue)
                 return ApiResponse.Failure(401, "Unauthorized.");
 
-            var users = await _userRepository.GetAsync(
-                predicate: u => u.Id == request.CurrentUserId.Value,
-                include: q => q.Include(u => u.Profile),
-                disableTracking: true
-                );
-            var userProfile = users.FirstOrDefault()?.Profile;
-            if(userProfile == null || userProfile.Role != Domain.Enums.UserRole.Admin)
-                return ApiResponse.Failure(403, "Forbidden. Only admin can review flash sale products.");
+
 
             var flashSaleProducts = await _flashSaleProductRepository.GetAsync(
                 predicate: fsp => fsp.Id == request.FlashSaleProductId,

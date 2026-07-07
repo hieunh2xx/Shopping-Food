@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { LogOut, Menu, X } from 'lucide-react';
+import { LogOut, Menu, X, ChevronDown, ChevronRight } from 'lucide-react';
 import { useAuth } from '../../hooks';
 import { NotificationBell } from './NotificationBell';
 
@@ -8,6 +8,7 @@ export interface NavItem {
   name: string;
   path: string;
   icon: React.ElementType;
+  group?: string;
 }
 
 export interface DashboardLayoutProps {
@@ -19,6 +20,59 @@ export interface DashboardLayoutProps {
   onLogout: () => void;
   extraAction?: React.ReactNode;
   globalBanner?: React.ReactNode;
+}
+
+function NavGroupDropdown({ 
+  groupName, 
+  items, 
+  location, 
+  setIsSidebarOpen 
+}: { 
+  groupName: string, 
+  items: NavItem[], 
+  location: any, 
+  setIsSidebarOpen: any 
+}) {
+  const isAnyActive = items.some(item => location.pathname === item.path);
+  const [isOpen, setIsOpen] = useState(isAnyActive || !groupName);
+
+  return (
+    <div className="space-y-1">
+      {groupName && (
+        <button 
+          onClick={() => setIsOpen(!isOpen)}
+          className="w-full flex items-center justify-between px-3 pt-2 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-600 transition-colors"
+        >
+          <span>{groupName}</span>
+          {isOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+        </button>
+      )}
+      {isOpen && (
+        <div className="space-y-1 pl-1">
+          {items.map((item) => {
+            const isExactMatch = location.pathname === item.path;
+            
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`
+                  flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors
+                  ${isExactMatch 
+                    ? 'bg-orange-50 text-orange-600' 
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}
+                `}
+                onClick={() => setIsSidebarOpen(false)}
+              >
+                <item.icon className={`w-5 h-5 ${isExactMatch ? 'text-orange-600' : 'text-gray-400'}`} />
+                {item.name}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function DashboardLayout({
@@ -71,29 +125,25 @@ export function DashboardLayout({
         </Link>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-          {navItems.map((item) => {
-            // Allow active highlight for exact match or nested paths, though exact match logic might need refinement depending on actual paths.
-            // A simple exact match is safest for top-level navigation:
-            const isExactMatch = location.pathname === item.path;
-            
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`
-                  flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors
-                  ${isExactMatch 
-                    ? 'bg-orange-50 text-orange-600' 
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}
-                `}
-                onClick={() => setIsSidebarOpen(false)}
-              >
-                <item.icon className={`w-5 h-5 ${isExactMatch ? 'text-orange-600' : 'text-gray-400'}`} />
-                {item.name}
-              </Link>
-            );
-          })}
+        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-4">
+          {(() => {
+            const groupedItems = navItems.reduce((acc, item) => {
+              const groupName = item.group || '';
+              if (!acc[groupName]) acc[groupName] = [];
+              acc[groupName].push(item);
+              return acc;
+            }, {} as Record<string, NavItem[]>);
+
+            return Object.entries(groupedItems).map(([groupName, items]) => (
+              <NavGroupDropdown 
+                key={groupName}
+                groupName={groupName}
+                items={items}
+                location={location}
+                setIsSidebarOpen={setIsSidebarOpen}
+              />
+            ));
+          })()}
         </nav>
 
         {/* Sidebar Footer */}

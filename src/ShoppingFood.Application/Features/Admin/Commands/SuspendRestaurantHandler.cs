@@ -40,13 +40,7 @@ namespace ShoppingFood.Application.Features.Admin.Commands
             if (!request.CurrentUserId.HasValue)
                 return ApiResponse.Failure(401, "Unauthorized.");
 
-            var admins = await _userRepository.GetAsync(
-                predicate: u => u.Id == request.CurrentUserId.Value,
-                include: q => q.Include(u => u.Profile)
-            );
-            var admin = admins.FirstOrDefault();
-            if (admin == null || admin.Profile.Role != Domain.Enums.UserRole.Admin)
-                return ApiResponse.Failure(403, "Forbidden. Only Admin can perform this action.");
+
 
             var restaurants = await _restaurantProfileRepository.GetAsync(
                 predicate: r => r.Id == request.RestaurantId,

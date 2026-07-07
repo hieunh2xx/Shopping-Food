@@ -12,8 +12,8 @@ using ShoppingFood.Repository.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using ShoppingFood.Application.Interfaces;
 
 namespace ShoppingFood.Application.Features.Carts.Commands
 {
@@ -26,6 +26,7 @@ namespace ShoppingFood.Application.Features.Carts.Commands
         private readonly IMapper _mapper;
         private readonly ShoppingFoodContext _dbContext;
         private readonly IHttpContextAccessor _httpContextAccessor; // Inject HttpContextAccessor
+        private readonly IFlashSalePricingService _flashSalePricingService;
 
         public AddToCartHandler(
             ICartRepository cartRepository,
@@ -34,7 +35,8 @@ namespace ShoppingFood.Application.Features.Carts.Commands
             IUnitOfWork unitOfWork,
             IMapper mapper, 
             ShoppingFoodContext dbContext,
-            IHttpContextAccessor httpContextAccessor)
+            IHttpContextAccessor httpContextAccessor,
+            IFlashSalePricingService flashSalePricingService)
         {
             _cartRepository = cartRepository;
             _cartItemRepository = cartItemRepository;
@@ -43,6 +45,7 @@ namespace ShoppingFood.Application.Features.Carts.Commands
             _mapper = mapper;
             _dbContext = dbContext;
             _httpContextAccessor = httpContextAccessor;
+            _flashSalePricingService = flashSalePricingService;
         }
 
         public async Task<ApiResponse> Handle(AddToCartCommand request, CancellationToken cancellationToken)
@@ -212,11 +215,14 @@ namespace ShoppingFood.Application.Features.Carts.Commands
 
         private async Task AddOrUpdateCartItemAsync(Guid cartId, Product product, int quantity)
         {
+            var flashSalePrice = await _flashSalePricingService.GetActiveFlashSalePriceAsync(product.Id);
+            var effectivePrice = flashSalePrice ?? product.Price;
+
             var item = await GetCartItemAsync(cartId, product.Id);
             if (item != null)
             {
                 item.Quantity += quantity;
-                item.PriceAtAdded = product.Price; 
+                item.PriceAtAdded = effectivePrice; 
                 _cartItemRepository.Update(item);
             }
             else
@@ -227,7 +233,7 @@ namespace ShoppingFood.Application.Features.Carts.Commands
                     CartId = cartId,
                     ProductId = product.Id,
                     Quantity = quantity,
-                    PriceAtAdded = product.Price,
+                    PriceAtAdded = effectivePrice,
                     CreatedAt = DateTime.UtcNow
                 }; 
                 _cartItemRepository.Add(newItem);

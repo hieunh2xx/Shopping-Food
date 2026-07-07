@@ -14,6 +14,7 @@ using ShoppingFood.Domain.Enums;
 using ShoppingFood.Domain.Models;
 using ShoppingFood.Dto.Product;
 using ShoppingFood.Repository.Interfaces;
+using ShoppingFood.Application.Interfaces;
 using Xunit;
 
 namespace ShoppingFood.Tests.Features.Products
@@ -23,6 +24,7 @@ namespace ShoppingFood.Tests.Features.Products
         private readonly Mock<IProductRepository> _productRepositoryMock;
         private readonly Mock<IUserRepository> _userRepositoryMock;
         private readonly Mock<IMapper> _mapperMock;
+        private readonly Mock<IFlashSalePricingService> _flashSalePricingServiceMock;
         private readonly GetProductsHandler _handler;
 
         public GetProductsHandlerTests()
@@ -30,11 +32,13 @@ namespace ShoppingFood.Tests.Features.Products
             _productRepositoryMock = new Mock<IProductRepository>();
             _userRepositoryMock = new Mock<IUserRepository>();
             _mapperMock = new Mock<IMapper>();
+            _flashSalePricingServiceMock = new Mock<IFlashSalePricingService>();
 
             _handler = new GetProductsHandler(
                 _productRepositoryMock.Object,
                 _userRepositoryMock.Object,
-                _mapperMock.Object
+                _mapperMock.Object,
+                _flashSalePricingServiceMock.Object
             );
         }
 

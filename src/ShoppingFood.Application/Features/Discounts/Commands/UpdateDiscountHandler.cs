@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
@@ -67,8 +67,7 @@ namespace ShoppingFood.Application.Features.Discounts.Commands
                 if (restaurant == null || discount.RestaurantId != restaurant.Id)
                     return ApiResponse.Failure(403, "Access denied. You can only update discounts belonging to your restaurant.");
             }
-            else if (user.Profile.Role != UserRole.Admin)
-                return ApiResponse.Failure(403, "Access denied. Only admin and seller can update discounts.");
+
 
             discount.Title = request.Title;
             discount.Description = request.Description;

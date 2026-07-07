@@ -11,8 +11,8 @@ using ShoppingFood.Repository.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using ShoppingFood.Application.Interfaces;
 
 namespace ShoppingFood.Application.Features.Restaurants.Queries
 {
@@ -23,19 +23,22 @@ namespace ShoppingFood.Application.Features.Restaurants.Queries
         private readonly IUserRepository _userRepository;
         private readonly IFavoriteRestaurantRepository _favoriteRestaurantRepository;
         private readonly IMapper _mapper;
+        private readonly IFlashSalePricingService _flashSalePricingService;
 
         public GetRestaurantDetailHandler(
             IRestaurantProfileRepository restaurantProfileRepository,
             IProductRepository productRepository,
             IUserRepository userRepository,
             IFavoriteRestaurantRepository favoriteRestaurantRepository,
-            IMapper mapper)
+            IMapper mapper,
+            IFlashSalePricingService flashSalePricingService)
         {
             _restaurantProfileRepository = restaurantProfileRepository;
             _productRepository = productRepository;
             _userRepository = userRepository;
             _favoriteRestaurantRepository = favoriteRestaurantRepository;
             _mapper = mapper;
+            _flashSalePricingService = flashSalePricingService;
         }
         public async Task<ApiResponse> Handle(GetRestaurantDetailQuery request, CancellationToken cancellationToken)
         {
@@ -80,6 +83,8 @@ namespace ShoppingFood.Application.Features.Restaurants.Queries
 
             var products = await GetApprovedProductsAsync(request.Id);
             restaurantDto.Products = _mapper.Map<System.Collections.Generic.List<ProductDto>>(products);
+            await _flashSalePricingService.AttachFlashSalePricesAsync(restaurantDto.Products);
+
             return ApiResponse.Success(restaurantDto, "Restaurant detail retrieved successfully.");
         }
 

@@ -39,14 +39,7 @@ namespace ShoppingFood.Application.Features.Admin.Commands
             if (!request.CurrentUserId.HasValue)
                 return ApiResponse.Failure(401, "Unauthorized.");
 
-            var users = await _userRepository.GetAsync(
-                predicate: u => u.Id == request.CurrentUserId.Value,
-                include: q => q.Include(u => u.Profile),
-                disableTracking: true
-            );
-            var currentUser = users.FirstOrDefault();
-            if (currentUser == null || currentUser.Profile?.Role != UserRole.Admin)
-                return ApiResponse.Failure(403, "Access denied. Only admins can toggle shipper account status.");
+
 
             var shippers = await _shipperProfileRepository.GetAsync(
                 predicate: s => s.Id == request.ShipperId,

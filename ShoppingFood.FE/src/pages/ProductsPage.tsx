@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Search, SlidersHorizontal, MapPin, X, Star, Navigation } from 'lucide-react';
+import { Search, SlidersHorizontal, MapPin, X, Star, Navigation, ArrowLeft } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { ROUTES } from '../routes/routeConfig';
 import { useProducts } from '../hooks';
 import { adminService } from '../services/AdminService';
 import { ProductList } from '../components/product/ProductList';
@@ -8,10 +10,14 @@ import type { ISearchProductQuery } from '../interfaces';
 import toast from 'react-hot-toast';
 
 export function ProductsPage() {
+  const [searchParams] = useSearchParams();
+  const initialCategory = searchParams.get('globalCategoryId') || 'all';
+
   const { products, total, isLoading, searchProducts } = useProducts();
   const [globalCategories, setGlobalCategories] = useState<any[]>([]);
-  const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [activeCategory, setActiveCategory] = useState<string>(initialCategory);
   const [searchQuery, setSearchQuery] = useState<ISearchProductQuery>({
+    globalCategoryId: initialCategory === 'all' ? undefined : initialCategory,
     skip: 0,
     take: 20,
   });
@@ -127,6 +133,9 @@ export function ProductsPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
       {/* Search Header */}
       <div className="mb-8">
+        <Link to={ROUTES.HOME} className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-orange-600 mb-6 transition-colors font-medium">
+          <ArrowLeft className="w-4 h-4" /> Về trang chủ
+        </Link>
         <h1 className="text-3xl font-bold text-gray-900 mb-6">Khám phá thực đơn</h1>
         
         <div className="bg-white border border-gray-200 p-4 rounded-2xl shadow-sm">

@@ -29,20 +29,10 @@ namespace ShoppingFood.Application.Features.FlashSales.Queries
 
         public async Task<ApiResponse> Handle(GetFlashSaleProductsQuery request, CancellationToken cancellationToken)
         {
-            if (!request.CurrentUserId.HasValue)
-                return ApiResponse.Failure(401, "Unauthorized.");
-
-            var users = await _userRepository.GetAsync(
-                predicate: u => u.Id == request.CurrentUserId.Value,
-                include: q => q.Include(u => u.Profile),
-                disableTracking: true
-                );
-            var userProfile = users.FirstOrDefault()?.Profile;
-            if (userProfile == null || userProfile.Role != Domain.Enums.UserRole.Admin)
-                return ApiResponse.Failure(403, "Forbidden. Only admin can access flash sale products management.");
 
             var products = await _flashSaleProductRepository.GetAsync(
-                predicate: fsp => fsp.FlashSaleId == request.FlashSaleId,
+                predicate: fsp => fsp.FlashSaleId == request.FlashSaleId && 
+                                  (!request.CurrentUserId.HasValue ? fsp.Status == ShoppingFood.Domain.Enums.FlashSaleProductStatus.Approved : true),
                 include: q => q.Include(fsp => fsp.Product).ThenInclude(p => p.Restaurant),
                 orderBy: q => q.OrderByDescending(fsp => fsp.CreatedAt),
                 skip: request.Skip,
@@ -51,7 +41,8 @@ namespace ShoppingFood.Application.Features.FlashSales.Queries
                 );
 
             var total = await _flashSaleProductRepository.GetCountAsync(
-                predicate: fsp => fsp.FlashSaleId == request.FlashSaleId
+                predicate: fsp => fsp.FlashSaleId == request.FlashSaleId && 
+                                  (!request.CurrentUserId.HasValue ? fsp.Status == ShoppingFood.Domain.Enums.FlashSaleProductStatus.Approved : true)
                 );
 
             var dtos = _mapper.Map<List<FlashSaleProductDto>>(products);

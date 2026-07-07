@@ -6,6 +6,7 @@ import { userService } from '../../services/UserService';
 import { loyaltyPointService } from '../../services/LoyaltyPointService';
 import type { IUserDto } from '../../interfaces';
 import toast from 'react-hot-toast';
+import { adminService } from '../../services/AdminService';
 
 const TIERS = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
 const TIER_COLORS: Record<string, string> = {
@@ -41,6 +42,18 @@ export function AdminUsersPage() {
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [historyItems, setHistoryItems] = useState<any[]>([]);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+
+  // Create Staff Modal
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newStaff, setNewStaff] = useState({
+    fullName: '',
+    userName: '',
+    password: '',
+    email: '',
+    phone: '',
+    role: 5 // Coordinator by default
+  });
+  const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -115,13 +128,57 @@ export function AdminUsersPage() {
     }
   };
 
+  const handleCreateStaff = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newStaff.fullName || !newStaff.userName || !newStaff.password || !newStaff.email || !newStaff.phone) {
+      toast.error('Vui lòng điền đầy đủ thông tin');
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      const res = await adminService.createStaff(newStaff);
+      if (!res.error) {
+        toast.success('Tạo tài khoản nội bộ thành công');
+        setIsCreateModalOpen(false);
+        setNewStaff({ fullName: '', userName: '', password: '', email: '', phone: '', role: 5 });
+        fetchUsers();
+      } else {
+        toast.error(res.message || 'Lỗi tạo tài khoản');
+      }
+    } catch {
+      toast.error('Có lỗi xảy ra khi tạo tài khoản');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const handleToggleStatus = async (userId: string) => {
+    try {
+      const res = await adminService.toggleUserStatus(userId);
+      if (!res.error) {
+        toast.success(res.message || 'Cập nhật trạng thái thành công');
+        fetchUsers();
+      } else {
+        toast.error(res.message || 'Lỗi cập nhật trạng thái');
+      }
+    } catch {
+      toast.error('Có lỗi xảy ra khi cập nhật trạng thái');
+    }
+  };
+
   const totalPages = Math.ceil(total / take);
 
   return (
     <div className="p-6">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Quản lý người dùng</h1>
-        <p className="text-sm text-gray-500 mt-1">Quản lý danh sách khách hàng và đối tác trên hệ thống</p>
+      <div className="mb-8 flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Quản lý người dùng</h1>
+          <p className="text-sm text-gray-500 mt-1">Quản lý danh sách khách hàng và đối tác trên hệ thống</p>
+        </div>
+        <Button onClick={() => setIsCreateModalOpen(true)} className="bg-orange-500 hover:bg-orange-600 text-white">
+          + Tạo tài khoản
+        </Button>
       </div>
 
       {/* Toolbar */}
@@ -186,12 +243,11 @@ export function AdminUsersPage() {
                     </td>
                     <td className="py-4 px-6 text-sm text-gray-600">{user.email || '—'}</td>
                     <td className="py-4 px-6">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${
-                        user.role === 'Admin' ? 'bg-purple-100 text-purple-700' :
-                        user.role === 'Seller' ? 'bg-blue-100 text-blue-700' :
-                        user.role === 'Shipper' ? 'bg-teal-100 text-teal-700' :
-                        'bg-gray-100 text-gray-700'
-                      }`}>
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${user.role === 'Admin' ? 'bg-purple-100 text-purple-700' :
+                          user.role === 'Seller' ? 'bg-blue-100 text-blue-700' :
+                            user.role === 'Shipper' ? 'bg-teal-100 text-teal-700' :
+                              'bg-gray-100 text-gray-700'
+                        }`}>
                         {user.role === 'Admin' && <Shield className="w-3 h-3" />}
                         {user.role === 'Seller' ? 'Đối tác' : user.role === 'Customer' ? 'Khách hàng' : user.role === 'Shipper' ? 'Tài xế' : user.role}
                       </span>
@@ -209,13 +265,12 @@ export function AdminUsersPage() {
                       </div>
                     </td>
                     <td className="py-4 px-6 text-center">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${
-                        user.status === 'Active'
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${user.status === 'Active'
                           ? 'bg-green-100 text-green-700'
                           : user.status === 'Banned'
-                          ? 'bg-red-100 text-red-700'
-                          : 'bg-yellow-100 text-yellow-700'
-                      }`}>
+                            ? 'bg-red-100 text-red-700'
+                            : 'bg-yellow-100 text-yellow-700'
+                        }`}>
                         {user.status === 'Active' ? 'Hoạt động' : user.status === 'Banned' ? 'Bị khóa' : user.status}
                       </span>
                     </td>
@@ -240,17 +295,17 @@ export function AdminUsersPage() {
                         {user.role !== 'Admin' && (
                           user.status === 'Active' ? (
                             <button
-                              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              className="text-gray-400 hover:text-red-500 transition-colors"
                               title="Khóa tài khoản"
-                              onClick={() => toast('Tính năng khóa tài khoản đang phát triển')}
+                              onClick={() => handleToggleStatus(user.id)}
                             >
                               <Ban className="w-4 h-4" />
                             </button>
                           ) : (
                             <button
-                              className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                              className="text-gray-400 hover:text-green-500 transition-colors"
                               title="Mở khóa tài khoản"
-                              onClick={() => toast('Tính năng mở khóa đang phát triển')}
+                              onClick={() => handleToggleStatus(user.id)}
                             >
                               <CheckCircle2 className="w-4 h-4" />
                             </button>
@@ -267,10 +322,10 @@ export function AdminUsersPage() {
 
         {/* Pagination */}
         <div className="p-4 border-t border-gray-100 flex justify-center">
-          <Pagination 
-            currentPage={page} 
-            totalPages={Math.ceil(total / take)} 
-            onPageChange={setPage} 
+          <Pagination
+            currentPage={page}
+            totalPages={Math.ceil(total / take)}
+            onPageChange={setPage}
             pageSize={take}
             pageSizeOptions={[10, 20, 50]}
             onPageSizeChange={(size) => { setTake(size); setPage(1); }}
@@ -311,11 +366,10 @@ export function AdminUsersPage() {
                     key={tier}
                     type="button"
                     onClick={() => setNewTier(tier)}
-                    className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all ${
-                      newTier === tier
+                    className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all ${newTier === tier
                         ? 'border-orange-500 bg-orange-50 shadow-sm'
                         : 'border-gray-200 hover:border-gray-300 bg-white'
-                    }`}
+                      }`}
                   >
                     <span className="text-xl">{TIER_ICONS[tier]}</span>
                     <span className={`text-xs font-semibold ${newTier === tier ? 'text-orange-600' : 'text-gray-600'}`}>{tier}</span>
@@ -378,11 +432,10 @@ export function AdminUsersPage() {
                 <div key={index} className="p-3 bg-white border border-gray-200 rounded-xl">
                   <div className="flex justify-between items-start mb-2">
                     <span className="font-medium text-gray-900 text-sm">{item.title}</span>
-                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                      item.status === 'Resolved' ? 'bg-green-100 text-green-700' :
-                      item.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-gray-100 text-gray-700'
-                    }`}>
+                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${item.status === 'Resolved' ? 'bg-green-100 text-green-700' :
+                        item.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-gray-100 text-gray-700'
+                      }`}>
                       {item.status === 'Resolved' ? 'Đã giải quyết' : item.status === 'Pending' ? 'Chờ xử lý' : item.status}
                     </span>
                   </div>
@@ -402,6 +455,50 @@ export function AdminUsersPage() {
             <Button type="button" onClick={() => setIsHistoryModalOpen(false)}>Đóng</Button>
           </div>
         </div>
+      </Modal>
+
+      {/* Create Staff Modal */}
+      <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title="Tạo tài khoản nội bộ">
+        <form onSubmit={handleCreateStaff} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Họ và tên</label>
+            <Input required value={newStaff.fullName} onChange={e => setNewStaff({ ...newStaff, fullName: e.target.value })} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tên đăng nhập</label>
+            <Input required value={newStaff.userName} onChange={e => setNewStaff({ ...newStaff, userName: e.target.value })} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>
+            <Input required type="password" value={newStaff.password} onChange={e => setNewStaff({ ...newStaff, password: e.target.value })} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <Input required type="email" value={newStaff.email} onChange={e => setNewStaff({ ...newStaff, email: e.target.value })} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
+            <Input required value={newStaff.phone} onChange={e => setNewStaff({ ...newStaff, phone: e.target.value })} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Vai trò</label>
+            <select
+              className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-colors"
+              value={newStaff.role}
+              onChange={e => setNewStaff({ ...newStaff, role: Number(e.target.value) })}
+            >
+              <option value={5}>Điều phối viên (Coordinator)</option>
+              {/* <option value={0}>Quản trị viên (Admin)</option> */}
+            </select>
+          </div>
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+            <Button type="button" variant="outline" onClick={() => setIsCreateModalOpen(false)}>Hủy</Button>
+            <Button type="submit" disabled={isCreating} className="bg-orange-500 hover:bg-orange-600 text-white">
+              {isCreating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Tạo tài khoản
+            </Button>
+          </div>
+        </form>
       </Modal>
     </div>
   );
