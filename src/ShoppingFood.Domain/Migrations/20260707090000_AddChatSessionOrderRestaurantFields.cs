@@ -5,8 +5,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace ShoppingFood.Domain.Migrations
 {
-    public partial class AddOrderChatSessionFields : Migration
+    /// <inheritdoc />
+    public partial class AddChatSessionOrderRestaurantFields : Migration
     {
+        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<Guid>(
@@ -22,6 +24,7 @@ namespace ShoppingFood.Domain.Migrations
                 nullable: true);
         }
 
+        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(

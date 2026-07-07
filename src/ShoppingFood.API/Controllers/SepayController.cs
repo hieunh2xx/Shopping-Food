@@ -4,7 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using ShoppingFood.Application.Features.Payments.Commands;
 using ShoppingFood.Application.Options;
+using ShoppingFood.Domain.Enums;
 using ShoppingFood.Dto.Security;
+using ShoppingFood.Repository.Interfaces;
 
 namespace ShoppingFood.API.Controllers
 {
@@ -14,15 +16,18 @@ namespace ShoppingFood.API.Controllers
     {
         private readonly IMediator _mediator;
         private readonly SepayOptions _sepayOptions;
+        private readonly IPaymentSessionRepository _sessionRepository;
         private readonly ILogger<SepayController> _logger;
 
         public SepayController(
             IMediator mediator,
             IOptions<SepayOptions> sepayOptions,
+            IPaymentSessionRepository sessionRepository,
             ILogger<SepayController> logger)
         {
             _mediator = mediator;
             _sepayOptions = sepayOptions.Value;
+            _sessionRepository = sessionRepository;
             _logger = logger;
         }
 
@@ -89,10 +94,18 @@ namespace ShoppingFood.API.Controllers
         }
 
         [HttpGet("webhook/diagnostics")]
-        public IActionResult WebhookDiagnostics()
+        public async Task<IActionResult> WebhookDiagnostics()
         {
             var hmacEnabled = !string.IsNullOrWhiteSpace(_sepayOptions.WebhookSecret);
             var apiKeyEnabled = !string.IsNullOrWhiteSpace(_sepayOptions.WebhookApiKey);
+
+            var pendingSessions = await _sessionRepository.GetAsync(
+                predicate: s => s.Status == PaymentSessionStatus.Pending
+                    && s.PaymentMethod == PaymentMethod.Sepay
+                    && s.ExpiresAt > DateTime.UtcNow,
+                orderBy: q => q.OrderByDescending(s => s.CreatedAt),
+                disableTracking: true);
+
             return Ok(new
             {
                 success = true,
@@ -104,7 +117,19 @@ namespace ShoppingFood.API.Controllers
                 vietQrKeyword = _sepayOptions.VietQrTransferKeyword,
                 bankAccount = _sepayOptions.BankAccountNumber,
                 bankName = _sepayOptions.BankName,
-                note = "SePay chỉ ghi nhật ký webhook khi có giao dịch THẬT trên TK đã chọn ở tab Tài khoản của webhook."
+                pendingSepaySessions = pendingSessions.Take(5).Select(s => new
+                {
+                    sessionId = s.Id,
+                    invoiceNumber = s.InvoiceNumber,
+                    amount = s.Amount,
+                    transferContent = s.InvoiceNumber != null
+                        ? $"{_sepayOptions.VietQrTransferKeyword} {s.InvoiceNumber}".Trim()
+                        : null,
+                    expiresAt = s.ExpiresAt,
+                    remainingSeconds = Math.Max(0, (int)(s.ExpiresAt - DateTime.UtcNow).TotalSeconds)
+                }),
+                sepayDashboardWebhookUrl = "https://modulator-vowed-embark.ngrok-free.dev/api/Payment/sepay/webhook",
+                note = "Dat hang SePay truoc, roi CK dung invoice+amount trong pendingSepaySessions. SePay chi gui webhook khi co GD that tren TK da chon."
             });
         }
 

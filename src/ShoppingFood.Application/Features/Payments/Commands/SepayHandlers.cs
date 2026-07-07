@@ -385,8 +385,18 @@ namespace ShoppingFood.Application.Features.Payments.Commands
             if (string.IsNullOrWhiteSpace(code))
                 code = data["content"]?.ToString();
             var amount = data["transferAmount"]?.Value<decimal?>();
+            var isIncoming = string.Equals(transferType, "in", StringComparison.OrdinalIgnoreCase)
+                || (string.IsNullOrWhiteSpace(transferType) && amount is > 0);
 
-            if (transferType == "in" && !string.IsNullOrWhiteSpace(code) && amount.HasValue)
+            string? skippedReason = null;
+            if (transferType == "out")
+                skippedReason = "outgoing_transfer";
+            else if (string.IsNullOrWhiteSpace(code))
+                skippedReason = "missing_code_and_content";
+            else if (!amount.HasValue)
+                skippedReason = "missing_amount";
+
+            if (isIncoming && !string.IsNullOrWhiteSpace(code) && amount.HasValue)
             {
                 var invoiceFromCode = _sepayService.ResolveInvoiceFromTransferCode(code) ?? code.Trim();
                 confirmation = new PaymentConfirmationMessage
@@ -402,7 +412,13 @@ namespace ShoppingFood.Application.Features.Payments.Commands
             await _orchestration.PersistWebhookAndEnqueueAsync(
                 eventKey, transferType ?? "bank", request.RawBody, confirmation);
 
-            return ApiResponse.Success(new { queued = confirmation != null }, "Webhook accepted.");
+            return ApiResponse.Success(new
+            {
+                queued = confirmation != null,
+                invoiceNumber = confirmation?.InvoiceNumber,
+                amount = confirmation?.Amount,
+                skippedReason
+            }, confirmation != null ? "Webhook accepted and queued." : "Webhook accepted (no matching payment code).");
         }
 
         private async Task<bool> IsDuplicateAsync(string eventKey)
