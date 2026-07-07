@@ -22,6 +22,7 @@ namespace ShoppingFood.Tests.Features.Users
         private readonly UnitOfWork _unitOfWork;
         private readonly UserRepository _userRepository;
         private readonly SellerApplicationRepository _sellerApplicationRepository;
+        private readonly NotificationRepository _notificationRepository;
         private readonly Mock<IMapper> _mapperMock;
 
         public SellerHandlerTests()
@@ -40,6 +41,7 @@ namespace ShoppingFood.Tests.Features.Users
             _unitOfWork = new UnitOfWork(_dbContext, _logContext);
             _userRepository = new UserRepository(_dbContext);
             _sellerApplicationRepository = new SellerApplicationRepository(_dbContext);
+            _notificationRepository = new NotificationRepository(_dbContext);
             _mapperMock = new Mock<IMapper>();
         }
 
@@ -136,6 +138,7 @@ namespace ShoppingFood.Tests.Features.Users
             var handler = new ApplySellerHandler(
                 _sellerApplicationRepository,
                 _userRepository,
+                _notificationRepository,
                 _unitOfWork
             );
 
@@ -177,6 +180,7 @@ namespace ShoppingFood.Tests.Features.Users
             var handler = new ApplySellerHandler(
                 _sellerApplicationRepository,
                 _userRepository,
+                _notificationRepository,
                 _unitOfWork
             );
 
@@ -230,6 +234,7 @@ namespace ShoppingFood.Tests.Features.Users
             var handler = new ApplySellerHandler(
                 _sellerApplicationRepository,
                 _userRepository,
+                _notificationRepository,
                 _unitOfWork
             );
 
@@ -272,6 +277,7 @@ namespace ShoppingFood.Tests.Features.Users
             var handler = new ApplySellerHandler(
                 _sellerApplicationRepository,
                 _userRepository,
+                _notificationRepository,
                 _unitOfWork
             );
 
