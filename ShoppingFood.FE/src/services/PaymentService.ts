@@ -96,6 +96,10 @@ class PaymentService {
     return httpClient.get(API_ENDPOINTS.PAYMENT.SEPAY_STATUS, { params });
   }
 
+  async reconcileSepayPayment(params: { sessionId?: string; invoiceNumber?: string }): Promise<IApiResponse<ISepayReconcileResult>> {
+    return httpClient.post(API_ENDPOINTS.PAYMENT.SEPAY_RECONCILE, null, { params });
+  }
+
   async getPaymentHistory(params?: { skip?: number; take?: number }): Promise<IApiResponse<{ total: number; items: IPaymentHistoryItem[] }>> {
     return httpClient.get(API_ENDPOINTS.PAYMENT.HISTORY, { params });
   }
@@ -123,6 +127,8 @@ export interface IPaymentSessionStatusDto {
   itemsSubtotal?: number;
   shippingFee?: number;
   status: string;
+  displayStatus?: string;
+  statusLabel?: string;
   orderId?: string;
   paymentMethod: string;
   isPaid: boolean;
@@ -145,6 +151,8 @@ export interface ISepayQrDto {
   itemsSubtotal?: number;
   shippingFee?: number;
   status: string;
+  displayStatus?: string;
+  statusLabel?: string;
   qrImageUrl: string;
   bankName?: string;
   bankAccountNumber?: string;
@@ -158,11 +166,22 @@ export interface ISepayQrDto {
   orderId?: string;
 }
 
+export interface ISepayReconcileResult {
+  success: boolean;
+  alreadyPaid: boolean;
+  matchedOnSepay: boolean;
+  skippedCooldown?: boolean;
+  externalTransactionId?: string;
+  message: string;
+}
+
 export interface IPaymentHistoryItem {
   paymentId: string;
   invoiceNumber: string;
   amount: number;
   status: string;
+  displayStatus?: string;
+  statusLabel?: string;
   paymentMethod: string;
   orderId?: string;
   createdAt: string;

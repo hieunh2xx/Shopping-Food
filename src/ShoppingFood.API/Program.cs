@@ -38,6 +38,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddHostedService<MemberTierEvaluationWorker>();
 builder.Services.AddHostedService<PaymentProcessingWorker>();
 builder.Services.AddHostedService<PaymentExpiryWorker>();
+builder.Services.AddHostedService<SepayReconciliationWorker>();
 
 // Add API documentation via Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();

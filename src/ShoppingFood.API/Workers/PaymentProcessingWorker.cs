@@ -23,6 +23,11 @@ namespace ShoppingFood.API.Workers
             {
                 var orchestration = bootScope.ServiceProvider.GetRequiredService<IPaymentOrchestrationService>();
                 await orchestration.ReplayUnprocessedWebhooksAsync();
+                var reconciled = await orchestration.ReconcileAllPendingSepaySessionsAsync();
+                if (reconciled > 0)
+                {
+                    _logger.LogInformation("Startup SePay reconciliation confirmed {Count} payment(s)", reconciled);
+                }
             }
 
             var queue = _serviceProvider.GetRequiredService<IPaymentMessageQueue>();

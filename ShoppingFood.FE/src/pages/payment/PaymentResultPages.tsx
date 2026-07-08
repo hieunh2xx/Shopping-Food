@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { CheckCircle, Loader2, AlertCircle, Clock } from 'lucide-react';
+import { CheckCircle, Loader2, AlertCircle, Clock, RefreshCw } from 'lucide-react';
 import { paymentService } from '../../services/PaymentService';
 import type { IPaymentSessionStatusDto } from '../../services/PaymentService';
 import { ROUTES } from '../../routes/routeConfig';
-import { formatCurrency } from '../../utils/formatters';
+import { formatCurrency, getPaymentDisplayStatusLabel } from '../../utils/formatters';
+import toast from 'react-hot-toast';
 
 type PageState = 'confirming' | 'success' | 'timeout';
 
@@ -14,6 +15,24 @@ export function PaymentSuccessPage() {
   const sessionId = searchParams.get('sessionId') ?? '';
   const [pageState, setPageState] = useState<PageState>('confirming');
   const [status, setStatus] = useState<IPaymentSessionStatusDto | null>(null);
+  const [reconciling, setReconciling] = useState(false);
+
+  const handleReconcile = async () => {
+    setReconciling(true);
+    const res = await paymentService.reconcileSepayPayment({
+      sessionId: sessionId || undefined,
+      invoiceNumber: invoice || undefined,
+    });
+    setReconciling(false);
+
+    if (!res.error && res.data?.success) {
+      setPageState('success');
+      toast.success(res.data.message || 'Đã đồng bộ thanh toán từ SePay');
+      return;
+    }
+
+    toast.error(res.data?.message || res.message || 'Chưa thấy giao dịch khớp');
+  };
 
   useEffect(() => {
     let attempts = 0;
@@ -33,7 +52,7 @@ export function PaymentSuccessPage() {
           return true;
         }
 
-        if (res.data.isExpired && !res.data.isPaid) {
+        if (res.data.isExpired || res.data.displayStatus === 'expired' || res.data.status === 'expired') {
           setPageState('timeout');
           return true;
         }
@@ -66,9 +85,11 @@ export function PaymentSuccessPage() {
         <Loader2 className="w-14 h-14 text-orange-500 animate-spin mb-4" />
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Đang xác nhận thanh toán</h1>
         <p className="text-gray-600 max-w-md mb-2">
-          Hệ thống đang chờ SePay/ngân hàng gửi webhook xác nhận giao dịch.
+          {status?.statusLabel ?? getPaymentDisplayStatusLabel(status?.displayStatus ?? status?.status ?? 'processing')}
         </p>
-        <p className="text-sm text-gray-400">Vui lòng không đóng trang này...</p>
+        <p className="text-sm text-gray-400">
+          {status?.message ?? 'Vui lòng không đóng trang này...'}
+        </p>
         {invoice && <p className="text-xs text-gray-400 mt-4">Mã CK: {invoice}</p>}
       </div>
     );
@@ -80,9 +101,20 @@ export function PaymentSuccessPage() {
         <Clock className="w-14 h-14 text-amber-500 mb-4" />
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Chưa nhận được xác nhận</h1>
         <p className="text-gray-600 max-w-md mb-4">
-          Chưa thấy webhook từ SePay. Nếu bạn đã chuyển khoản, hệ thống sẽ cập nhật trong vài phút.
+          Chưa thấy webhook từ SePay. Nếu bạn đã chuyển khoản, hệ thống có thể đồng bộ trực tiếp từ SePay API.
         </p>
-        {invoice && <p className="text-sm text-gray-400 mb-6">Mã CK: {invoice}</p>}
+        {invoice && <p className="text-sm text-gray-400 mb-4">Mã CK: {invoice}</p>}
+        <div className="flex flex-wrap justify-center gap-3 mb-4">
+          <button
+            type="button"
+            onClick={handleReconcile}
+            disabled={reconciling}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-orange-600 text-white rounded-xl font-medium disabled:opacity-60"
+          >
+            {reconciling ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            Kiểm tra lại từ SePay
+          </button>
+        </div>
         <div className="flex gap-3">
           <Link to={ROUTES.ORDERS} className="px-5 py-2.5 bg-orange-600 text-white rounded-xl font-medium">
             Xem đơn hàng
@@ -100,7 +132,7 @@ export function PaymentSuccessPage() {
       <CheckCircle className="w-16 h-16 text-green-500 mb-4" />
       <h1 className="text-2xl font-bold text-gray-900 mb-2">Thanh toán thành công</h1>
       <p className="text-sm text-green-700 bg-green-50 px-3 py-1 rounded-full mb-4">
-        {status?.message ?? 'Đã xác nhận qua webhook SePay'}
+        {status?.statusLabel ?? getPaymentDisplayStatusLabel(status?.displayStatus ?? status?.status ?? 'paid')}
       </p>
 
       {(status?.itemsSubtotal != null || status?.shippingFee != null) && (

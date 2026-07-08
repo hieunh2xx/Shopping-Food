@@ -86,6 +86,8 @@ namespace ShoppingFood.Application.Features.Payments.Commands
                 }
             }
 
+            var display = PaymentDisplayStatus.Resolve(session, cached, remaining);
+
             return ApiResponse.Success(new
             {
                 paymentId = session.Id,
@@ -95,17 +97,19 @@ namespace ShoppingFood.Application.Features.Payments.Commands
                 amount = session.Amount,
                 itemsSubtotal,
                 shippingFee,
-                status = session.Status.ToString(),
+                displayStatus = display.Code,
+                statusLabel = display.Label,
+                status = display.Code,
                 qrImageUrl = qrUrl,
                 bankName = bank?.BankName,
                 bankAccountNumber = bank?.AccountNumber,
                 accountHolder = bank?.AccountHolder,
                 expiresAt = session.ExpiresAt,
                 remainingSeconds = remaining,
-                isExpired,
+                isExpired = display.Code == PaymentDisplayStatus.Expired,
                 isPaid,
-                awaitingWebhook = PaymentSessionStatusHelper.IsAwaitingWebhook(session, remaining),
-                isProcessing = cached?.Status == "Processing",
+                awaitingWebhook = display.Code == PaymentDisplayStatus.AwaitingPayment,
+                isProcessing = display.Code == PaymentDisplayStatus.Processing,
                 orderId = session.OrderId
             }, "QR payment info.");
         }
@@ -186,17 +190,20 @@ namespace ShoppingFood.Application.Features.Payments.Commands
         private readonly IPaymentCacheService _cache;
         private readonly ISepayService _sepayService;
         private readonly IOrderRepository _orderRepository;
+        private readonly IPaymentOrchestrationService _orchestration;
 
         public GetPaymentSessionStatusHandler(
             IPaymentSessionRepository sessionRepository,
             IPaymentCacheService cache,
             ISepayService sepayService,
-            IOrderRepository orderRepository)
+            IOrderRepository orderRepository,
+            IPaymentOrchestrationService orchestration)
         {
             _sessionRepository = sessionRepository;
             _cache = cache;
             _sepayService = sepayService;
             _orderRepository = orderRepository;
+            _orchestration = orchestration;
         }
 
         public async Task<ApiResponse> Handle(GetPaymentSessionStatusQuery request, CancellationToken cancellationToken)
@@ -214,6 +221,14 @@ namespace ShoppingFood.Application.Features.Payments.Commands
 
             if (request.CurrentUserId.HasValue && session.UserAccountId != request.CurrentUserId)
                 return ApiResponse.Failure(403, "Forbidden.");
+
+            if (session.PaymentMethod == PaymentMethod.Sepay
+                && !PaymentSessionStatusHelper.IsWebhookConfirmed(session))
+            {
+                await _orchestration.TryReconcileSessionAsync(session.Id, cancellationToken);
+                sessions = await _sessionRepository.GetAsync(predicate: s => s.Id == session.Id, disableTracking: true);
+                session = sessions.FirstOrDefault() ?? session;
+            }
 
             var cached = _cache.GetByPaymentId(session.Id);
             var remaining = Math.Max(0, (int)(session.ExpiresAt - DateTime.UtcNow).TotalSeconds);
@@ -234,6 +249,8 @@ namespace ShoppingFood.Application.Features.Payments.Commands
                 }
             }
 
+            var display = PaymentDisplayStatus.Resolve(session, cached, remaining);
+
             return ApiResponse.Success(new
             {
                 paymentId = session.Id,
@@ -245,23 +262,27 @@ namespace ShoppingFood.Application.Features.Payments.Commands
                 amount = session.Amount,
                 itemsSubtotal,
                 shippingFee,
-                status = cached?.Status ?? session.Status.ToString(),
+                displayStatus = display.Code,
+                statusLabel = display.Label,
+                status = display.Code,
                 orderId = session.OrderId,
                 paymentMethod = session.PaymentMethod.ToString(),
                 isPaid,
-                awaitingWebhook = PaymentSessionStatusHelper.IsAwaitingWebhook(session, remaining),
-                isProcessing = cached?.Status == "Processing",
-                isExpired = session.Status == PaymentSessionStatus.Expired || remaining == 0,
+                awaitingWebhook = display.Code == PaymentDisplayStatus.AwaitingPayment,
+                isProcessing = display.Code == PaymentDisplayStatus.Processing,
+                isExpired = display.Code == PaymentDisplayStatus.Expired,
                 expiresAt = session.ExpiresAt,
                 remainingSeconds = remaining,
                 qrImageUrl = cached?.QrImageUrl,
                 externalTransactionId = session.ExternalTransactionId,
                 message = isPaid
                     ? "Thanh toán SePay đã được xác nhận qua webhook."
-                    : PaymentSessionStatusHelper.IsAwaitingWebhook(session, remaining)
-                        ? "Đang chờ SePay/ngân hàng gửi webhook xác nhận."
-                        : session.Status == PaymentSessionStatus.Expired || remaining == 0
-                            ? "Phiên thanh toán đã hết hạn."
+                    : display.Code == PaymentDisplayStatus.AwaitingPayment
+                        ? "Vui lòng chuyển khoản đúng số tiền và nội dung trên QR."
+                        : display.Code == PaymentDisplayStatus.Processing
+                            ? "Đã nhận webhook, hệ thống đang xác nhận giao dịch."
+                        : display.Code == PaymentDisplayStatus.Expired
+                            ? "Phiên thanh toán đã hết hạn. Vui lòng tạo đơn mới."
                             : "Chưa nhận được xác nhận thanh toán."
             });
         }
@@ -425,6 +446,63 @@ namespace ShoppingFood.Application.Features.Payments.Commands
         {
             var existing = await _webhookLogRepository.GetAsync(predicate: l => l.EventKey == eventKey);
             return existing.Any();
+        }
+    }
+
+    public class ReconcileSepayPaymentCommand : IRequest<ApiResponse>
+    {
+        public Guid? SessionId { get; set; }
+        public string? InvoiceNumber { get; set; }
+        public Guid? CurrentUserId { get; set; }
+    }
+
+    public class ReconcileSepayPaymentHandler : IRequestHandler<ReconcileSepayPaymentCommand, ApiResponse>
+    {
+        private readonly IPaymentSessionRepository _sessionRepository;
+        private readonly ISepayService _sepayService;
+        private readonly IPaymentOrchestrationService _orchestration;
+
+        public ReconcileSepayPaymentHandler(
+            IPaymentSessionRepository sessionRepository,
+            ISepayService sepayService,
+            IPaymentOrchestrationService orchestration)
+        {
+            _sessionRepository = sessionRepository;
+            _sepayService = sepayService;
+            _orchestration = orchestration;
+        }
+
+        public async Task<ApiResponse> Handle(ReconcileSepayPaymentCommand request, CancellationToken cancellationToken)
+        {
+            if (!request.SessionId.HasValue && string.IsNullOrWhiteSpace(request.InvoiceNumber))
+                return ApiResponse.Failure(400, "Cần sessionId hoặc invoiceNumber.");
+
+            var resolvedInvoice = !string.IsNullOrWhiteSpace(request.InvoiceNumber)
+                ? _sepayService.ResolveInvoiceFromTransferCode(request.InvoiceNumber) ?? request.InvoiceNumber.Trim()
+                : null;
+
+            var sessions = await _sessionRepository.GetAsync(predicate: s =>
+                (request.SessionId.HasValue && s.Id == request.SessionId.Value)
+                || (resolvedInvoice != null && s.InvoiceNumber == resolvedInvoice));
+
+            var session = sessions.FirstOrDefault();
+            if (session == null)
+                return ApiResponse.Failure(404, "Phiên thanh toán không tồn tại.");
+
+            if (request.CurrentUserId.HasValue && session.UserAccountId != request.CurrentUserId)
+                return ApiResponse.Failure(403, "Forbidden.");
+
+            var result = await _orchestration.TryReconcileSessionAsync(session.Id, cancellationToken);
+
+            return ApiResponse.Success(new
+            {
+                success = result.Success,
+                alreadyPaid = result.AlreadyPaid,
+                matchedOnSepay = result.MatchedOnSepay,
+                skippedCooldown = result.IsSkippedCooldown,
+                externalTransactionId = result.ExternalTransactionId,
+                message = result.Message
+            }, result.Message);
         }
     }
 }

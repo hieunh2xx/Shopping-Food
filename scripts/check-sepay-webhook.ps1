@@ -46,6 +46,19 @@ try {
     if ($ngrokUrl) {
         Write-Host "Ngrok: $ngrokUrl"
         Write-Host "URL dan cho SePay: $ngrokUrl/api/Payment/sepay/webhook"
+        try {
+            $ngrokTest = Invoke-WebRequest -Uri "$ngrokUrl/swagger/index.html" -UseBasicParsing -TimeoutSec 10 -Headers @{ "ngrok-skip-browser-warning" = "true" }
+            if ($ngrokTest.StatusCode -eq 200) {
+                Write-Host "OK: Ngrok forward toi API thanh cong" -ForegroundColor Green
+            }
+        } catch {
+            $code = $_.Exception.Response.StatusCode.value__
+            if ($code -eq 502) {
+                Write-Host "LOI 502: Ngrok chay nhung API localhost:5091 khong phan hoi — chay: dotnet run --project src/ShoppingFood.API --launch-profile http" -ForegroundColor Red
+            } else {
+                Write-Host "Ngrok test failed: $($_.Exception.Message)" -ForegroundColor Yellow
+            }
+        }
     }
 } catch {
     Write-Host "Ngrok khong chay - chay: .\scripts\start-ngrok-webhook.ps1" -ForegroundColor Yellow

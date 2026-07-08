@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Application.Interfaces;
+using ShoppingFood.Application.Services;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Domain.Enums;
 using ShoppingFood.Repository.Interfaces;
@@ -256,18 +257,25 @@ namespace ShoppingFood.Application.Features.Payments.Queries
                 orderBy: q => q.OrderByDescending(s => s.CreatedAt),
                 disableTracking: true);
 
-            var items = sessions.Skip(request.Skip).Take(request.Take).Select(s => new
+            var items = sessions.Skip(request.Skip).Take(request.Take).Select(s =>
             {
-                paymentId = s.Id,
-                s.InvoiceNumber,
-                s.Amount,
-                status = s.Status.ToString(),
-                paymentMethod = s.PaymentMethod.ToString(),
-                s.OrderId,
-                s.CreatedAt,
-                s.ExpiresAt,
-                s.ExternalTransactionId,
-                isPaid = s.Status == PaymentSessionStatus.Completed
+                var remaining = Math.Max(0, (int)(s.ExpiresAt - DateTime.UtcNow).TotalSeconds);
+                var display = PaymentDisplayStatus.Resolve(s, null, remaining);
+                return new
+                {
+                    paymentId = s.Id,
+                    s.InvoiceNumber,
+                    s.Amount,
+                    displayStatus = display.Code,
+                    statusLabel = display.Label,
+                    status = display.Code,
+                    paymentMethod = s.PaymentMethod.ToString(),
+                    s.OrderId,
+                    s.CreatedAt,
+                    s.ExpiresAt,
+                    s.ExternalTransactionId,
+                    isPaid = PaymentSessionStatusHelper.IsWebhookConfirmed(s)
+                };
             }).ToList();
 
             return ApiResponse.Success(new { total = sessions.Count, items }, "Payment history.");

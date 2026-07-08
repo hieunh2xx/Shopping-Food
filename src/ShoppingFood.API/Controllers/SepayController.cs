@@ -133,6 +133,21 @@ namespace ShoppingFood.API.Controllers
             });
         }
 
+        [HttpPost("reconcile")]
+        public async Task<IActionResult> Reconcile(
+            [FromQuery] Guid? sessionId,
+            [FromQuery] string? invoiceNumber)
+        {
+            var userId = (User as MyPrincipal)?.UserDto?.Id;
+            var response = await _mediator.Send(new ReconcileSepayPaymentCommand
+            {
+                SessionId = sessionId,
+                InvoiceNumber = invoiceNumber,
+                CurrentUserId = userId
+            });
+            return StatusCode(response.Code, response);
+        }
+
         [HttpGet("webhook")]
         [HttpHead("webhook")]
         public IActionResult WebhookHealthCheck()

@@ -8,6 +8,7 @@ namespace ShoppingFood.Dto.Order
         public decimal TotalAmount { get; set; }
         public string Status { get; set; } = string.Empty;
         public string PaymentMethod { get; set; } = string.Empty;
+        public string PaymentStatus { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
         public bool CanCancel { get; set; }
         public bool CanMessageSeller { get; set; }

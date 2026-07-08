@@ -58,6 +58,7 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                     TotalAmount = o.TotalAmount,
                     Status = o.Status.ToString(),
                     PaymentMethod = o.PaymentMethod.ToString(),
+                    PaymentStatus = o.PaymentStatus.ToString(),
                     CreatedAt = o.CreatedAt,
                     CanCancel = o.Status == OrderStatus.Pending,
                     CanMessageSeller = MessageableStatuses.Contains(o.Status),

@@ -3,6 +3,7 @@ export interface IOrderSummary {
   totalAmount: number;
   status: string;
   paymentMethod: string;
+  paymentStatus?: string;
   createdAt: string;
   canCancel?: boolean;
   canMessageSeller?: boolean;

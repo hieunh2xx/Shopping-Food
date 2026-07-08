@@ -238,7 +238,8 @@ namespace ShoppingFood.Application.Services
         public async Task<bool> ConfirmPaymentSessionByInvoiceAsync(
             string invoiceNumber,
             decimal? paidAmount = null,
-            string? externalTransactionId = null)
+            string? externalTransactionId = null,
+            bool allowExpired = false)
         {
             var resolvedInvoice = _sepayService.ResolveInvoiceFromTransferCode(invoiceNumber) ?? invoiceNumber.Trim();
 
@@ -252,17 +253,21 @@ namespace ShoppingFood.Application.Services
             if (session.Status == PaymentSessionStatus.Completed)
                 return true;
 
-            if (session.Status != PaymentSessionStatus.Pending)
-                return false;
-
-            if (session.Status == PaymentSessionStatus.Expired)
-                return false;
-
-            if (session.ExpiresAt < DateTime.UtcNow)
+            if (!allowExpired)
             {
-                session.Status = PaymentSessionStatus.Expired;
-                session.UpdatedAt = DateTime.UtcNow;
-                _paymentSessionRepository.Update(session);
+                if (session.Status != PaymentSessionStatus.Pending)
+                    return false;
+
+                if (session.ExpiresAt < DateTime.UtcNow)
+                {
+                    session.Status = PaymentSessionStatus.Expired;
+                    session.UpdatedAt = DateTime.UtcNow;
+                    _paymentSessionRepository.Update(session);
+                    return false;
+                }
+            }
+            else if (session.Status == PaymentSessionStatus.Failed)
+            {
                 return false;
             }
 

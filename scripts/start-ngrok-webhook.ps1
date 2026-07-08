@@ -26,6 +26,16 @@ function Get-ActiveNgrokUrl {
     return $null
 }
 
+function Test-ApiListening {
+    param([int]$TargetPort)
+    try {
+        $resp = Invoke-WebRequest -Uri "http://localhost:$TargetPort/swagger/index.html" -UseBasicParsing -TimeoutSec 3
+        return $resp.StatusCode -eq 200
+    } catch {
+        return $false
+    }
+}
+
 function Stop-NgrokProcesses {
     Get-Process -Name "ngrok" -ErrorAction SilentlyContinue | Stop-Process -Force
     Start-Sleep -Seconds 2
@@ -50,10 +60,23 @@ WEBHOOK_URL=$wh
 "@ | Set-Content -Path $UrlsFile -Encoding UTF8
 }
 
+# --- API phải chạy trước — ngrok 502 nếu không có upstream
+if (-not (Test-ApiListening -TargetPort $Port)) {
+    Write-Host "CANH BAO: API chua chay tai http://localhost:$Port" -ForegroundColor Red
+    Write-Host "Ngrok se tra 502 Bad Gateway neu forward webhook khi API tat." -ForegroundColor Yellow
+    Write-Host "Chay API truoc:" -ForegroundColor Yellow
+    Write-Host "  cd src\ShoppingFood.API" -ForegroundColor Gray
+    Write-Host "  dotnet run --launch-profile http" -ForegroundColor Gray
+    Write-Host ""
+}
+
 # --- Đã có tunnel tới đúng port?
 $existing = Get-ActiveNgrokUrl -TargetPort $Port
 if ($existing -and -not $Restart) {
     Write-Host "Ngrok da chay san (port $Port). Khong can khoi dong lai." -ForegroundColor Yellow
+    if (-not (Test-ApiListening -TargetPort $Port)) {
+        Write-Host "CANH BAO: API chua chay — ngrok se tra 502." -ForegroundColor Red
+    }
     Write-WebhookInfo -BaseUrl $existing
     exit 0
 }
@@ -83,4 +106,11 @@ if (-not $url) {
 }
 
 Write-WebhookInfo -BaseUrl $url
+
+if (-not (Test-ApiListening -TargetPort $Port)) {
+    Write-Host "Ngrok da san sang nhung API van chua phan hoi — webhook SePay se loi 502 cho den khi API chay." -ForegroundColor Red
+} else {
+    Write-Host "API + Ngrok OK — webhook co the nhan request." -ForegroundColor Green
+}
+
 Write-Host "Ngrok PID: $($ngrokJob.Id) - de dung: Stop-Process -Id $($ngrokJob.Id)" -ForegroundColor DarkGray

@@ -1,15 +1,10 @@
 import { useEffect, useState } from 'react';
 import { History, CreditCard } from 'lucide-react';
 import { paymentService, type IPaymentHistoryItem } from '../../services/PaymentService';
-import { formatCurrency } from '../../utils/formatters';
+import { formatCurrency, getPaymentDisplayStatusColor, getPaymentDisplayStatusLabel, getPaymentMethodLabel } from '../../utils/formatters';
 import { Card } from '../../components/common';
 
-const statusColor: Record<string, string> = {
-  Completed: 'text-green-600 bg-green-50',
-  Pending: 'text-amber-600 bg-amber-50',
-  Expired: 'text-gray-500 bg-gray-100',
-  Failed: 'text-red-600 bg-red-50',
-};
+const statusColor = getPaymentDisplayStatusColor;
 
 export function PaymentHistoryPage() {
   const [items, setItems] = useState<IPaymentHistoryItem[]>([]);
@@ -47,7 +42,7 @@ export function PaymentHistoryPage() {
                 <div className="min-w-0">
                   <p className="font-medium text-gray-900 truncate">{item.invoiceNumber}</p>
                   <p className="text-xs text-gray-500">
-                    {item.paymentMethod} · {new Date(item.createdAt).toLocaleString('vi-VN')}
+                    {getPaymentMethodLabel(item.paymentMethod)} · {new Date(item.createdAt).toLocaleString('vi-VN')}
                   </p>
                   {item.orderId && (
                     <p className="text-xs text-gray-400">Đơn: {item.orderId}</p>
@@ -56,8 +51,8 @@ export function PaymentHistoryPage() {
               </div>
               <div className="text-right shrink-0">
                 <p className="font-bold text-gray-900">{formatCurrency(item.amount)}</p>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor[item.status] ?? 'bg-gray-100'}`}>
-                  {item.status}
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor(item.displayStatus ?? item.status)}`}>
+                  {getPaymentDisplayStatusLabel(item.displayStatus ?? item.status, item.statusLabel)}
                 </span>
               </div>
             </Card>

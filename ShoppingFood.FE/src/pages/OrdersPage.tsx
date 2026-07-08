@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import { PackageOpen, XCircle, RefreshCw, AlertTriangle, Star, MessageCircle } from 'lucide-react';
 import { Button, Input, Modal } from '../components/common';
 import { OrderSellerChatModal } from '../components/chat/OrderSellerChatModal';
+import { formatCurrency, formatDate, getOrderStatusColor, getOrderStatusLabel, getPaymentMethodLabel, getPaymentStatusColor, getPaymentStatusLabel } from '../utils/formatters';
 
 export function OrdersPage() {
   const [orders, setOrders] = useState<IOrderSummary[]>([]);
@@ -46,41 +47,7 @@ export function OrdersPage() {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('vi-VN', {
-      hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric'
-    });
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'Pending': return 'Chờ xác nhận';
-      case 'Confirmed': return 'Đã xác nhận';
-      case 'Preparing': return 'Đang chuẩn bị';
-      case 'WaitingForShipper': return 'Chờ tài xế';
-      case 'Shipping': return 'Đang giao';
-      case 'Delivered': return 'Đã giao';
-      case 'Cancelled': return 'Đã hủy';
-      default: return status;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Pending': return 'bg-yellow-100 text-yellow-800';
-      case 'Confirmed': return 'bg-blue-100 text-blue-800';
-      case 'Preparing': return 'bg-indigo-100 text-indigo-800';
-      case 'WaitingForShipper': return 'bg-purple-100 text-purple-800';
-      case 'Shipping': return 'bg-orange-100 text-orange-800';
-      case 'Delivered': return 'bg-green-100 text-green-800';
-      case 'Cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
+  const formatOrderDate = (dateString: string) => formatDate(dateString);
 
   const handleCancelOrder = async (orderId: string) => {
     if (!window.confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) return;
@@ -204,14 +171,19 @@ export function OrdersPage() {
           {orders.map(order => (
             <div key={order.id} className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
               <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
+                <div className="flex flex-wrap items-center gap-2 mb-2">
                   <span className="font-semibold text-gray-800">Đơn hàng #{order.id.substring(0, 8)}</span>
-                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusColor(order.status)}`}>
-                    {getStatusLabel(order.status)}
+                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${getOrderStatusColor(order.status)}`}>
+                    {getOrderStatusLabel(order.status)}
                   </span>
+                  {order.paymentStatus && (
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${getPaymentStatusColor(order.paymentStatus)}`}>
+                      {getPaymentStatusLabel(order.paymentStatus)}
+                    </span>
+                  )}
                 </div>
-                <p className="text-sm text-gray-500">Ngày đặt: {formatDate(order.createdAt)}</p>
-                <p className="text-sm text-gray-500 mb-4">Thanh toán: {order.paymentMethod}</p>
+                <p className="text-sm text-gray-500">Ngày đặt: {formatOrderDate(order.createdAt)}</p>
+                <p className="text-sm text-gray-500 mb-4">Thanh toán: {getPaymentMethodLabel(order.paymentMethod)}</p>
                 
                 <div className="flex flex-wrap gap-2">
                   {(order.canCancel ?? order.status === 'Pending') && (

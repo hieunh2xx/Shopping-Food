@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using ShoppingFood.Application.Interfaces;
 using ShoppingFood.Application.Models;
@@ -18,6 +19,8 @@ namespace ShoppingFood.Application.Services
         private readonly IPaymentSettlementService _paymentService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ISepayService _sepayService;
+        private readonly ISepayTransactionApiClient _transactionApi;
+        private readonly IMemoryCache _memoryCache;
         private readonly SepayOptions _options;
 
         public PaymentOrchestrationService(
@@ -28,6 +31,8 @@ namespace ShoppingFood.Application.Services
             IPaymentSettlementService paymentService,
             IUnitOfWork unitOfWork,
             ISepayService sepayService,
+            ISepayTransactionApiClient transactionApi,
+            IMemoryCache memoryCache,
             IOptions<SepayOptions> options)
         {
             _cache = cache;
@@ -37,6 +42,8 @@ namespace ShoppingFood.Application.Services
             _paymentService = paymentService;
             _unitOfWork = unitOfWork;
             _sepayService = sepayService;
+            _transactionApi = transactionApi;
+            _memoryCache = memoryCache;
             _options = options.Value;
         }
 
@@ -132,6 +139,138 @@ namespace ShoppingFood.Application.Services
             }
 
             return false;
+        }
+
+        public async Task<SepayReconcileResult> TryReconcileSessionAsync(
+            Guid sessionId,
+            CancellationToken cancellationToken = default)
+        {
+            var cooldownKey = $"sepay:reconcile:cooldown:{sessionId}";
+            if (_memoryCache.TryGetValue(cooldownKey, out _))
+                return SepayReconcileResult.SkippedCooldown();
+
+            _memoryCache.Set(cooldownKey, true, TimeSpan.FromSeconds(30));
+
+            var sessions = await _sessionRepository.GetAsync(
+                predicate: s => s.Id == sessionId,
+                disableTracking: false);
+            var session = sessions.FirstOrDefault();
+            if (session == null)
+                return SepayReconcileResult.NotFound("Không tìm thấy phiên thanh toán.");
+
+            if (session.PaymentMethod != PaymentMethod.Sepay)
+                return SepayReconcileResult.NotFound("Phiên không phải SePay.");
+
+            if (PaymentSessionStatusHelper.IsWebhookConfirmed(session))
+            {
+                _cache.UpdateStatus(session.Id, "Paid");
+                return SepayReconcileResult.AlreadyConfirmed();
+            }
+
+            if (!_transactionApi.IsConfigured)
+                return SepayReconcileResult.NotFound("Chưa cấu hình Sepay:ApiBearerToken để đồng bộ giao dịch.");
+
+            if (string.IsNullOrWhiteSpace(session.InvoiceNumber))
+                return SepayReconcileResult.NotFound("Phiên thiếu mã hóa đơn.");
+
+            var transferContent = _sepayService.BuildTransferContent(session.InvoiceNumber);
+            var searchTerms = new[] { session.InvoiceNumber, transferContent }
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Distinct(StringComparer.OrdinalIgnoreCase);
+
+            var fromUtc = session.CreatedAt.AddMinutes(-5);
+            var toUtc = DateTime.UtcNow.AddHours(1);
+            var allowExpired = session.Status == PaymentSessionStatus.Expired
+                || session.ExpiresAt < DateTime.UtcNow;
+
+            foreach (var term in searchTerms)
+            {
+                var transactions = await _transactionApi.SearchIncomingTransactionsAsync(
+                    term,
+                    session.Amount,
+                    fromUtc,
+                    toUtc,
+                    cancellationToken);
+
+                foreach (var tx in transactions)
+                {
+                    if (!string.Equals(tx.TransferType, "in", StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    if (Math.Abs(tx.AmountIn - session.Amount) > 1)
+                        continue;
+
+                    var rawCode = tx.Code ?? tx.TransactionContent ?? tx.ReferenceNumber;
+                    var resolved = _sepayService.ResolveInvoiceFromTransferCode(rawCode ?? string.Empty);
+                    if (!string.Equals(resolved, session.InvoiceNumber, StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    var externalId = tx.ReferenceNumber ?? tx.Id;
+                    var message = new PaymentConfirmationMessage
+                    {
+                        EventKey = $"reconcile:{tx.Id}",
+                        InvoiceNumber = session.InvoiceNumber,
+                        Amount = tx.AmountIn,
+                        Source = "SePay-API-Reconcile",
+                        ExternalTransactionId = externalId
+                    };
+
+                    if (allowExpired)
+                    {
+                        var confirmed = await _paymentService.ConfirmPaymentSessionByInvoiceAsync(
+                            session.InvoiceNumber,
+                            tx.AmountIn,
+                            externalId,
+                            allowExpired: true);
+
+                        if (confirmed)
+                        {
+                            session.ExternalTransactionId ??= externalId;
+                            session.SepayOrderId ??= externalId;
+                            session.UpdatedAt = DateTime.UtcNow;
+                            _sessionRepository.Update(session);
+                            _cache.UpdateStatus(session.Id, "Paid");
+                            await _unitOfWork.SaveChangesAsync();
+                            return SepayReconcileResult.Confirmed(externalId);
+                        }
+                    }
+                    else
+                    {
+                        var ok = await ProcessConfirmationAsync(message);
+                        if (ok)
+                            return SepayReconcileResult.Confirmed(externalId);
+                    }
+                }
+            }
+
+            return SepayReconcileResult.NotFound(
+                allowExpired
+                    ? "Chưa thấy giao dịch khớp trên SePay (có thể chưa chuyển khoản hoặc nội dung/số tiền sai)."
+                    : "Chưa thấy giao dịch khớp trên SePay. Hệ thống sẽ thử lại tự động.");
+        }
+
+        public async Task<int> ReconcileAllPendingSepaySessionsAsync(CancellationToken cancellationToken = default)
+        {
+            var cutoff = DateTime.UtcNow.AddHours(-24);
+            var sessions = await _sessionRepository.GetAsync(
+                predicate: s => s.PaymentMethod == PaymentMethod.Sepay
+                    && s.CreatedAt >= cutoff
+                    && (s.Status == PaymentSessionStatus.Pending || s.Status == PaymentSessionStatus.Expired),
+                orderBy: q => q.OrderBy(s => s.CreatedAt),
+                disableTracking: true);
+
+            var confirmed = 0;
+            foreach (var session in sessions)
+            {
+                if (PaymentSessionStatusHelper.IsWebhookConfirmed(session))
+                    continue;
+
+                var result = await TryReconcileSessionAsync(session.Id, cancellationToken);
+                if (result.Success && result.MatchedOnSepay)
+                    confirmed++;
+            }
+
+            return confirmed;
         }
 
         public async Task ExpireStaleSessionsAsync()

@@ -10,5 +10,7 @@ namespace ShoppingFood.Application.Interfaces
         Task<bool> ProcessConfirmationAsync(PaymentConfirmationMessage message);
         Task ExpireStaleSessionsAsync();
         Task ReplayUnprocessedWebhooksAsync();
+        Task<SepayReconcileResult> TryReconcileSessionAsync(Guid sessionId, CancellationToken cancellationToken = default);
+        Task<int> ReconcileAllPendingSepaySessionsAsync(CancellationToken cancellationToken = default);
     }
 }
