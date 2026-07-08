@@ -98,8 +98,8 @@ export function AdminPermissionsPage() {
   }, [endpoints]);
 
   return (
-    <div className="p-6 flex flex-col" style={{ height: 'calc(100vh - 4rem)' }}>
-      <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
+    <div className="p-6">
+      <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Phân quyền Hệ thống</h1>
           <p className="text-sm text-gray-500 mt-1">Cấp quyền truy cập API Endpoints cho từng Vai trò (Roles).</p>

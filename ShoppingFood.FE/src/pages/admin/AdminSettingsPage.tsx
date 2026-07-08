@@ -178,11 +178,11 @@ export function AdminSettingsPage() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="p-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Quản lý Danh mục toàn sàn</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Quản lý Danh mục toàn sàn</h1>
           <p className="text-sm text-gray-500 mt-1">
             Thiết lập các danh mục món ăn chính (Global Menu Categories) trên toàn sàn thương mại điện tử
           </p>

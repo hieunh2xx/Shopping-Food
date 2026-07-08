@@ -160,16 +160,15 @@ export function AdminApprovalsPage() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="p-6">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2">
-          <ShieldCheck className="w-8 h-8 text-orange-500" />
-          Phê duyệt yêu cầu hệ thống
-        </h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Duyệt tài khoản đối tác Cửa hàng, Tài xế đăng ký mới và phê duyệt Món ăn mới được tải lên
-        </p>
+      <div className="mb-8 flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Phê duyệt yêu cầu hệ thống</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Duyệt tài khoản đối tác Cửa hàng, Tài xế đăng ký mới và phê duyệt Món ăn mới được tải lên
+          </p>
+        </div>
       </div>
 
       {/* Tabs */}

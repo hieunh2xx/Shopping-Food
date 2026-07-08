@@ -82,16 +82,15 @@ export function AdminNotificationsPage() {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <BellRing className="w-6 h-6 text-orange-500" />
-          Truyền thông Flash Sale
-        </h1>
-        <p className="text-sm text-gray-500 mt-1">Gửi thông báo về chương trình Flash Sale đến khách hàng</p>
+    <div className="p-6">
+      <div className="mb-8 flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Truyền thông Flash Sale</h1>
+          <p className="text-sm text-gray-500 mt-1">Gửi thông báo về chương trình Flash Sale đến khách hàng</p>
+        </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -728,22 +728,22 @@ namespace ShoppingFood.Domain.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("ab50cc6c-959b-49a6-b9e2-ce27e4c509dc"),
-                            CreatedAt = new DateTime(2026, 7, 7, 6, 35, 42, 859, DateTimeKind.Utc).AddTicks(1501),
+                            Id = new Guid("11111111-1111-1111-1111-111111111111"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             MinPoints = 100,
                             Tier = "Silver"
                         },
                         new
                         {
-                            Id = new Guid("2e4463c3-6cf5-4b14-bfb9-c3b9846a919a"),
-                            CreatedAt = new DateTime(2026, 7, 7, 6, 35, 42, 859, DateTimeKind.Utc).AddTicks(1502),
+                            Id = new Guid("22222222-2222-2222-2222-222222222222"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             MinPoints = 500,
                             Tier = "Gold"
                         },
                         new
                         {
-                            Id = new Guid("c8187eb6-7b5e-4998-948b-4b08b49a049d"),
-                            CreatedAt = new DateTime(2026, 7, 7, 6, 35, 42, 859, DateTimeKind.Utc).AddTicks(1504),
+                            Id = new Guid("33333333-3333-3333-3333-333333333333"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             MinPoints = 1000,
                             Tier = "Diamond"
                         });

@@ -64,11 +64,11 @@ export function AdminLegalSettingsPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 py-6">
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-3">
-          <ShieldCheck className="w-8 h-8 text-blue-500" />
+    <div className="p-6">
+      <div className="mb-8 flex justify-between items-center">
+        <div>
           <h1 className="text-2xl font-bold text-gray-900">Cấu hình Chính sách & Điều khoản</h1>
+          <p className="text-sm text-gray-500 mt-1">Quản lý nội dung pháp lý của hệ thống</p>
         </div>
         <Button onClick={handleSave} isLoading={isSaving} className="flex items-center gap-2">
           <Save className="w-4 h-4" />

@@ -38,17 +38,7 @@ export function UserLayout() {
               >
                 <User className="w-5 h-5" /> Hồ sơ cá nhân
               </NavLink>
-              <NavLink
-                to={ROUTES.ORDERS as string}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm ${
-                    isActive && !isProfileTab('favorites') && !isProfileTab('address') && !isProfileTab('vouchers') && !isProfileTab('loyalty')
-                      ? 'bg-orange-50 text-orange-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  }`
-                }
-              >
-                <ClipboardList className="w-5 h-5" /> Đơn hàng của tôi
-              </NavLink>
+
               <NavLink
                 to={`${ROUTES.PROFILE}?tab=favorites`}
                 className={() =>

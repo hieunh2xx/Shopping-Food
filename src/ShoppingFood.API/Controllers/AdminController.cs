@@ -192,6 +192,25 @@ namespace ShoppingFood.API.Controllers
             return StatusCode(response.Code, response);
         }
 
+        [HttpGet("product-reports")]
+        public async Task<ActionResult<ApiResponse>> GetProductReports([FromQuery] GetProductReportsQuery query)
+        {
+            if(userDto != null)
+                query.CurrentUserId = userDto.Id;
+            var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpPost("product-reports/{reportId}/moderate")]
+        public async Task<ActionResult<ApiResponse>> ModerateProductReport(Guid reportId, [FromBody] ModerateProductReportCommand command)
+        {
+            command.ReportId = reportId;
+            if (userDto != null)
+                command.CurrentUserId = userDto.Id;
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
+
         [HttpPost("support-tickets")]
         public async Task<ActionResult<ApiResponse>> CreateSupportTicket([FromBody] CreateSupportTicketCommand command)
         {

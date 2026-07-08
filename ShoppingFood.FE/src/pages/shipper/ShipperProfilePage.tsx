@@ -16,6 +16,35 @@ import { useAuth } from '../../hooks';
 import { shipperService } from '../../services';
 import type { IShipperScheduleAndAreaDto, IWorkingScheduleItemDto } from '../../interfaces/IShipper';
 import { ShipperReputationTab } from './components/ShipperReputationTab';
+import { MapContainer, TileLayer, Marker, useMapEvents, Circle } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// Fix leaflet default icon issue
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+function LocationMarker({ position, setPosition }: { position: [number, number] | null, setPosition: (p: [number, number]) => void }) {
+  const map = useMapEvents({
+    click(e) {
+      setPosition([e.latlng.lat, e.latlng.lng]);
+    },
+  });
+
+  useEffect(() => {
+    if (position) {
+      map.flyTo(position, map.getZoom());
+    }
+  }, [position, map]);
+
+  return position === null ? null : (
+    <Marker position={position}></Marker>
+  );
+}
 
 export function ShipperProfilePage() {
   const { user } = useAuth();
@@ -27,14 +56,66 @@ export function ShipperProfilePage() {
   const [scheduleData, setScheduleData] = useState<IShipperScheduleAndAreaDto | null>(null);
   const [editSchedule, setEditSchedule] = useState<IWorkingScheduleItemDto[]>([]);
   const [editRadius, setEditRadius] = useState<number>(5);
+  const [editLocation, setEditLocation] = useState<[number, number] | null>(null);
+  const [addressText, setAddressText] = useState('');
+
+  useEffect(() => {
+    if (editLocation) {
+      const fetchAddress = async () => {
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${editLocation[0]}&lon=${editLocation[1]}&accept-language=vi`);
+          const data = await res.json();
+          if (data && data.display_name) {
+            let parts = data.display_name.split(',').map((p: string) => p.trim());
+            // Filter out Vietnam
+            parts = parts.filter((p: string) => p.toLowerCase() !== 'việt nam' && p.toLowerCase() !== 'vietnam');
+            // Filter out postal codes (typically 5 or 6 digits)
+            parts = parts.filter((p: string) => !/^\d{5,6}$/.test(p));
+            setAddressText(parts.join(', '));
+          }
+        } catch {
+          // ignore
+        }
+      };
+      // Debounce slightly to prevent spam if dragging map rapidly (though we use click)
+      const timer = setTimeout(fetchAddress, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [editLocation]);
+
+  const handleGetCurrentLocation = () => {
+    if (navigator.geolocation) {
+      toast.loading("Đang lấy vị trí...", { id: 'geo' });
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setEditLocation([position.coords.latitude, position.coords.longitude]);
+          toast.success("Đã lấy vị trí hiện tại!", { id: 'geo' });
+        },
+        (error) => {
+          toast.error("Không thể lấy vị trí. Vui lòng bật GPS và cấp quyền.", { id: 'geo' });
+        }
+      );
+    } else {
+      toast.error("Trình duyệt không hỗ trợ định vị.");
+    }
+  };
 
   const fetchScheduleAndArea = useCallback(async () => {
     try {
       const res = await shipperService.getScheduleAndArea();
-      if (res.data) {
+      if (!res.error && res.data) {
         setScheduleData(res.data);
-        setEditSchedule(res.data.workingSchedule || []);
-        setEditRadius(res.data.operatingRadiusKm ?? 5);
+        setEditRadius(res.data.operatingRadiusKm || 5);
+        if (res.data.operatingLatitude && res.data.operatingLongitude) {
+          setEditLocation([res.data.operatingLatitude, res.data.operatingLongitude]);
+        }
+        if (res.data.workingSchedule) {
+          const daysStr = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+          setEditSchedule(res.data.workingSchedule.map(s => ({
+            ...s,
+            dayOfWeek: typeof s.dayOfWeek === 'string' ? daysStr.indexOf(s.dayOfWeek as string) : s.dayOfWeek
+          })));
+        }
       }
     } catch (err) {
       console.error('Failed to fetch schedule:', err);
@@ -51,12 +132,12 @@ export function ShipperProfilePage() {
     setSaving(true);
     try {
       await shipperService.updateScheduleAndArea({
-        operatingLatitude: scheduleData?.operatingLatitude ?? undefined,
-        operatingLongitude: scheduleData?.operatingLongitude ?? undefined,
+        operatingLatitude: editLocation?.[0] ?? undefined,
+        operatingLongitude: editLocation?.[1] ?? undefined,
         operatingRadiusKm: editRadius,
         workingSchedule: editSchedule
       });
-      toast.success('Cập nhật lịch làm việc thành công!');
+      toast.success('Cập nhật lịch làm việc và khu vực thành công!');
       fetchScheduleAndArea();
     } catch (err) {
       toast.error('Không thể cập nhật. Vui lòng thử lại.');
@@ -78,10 +159,6 @@ export function ShipperProfilePage() {
   const updateScheduleItem = (idx: number, field: keyof IWorkingScheduleItemDto, value: string | number) => {
     setEditSchedule(prev => prev.map((item, i) => i === idx ? { ...item, [field]: value } : item));
   };
-
-
-
-
 
   if (loading) {
     return (
@@ -243,18 +320,41 @@ export function ShipperProfilePage() {
               <h4 className="text-sm font-bold text-gray-800 flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-orange-500" /> Khu vực hoạt động
               </h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-1">
-                  <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Vĩ độ</span>
-                  <p className="text-sm font-medium text-gray-700 bg-white p-2.5 rounded-xl border border-gray-200">
-                    {scheduleData?.operatingLatitude?.toFixed(6) ?? 'Chưa thiết lập'}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Kinh độ</span>
-                  <p className="text-sm font-medium text-gray-700 bg-white p-2.5 rounded-xl border border-gray-200">
-                    {scheduleData?.operatingLongitude?.toFixed(6) ?? 'Chưa thiết lập'}
-                  </p>
+              <p className="text-xs text-gray-500 mb-2">Bấm vào bản đồ để chọn tâm khu vực hoạt động (vị trí thường xuyên nhận đơn).</p>
+
+              <div className="h-[300px] w-full rounded-xl overflow-hidden border border-gray-200 z-0 relative">
+                <MapContainer 
+                  center={editLocation || [21.0285, 105.8542]} // Hanoi as default
+                  zoom={13} 
+                  style={{ height: '100%', width: '100%' }}
+                >
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  />
+                  <LocationMarker position={editLocation} setPosition={setEditLocation} />
+                  {editLocation && editRadius && (
+                    <Circle 
+                      center={editLocation} 
+                      radius={editRadius * 1000} // km to meters
+                      pathOptions={{ color: 'orange', fillColor: 'orange', fillOpacity: 0.2 }}
+                    />
+                  )}
+                </MapContainer>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 pt-4 border-t border-gray-100 items-end">
+                <div className="sm:col-span-2 space-y-1">
+                  <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Địa chỉ (Vị trí ghim)</span>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={addressText || (editLocation ? `${editLocation[0].toFixed(5)}, ${editLocation[1].toFixed(5)}` : 'Chưa thiết lập')}
+                      placeholder="Chọn vị trí trên bản đồ..."
+                      className="w-full text-sm font-medium text-gray-700 bg-gray-50 p-2.5 rounded-xl border border-gray-200 focus:outline-none"
+                    />
+                  </div>
                 </div>
                 <div className="space-y-1">
                   <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Bán kính (km)</span>
@@ -267,6 +367,14 @@ export function ShipperProfilePage() {
                     onChange={e => setEditRadius(parseFloat(e.target.value) || 5)}
                     className="w-full text-sm font-medium text-gray-700 bg-white p-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500"
                   />
+                </div>
+                <div className="space-y-1">
+                  <button
+                    onClick={handleGetCurrentLocation}
+                    className="w-full py-2.5 px-3 bg-orange-100 hover:bg-orange-200 text-orange-600 font-bold rounded-xl transition-colors flex items-center justify-center gap-2 text-sm"
+                  >
+                    <Navigation className="w-4 h-4" /> Vị trí hiện tại
+                  </button>
                 </div>
               </div>
             </div>
@@ -311,6 +419,7 @@ export function ShipperProfilePage() {
                       </select>
                       <input
                         type="time"
+                        lang="en-US"
                         value={item.from}
                         onChange={e => updateScheduleItem(idx, 'from', e.target.value)}
                         className="bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
@@ -318,6 +427,7 @@ export function ShipperProfilePage() {
                       <span className="text-gray-400 text-sm font-bold">→</span>
                       <input
                         type="time"
+                        lang="en-US"
                         value={item.to}
                         onChange={e => updateScheduleItem(idx, 'to', e.target.value)}
                         className="bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500/50"

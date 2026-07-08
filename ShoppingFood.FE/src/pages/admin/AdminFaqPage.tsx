@@ -150,15 +150,11 @@ export function AdminFaqPage() {
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center shrink-0">
-            <HelpCircle className="w-6 h-6 text-orange-600" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Quản lý câu hỏi FAQ</h1>
-          </div>
+    <div className="p-6">
+      <div className="mb-8 flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Quản lý câu hỏi FAQ</h1>
+          <p className="text-sm text-gray-500 mt-1">Danh sách câu hỏi thường gặp</p>
         </div>
         <Button onClick={openAddModal} className="shrink-0 flex items-center gap-2">
           <Plus className="w-4 h-4" />

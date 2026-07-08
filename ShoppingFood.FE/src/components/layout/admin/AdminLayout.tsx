@@ -18,7 +18,8 @@ import {
   MessageSquare,
   DollarSign,
   CreditCard,
-  ServerCog
+  ServerCog,
+  MessageSquareWarning
 } from 'lucide-react';
 import { useAuth } from '../../../hooks';
 import { ROUTES } from '../../../routes/routeConfig';
@@ -51,6 +52,8 @@ export function AdminLayout() {
     { name: 'Lịch sử điều phối', path: ROUTES.ADMIN_DISPATCH_HISTORY, icon: History, group: 'Vận hành' },
     { name: 'Xử lý khiếu nại', path: ROUTES.ADMIN_INCIDENTS, icon: ShieldAlert, group: 'Vận hành' },
     { name: 'Live Chat', path: ROUTES.ADMIN_CHAT, icon: MessageSquare, group: 'Vận hành' },
+    { name: 'Báo cáo Bình luận', path: '/admin/review-reports', icon: MessageSquareWarning, group: 'Vận hành' },
+    { name: 'Báo cáo Sản phẩm', path: '/admin/product-reports', icon: ShieldAlert, group: 'Vận hành' },
 
     // Marketing & Ưu đãi
     { name: 'Khuyến mãi hệ thống', path: '/admin/discounts', icon: Tag, group: 'Marketing & Ưu đãi' },

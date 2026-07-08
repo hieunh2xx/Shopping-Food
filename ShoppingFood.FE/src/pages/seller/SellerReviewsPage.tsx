@@ -7,8 +7,12 @@ import toast from 'react-hot-toast';
 
 export function SellerReviewsPage() {
   const [reviews, setReviews] = useState<IProductReviewDto[]>([]);
+  const [total, setTotal] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all'); // 'all', 'replied', 'unreplied'
+  const take = 10;
 
   const [replyModal, setReplyModal] = useState({ isOpen: false, reviewId: '', content: '' });
   const [reportModal, setReportModal] = useState({ isOpen: false, reviewId: '', reason: '' });
@@ -16,14 +20,16 @@ export function SellerReviewsPage() {
 
   useEffect(() => {
     fetchReviews();
-  }, []);
+  }, [currentPage]);
 
   const fetchReviews = async () => {
     setIsLoading(true);
     try {
-      const res = await productService.getSellerReviews(0, 100);
+      const skip = (currentPage - 1) * take;
+      const res = await productService.getSellerReviews(skip, take);
       if (!res.error && res.data) {
         setReviews(res.data);
+        setTotal(res.total || 0);
       } else {
         toast.error(res.message || 'Lỗi khi tải danh sách đánh giá');
       }
@@ -34,11 +40,27 @@ export function SellerReviewsPage() {
     }
   };
 
-  const filteredReviews = reviews.filter(r =>
-    (r.productName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (r.comment || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (r.userName || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleSearch = () => {
+    setCurrentPage(1);
+    fetchReviews();
+  };
+
+  const filteredReviews = reviews.filter(r => {
+    const matchSearch = (r.productName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        (r.comment || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        (r.userName || '').toLowerCase().includes(searchTerm.toLowerCase());
+    
+    let matchFilter = true;
+    if (filterStatus === 'replied') {
+      matchFilter = !!r.sellerReply;
+    } else if (filterStatus === 'unreplied') {
+      matchFilter = !r.sellerReply;
+    }
+
+    return matchSearch && matchFilter;
+  });
+
+  const totalPages = Math.ceil(total / take);
 
   const handleReplyReview = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,26 +119,44 @@ export function SellerReviewsPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div className="p-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Quản lý Đánh giá</h1>
           <p className="text-sm text-gray-500 mt-1">Xem phản hồi từ khách hàng và tương tác lại ({reviews.length} đánh giá)</p>
         </div>
+      </div>
 
-        <div className="relative w-full sm:w-64">
-          <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+      {/* Toolbar */}
+      <div className="bg-white p-4 rounded-2xl border border-gray-200 mb-6 flex flex-col sm:flex-row gap-4">
+        <div className="flex-1 relative">
           <input
             type="text"
-            placeholder="Tìm kiếm đánh giá..."
-            className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+            placeholder="Tìm kiếm đánh giá (chỉ hỗ trợ trên trang hiện tại)..."
+            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-colors"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
+          <Search className="w-5 h-5 text-gray-400 absolute left-3 top-2.5" />
+        </div>
+        <div className="flex gap-2 shrink-0">
+          <select
+            value={filterStatus}
+            onChange={(e) => {
+              setFilterStatus(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-orange-500 transition-colors"
+          >
+            <option value="all">Tất cả đánh giá</option>
+            <option value="unreplied">Chưa trả lời</option>
+            <option value="replied">Đã trả lời</option>
+          </select>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
         <div className="divide-y divide-gray-100">
           {filteredReviews.length === 0 ? (
             <div className="p-8 text-center text-gray-500">
@@ -191,6 +231,30 @@ export function SellerReviewsPage() {
             ))
           )}
         </div>
+        
+        {totalPages > 1 && (
+          <div className="p-4 border-t border-gray-100 flex justify-center">
+            <div className="flex items-center gap-1">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(p => p - 1)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Trước
+              </button>
+              <span className="px-4 py-1.5 text-sm text-gray-700 font-medium">
+                Trang {currentPage} / {totalPages}
+              </span>
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(p => p + 1)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Sau
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <Modal isOpen={replyModal.isOpen} onClose={() => setReplyModal(prev => ({ ...prev, isOpen: false }))} title="Trả lời đánh giá">

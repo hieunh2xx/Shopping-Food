@@ -112,12 +112,11 @@ export function AdminFinanceOperationsPage() {
   if (isLoading) return <Loading />;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 py-6 px-4">
-      <div className="flex items-center gap-3 mb-6">
-        <Settings className="w-8 h-8 text-indigo-600" />
+    <div className="p-6">
+      <div className="mb-8 flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Cấu Hình Tài Chính & Vận Hành</h1>
-          <p className="text-sm text-gray-500">Quản lý phí giao hàng, thu nhập Shipper, và chiết khấu nhà hàng</p>
+          <p className="text-sm text-gray-500 mt-1">Quản lý phí giao hàng, thu nhập Shipper, và chiết khấu nhà hàng</p>
         </div>
       </div>
 

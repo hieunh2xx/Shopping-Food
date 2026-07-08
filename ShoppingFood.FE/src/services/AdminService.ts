@@ -120,12 +120,21 @@ class AdminService extends BaseService<unknown> {
   }): Promise<IApiResponse<any>> {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ADMIN.BROADCAST_NOTIFICATION, data);
   }
-  async getReviewReports(skip = 0, take = 50): Promise<IApiResponse<any>> {
-    return httpClient.get<IApiResponse<any>>(API_ENDPOINTS.ADMIN.REVIEW_REPORTS, { params: { skip, take } });
+
+  async getReviewReports(params?: { skip?: number, take?: number }): Promise<IApiResponse<any>> {
+    return httpClient.get<IApiResponse<any>>(API_ENDPOINTS.ADMIN.REVIEW_REPORTS, { params });
   }
 
-  async moderateReviewReport(reportId: string, action: number): Promise<IApiResponse<any>> {
-    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ADMIN.MODERATE_REVIEW_REPORT(reportId), { action });
+  async moderateReview(reportId: string, data: { isApproved: boolean, adminNote: string }): Promise<IApiResponse<any>> {
+    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ADMIN.MODERATE_REVIEW_REPORT(reportId), data);
+  }
+
+  async getProductReports(params?: { skip?: number, take?: number }): Promise<IApiResponse<any>> {
+    return httpClient.get<IApiResponse<any>>(API_ENDPOINTS.ADMIN.PRODUCT_REPORTS, { params });
+  }
+
+  async moderateProductReport(reportId: string, data: { isApproved: boolean, hideProduct: boolean, adminNote: string }): Promise<IApiResponse<any>> {
+    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ADMIN.MODERATE_PRODUCT_REPORT(reportId), data);
   }
 
   async createSupportTicket(data: ICreateSupportTicketRequest): Promise<IApiResponse<any>> {

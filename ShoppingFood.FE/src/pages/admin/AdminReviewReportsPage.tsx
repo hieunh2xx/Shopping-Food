@@ -51,15 +51,15 @@ export function AdminReviewReportsPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 p-4">
-      <div className="flex justify-between items-end mb-6">
+    <div className="p-6">
+      <div className="mb-8 flex justify-between items-end">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Kiểm duyệt Bình luận</h1>
           <p className="text-sm text-gray-500 mt-1">Quản lý và xử lý các báo cáo vi phạm từ người dùng</p>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="bg-gray-50 text-gray-600 font-medium border-b border-gray-100">

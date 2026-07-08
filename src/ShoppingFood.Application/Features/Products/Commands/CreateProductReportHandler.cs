@@ -20,6 +20,7 @@ namespace ShoppingFood.Application.Features.Products.Commands
         private readonly ISystemReportRepository _systemReportRepository;
         private readonly IProductRepository _productRepository;
         private readonly IUserRepository _userRepository;
+        private readonly INotificationRepository _notificationRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
@@ -27,6 +28,7 @@ namespace ShoppingFood.Application.Features.Products.Commands
             ISystemReportRepository systemReportRepository,
             IProductRepository productRepository,
             IUserRepository userRepository,
+            INotificationRepository notificationRepository,
             IUnitOfWork unitOfWork,
             IMapper mapper
             ) 
@@ -34,6 +36,7 @@ namespace ShoppingFood.Application.Features.Products.Commands
             _systemReportRepository = systemReportRepository;
             _productRepository = productRepository;
             _userRepository = userRepository;
+            _notificationRepository = notificationRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
@@ -66,6 +69,7 @@ namespace ShoppingFood.Application.Features.Products.Commands
                 report.UpdatedAt = DateTime.UtcNow;
                 
                 _systemReportRepository.Add( report );
+                await NotifyAdminAsync(product.ItemName);
                 await _unitOfWork.SaveChangesAsync();
 
                 var dto = _mapper.Map<SystemReportDto>(report);
@@ -76,6 +80,29 @@ namespace ShoppingFood.Application.Features.Products.Commands
             {
                 await _unitOfWork.LogErrorAsync("CreateProductReportHandler.Handle", ex);
                 return ApiResponse.Failure(400, $"An error occurred: {ex.Message}");
+            }
+        }
+
+        private async Task NotifyAdminAsync(string productName)
+        {
+            var admins = await _userRepository.GetAsync(
+                predicate: u => u.Profile != null && u.Profile.Role == Domain.Enums.UserRole.Admin,
+                include: q => q.Include(u => u.Profile),
+                disableTracking: true
+                );
+
+            foreach (var admin in admins)
+            {
+                _notificationRepository.Add(new Notification
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = admin.Id,
+                    Title = "Báo cáo sản phẩm mới",
+                    Message = $"Có báo cáo mới về sản phẩm '{productName}' đang chờ xử lý.",
+                    NotificationType = Domain.Enums.NotificationType.System,
+                    IsRead = false,
+                    CreateAt = DateTime.UtcNow
+                });
             }
         }
     }

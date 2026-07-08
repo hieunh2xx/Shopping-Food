@@ -101,6 +101,8 @@ export const API_ENDPOINTS = {
     BROADCAST_NOTIFICATION: '/Admin/notifications/broadcast', // POST
     REVIEW_REPORTS: '/Admin/review-reports', // GET
     MODERATE_REVIEW_REPORT: (reportId: string) => `/Admin/review-reports/${reportId}/moderate`, // POST
+    PRODUCT_REPORTS: '/Admin/product-reports', // GET
+    MODERATE_PRODUCT_REPORT: (reportId: string) => `/Admin/product-reports/${reportId}/moderate`, // POST
     SUPPORT_TICKETS: '/Admin/support-tickets', // POST
     SUSPEND_SHIPPER: (id: string) => `/Admin/shippers/${id}/suspend`, // PUT
     CREATE_STAFF: '/Admin/users/staff', // POST

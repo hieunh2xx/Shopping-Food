@@ -22,6 +22,7 @@ import {
   SellerSettingsPage,
   SellerCategoriesPage,
   SellerToppingsPage,
+  SellerReviewsPage,
   SellerDiscountsPage,
   SellerPromotionsPage,
   AdminUsersPage,
@@ -53,6 +54,7 @@ import {
   CoordinatorIncidentsPage,
   CoordinatorChatPage,
   AdminReviewReportsPage,
+  AdminProductReportsPage,
   CheckoutPage,
   FlashSalePage,
   RestaurantsPage,
@@ -149,6 +151,7 @@ export function AppRoutes() {
         <Route path="settings" element={<SellerSettingsPage />} />
         <Route path="categories" element={<SellerCategoriesPage />} />
         <Route path="toppings" element={<SellerToppingsPage />} />
+        <Route path="reviews" element={<SellerReviewsPage />} />
         <Route path="discounts" element={<SellerDiscountsPage />} />
         <Route path="promotions" element={<SellerPromotionsPage />} />
         <Route path="flash-sales" element={<SellerFlashSalesPage />} />
@@ -181,6 +184,7 @@ export function AppRoutes() {
         <Route path="flash-sales" element={<AdminFlashSalePage />} />
         <Route path="notifications" element={<AdminNotificationsPage />} />
         <Route path="review-reports" element={<AdminReviewReportsPage />} />
+        <Route path="product-reports" element={<AdminProductReportsPage />} />
         <Route path="incidents" element={<CoordinatorIncidentsPage />} />
         <Route path="faq" element={<AdminFaqPage />} />
         <Route path="chat" element={<AdminChatPage />} />

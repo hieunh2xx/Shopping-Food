@@ -39,13 +39,15 @@ export function AdminFinancePage() {
   const summary = reconciliation?.summary;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Quản lý tài chính</h1>
-        <p className="text-gray-500">Đối soát, chiết khấu sàn và duyệt rút tiền (UC-PAY-009, UC-PAY-015)</p>
+    <div className="p-6">
+      <div className="mb-8 flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Quản lý tài chính</h1>
+          <p className="text-sm text-gray-500 mt-1">Đối soát, chiết khấu sàn và duyệt rút tiền (UC-PAY-009, UC-PAY-015)</p>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
           { label: 'Tổng doanh thu', value: formatCurrency(summary?.totalRevenue || 0), icon: DollarSign, color: 'blue' },
           { label: 'Chiết khấu sàn', value: formatCurrency(summary?.totalCommission || 0), icon: TrendingUp, color: 'orange' },

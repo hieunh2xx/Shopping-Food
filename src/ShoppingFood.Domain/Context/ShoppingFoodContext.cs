@@ -808,9 +808,9 @@ namespace ShoppingFood.Domain.Context
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Tier).HasConversion<string>().IsRequired();
 
-                entity.HasData(new MemberTierConfig { Id = Guid.NewGuid(), Tier = MemberTier.Silver, MinPoints = 100, CreatedAt = DateTime.UtcNow },
-                               new MemberTierConfig { Id = Guid.NewGuid(), Tier = MemberTier.Gold, MinPoints = 500, CreatedAt = DateTime.UtcNow },
-                               new MemberTierConfig { Id = Guid.NewGuid(), Tier = MemberTier.Diamond, MinPoints = 1000, CreatedAt = DateTime.UtcNow });
+                entity.HasData(new MemberTierConfig { Id = Guid.Parse("11111111-1111-1111-1111-111111111111"), Tier = MemberTier.Silver, MinPoints = 100, CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                               new MemberTierConfig { Id = Guid.Parse("22222222-2222-2222-2222-222222222222"), Tier = MemberTier.Gold, MinPoints = 500, CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                               new MemberTierConfig { Id = Guid.Parse("33333333-3333-3333-3333-333333333333"), Tier = MemberTier.Diamond, MinPoints = 1000, CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) });
             });
 
             modelBuilder.Entity<OrderDispatchHistory>(entity =>
