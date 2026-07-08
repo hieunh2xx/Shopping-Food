@@ -40,7 +40,6 @@ import {
   ShipperWalletPage,
   NotFoundPage,
   ProfilePage,
-  OrdersPage,
   SellerApplyPage,
   ShipperApplyPage,
   ShipperDashboard,
@@ -56,7 +55,6 @@ import {
   AdminReviewReportsPage,
   CheckoutPage,
   FlashSalePage,
-  GuestOrderTrackingPage,
   RestaurantsPage,
   PromotionsPage,
   HelpCenterPage,
@@ -111,7 +109,6 @@ export function AppRoutes() {
             <PaymentHistoryPage />
           </PrivateRoute>
         } />
-        <Route path={ROUTES.GUEST_ORDER_TRACKING} element={<GuestOrderTrackingPage />} />
         <Route path={ROUTES.HELP_CENTER} element={<HelpCenterPage />} />
         <Route path={ROUTES.REPORT_INCIDENT} element={<PrivateRoute><UserReportIncidentPage /></PrivateRoute>} />
         <Route path={ROUTES.TERMS_OF_USE} element={<TermsOfUsePage />} />
@@ -122,11 +119,6 @@ export function AppRoutes() {
           <Route path={ROUTES.PROFILE} element={
             <PrivateRoute allowedRoles={['Customer', 'Seller', 'Admin', 'Mall', 'Shipper', 'Coordinator']}>
               <ProfilePage />
-            </PrivateRoute>
-          } />
-          <Route path={ROUTES.ORDERS} element={
-            <PrivateRoute allowedRoles={['Customer', 'Seller', 'Admin', 'Mall', 'Shipper', 'Coordinator']}>
-              <OrdersPage />
             </PrivateRoute>
           } />
           <Route path={ROUTES.SELLER_APPLY} element={

@@ -5,13 +5,20 @@ import { flashSaleService } from '../../services/FlashSaleService';
 import type { IFlashSale } from '../../interfaces';
 import { productService } from '../../services/ProductService';
 import { authService } from '../../services/AuthService';
-import { Button, Input, Modal } from '../../components/common';
+import { Button, Input, Modal, Pagination } from '../../components/common';
 import { formatDate } from '../../utils/formatters';
 
 export function SellerFlashSalesPage() {
   const [flashSales, setFlashSales] = useState<IFlashSale[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [restaurantId, setRestaurantId] = useState('');
+
+  // Participating products state
+  const [participatingProducts, setParticipatingProducts] = useState<any[]>([]);
+  const [selectedSaleForProducts, setSelectedSaleForProducts] = useState<IFlashSale | null>(null);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSaleId, setSelectedSaleId] = useState('');
   
@@ -31,13 +38,14 @@ export function SellerFlashSalesPage() {
 
   const fetchData = async () => {
     try {
-      let restaurantId = '';
+      let currentRestaurantId = '';
       const profileRes = await authService.getProfile();
       if (!profileRes.error && profileRes.data?.sellerInfo?.restaurantId) {
-        restaurantId = profileRes.data.sellerInfo.restaurantId;
+        currentRestaurantId = profileRes.data.sellerInfo.restaurantId;
+        setRestaurantId(currentRestaurantId);
       }
 
-      if (!restaurantId) {
+      if (!currentRestaurantId) {
         toast.error('Không tìm thấy thông tin nhà hàng');
         setIsLoading(false);
         return;
@@ -45,7 +53,7 @@ export function SellerFlashSalesPage() {
 
       const [fsRes, pRes] = await Promise.all([
         flashSaleService.getActiveFlashSales(),
-        productService.search({ restaurantId, status: 'Approved', skip: 0, take: 100 })
+        productService.search({ restaurantId: currentRestaurantId, status: 'Approved', skip: 0, take: 100 })
       ]);
       
       if (!fsRes.error && fsRes.data) {
@@ -58,6 +66,26 @@ export function SellerFlashSalesPage() {
       toast.error('Lỗi khi tải dữ liệu');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleViewProducts = async (sale: IFlashSale) => {
+    if (selectedSaleForProducts?.id === sale.id) {
+      setSelectedSaleForProducts(null);
+      return;
+    }
+    
+    setSelectedSaleForProducts(sale);
+    setIsLoadingProducts(true);
+    try {
+      const res = await flashSaleService.getFlashSaleProducts(sale.id, 0, 100, restaurantId);
+      if (!res.error && res.data) {
+        setParticipatingProducts(res.data.data || []);
+      }
+    } catch {
+      toast.error('Lỗi khi tải danh sách sản phẩm');
+    } finally {
+      setIsLoadingProducts(false);
     }
   };
 
@@ -129,14 +157,69 @@ export function SellerFlashSalesPage() {
                     <span className="font-medium text-gray-900">{formatDate(sale.endDate)}</span>
                   </div>
                 </div>
-                <Button className="w-full" onClick={() => handleRegisterClick(sale.id)}>
-                  Đăng ký tham gia
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" className="w-1/2" onClick={() => handleViewProducts(sale)}>
+                    {selectedSaleForProducts?.id === sale.id ? 'Đóng DS' : 'Sản phẩm đã ĐK'}
+                  </Button>
+                  <Button className="w-1/2" onClick={() => handleRegisterClick(sale.id)}>
+                    Đăng ký mới
+                  </Button>
+                </div>
               </div>
             </div>
           ))
         )}
       </div>
+
+      {selectedSaleForProducts && (
+        <div className="mt-8 bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="p-6 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Sản phẩm tham gia: {selectedSaleForProducts.title}</h2>
+              <p className="text-sm text-gray-500 mt-1">Danh sách sản phẩm của cửa hàng đã đăng ký vào chương trình này</p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setSelectedSaleForProducts(null)}>Đóng</Button>
+          </div>
+          <div className="overflow-x-auto">
+            {isLoadingProducts ? (
+              <div className="p-8 text-center text-gray-500">Đang tải danh sách...</div>
+            ) : participatingProducts.length === 0 ? (
+              <div className="p-8 text-center text-gray-500">Cửa hàng chưa có sản phẩm nào tham gia chương trình này.</div>
+            ) : (
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200 text-sm text-gray-500">
+                    <th className="py-4 px-6 font-medium">Sản phẩm</th>
+                    <th className="py-4 px-6 font-medium">Giá Flash Sale</th>
+                    <th className="py-4 px-6 font-medium text-center">Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {participatingProducts.map((p) => (
+                    <tr key={p.id} className="hover:bg-orange-50/50 transition-colors">
+                      <td className="py-4 px-6 text-sm font-semibold text-gray-900">
+                        {p.productName || 'Sản phẩm ' + p.productId}
+                      </td>
+                      <td className="py-4 px-6 text-sm font-bold text-orange-600">
+                        {p.flashSalePrice?.toLocaleString('vi-VN')} đ
+                      </td>
+                      <td className="py-4 px-6 text-center">
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          p.status === 'Approved' ? 'bg-emerald-100 text-emerald-700' :
+                          p.status === 'Rejected' ? 'bg-red-100 text-red-700' :
+                          'bg-yellow-100 text-yellow-700'
+                        }`}>
+                          {p.status === 'Approved' ? 'Đã duyệt' : p.status === 'Rejected' ? 'Từ chối' : 'Chờ duyệt'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      )}
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Đăng ký sản phẩm">
         <form onSubmit={handleSubmit} className="space-y-4">

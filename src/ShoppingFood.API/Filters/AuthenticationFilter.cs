@@ -100,6 +100,7 @@ namespace ShoppingFood.API.Filters
                                        path.StartsWith("/api/Order/update", StringComparison.OrdinalIgnoreCase) ||
                                        path.StartsWith("/api/Order/cancel", StringComparison.OrdinalIgnoreCase) ||
                                        path.StartsWith("/api/Order/details", StringComparison.OrdinalIgnoreCase) ||
+                                       path.StartsWith("/api/Order/GuestOrders", StringComparison.OrdinalIgnoreCase) ||
                                        path.StartsWith("/api/Discount/apply", StringComparison.OrdinalIgnoreCase) ||
                                        (method == "GET" && path.StartsWith("/api/Discount", StringComparison.OrdinalIgnoreCase)) ||
                                        (method == "GET" && path.StartsWith("/api/Promotion", StringComparison.OrdinalIgnoreCase))) &&

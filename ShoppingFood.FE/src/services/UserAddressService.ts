@@ -1,5 +1,6 @@
 import { httpClient } from './base/HttpClient';
 import type { IApiResponse, IUserAddressDto, IAddUserAddress } from '../interfaces';
+import { API_ENDPOINTS } from '../config/endpoints';
 
 class UserAddressService {
   private endpoint = '/UserAddress';

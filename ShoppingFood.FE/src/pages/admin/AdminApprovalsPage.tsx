@@ -78,6 +78,16 @@ export function AdminApprovalsPage() {
     fetchData();
   }, [fetchData, take]);
 
+  // Lắng nghe sự kiện notification real-time để tự động tải lại danh sách
+  useEffect(() => {
+    const handleNotification = (e: CustomEvent) => {
+      fetchData();
+    };
+
+    window.addEventListener('ON_REALTIME_NOTIFICATION', handleNotification as EventListener);
+    return () => window.removeEventListener('ON_REALTIME_NOTIFICATION', handleNotification as EventListener);
+  }, [fetchData]);
+
   const openActionModal = (type: 'approve' | 'reject', tab: TabType, id: string, name: string) => {
     setRejectionReason('');
     setActionModal({
@@ -138,6 +148,15 @@ export function AdminApprovalsPage() {
 
   const viewPhoto = (url: string, title: string) => {
     setPhotoModal({ isOpen: true, url, title });
+  };
+
+  const getVehicleTypeName = (type: string) => {
+    switch (type) {
+      case 'Motorcycle': return 'Xe máy';
+      case 'ElectricMotorbike': return 'Xe máy điện';
+      case 'Car': return 'Ô tô';
+      default: return type;
+    }
   };
 
   return (
@@ -215,13 +234,13 @@ export function AdminApprovalsPage() {
                       <tr key={app.id} className="hover:bg-gray-50/50 transition-colors">
                         <td className="py-4 px-6">
                           <div className="font-semibold text-gray-900">{app.fullName}</div>
-                          <div className="text-xs text-gray-500 mt-0.5">{app.email}</div>
-                          <div className="text-xs text-gray-500 mt-0.5">{app.phone}</div>
+                          <div className="text-xs text-gray-500 mt-0.5">Email: {app.email}</div>
+                          <div className="text-xs text-gray-500 mt-0.5">SĐT: {app.phone}</div>
                         </td>
                         <td className="py-4 px-6">
-                          <div className="font-semibold text-orange-600">{app.businessName}</div>
-                          <div className="text-xs text-gray-600 mt-1 max-w-xs">{app.businessAddress}</div>
-                          <div className="text-[11px] text-gray-400 mt-1 italic">{app.contactInfo}</div>
+                          <div className="font-semibold text-orange-600">Tên shop: {app.businessName}</div>
+                          <div className="text-xs text-gray-600 mt-1 max-w-xs">Địa chỉ: {app.businessAddress}</div>
+                          <div className="text-[11px] text-gray-400 mt-1 italic">Liên hệ: {app.contactInfo}</div>
                         </td>
                         <td className="py-4 px-6 text-center">
                           <div className="flex justify-center gap-3">
@@ -287,11 +306,14 @@ export function AdminApprovalsPage() {
                       <tr key={app.id} className="hover:bg-gray-50/50 transition-colors">
                         <td className="py-4 px-6">
                           <div className="font-semibold text-gray-900">{app.fullName}</div>
-                          <div className="text-xs text-gray-500 mt-0.5">{app.email}</div>
-                          <div className="text-xs text-gray-500 mt-0.5">{app.phone}</div>
+                          <div className="text-xs text-gray-500 mt-0.5">Email: {app.email}</div>
+                          <div className="text-xs text-gray-500 mt-0.5">SĐT: {app.phone}</div>
+                          {app.identityCardNumber && (
+                            <div className="text-xs text-gray-500 mt-0.5">CCCD: {app.identityCardNumber}</div>
+                          )}
                         </td>
                         <td className="py-4 px-6">
-                          <div className="text-sm font-semibold text-gray-800">Loại: {app.vehicleType}</div>
+                          <div className="text-sm font-semibold text-gray-800">Loại: {getVehicleTypeName(app.vehicleType)}</div>
                           <div className="text-xs font-bold text-orange-600 mt-1">Biển số: {app.vehiclePlateNumber}</div>
                         </td>
                         <td className="py-4 px-6 text-center">
@@ -384,6 +406,32 @@ export function AdminApprovalsPage() {
                             <div>
                               <div className="font-semibold text-gray-900">{prod.itemName}</div>
                               <div className="text-xs text-gray-500 mt-0.5 line-clamp-1 max-w-xs">{prod.description || 'Không có mô tả.'}</div>
+                              
+                              {prod.sizes && prod.sizes.length > 0 && (
+                                <div className="mt-2">
+                                  <div className="text-[11px] font-semibold text-gray-700">Kích cỡ:</div>
+                                  <div className="flex flex-wrap gap-1 mt-0.5">
+                                    {prod.sizes.map((s: any) => (
+                                      <span key={s.id} className="text-[10px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-100">
+                                        {s.sizeName} (+{formatCurrency(s.extraPrice)})
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {prod.toppings && prod.toppings.length > 0 && (
+                                <div className="mt-1.5">
+                                  <div className="text-[11px] font-semibold text-gray-700">Topping:</div>
+                                  <div className="flex flex-wrap gap-1 mt-0.5">
+                                    {prod.toppings.map((t: any) => (
+                                      <span key={t.id} className="text-[10px] bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded border border-purple-100">
+                                        {t.toppingName || t.name} (+{formatCurrency(t.price)})
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </td>

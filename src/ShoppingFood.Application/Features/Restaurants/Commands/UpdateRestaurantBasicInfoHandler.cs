@@ -55,6 +55,7 @@ namespace ShoppingFood.Application.Features.Restaurants.Commands
         {
             restaurant.RestaurantName = request.RestaurantName;
             restaurant.Phone = request.Phone;
+            restaurant.Address = request.Address;
             restaurant.LogoUrl = request.LogoUrl;
             restaurant.BannerUrl = request.BannerUrl;
             restaurant.Latitude = request.Latitude;

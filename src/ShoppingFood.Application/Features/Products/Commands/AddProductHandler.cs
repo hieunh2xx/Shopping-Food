@@ -116,13 +116,15 @@ namespace ShoppingFood.Application.Features.Products.Commands
             if (imageUrls == null || !imageUrls.Any()) return;
 
             product.Images = new List<ProductImage>();
-            foreach(var url in imageUrls)
+            for (int i = 0; i < imageUrls.Count; i++)
             {
+                var url = imageUrls[i];
                 product.Images.Add(new ProductImage
                 {
                     Id = Guid.NewGuid(),
                     ProductId = product.Id,
-                    ImageUrl = url
+                    ImageUrl = url,
+                    IsPrimary = i == 0 // Set first image as primary
                 });
             }
         }

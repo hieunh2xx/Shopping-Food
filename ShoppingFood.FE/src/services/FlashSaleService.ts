@@ -39,9 +39,9 @@ class FlashSaleService {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.FLASH_SALE.REVIEW_PRODUCT, data);
   }
 
-  public async getFlashSaleProducts(flashSaleId: string, skip = 0, take = 50): Promise<IApiResponse<{ total: number; data: IFlashSaleProduct[] }>> {
+  public async getFlashSaleProducts(flashSaleId: string, skip = 0, take = 50, restaurantId?: string): Promise<IApiResponse<{ total: number; data: IFlashSaleProduct[] }>> {
     return httpClient.get<IApiResponse<{ total: number; data: IFlashSaleProduct[] }>>(API_ENDPOINTS.FLASH_SALE.PRODUCTS(flashSaleId), {
-      params: { skip, take }
+      params: { skip, take, restaurantId }
     });
   }
 }

@@ -19,8 +19,15 @@ class OrderService {
   /**
    * Get orders for the current logged in user
    */
-  public async getMyOrders(): Promise<IApiResponse<IOrderSummary[]>> {
-    return httpClient.get<IApiResponse<IOrderSummary[]>>(API_ENDPOINTS.ORDER.MY_ORDERS);
+  public async getMyOrders(params?: { skip?: number; take?: number }): Promise<IApiResponse<IOrderSummary[]>> {
+    return httpClient.get<IApiResponse<IOrderSummary[]>>(API_ENDPOINTS.ORDER.MY_ORDERS, { params });
+  }
+
+  /**
+   * Get orders for a guest user
+   */
+  public async getGuestOrders(guestUserId: string, params?: { skip?: number; take?: number }): Promise<IApiResponse<IOrderSummary[]>> {
+    return httpClient.get<IApiResponse<IOrderSummary[]>>(`${API_ENDPOINTS.ORDER.BASE}/GuestOrders/${guestUserId}`, { params });
   }
 
   /**

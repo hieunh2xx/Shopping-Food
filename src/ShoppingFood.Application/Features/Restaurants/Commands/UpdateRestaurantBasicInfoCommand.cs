@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using ShoppingFood.Core.Base;
 using System;
 using System.Collections.Generic;
@@ -14,7 +14,8 @@ namespace ShoppingFood.Application.Features.Restaurants.Commands
         public string Phone {  get; set; } = string.Empty;
         public string? LogoUrl {  get; set; } 
         public string? BannerUrl { get; set; }
-        public double Latitude { get; set; }
-        public double Longitude { get; set; }
+        public string Address { get; set; } = string.Empty;
+        public double? Latitude { get; set; }
+        public double? Longitude { get; set; }
     }
 }

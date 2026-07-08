@@ -49,10 +49,11 @@ export interface INearbyRestaurantDto {
 export interface IUpdateRestaurantBasicInfo {
   restaurantName: string;
   phone: string;
+  address: string;
   logoUrl?: string;
   bannerUrl?: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface IUpdateRestaurantOperatingHours {

@@ -15,5 +15,7 @@ namespace ShoppingFood.Dto.Order
         public Guid? RestaurantId { get; set; }
         public string? RestaurantName { get; set; }
         public Guid? OrderChatSessionId { get; set; }
+        public Guid? PaymentSessionId { get; set; }
+
     }
 }

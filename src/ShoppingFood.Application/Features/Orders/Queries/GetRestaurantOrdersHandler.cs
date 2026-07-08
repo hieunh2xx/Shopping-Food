@@ -46,21 +46,23 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                     return ApiResponse.Failure(403, "You do not own any restaurants on the system.");
                 }
 
-                // 2. Fetch orders placed at this restaurant
+                // 2. Build predicate
+                System.Linq.Expressions.Expression<Func<Order, bool>> predicate = o => 
+                    o.Items.Any(i => i.Product != null && i.Product.RestaurantId == restaurant.Id)
+                    && !(o.PaymentMethod != PaymentMethod.COD && o.PaymentStatus == PaymentStatus.Pending)
+                    && (!request.Status.HasValue || o.Status == request.Status.Value);
+
+                var total = await _orderRepository.GetCountAsync(predicate);
+
+                // 3. Fetch orders placed at this restaurant
                 var orders = await _orderRepository.GetAsync(
-                    predicate: o => o.Items.Any(i => i.Product != null && i.Product.RestaurantId == restaurant.Id),
+                    predicate: predicate,
                     orderBy: q => q.OrderByDescending(o => o.CreatedAt),
                     include: q => q.Include(o => o.Items).ThenInclude(i => i.Product),
                     skip: request.Skip,
                     take: request.Take,
                     disableTracking: true
                 );
-
-                // 3. Filter by status if requested
-                if (request.Status.HasValue)
-                {
-                    orders = orders.Where(o => o.Status == request.Status.Value).ToList();
-                }
 
                 // 4. Map to DTO
                 var dtos = orders.Select(o => new OrderDetailDto
@@ -89,7 +91,7 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                     }).ToList()
                 }).ToList();
 
-                return ApiResponse.Success(dtos, "Restaurant orders retrieved successfully.");
+                return ApiResponse.Success(dtos, "Restaurant orders retrieved successfully.", total);
             }
             catch (Exception ex)
             {

@@ -7,5 +7,6 @@ namespace ShoppingFood.Application.Features.FlashSales.Queries
     public class GetFlashSaleProductsQuery : BaseQuery, IRequest<ApiResponse>
     {
         public Guid FlashSaleId { get; set; }
+        public Guid? RestaurantId { get; set; }
     }
 }

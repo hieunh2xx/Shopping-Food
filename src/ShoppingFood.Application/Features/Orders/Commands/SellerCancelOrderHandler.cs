@@ -17,15 +17,18 @@ namespace ShoppingFood.Application.Features.Orders.Commands
     {
         private readonly IOrderRepository _orderRepository;
         private readonly IRestaurantProfileRepository _restaurantProfileRepository;
+        private readonly INotificationRepository _notificationRepository;
         private readonly IUnitOfWork _unitOfWork;
 
         public SellerCancelOrderHandler(
             IOrderRepository orderRepository,
             IRestaurantProfileRepository restaurantProfileRepository,
+            INotificationRepository notificationRepository,
             IUnitOfWork unitOfWork)
         {
             _orderRepository = orderRepository;
             _restaurantProfileRepository = restaurantProfileRepository;
+            _notificationRepository = notificationRepository;
             _unitOfWork = unitOfWork;
         }
         public async Task<ApiResponse> Handle(SellerCancelOrderCommand request, CancellationToken cancellationToken)
@@ -66,6 +69,23 @@ namespace ShoppingFood.Application.Features.Orders.Commands
 
                 _orderRepository.Update(order);
                 await _unitOfWork.SaveChangesAsync();
+
+                if (order.UserAccountId.HasValue)
+                {
+                    var notification = new Notification
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = order.UserAccountId.Value,
+                        Title = "Đơn hàng đã bị hủy",
+                        Message = $"Đơn hàng #{order.Id.ToString().Substring(0, 8)} của bạn đã bị hủy bởi cửa hàng. Lý do: {request.Reason}",
+                        NotificationType = NotificationType.System,
+                        IsRead = false,
+                        CreateAt = DateTime.UtcNow
+                    };
+                    _notificationRepository.Add(notification);
+                    await _unitOfWork.SaveChangesAsync();
+                }
+
                 return ApiResponse.Success(null, "Order cancelled successfully due to incident.");
             }
             catch (Exception ex) 

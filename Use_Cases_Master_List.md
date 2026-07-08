@@ -240,3 +240,23 @@ Báo cáo doanh thu, phân tích dữ liệu kinh doanh, cấu hình hệ thốn
 | `UC-SYS-014` | Cập nhật điều khoản chính sách bảo mật | Admin | Thay đổi nội dung pháp lý hiển thị khi đăng ký tài khoản mới. |
 | `UC-SYS-015` | Gửi thông báo khẩn cấp toàn hệ thống | Admin | Phát thông báo đẩy đến tất cả app người dùng về thiên tai, sự cố. |
 | `UC-SYS-016` | Giám sát hiệu suất hạ tầng (Server Monitoring) | Admin | Theo dõi dung lượng CPU, RAM, băng thông để kịp thời nâng cấp. |
+
+---
+
+## 10. Phân hệ 10: Coordinator & Dispatch Management (11 Use Cases)
+Quản lý bảng điều phối thời gian thực, điều phối viên làm trung gian đề xuất và gán đơn, theo dõi vị trí và xử lý sự cố.
+
+| Mã UC | Tên Use Case | Tác nhân chính (Actor) | Mô tả ngắn gọn |
+| :--- | :--- | :--- | :--- |
+| `UC-COORD-001` | Xem bảng điều phối thời gian thực (Dispatch Board) | Coordinator | Hiển thị toàn bộ đơn hàng trong ngày, hỗ trợ bộ lọc động theo trạng thái (Đang chuẩn bị, Chờ shipper, Đang giao, Đã giao, Đã hủy) để quản lý tổng quan. |
+| `UC-COORD-002` | Gợi ý Shipper thông minh | System / Coordinator | Tính toán khoảng cách, hiển thị danh sách shipper tối ưu gần nhà hàng nhất dựa trên trạng thái hoạt động và điểm uy tín. |
+| `UC-COORD-003` | Gửi đề xuất giao đơn (Send Proposal) | Coordinator | Gửi thông tin đơn hàng đề xuất đến shipper cụ thể, kích hoạt countdown 60s trên App của shipper. |
+| `UC-COORD-004` | Gán đơn bắt buộc (Force Assign) | Coordinator | Bỏ qua bước chờ xác nhận, gán trực tiếp đơn hàng cho shipper trong tình huống khẩn cấp hoặc đơn VIP. |
+| `UC-COORD-005` | Xử lý sự cố giao hàng (Incident Approval) | Coordinator | Tiếp nhận báo cáo sự cố giao thất bại (`confirm-failed`) từ shipper để xác minh lý do và đưa ra quyết định xử lý. |
+| `UC-COORD-006` | Thu hồi/Giải phóng đơn hàng (Release Order) | Coordinator | Gỡ shipper hiện tại ra khỏi đơn hàng (thiết lập `ShipperId = null`) và chuyển đơn trở lại danh sách chờ điều phối. |
+| `UC-COORD-007` | Theo dõi Shipper realtime | Coordinator | Giám sát vị trí GPS, trạng thái hoạt động (online/offline), số đơn đang giao và hiệu suất của toàn bộ shipper. |
+| `UC-COORD-008` | Chuyển đơn sang shipper khác (Reassign Order) | Coordinator | Chuyển trực tiếp đơn hàng đang giao từ shipper hiện tại sang shipper mới trong một thao tác duy nhất. |
+| `UC-COORD-009` | Hàng đợi ưu tiên xử lý (Escalation Queue) | System / Coordinator | Lọc và cảnh báo nổi bật các đơn hàng có rủi ro cao (đơn chờ > 15 phút, đơn bị từ chối nhiều lần, nhà hàng quá tải). |
+| `UC-COORD-010` | Xem lịch sử điều phối (Audit Logs) | Coordinator, Admin | Theo dõi toàn bộ lịch sử thao tác của các coordinator và phản hồi của shipper đối với các đơn hàng. |
+| `UC-COORD-011` | Tạm khóa hoạt động Shipper (Suspend Shipper) | Coordinator | Tạm thời khóa quyền nhận đề xuất giao đơn của Shipper do vi phạm quy định vận hành. |
+

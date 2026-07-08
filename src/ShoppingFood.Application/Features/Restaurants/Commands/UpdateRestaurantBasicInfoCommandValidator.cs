@@ -14,6 +14,9 @@ namespace ShoppingFood.Application.Features.Restaurants.Commands
                 .NotEmpty().WithMessage("{PropertyName} is required.")
                 .Matches(@"^\d{9,15}$").WithMessage("Phone number must contain 9 to 15 digits.");
 
+            RuleFor(p => p.Address)
+                .MaximumLength(255).WithMessage("{PropertyName} must not exceed 255 characters.");
+
             RuleFor(p => p.LogoUrl)
                 .MaximumLength(255).WithMessage("{PropertyName} must not exceed 255 characters.");
 

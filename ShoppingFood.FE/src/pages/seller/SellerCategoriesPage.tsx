@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, Edit, Trash2, FolderOpen, ArrowUpDown } from 'lucide-react';
-import { Button, Input, Modal, Loading } from '../../components/common';
+import { Button, Input, Modal, Loading, Pagination } from '../../components/common';
 import { menuCategoryService } from '../../services';
 import { authService } from '../../services/AuthService';
 import type { IMenuCategoryDto } from '../../interfaces';
@@ -10,6 +10,13 @@ export function SellerCategoriesPage() {
   const [restaurantId, setRestaurantId] = useState<string>('');
   const [categories, setCategories] = useState<IMenuCategoryDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [take, setTake] = useState(10);
+  const paginatedCategories = categories.slice((currentPage - 1) * take, currentPage * take);
+  const total = categories.length;
+  const totalPages = Math.ceil(total / take);
 
   // Form Modal state
   const [isOpen, setIsOpen] = useState(false);
@@ -189,9 +196,9 @@ export function SellerCategoriesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {categories.map((cat) => (
+                {paginatedCategories.map((cat) => (
                   <tr key={cat.id} className="hover:bg-orange-50/50 transition-colors group">
-                    <td className="py-4 px-6 font-semibold text-gray-900">{cat.title}</td>
+                    <td className="py-4 px-6 text-sm font-semibold text-gray-900">{cat.title}</td>
                     <td className="py-4 px-6 text-sm text-gray-500 max-w-xs truncate">{cat.description || '-'}</td>
                     <td className="py-4 px-6 text-center text-sm font-medium text-gray-700">
                       <span className="inline-flex items-center gap-1 bg-gray-100 px-2.5 py-1 rounded-md text-xs">
@@ -203,10 +210,10 @@ export function SellerCategoriesPage() {
                       {cat.productCount || 0} món
                     </td>
                     <td className="py-4 px-6 text-right">
-                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-end gap-2 transition-opacity">
                         <button
                           onClick={() => handleEdit(cat)}
-                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="px-4 py-1.5 border border-slate-200 text-slate-500 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 rounded-3xl transition-all"
                           title="Chỉnh sửa"
                         >
                           <Edit className="w-4 h-4" />
@@ -214,10 +221,10 @@ export function SellerCategoriesPage() {
                         <button
                           onClick={() => handleDeleteClick(cat)}
                           disabled={cat.productCount > 0}
-                          className={`p-2 rounded-lg transition-colors ${
+                          className={`px-4 py-1.5 border rounded-3xl transition-all ${
                             cat.productCount > 0
-                              ? 'text-gray-200 cursor-not-allowed'
-                              : 'text-gray-400 hover:text-red-600 hover:bg-red-50'
+                              ? 'border-gray-100 text-gray-200 cursor-not-allowed'
+                              : 'border-red-200 text-red-500 hover:text-red-600 hover:bg-red-50 hover:border-red-300'
                           }`}
                           title={cat.productCount > 0 ? 'Không thể xóa danh mục có chứa món ăn' : 'Xóa'}
                         >
@@ -230,6 +237,22 @@ export function SellerCategoriesPage() {
               </tbody>
             </table>
           </div>
+          
+          {total > 0 && (
+            <div className="p-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <span className="text-sm text-gray-500">
+                Hiển thị {Math.min((currentPage - 1) * take + 1, total)} – {Math.min(currentPage * take, total)} trong số {total} danh mục
+              </span>
+              <Pagination 
+                currentPage={currentPage} 
+                totalPages={totalPages} 
+                onPageChange={setCurrentPage}
+                pageSize={take}
+                pageSizeOptions={[10, 20, 50]}
+                onPageSizeChange={(size) => { setTake(size); setCurrentPage(1); }} 
+              />
+            </div>
+          )}
         </div>
       )}
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Gift, Search, Plus, Trash2, Edit2 } from 'lucide-react';
-import { Button, Input, Modal } from '../../components/common';
+import { Button, Input, Modal, Pagination } from '../../components/common';
 import toast from 'react-hot-toast';
 import { promotionService } from '../../services/PromotionService';
 import { productService } from '../../services/ProductService';
@@ -14,6 +14,12 @@ export function SellerPromotionsPage() {
   const [promotions, setPromotions] = useState<IBuyXGetYPromotionDto[]>([]);
   const [products, setProducts] = useState<IProductDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [take, setTake] = useState(10);
+  const paginatedPromotions = promotions.slice((page - 1) * take, page * take);
+  const total = promotions.length;
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -168,8 +174,8 @@ export function SellerPromotionsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {promotions.map((promo) => (
-                <tr key={promo.id} className="hover:bg-orange-50/50">
+              {paginatedPromotions.map((promo) => (
+                <tr key={promo.id} className="hover:bg-orange-50/50 transition-colors group">
                   <td className="py-4 px-6">
                     <div className="flex items-start gap-3">
                       <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center shrink-0">
@@ -192,12 +198,12 @@ export function SellerPromotionsPage() {
                   </td>
                   <td className="py-4 px-6 text-right">
                     <div className="flex justify-end gap-2">
-                      <Button variant="outline" size="sm" onClick={() => handleOpenModal(promo)}>
+                      <button onClick={() => handleOpenModal(promo)} className="px-4 py-1.5 border border-slate-200 text-slate-500 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 rounded-3xl transition-all">
                         <Edit2 className="w-4 h-4" />
-                      </Button>
-                      <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => handleDelete(promo.id)}>
+                      </button>
+                      <button onClick={() => handleDelete(promo.id)} className="px-4 py-1.5 border border-red-200 text-red-500 hover:text-red-600 hover:bg-red-50 hover:border-red-300 rounded-3xl transition-all">
                         <Trash2 className="w-4 h-4" />
-                      </Button>
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -210,6 +216,21 @@ export function SellerPromotionsPage() {
             </tbody>
           </table>
         </div>
+        {total > 0 && (
+          <div className="p-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <span className="text-sm text-gray-500">
+              Hiển thị {Math.min((page - 1) * take + 1, total)} – {Math.min(page * take, total)} trong số {total} khuyến mãi
+            </span>
+            <Pagination 
+              currentPage={page} 
+              totalPages={Math.ceil(total / take)} 
+              onPageChange={setPage}
+              pageSize={take}
+              pageSizeOptions={[10, 20, 50]}
+              onPageSizeChange={(size) => { setTake(size); setPage(1); }} 
+            />
+          </div>
+        )}
       </div>
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingPromo ? 'Cập nhật khuyến mãi' : 'Thêm Mua X Tặng Y'} size="lg">

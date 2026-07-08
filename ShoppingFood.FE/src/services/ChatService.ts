@@ -1,7 +1,8 @@
 import { HubConnection, HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
 import { httpClient } from './base/HttpClient';
 import { ENV } from '../config/env';
-import type { IApiResponse, IChatSession, IChatMessage, ICreateChatSessionRequest } from '../interfaces';
+import { API_ENDPOINTS } from '../config/endpoints';
+import type { IApiResponse, IChatSession, IChatMessage, ICreateChatSessionRequest, ISellerOrderChatSummary } from '../interfaces';
 
 function normalizeMessage(raw: Record<string, unknown>): IChatMessage {
   return {

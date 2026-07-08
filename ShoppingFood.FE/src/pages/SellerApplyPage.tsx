@@ -94,7 +94,7 @@ export function SellerApplyPage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Tên cửa hàng</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Tên cửa hàng</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Store className="h-5 w-5 text-gray-400" />
@@ -104,14 +104,14 @@ export function SellerApplyPage() {
                 required
                 value={formData.businessName}
                 onChange={e => setFormData({ ...formData, businessName: e.target.value })}
-                className="pl-10 block w-full rounded-xl border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 bg-gray-50 border p-3 text-sm"
+                className="pl-10 block w-full rounded-xl border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 bg-gray-50 border p-3 text-sm font-medium text-gray-900"
                 placeholder="Nhập tên cửa hàng của bạn"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Địa chỉ cửa hàng</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Địa chỉ cửa hàng</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <MapPin className="h-5 w-5 text-gray-400" />
@@ -121,14 +121,14 @@ export function SellerApplyPage() {
                 required
                 value={formData.businessAddress}
                 onChange={e => setFormData({ ...formData, businessAddress: e.target.value })}
-                className="pl-10 block w-full rounded-xl border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 bg-gray-50 border p-3 text-sm"
+                className="pl-10 block w-full rounded-xl border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 bg-gray-50 border p-3 text-sm font-medium text-gray-900"
                 placeholder="Số nhà, tên đường, phường/xã, quận/huyện..."
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Số điện thoại liên hệ</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Số điện thoại liên hệ</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Phone className="h-5 w-5 text-gray-400" />
@@ -138,14 +138,14 @@ export function SellerApplyPage() {
                 required
                 value={formData.contactInfo}
                 onChange={e => setFormData({ ...formData, contactInfo: e.target.value })}
-                className="pl-10 block w-full rounded-xl border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 bg-gray-50 border p-3 text-sm"
+                className="pl-10 block w-full rounded-xl border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 bg-gray-50 border p-3 text-sm font-medium text-gray-900"
                 placeholder="Số điện thoại của cửa hàng"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Giấy phép kinh doanh (Hình ảnh/PDF)</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Giấy phép kinh doanh (Hình ảnh/PDF)</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <FileText className="h-5 w-5 text-gray-400" />
@@ -161,7 +161,7 @@ export function SellerApplyPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Logo / Ảnh đại diện cửa hàng</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Logo / Ảnh đại diện cửa hàng</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <ImageIcon className="h-5 w-5 text-gray-400" />

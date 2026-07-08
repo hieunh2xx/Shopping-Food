@@ -64,7 +64,8 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                     CanMessageSeller = MessageableStatuses.Contains(o.Status),
                     RestaurantId = restaurant?.Id,
                     RestaurantName = restaurant?.RestaurantName,
-                    OrderChatSessionId = chat?.Id
+                    OrderChatSessionId = chat?.Id,
+                    PaymentSessionId = o.PaymentSessionId
                 };
             }).ToList();
 

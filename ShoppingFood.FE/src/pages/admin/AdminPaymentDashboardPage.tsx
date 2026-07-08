@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { BarChart3, Clock, CheckCircle, XCircle, Layers, Webhook } from 'lucide-react';
 import { Card } from '../../components/common';
 import { paymentService } from '../../services/PaymentService';
-import { formatCurrency } from '../../utils/formatters';
+import { formatCurrency, getPaymentDisplayStatusLabel, getPaymentDisplayStatusColor } from '../../utils/formatters';
 
 export function AdminPaymentDashboardPage() {
   const [data, setData] = useState<any>(null);
@@ -77,7 +77,11 @@ export function AdminPaymentDashboardPage() {
                 <tr key={row.paymentId} className="border-b border-gray-50">
                   <td className="py-2 pr-4 font-mono text-xs">{row.invoiceNumber}</td>
                   <td className="py-2 pr-4">{formatCurrency(row.amount)}</td>
-                  <td className="py-2 pr-4">{row.status}</td>
+                  <td className="py-2 pr-4">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPaymentDisplayStatusColor(row.status)}`}>
+                      {getPaymentDisplayStatusLabel(row.status)}
+                    </span>
+                  </td>
                   <td className="py-2 text-gray-500">{new Date(row.createdAt).toLocaleString('vi-VN')}</td>
                 </tr>
               ))}

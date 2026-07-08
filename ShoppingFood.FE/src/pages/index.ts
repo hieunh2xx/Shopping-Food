@@ -35,7 +35,6 @@ export { BuyXGetYPage } from './BuyXGetYPage';
 export * from './FlashSalePage';
 export { ProfilePage } from './ProfilePage';
 export { default as MaintenancePage } from './shared/MaintenancePage';
-export { OrdersPage } from './OrdersPage';
 export { NotFoundPage } from './NotFoundPage';
 export { ShipperApplyPage } from './ShipperApplyPage';
 export { ShipperDashboard } from './shipper/ShipperDashboard';
@@ -50,7 +49,6 @@ export { default as MonitorShippersPage } from './coordinator/MonitorShippersPag
 export { CoordinatorIncidentsPage } from './coordinator/CoordinatorIncidentsPage';
 export { CoordinatorChatPage } from './coordinator/CoordinatorChatPage';
 export { CheckoutPage } from './CheckoutPage';
-export { GuestOrderTrackingPage } from './GuestOrderTrackingPage';
 export { AdminFlashSalePage } from './admin/AdminFlashSalePage';
 export { AdminNotificationsPage } from './admin/AdminNotificationsPage';
 export { AdminReviewReportsPage } from './admin/AdminReviewReportsPage';

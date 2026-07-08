@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Tag, Search, Plus, Trash2, Edit2, BarChart3 } from 'lucide-react';
-import { Button, Input, Modal } from '../../components/common';
+import { Button, Input, Modal, Pagination } from '../../components/common';
 import toast from 'react-hot-toast';
 import { discountService } from '../../services/DiscountService';
 import type { IDiscountDto, ICreateDiscountRequest, IUpdateDiscountRequest } from '../../interfaces';
@@ -19,7 +19,7 @@ export function SellerDiscountsPage() {
   const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
   const [stats, setStats] = useState<any>(null);
   const [page, setPage] = useState(1);
-  const take = 10;
+  const [take, setTake] = useState(10);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -248,12 +248,12 @@ export function SellerDiscountsPage() {
                   </td>
                   <td className="py-4 px-6 text-right">
                     <div className="flex justify-end gap-2">
-                      <Button variant="outline" size="sm" onClick={() => handleOpenModal(discount)}>
+                      <button onClick={() => handleOpenModal(discount)} className="px-4 py-1.5 border border-slate-200 text-slate-500 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 rounded-3xl transition-all">
                         <Edit2 className="w-4 h-4" />
-                      </Button>
-                      <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => handleDelete(discount.id)}>
+                      </button>
+                      <button onClick={() => handleDelete(discount.id)} className="px-4 py-1.5 border border-red-200 text-red-500 hover:text-red-600 hover:bg-red-50 hover:border-red-300 rounded-3xl transition-all">
                         <Trash2 className="w-4 h-4" />
-                      </Button>
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -266,6 +266,22 @@ export function SellerDiscountsPage() {
             </tbody>
           </table>
         </div>
+        
+        {total > 0 && (
+          <div className="p-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <span className="text-sm text-gray-500">
+              Hiển thị {Math.min((page - 1) * take + 1, total)} – {Math.min(page * take, total)} trong số {total} mã giảm giá
+            </span>
+            <Pagination 
+              currentPage={page} 
+              totalPages={Math.ceil(total / take)} 
+              onPageChange={setPage}
+              pageSize={take}
+              pageSizeOptions={[10, 20, 50]}
+              onPageSizeChange={(size) => { setTake(size); setPage(1); }} 
+            />
+          </div>
+        )}
       </div>
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingDiscount ? 'Cập nhật mã giảm giá' : 'Tạo mã giảm giá mới'} size="lg">

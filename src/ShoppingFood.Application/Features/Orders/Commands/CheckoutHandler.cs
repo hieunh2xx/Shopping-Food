@@ -37,6 +37,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IPlatformFinanceConfigRepository _configRepository;
         private readonly IFlashSalePricingService _flashSalePricingService;
+        private readonly INotificationRepository _notificationRepository;
 
         public CheckoutHandler(
             ICartRepository cartRepository,
@@ -54,7 +55,8 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             ShoppingFoodContext dbContext,
             IHttpContextAccessor httpContextAccessor,
             IPlatformFinanceConfigRepository configRepository,
-            IFlashSalePricingService flashSalePricingService
+            IFlashSalePricingService flashSalePricingService,
+            INotificationRepository notificationRepository
             )
         {
             _cartRepository = cartRepository;
@@ -73,6 +75,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             _httpContextAccessor = httpContextAccessor;
             _configRepository = configRepository;
             _flashSalePricingService = flashSalePricingService;
+            _notificationRepository = notificationRepository;
         }
         public async Task<ApiResponse> Handle(CheckoutCommand request, CancellationToken cancellationToken)
         {
@@ -189,6 +192,26 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 await _unitOfWork.SaveChangesAsync();
 
                 await transaction.CommitAsync(cancellationToken);
+
+                if (order.PaymentMethod == PaymentMethod.COD)
+                {
+                    var restaurant = cart.Items.FirstOrDefault()?.Product?.Restaurant;
+                    if (restaurant != null)
+                    {
+                        var notification = new Notification
+                        {
+                            Id = Guid.NewGuid(),
+                            UserId = restaurant.Owner.UserAccountId,
+                            Title = "Đơn hàng mới",
+                            Message = $"Bạn có đơn hàng mới #{order.Id.ToString().Substring(0, 8)} (Thanh toán khi nhận hàng).",
+                            NotificationType = NotificationType.System,
+                            IsRead = false,
+                            CreateAt = DateTime.UtcNow
+                        };
+                        _notificationRepository.Add(notification);
+                        await _unitOfWork.SaveChangesAsync();
+                    }
+                }
 
                 var responseData = new
                 {

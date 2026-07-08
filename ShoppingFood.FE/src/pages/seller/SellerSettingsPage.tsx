@@ -4,28 +4,58 @@ import { restaurantService } from '../../services/RestaurantService';
 import type { IUserDto } from '../../interfaces';
 import { Card, Button, Input } from '../../components/common';
 import toast from 'react-hot-toast';
-import { 
-  Store, 
-  Clock, 
-  Navigation, 
-  Activity, 
-  Save, 
+import {
+  Store,
+  Clock,
+  Navigation,
+  Activity,
+  Save,
   Info,
   ShieldAlert
 } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// Fix leaflet default icon issue
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+function LocationMarker({ position, setPosition }: { position: [number, number] | null, setPosition: (p: [number, number]) => void }) {
+  const map = useMapEvents({
+    click(e) {
+      setPosition([e.latlng.lat, e.latlng.lng]);
+    },
+  });
+
+  useEffect(() => {
+    if (position) {
+      map.flyTo(position, map.getZoom());
+    }
+  }, [position, map]);
+
+  return position === null ? null : (
+    <Marker position={position}></Marker>
+  );
+}
 
 export function SellerSettingsPage() {
   const [profile, setProfile] = useState<IUserDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Forms state
   const [basicInfo, setBasicInfo] = useState({
     restaurantName: '',
     address: '',
     phone: '',
     email: '',
-    logoUrl: ''
+    logoUrl: '',
+    latitude: undefined as number | undefined,
+    longitude: undefined as number | undefined
   });
 
   const [operatingHours, setOperatingHours] = useState({
@@ -57,7 +87,9 @@ export function SellerSettingsPage() {
               address: rest.address || '',
               phone: rest.phone || '',
               email: rest.email || '',
-              logoUrl: rest.logoUrl || ''
+              logoUrl: rest.logoUrl || '',
+              latitude: rest.latitude,
+              longitude: rest.longitude
             });
 
             // Format TimeSpan (e.g., "08:00:00" -> "08:00")
@@ -101,9 +133,10 @@ export function SellerSettingsPage() {
       const res = await restaurantService.updateBasicInfo({
         restaurantName: basicInfo.restaurantName,
         phone: basicInfo.phone,
+        address: basicInfo.address,
         logoUrl: basicInfo.logoUrl || undefined,
-        latitude: 0,
-        longitude: 0,
+        latitude: basicInfo.latitude,
+        longitude: basicInfo.longitude,
       });
       if (!res.error) {
         toast.success('Đã cập nhật thông tin thành công!', { id: toastId });
@@ -115,6 +148,34 @@ export function SellerSettingsPage() {
       toast.error('Lỗi kết nối máy chủ', { id: toastId });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const reverseGeocode = async (lat: number, lng: number) => {
+    try {
+      toast.loading('Đang tự động lấy địa chỉ...', { id: 'geocode' });
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=vi`);
+      const data = await res.json();
+      if (data && data.address) {
+        const ignoreKeys = ['postcode', 'country', 'country_code', 'ISO3166-2-lvl4'];
+        const addressParts = [];
+        for (const key in data.address) {
+          if (!ignoreKeys.includes(key) && data.address[key]) {
+            // Check if it's not already in the array to prevent duplication
+            if (!addressParts.includes(data.address[key])) {
+              addressParts.push(data.address[key]);
+            }
+          }
+        }
+        const formattedAddress = addressParts.join(', ');
+        setBasicInfo(prev => ({ ...prev, address: formattedAddress }));
+        toast.success('Đã điền tự động địa chỉ', { id: 'geocode' });
+      } else if (data && data.display_name) {
+        toast.dismiss('geocode');
+      }
+    } catch (e) {
+      console.error('Reverse geocoding error', e);
+      toast.dismiss('geocode');
     }
   };
 
@@ -221,10 +282,10 @@ export function SellerSettingsPage() {
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="p-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Cấu hình Cửa hàng</h1>
-        <p className="text-gray-500">Thiết lập thông tin hoạt động, phí vận chuyển và thời gian hoạt động của quán</p>
+        <h1 className="text-2xl font-bold text-gray-900">Cấu hình Cửa hàng</h1>
+        <p className="text-sm text-gray-500 mt-1">Thiết lập thông tin hoạt động, phí vận chuyển và thời gian hoạt động của quán</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -249,6 +310,62 @@ export function SellerSettingsPage() {
                 onChange={(e) => setBasicInfo({ ...basicInfo, address: e.target.value })}
                 placeholder="Số nhà, Tên đường, Quận/Huyện..."
               />
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <Navigation className="w-4 h-4 text-gray-500" />
+                    Vị trí trên bản đồ
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (navigator.geolocation) {
+                        toast.loading('Đang lấy vị trí...', { id: 'gps' });
+                        navigator.geolocation.getCurrentPosition(
+                          (pos) => {
+                            setBasicInfo(prev => ({
+                              ...prev,
+                              latitude: pos.coords.latitude,
+                              longitude: pos.coords.longitude
+                            }));
+                            toast.success('Đã lấy vị trí hiện tại', { id: 'gps' });
+                            reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+                          },
+                          (error) => {
+                            toast.error('Không thể lấy vị trí. Vui lòng cấp quyền vị trí cho trình duyệt.', { id: 'gps' });
+                          }
+                        );
+                      } else {
+                        toast.error('Trình duyệt không hỗ trợ lấy vị trí');
+                      }
+                    }}
+                    className="text-xs text-orange-600 hover:text-orange-700 font-medium flex items-center gap-1 bg-orange-50 px-2.5 py-1.5 rounded-lg transition-colors border border-orange-100"
+                  >
+                    <Navigation className="w-3.5 h-3.5" />
+                    Lấy vị trí hiện tại
+                  </button>
+                </div>
+                <div className="h-[300px] w-full rounded-xl overflow-hidden border border-gray-200 relative z-0">
+                  <MapContainer
+                    center={basicInfo.latitude && basicInfo.longitude ? [basicInfo.latitude, basicInfo.longitude] : [10.762622, 106.660172]}
+                    zoom={13}
+                    style={{ height: '100%', width: '100%' }}
+                  >
+                    <TileLayer
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    <LocationMarker
+                      position={basicInfo.latitude && basicInfo.longitude ? [basicInfo.latitude, basicInfo.longitude] : null}
+                      setPosition={(p) => {
+                        setBasicInfo(prev => ({ ...prev, latitude: p[0], longitude: p[1] }));
+                        reverseGeocode(p[0], p[1]);
+                      }}
+                    />
+                  </MapContainer>
+                </div>
+                <p className="text-xs text-gray-500 italic">Click vào bản đồ để chọn vị trí chính xác của nhà hàng.</p>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
                   label="Số điện thoại liên hệ *"
@@ -323,11 +440,10 @@ export function SellerSettingsPage() {
               <button
                 type="button"
                 onClick={() => handleUpdateStatus('Active')}
-                className={`w-full py-3 px-4 rounded-xl font-semibold border flex items-center justify-center gap-2 transition-all ${
-                  status === 'Active'
+                className={`w-full py-3 px-4 rounded-xl font-semibold border flex items-center justify-center gap-2 transition-all ${status === 'Active'
                     ? 'bg-green-500 border-green-500 text-white shadow-lg shadow-green-500/25'
                     : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
-                }`}
+                  }`}
               >
                 <div className={`w-3.5 h-3.5 rounded-full ${status === 'Active' ? 'bg-white animate-pulse' : 'bg-green-500'}`}></div>
                 MỞ CỬA BÁN HÀNG
@@ -335,11 +451,10 @@ export function SellerSettingsPage() {
               <button
                 type="button"
                 onClick={() => handleUpdateStatus('Inactive')}
-                className={`w-full py-3 px-4 rounded-xl font-semibold border flex items-center justify-center gap-2 transition-all ${
-                  status === 'Inactive'
+                className={`w-full py-3 px-4 rounded-xl font-semibold border flex items-center justify-center gap-2 transition-all ${status === 'Inactive'
                     ? 'bg-red-500 border-red-500 text-white shadow-lg shadow-red-500/25'
                     : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
-                }`}
+                  }`}
               >
                 <div className={`w-3.5 h-3.5 rounded-full ${status === 'Inactive' ? 'bg-white' : 'bg-red-500'}`}></div>
                 TẠM NGHỈ BÁN

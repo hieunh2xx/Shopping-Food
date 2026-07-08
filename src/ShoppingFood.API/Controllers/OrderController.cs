@@ -30,6 +30,19 @@ namespace ShoppingFood.API.Controllers
             return StatusCode(response.Code, response);
         }
 
+        [HttpGet("GuestOrders/{guestUserId}")]
+        public async Task<IActionResult> GetGuestOrders(Guid guestUserId, [FromQuery] int skip = 0, [FromQuery] int take = 50)
+        {
+            var query = new GetGuestOrdersQuery 
+            { 
+                GuestUserId = guestUserId,
+                Skip = skip,
+                Take = take
+            };
+            var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
+        }
+
         [HttpGet("details/{id}")]
         public async Task<IActionResult> GetOrderDetails(Guid id)
         {

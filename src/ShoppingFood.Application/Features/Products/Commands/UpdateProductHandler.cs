@@ -42,23 +42,36 @@ namespace ShoppingFood.Application.Features.Products.Commands
                 if (product == null) 
                     return ApiResponse.Failure(404, "This dish cannot be found.");
 
-                _mapper.Map(request, product);
+                product.ItemName = request.ItemName;
+                product.Description = request.Description;
+                product.Price = request.Price;
+                product.CategoryId = request.CategoryId;
+                product.GlobalCategoryId = request.GlobalCategoryId;
                 product.UpdatedAt = DateTime.UtcNow;
 
                 UpdateImages(product, request.ImageUrls);
                 UpdateToppings(product, request.ToppingIds);
                 UpdateSizes(product, request.Sizes);
 
+                var modifiedEntries = _dbContext.ChangeTracker.Entries().Where(e => e.State == EntityState.Modified).ToList();
+                foreach (var entry in modifiedEntries)
+                {
+                    if (entry.Entity is ProductImage || entry.Entity is ProductTopping)
+                    {
+                        entry.State = EntityState.Unchanged;
+                    }
+                }
+
                 await _unitOfWork.SaveChangesAsync();
                 var productDto = _mapper.Map<ProductDto>(product);
                 return ApiResponse.Success(productDto, "Update product successfully");
             }
-            //catch (DbUpdateConcurrencyException ex)
-            //{
-            //    var details = string.Join("; ", ex.Entries.Select(e => $"Entity: {e.Entity.GetType().Name}, State: {e.State}, Key: {string.Join(",", e.Metadata.FindPrimaryKey().Properties.Select(p => e.Property(p.Name).CurrentValue))}"));
-            //    await _unitOfWork.LogErrorAsync("UpdateProductHandler.Handle.Concurrency", new Exception($"Concurrency details: {details}", ex));
-            //    return ApiResponse.Failure(400, "An error occurred: data may have been modified or deleted since entities were loaded.");
-            //}
+            catch (DbUpdateConcurrencyException ex)
+            {
+                var details = string.Join("; ", ex.Entries.Select(e => $"Entity: {e.Entity.GetType().Name}, State: {e.State}, Key: {string.Join(",", e.Metadata.FindPrimaryKey().Properties.Select(p => e.Property(p.Name).CurrentValue))}"));
+                await _unitOfWork.LogErrorAsync("UpdateProductHandler.Handle.Concurrency", new Exception($"Concurrency details: {details}", ex));
+                return ApiResponse.Failure(400, $"Lỗi cập nhật: {details}");
+            }
             catch (Exception ex)
             {
                 await _unitOfWork.LogErrorAsync("UpdateProductHandler.Handle", ex);
@@ -70,26 +83,52 @@ namespace ShoppingFood.Application.Features.Products.Commands
         {
             if (imageUrls == null) return;
 
-            // Remove images that are no longer in the request
+            // Explicitly remove all existing images that are not in the new list
             var imagesToRemove = product.Images
                 .Where(i => !imageUrls.Contains(i.ImageUrl))
                 .ToList();
+            
             foreach (var image in imagesToRemove)
             {
                 product.Images.Remove(image);
+                _dbContext.Set<ProductImage>().Remove(image);
             }
 
-            // Add new images that are not already present
+            // Explicitly add new images that are not in the existing list
             var existingUrls = product.Images.Select(i => i.ImageUrl).ToList();
             var urlsToAdd = imageUrls.Where(url => !existingUrls.Contains(url)).ToList();
+
             foreach (var url in urlsToAdd)
             {
-                product.Images.Add(new ProductImage
+                var newImage = new ProductImage
                 {
                     Id = Guid.NewGuid(),
                     ProductId = product.Id,
-                    ImageUrl = url
-                });
+                    ImageUrl = url,
+                    IsPrimary = false // We will set the primary below
+                };
+                product.Images.Add(newImage);
+                _dbContext.Set<ProductImage>().Add(newImage);
+            }
+
+            // Ensure the first image in the ordered list is marked as primary
+            if (product.Images.Any())
+            {
+                foreach (var img in product.Images)
+                {
+                    img.IsPrimary = false;
+                }
+                
+                // Set the one matching the first URL in the request as primary
+                var firstUrl = imageUrls.FirstOrDefault();
+                if (firstUrl != null)
+                {
+                    var primaryImg = product.Images.FirstOrDefault(i => i.ImageUrl == firstUrl);
+                    if (primaryImg != null)
+                    {
+                        primaryImg.IsPrimary = true;
+                    }
+                }
             }
         }
 
@@ -104,6 +143,7 @@ namespace ShoppingFood.Application.Features.Products.Commands
             foreach (var topping in toppingsToRemove)
             {
                 product.ProductToppings.Remove(topping);
+                _dbContext.Remove(topping);
             }
 
             // Add new toppings that are not already present
@@ -129,6 +169,7 @@ namespace ShoppingFood.Application.Features.Products.Commands
             foreach (var size in sizesToRemove)
             {
                 product.ProductSizes.Remove(size);
+                _dbContext.Remove(size);
             }
 
             // Add or Update sizes
@@ -145,7 +186,6 @@ namespace ShoppingFood.Application.Features.Products.Commands
                     }
                     newSize.ProductId = product.Id;
                     product.ProductSizes.Add(newSize);
-                    _dbContext.Entry(newSize).State = EntityState.Added;
                 }
                 else
                 {

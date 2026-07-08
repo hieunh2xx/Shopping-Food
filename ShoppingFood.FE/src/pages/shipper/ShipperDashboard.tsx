@@ -1,15 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import { 
-  PackageOpen, 
-  MapPin, 
-  Store, 
-  Navigation, 
-  DollarSign, 
-  CheckCircle2, 
-  Clock, 
-  Star, 
-  TrendingUp, 
+import {
+  PackageOpen,
+  MapPin,
+  Store,
+  Navigation,
+  DollarSign,
+  CheckCircle2,
+  Clock,
+  Star,
+  TrendingUp,
   AlertTriangle,
   ArrowRight,
   Shield,
@@ -25,7 +25,7 @@ import { OrderProposalPopup } from './components/OrderProposalPopup';
 
 export function ShipperDashboard() {
   const { user } = useAuth();
-  
+
   // Real state from API (persisted locally across page changes)
   const [isOnline, setIsOnline] = useState(() => {
     return localStorage.getItem('shipper_is_online') === 'true';
@@ -37,7 +37,7 @@ export function ShipperDashboard() {
   const [availableOffers, setAvailableOffers] = useState<IProposedDeliveryOfferDto[]>([]);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
-  
+
   // State cho Popup đề xuất 60s
   const [proposalPopupOffer, setProposalPopupOffer] = useState<IProposedDeliveryOfferDto | null>(null);
 
@@ -160,7 +160,7 @@ export function ShipperDashboard() {
               setProposalPopupOffer(res.data);
             }
           } catch (err) {
-             console.error('Lỗi khi lấy thông tin đề xuất:', err);
+            console.error('Lỗi khi lấy thông tin đề xuất:', err);
           }
         }
       }
@@ -194,8 +194,8 @@ export function ShipperDashboard() {
               toast.error(`API trả về nhưng không có data. Lỗi: ${res.message}`);
             }
           } catch (err: any) {
-             console.error('Lỗi khi lấy thông tin force assign:', err);
-             toast.error(`Lỗi API GetProposedOffer: ${err?.message || 'Không rõ'}`);
+            console.error('Lỗi khi lấy thông tin force assign:', err);
+            toast.error(`Lỗi API GetProposedOffer: ${err?.message || 'Không rõ'}`);
           }
         } else {
           toast.error(`Không thể trích xuất orderId từ message: ${n.message}`);
@@ -241,14 +241,14 @@ export function ShipperDashboard() {
   const handleRejectProposal = async (orderId: string) => {
     try {
       await shipperService.rejectOffer({ orderId, reason: 'Shipper từ chối' });
-    } catch (e) {} // ignore
+    } catch (e) { } // ignore
     setProposalPopupOffer(null);
   };
 
   const handleTimeoutProposal = async (orderId: string) => {
     try {
       await shipperService.rejectOffer({ orderId, reason: 'Quá thời gian phản hồi' });
-    } catch (e) {} // ignore
+    } catch (e) { } // ignore
     setProposalPopupOffer(null);
     toast.error('Đã hết thời gian phản hồi đề xuất.');
   };
@@ -266,7 +266,7 @@ export function ShipperDashboard() {
               lng: position.coords.longitude
             };
             setCoords(newCoords);
-            
+
             // Post live location to backend API
             try {
               await shipperService.updateLocation({
@@ -318,12 +318,12 @@ export function ShipperDashboard() {
     try {
       const newStatus = !isOnline;
       const res = await shipperService.toggleOnline({ isOnline: newStatus });
-      
+
       if (res && res.error) {
         toast.error(res.message || 'Không thể thay đổi trạng thái.');
         return;
       }
-      
+
       setIsOnline(newStatus);
       localStorage.setItem('shipper_is_online', newStatus ? 'true' : 'false');
       toast.success(newStatus ? 'Bạn đã BẬT trạng thái trực tuyến!' : 'Bạn đã TẮT trạng thái trực tuyến!');
@@ -399,7 +399,7 @@ export function ShipperDashboard() {
   // Progress delivery steps
   const handleProgressDelivery = async () => {
     if (!activeDelivery) return;
-    
+
     setActionLoading('progress');
     try {
       if (activeDelivery.step === 'accepted') {
@@ -449,7 +449,7 @@ export function ShipperDashboard() {
   // Failed delivery
   const handleDeliveryFailed = async () => {
     if (!activeDelivery) return;
-    
+
     const reason = prompt('Nhập lý do giao hàng thất bại:');
     if (!reason) return;
 
@@ -485,7 +485,7 @@ export function ShipperDashboard() {
   return (
     <div className="min-h-screen bg-gray-50/50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-8">
-        
+
         {/* Dashboard Header Banner */}
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
@@ -499,13 +499,13 @@ export function ShipperDashboard() {
               <p className="text-gray-500 text-sm mt-0.5">Chào mừng quay lại, {user?.fullName || 'Tài xế đối tác'}</p>
             </div>
           </div>
-          
+
           {/* Online Status Toggle */}
           <div className="flex items-center gap-3 bg-gray-50 p-2.5 rounded-2xl border border-gray-100">
             <span className={`text-sm font-semibold ${isOnline ? 'text-green-600' : 'text-gray-400'}`}>
               {isOnline ? 'Đang trực tuyến' : 'Đang ngoại tuyến'}
             </span>
-            <button 
+            <button
               onClick={handleToggleOnline}
               disabled={togglingOnline}
               className={`relative inline-flex h-9 w-16 items-center rounded-full transition-colors duration-300 focus:outline-none disabled:opacity-50 ${isOnline ? 'bg-green-500' : 'bg-gray-300'}`}
@@ -563,10 +563,10 @@ export function ShipperDashboard() {
 
         {/* Main Layout Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
+
           {/* Left section: Active delivery */}
           <div className="lg:col-span-2 space-y-6">
-            
+
             {/* Active Delivery */}
             <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
               <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
@@ -592,13 +592,12 @@ export function ShipperDashboard() {
                   {/* Progress tracker */}
                   <div className="relative py-4 px-2">
                     <div className="absolute left-[20px] top-[30px] bottom-[30px] w-0.5 bg-gray-200"></div>
-                    
+
                     <div className="relative flex items-start gap-4 mb-6">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center z-10 shrink-0 font-bold text-sm ${
-                        activeDelivery.step === 'accepted' || activeDelivery.step === 'arrived' || activeDelivery.step === 'picked_up'
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center z-10 shrink-0 font-bold text-sm ${activeDelivery.step === 'accepted' || activeDelivery.step === 'arrived' || activeDelivery.step === 'picked_up'
                           ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20'
                           : 'bg-gray-200 text-gray-500'
-                      }`}>
+                        }`}>
                         1
                       </div>
                       <div>
@@ -608,11 +607,10 @@ export function ShipperDashboard() {
                     </div>
 
                     <div className="relative flex items-start gap-4 mb-6">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center z-10 shrink-0 font-bold text-sm ${
-                        activeDelivery.step === 'arrived' || activeDelivery.step === 'picked_up'
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center z-10 shrink-0 font-bold text-sm ${activeDelivery.step === 'arrived' || activeDelivery.step === 'picked_up'
                           ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20'
                           : 'bg-gray-200 text-gray-500'
-                      }`}>
+                        }`}>
                         2
                       </div>
                       <div>
@@ -622,11 +620,10 @@ export function ShipperDashboard() {
                     </div>
 
                     <div className="relative flex items-start gap-4">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center z-10 shrink-0 font-bold text-sm ${
-                        activeDelivery.step === 'picked_up'
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center z-10 shrink-0 font-bold text-sm ${activeDelivery.step === 'picked_up'
                           ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20'
                           : 'bg-gray-200 text-gray-500'
-                      }`}>
+                        }`}>
                         3
                       </div>
                       <div>
@@ -644,7 +641,7 @@ export function ShipperDashboard() {
                     <p><strong>Tổng tiền thu hộ (COD):</strong> <span className="font-bold text-orange-600">{formatCurrency(activeDelivery.totalAmount)}</span></p>
                     {activeDelivery.googleMapNavigationUrl && (
                       <div className="pt-2">
-                        <a 
+                        <a
                           href={activeDelivery.googleMapNavigationUrl}
                           target="_blank"
                           rel="noopener noreferrer"
@@ -659,7 +656,7 @@ export function ShipperDashboard() {
                   {/* Action buttons based on steps */}
                   <div className="flex flex-wrap gap-3 pt-2">
                     {activeDelivery.step !== 'picked_up' ? (
-                      <button 
+                      <button
                         onClick={handleProgressDelivery}
                         disabled={actionLoading === 'progress'}
                         className="flex-1 py-3 px-4 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-2xl shadow-lg shadow-orange-500/20 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
@@ -669,7 +666,7 @@ export function ShipperDashboard() {
                       </button>
                     ) : (
                       <>
-                        <button 
+                        <button
                           onClick={handleDeliverySuccess}
                           disabled={actionLoading === 'success'}
                           className="flex-1 py-3 px-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-2xl shadow-lg shadow-green-500/20 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
@@ -677,7 +674,7 @@ export function ShipperDashboard() {
                           {actionLoading === 'success' && <Loader2 className="w-4 h-4 animate-spin" />}
                           Giao thành công
                         </button>
-                        <button 
+                        <button
                           onClick={handleDeliveryFailed}
                           disabled={actionLoading === 'failed'}
                           className="py-3 px-6 bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 font-bold rounded-2xl transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
@@ -688,7 +685,7 @@ export function ShipperDashboard() {
                       </>
                     )}
                   </div>
-                  
+
                   {/* Báo cáo sự cố */}
                   <div className="pt-3 border-t border-gray-100 mt-2">
                     <button
@@ -717,7 +714,7 @@ export function ShipperDashboard() {
                 <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                   <Navigation className="w-5 h-5 text-emerald-500 animate-bounce" /> Đơn hàng xung quanh
                 </h2>
-                <button 
+                <button
                   onClick={fetchAvailableOffers}
                   className="p-2 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded-xl transition-all"
                   title="Làm mới"
@@ -728,7 +725,11 @@ export function ShipperDashboard() {
 
               <div className="space-y-4">
                 {availableOffers.map(offer => (
-                  <div key={offer.orderId} className="p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-orange-200 hover:bg-orange-50/10 transition-all space-y-3 group">
+                  <div
+                    key={offer.orderId}
+                    onClick={() => setProposalPopupOffer(offer)}
+                    className="p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-orange-200 hover:bg-orange-50/10 transition-all space-y-3 group cursor-pointer"
+                  >
                     <div className="flex justify-between items-start">
                       <div>
                         <h4 className="font-bold text-gray-900 group-hover:text-orange-600 transition-colors">{offer.restaurantName}</h4>
@@ -736,7 +737,7 @@ export function ShipperDashboard() {
                       </div>
                       <span className="font-extrabold text-sm text-emerald-600">{formatCurrency(offer.shippingFee)}</span>
                     </div>
-                    
+
                     <div className="text-xs text-gray-500 space-y-1.5 bg-white p-2.5 rounded-xl border border-gray-100">
                       <p className="truncate flex items-start gap-1">
                         <Store className="w-3.5 h-3.5 text-orange-400 shrink-0 mt-0.5" />
@@ -759,8 +760,11 @@ export function ShipperDashboard() {
                     )}
 
                     <div className="flex gap-2">
-                      <button 
-                        onClick={() => handleAcceptOffer(offer.orderId)}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAcceptOffer(offer.orderId);
+                        }}
                         disabled={actionLoading === offer.orderId || !!activeDelivery}
                         className="flex-1 py-2 bg-white hover:bg-orange-500 hover:text-white border border-gray-200 hover:border-orange-500 text-gray-700 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1 disabled:opacity-50"
                       >
@@ -770,7 +774,7 @@ export function ShipperDashboard() {
                           <>Nhận đơn ngay <ArrowRight className="w-3.5 h-3.5" /></>
                         )}
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleRejectOffer(offer.orderId)}
                         disabled={actionLoading === `reject-${offer.orderId}`}
                         className="py-2 px-3 bg-white hover:bg-gray-100 border border-gray-200 text-gray-500 text-xs font-bold rounded-xl transition-all disabled:opacity-50"
@@ -789,7 +793,7 @@ export function ShipperDashboard() {
                   <div className="text-center py-8">
                     <AlertTriangle className="w-8 h-8 text-gray-300 mx-auto mb-2" />
                     <p className="text-gray-500 text-sm">Hết đơn hàng chờ trong khu vực</p>
-                    <button 
+                    <button
                       onClick={fetchAvailableOffers}
                       className="mt-3 text-xs text-orange-500 font-semibold hover:text-orange-600 flex items-center gap-1 mx-auto"
                     >
@@ -812,7 +816,7 @@ export function ShipperDashboard() {
             onClose={() => setIsReportModalOpen(false)}
             orderId={activeDelivery.orderId}
           />
-          <SuccessDeliveryModal 
+          <SuccessDeliveryModal
             isOpen={isSuccessModalOpen}
             onClose={() => setIsSuccessModalOpen(false)}
             orderId={activeDelivery.orderId}
@@ -825,7 +829,7 @@ export function ShipperDashboard() {
 
       {/* Popup Đề xuất đơn hàng */}
       {proposalPopupOffer && (
-        <OrderProposalPopup 
+        <OrderProposalPopup
           offer={proposalPopupOffer}
           onAccept={handleAcceptProposal}
           onReject={handleRejectProposal}

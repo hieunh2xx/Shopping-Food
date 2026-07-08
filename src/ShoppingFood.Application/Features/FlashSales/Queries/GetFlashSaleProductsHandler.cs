@@ -32,7 +32,8 @@ namespace ShoppingFood.Application.Features.FlashSales.Queries
 
             var products = await _flashSaleProductRepository.GetAsync(
                 predicate: fsp => fsp.FlashSaleId == request.FlashSaleId && 
-                                  (!request.CurrentUserId.HasValue ? fsp.Status == ShoppingFood.Domain.Enums.FlashSaleProductStatus.Approved : true),
+                                  (!request.CurrentUserId.HasValue ? fsp.Status == ShoppingFood.Domain.Enums.FlashSaleProductStatus.Approved : true) &&
+                                  (!request.RestaurantId.HasValue || fsp.Product.RestaurantId == request.RestaurantId.Value),
                 include: q => q.Include(fsp => fsp.Product).ThenInclude(p => p.Restaurant),
                 orderBy: q => q.OrderByDescending(fsp => fsp.CreatedAt),
                 skip: request.Skip,
@@ -42,7 +43,8 @@ namespace ShoppingFood.Application.Features.FlashSales.Queries
 
             var total = await _flashSaleProductRepository.GetCountAsync(
                 predicate: fsp => fsp.FlashSaleId == request.FlashSaleId && 
-                                  (!request.CurrentUserId.HasValue ? fsp.Status == ShoppingFood.Domain.Enums.FlashSaleProductStatus.Approved : true)
+                                  (!request.CurrentUserId.HasValue ? fsp.Status == ShoppingFood.Domain.Enums.FlashSaleProductStatus.Approved : true) &&
+                                  (!request.RestaurantId.HasValue || fsp.Product.RestaurantId == request.RestaurantId.Value)
                 );
 
             var dtos = _mapper.Map<List<FlashSaleProductDto>>(products);

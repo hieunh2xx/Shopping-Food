@@ -28,7 +28,7 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
   const [categoryId, setCategoryId] = useState('');
   const [globalCategoryId, setGlobalCategoryId] = useState('');
   const [globalCategories, setGlobalCategories] = useState<{ id: string; name: string }[]>([]);
-  const [imageUrl, setImageUrl] = useState('');
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [sizes, setSizes] = useState<IProductSizeDto[]>([]);
   const [availableToppings, setAvailableToppings] = useState<IToppingDto[]>([]);
   const [selectedToppings, setSelectedToppings] = useState<string[]>([]);
@@ -45,7 +45,7 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
     try {
       const res = await authService.uploadImage(file);
       if (!res.error && res.data?.imageUrl) {
-        setImageUrl(res.data.imageUrl);
+        setImageUrls(prev => [...prev, res.data.imageUrl]);
         toast.success('Tải ảnh lên thành công!', { id: toastId });
       } else {
         toast.error(res.message || 'Không thể tải ảnh lên', { id: toastId });
@@ -97,7 +97,7 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
       setPrice(product.price);
       setCategoryId(product.categoryId);
       setGlobalCategoryId(product.globalCategoryId || '');
-      setImageUrl(product.primaryImageUrl || '');
+      setImageUrls(product.images || (product.primaryImageUrl ? [product.primaryImageUrl] : []));
       setSizes(product.sizes || []);
       setSelectedToppings(product.toppings?.map(t => t.id) || []);
       setAvailableFrom(product.availableFrom || '');
@@ -108,7 +108,7 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
       setPrice(0);
       setCategoryId('');
       setGlobalCategoryId('');
-      setImageUrl('');
+      setImageUrls([]);
       setSizes([]);
       setSelectedToppings([]);
       setAvailableFrom('');
@@ -155,7 +155,7 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
           price,
           categoryId,
           globalCategoryId: globalCategoryId || undefined,
-          imageUrls: imageUrl.trim() ? [imageUrl.trim()] : undefined,
+          imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
           sizes: sizes.filter(s => s.sizeName.trim()).map(s => {
             const isExisting = product.sizes?.some(orig => orig.id === s.id);
             return {
@@ -190,7 +190,7 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
           price,
           categoryId,
           globalCategoryId: globalCategoryId || undefined,
-          imageUrls: imageUrl.trim() ? [imageUrl.trim()] : undefined,
+          imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
           sizes: sizes.filter(s => s.sizeName.trim()).map(s => ({
             sizeName: s.sizeName,
             extraPrice: s.extraPrice,
@@ -276,29 +276,34 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
           />
         </div>
 
-        {/* Product Image */}
+        {/* Product Images */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Ảnh sản phẩm</label>
-          <div className="flex gap-4 items-center">
-            {imageUrl ? (
-              <div className="relative w-24 h-24 rounded-2xl overflow-hidden border border-gray-200 group bg-gray-50 flex-shrink-0">
-                <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Ảnh sản phẩm (Tối đa 5 ảnh)</label>
+          <div className="flex flex-wrap gap-4 items-center">
+            {imageUrls.map((url, idx) => (
+              <div key={idx} className="relative w-24 h-24 rounded-2xl overflow-hidden border border-gray-200 group bg-gray-50 flex-shrink-0">
+                <img src={url} alt={`Preview ${idx + 1}`} className="w-full h-full object-cover" />
+                {idx === 0 && (
+                  <span className="absolute top-1 left-1 bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">Ảnh chính</span>
+                )}
                 <button
                   type="button"
-                  onClick={() => setImageUrl('')}
+                  onClick={() => setImageUrls(imageUrls.filter((_, i) => i !== idx))}
                   className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity text-xs font-semibold"
                 >
                   Xóa ảnh
                 </button>
               </div>
-            ) : (
+            ))}
+            
+            {imageUrls.length < 5 && (
               <label className="w-24 h-24 rounded-2xl border-2 border-dashed border-gray-300 hover:border-orange-500 hover:bg-orange-50/20 cursor-pointer flex flex-col items-center justify-center text-gray-400 hover:text-orange-500 transition-all flex-shrink-0">
                 {isUploading ? (
                   <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
                 ) : (
                   <>
                     <Plus className="w-5 h-5 mb-1" />
-                    <span className="text-[10px] font-medium">Chọn ảnh</span>
+                    <span className="text-[10px] font-medium">Thêm ảnh</span>
                   </>
                 )}
                 <input
@@ -310,15 +315,23 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
                 />
               </label>
             )}
-            <div className="flex-1">
-              <p className="text-xs text-gray-400 mb-1.5">Nhập URL ảnh trực tiếp (nếu có):</p>
-              <Input
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="https://example.com/image.jpg"
-                disabled={isUploading}
-              />
-            </div>
+          </div>
+          <div className="mt-3">
+            <p className="text-xs text-gray-400 mb-1.5">Nhập URL ảnh trực tiếp (nhấn Enter để thêm):</p>
+            <Input
+              placeholder="https://example.com/image.jpg"
+              disabled={isUploading || imageUrls.length >= 5}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  const val = e.currentTarget.value.trim();
+                  if (val && imageUrls.length < 5) {
+                    setImageUrls([...imageUrls, val]);
+                    e.currentTarget.value = '';
+                  }
+                }
+              }}
+            />
           </div>
         </div>
 
@@ -781,17 +794,17 @@ export function SellerProductsPage() {
 
                       {/* Actions */}
                       <td className="py-4 px-6 text-right">
-                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center justify-end gap-2 transition-opacity">
                           <button
                             onClick={() => handleEdit(product)}
-                            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            className="px-4 py-1.5 border border-slate-200 text-slate-500 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 rounded-3xl transition-all"
                             title="Chỉnh sửa"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDeleteClick(product)}
-                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            className="px-4 py-1.5 border border-red-200 text-red-500 hover:text-red-600 hover:bg-red-50 hover:border-red-300 rounded-3xl transition-all"
                             title="Xóa"
                           >
                             <Trash2 className="w-4 h-4" />

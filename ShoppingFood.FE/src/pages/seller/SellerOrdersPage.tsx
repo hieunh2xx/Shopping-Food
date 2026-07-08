@@ -16,7 +16,7 @@ import {
   AlertCircle,
   MessageCircle
 } from 'lucide-react';
-import { Card, Button } from '../../components/common';
+import { Card, Button, Pagination } from '../../components/common';
 import { OrderSellerChatModal } from '../../components/chat/OrderSellerChatModal';
 import toast from 'react-hot-toast';
 
@@ -34,6 +34,7 @@ const STATUS_TABS = [
 export function SellerOrdersPage() {
   const { token } = useAuth();
   const [orders, setOrders] = useState<any[]>([]);
+  const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
@@ -50,10 +51,20 @@ export function SellerOrdersPage() {
 
   // Pagination states
   const [page, setPage] = useState(1);
-  const take = 10;
+  const [take, setTake] = useState(10);
 
   useEffect(() => {
     fetchOrders();
+  }, [activeTab, page]);
+
+  useEffect(() => {
+    const handleNotification = () => {
+      fetchOrders();
+    };
+    window.addEventListener('ON_REALTIME_NOTIFICATION', handleNotification);
+    return () => {
+      window.removeEventListener('ON_REALTIME_NOTIFICATION', handleNotification);
+    };
   }, [activeTab, page]);
 
   useEffect(() => {
@@ -91,6 +102,7 @@ export function SellerOrdersPage() {
       const res = await orderService.getRestaurantOrders(params);
       if (!res.error && res.data) {
         setOrders(res.data);
+        setTotal(res.total || 0);
       } else {
         toast.error(res.message || 'Lỗi khi tải danh sách đơn hàng');
       }
@@ -222,11 +234,11 @@ export function SellerOrdersPage() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="p-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Quản lý Đơn hàng</h1>
-          <p className="text-gray-500">Xem và xử lý các đơn đặt tại quán của bạn</p>
+          <h1 className="text-2xl font-bold text-gray-900">Quản lý Đơn hàng</h1>
+          <p className="text-sm text-gray-500 mt-1">Xem và xử lý các đơn đặt tại quán của bạn</p>
         </div>
       </div>
 
@@ -398,23 +410,21 @@ export function SellerOrdersPage() {
           )}
 
           {/* Pagination */}
-          <div className="flex justify-between items-center pt-4">
-            <Button
-              variant="secondary"
-              disabled={page === 1}
-              onClick={() => setPage(prev => prev - 1)}
-            >
-              Trang trước
-            </Button>
-            <span className="text-sm font-medium text-gray-500">Trang {page}</span>
-            <Button
-              variant="secondary"
-              disabled={orders.length < take}
-              onClick={() => setPage(prev => prev + 1)}
-            >
-              Trang sau
-            </Button>
-          </div>
+          {total > 0 && (
+            <div className="bg-white rounded-2xl border border-gray-200 p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <span className="text-sm text-gray-500">
+                Hiển thị {Math.min((page - 1) * take + 1, total)} – {Math.min(page * take, total)} trong số {total} đơn hàng
+              </span>
+              <Pagination
+                currentPage={page}
+                totalPages={Math.ceil(total / take)}
+                onPageChange={setPage}
+                pageSize={take}
+                pageSizeOptions={[10, 20, 50]}
+                onPageSizeChange={(size) => { setTake(size); setPage(1); }}
+              />
+            </div>
+          )}
         </div>
 
         {/* Selected Order Details Panel */}

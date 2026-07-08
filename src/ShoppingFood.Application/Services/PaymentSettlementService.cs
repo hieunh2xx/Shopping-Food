@@ -20,6 +20,7 @@ namespace ShoppingFood.Application.Services
         private readonly ISepayService _sepayService;
         private readonly IPaymentCacheService _paymentCache;
         private readonly ISepayBankAccountResolver _bankAccountResolver;
+        private readonly INotificationRepository _notificationRepository;
 
         public PaymentSettlementService(
             IPlatformFinanceConfigRepository configRepository,
@@ -32,7 +33,8 @@ namespace ShoppingFood.Application.Services
             IUnitOfWork unitOfWork,
             ISepayService sepayService,
             IPaymentCacheService paymentCache,
-            ISepayBankAccountResolver bankAccountResolver)
+            ISepayBankAccountResolver bankAccountResolver,
+            INotificationRepository notificationRepository)
         {
             _configRepository = configRepository;
             _walletRepository = walletRepository;
@@ -45,6 +47,7 @@ namespace ShoppingFood.Application.Services
             _sepayService = sepayService;
             _paymentCache = paymentCache;
             _bankAccountResolver = bankAccountResolver;
+            _notificationRepository = notificationRepository;
         }
 
         public async Task<PlatformFinanceConfig> GetConfigAsync()
@@ -284,6 +287,7 @@ namespace ShoppingFood.Application.Services
             {
                 var orders = await _orderRepository.GetAsync(
                     predicate: o => o.Id == session.OrderId.Value,
+                    include: q => q.Include(o => o.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Restaurant).ThenInclude(r => r.Owner),
                     disableTracking: false);
                 var order = orders.FirstOrDefault();
                 if (order != null)
@@ -291,6 +295,22 @@ namespace ShoppingFood.Application.Services
                     order.PaymentStatus = PaymentStatus.Paid;
                     order.UpdatedAt = DateTime.UtcNow;
                     _orderRepository.Update(order);
+
+                    var restaurant = order.Items.FirstOrDefault()?.Product?.Restaurant;
+                    if (restaurant != null)
+                    {
+                        var notification = new Notification
+                        {
+                            Id = Guid.NewGuid(),
+                            UserId = restaurant.Owner.UserAccountId,
+                            Title = "Đơn hàng mới",
+                            Message = $"Bạn có đơn hàng mới #{order.Id.ToString().Substring(0, 8)} (Đã thanh toán Online).",
+                            NotificationType = NotificationType.System,
+                            IsRead = false,
+                            CreateAt = DateTime.UtcNow
+                        };
+                        _notificationRepository.Add(notification);
+                    }
                 }
             }
 

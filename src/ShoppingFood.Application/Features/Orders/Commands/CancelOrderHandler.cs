@@ -1,7 +1,9 @@
-﻿using MediatR;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
 using ShoppingFood.Domain.Enums;
+using ShoppingFood.Domain.Models;
 using ShoppingFood.Application.Interfaces;
 using ShoppingFood.Repository.Interfaces;
 using System;
@@ -16,22 +18,29 @@ namespace ShoppingFood.Application.Features.Orders.Commands
     {
         private readonly IOrderRepository _orderRepository;
         private readonly IPaymentSettlementService _paymentSettlementService;
+        private readonly INotificationRepository _notificationRepository;
         private readonly IUnitOfWork _unitOfWork;
 
         public CancelOrderHandler(
             IOrderRepository orderRepository,
             IPaymentSettlementService paymentSettlementService,
+            INotificationRepository notificationRepository,
             IUnitOfWork unitOfWork) 
         {
             _orderRepository = orderRepository;
             _paymentSettlementService = paymentSettlementService;
+            _notificationRepository = notificationRepository;
             _unitOfWork = unitOfWork;
         }
         public async Task<ApiResponse> Handle(CancelOrderCommand request, CancellationToken cancellationToken)
         {
             try
             {
-                var order = await _orderRepository.GetByIdAsync(request.OrderId);
+                var orders = await _orderRepository.GetAsync(
+                    predicate: o => o.Id == request.OrderId,
+                    include: q => q.Include(o => o.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Restaurant).ThenInclude(r => r.Owner),
+                    disableTracking: false);
+                var order = orders.FirstOrDefault();
                 if(order == null)
                     return ApiResponse.Failure(404, "Order not found");
 
@@ -58,6 +67,24 @@ namespace ShoppingFood.Application.Features.Orders.Commands
 
                 _orderRepository.Update(order);
                 await _unitOfWork.SaveChangesAsync();
+
+                var restaurant = order.Items.FirstOrDefault()?.Product?.Restaurant;
+                if (restaurant != null)
+                {
+                    var notification = new Notification
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = restaurant.Owner.UserAccountId,
+                        Title = "Đơn hàng đã bị hủy",
+                        Message = $"Đơn hàng #{order.Id.ToString().Substring(0, 8)} đã bị khách hàng hủy.",
+                        NotificationType = NotificationType.System,
+                        IsRead = false,
+                        CreateAt = DateTime.UtcNow
+                    };
+                    _notificationRepository.Add(notification);
+                    await _unitOfWork.SaveChangesAsync();
+                }
+
                 return ApiResponse.Success(null,"Order cancelled successfully");
             }
             catch (Exception ex)

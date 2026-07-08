@@ -124,7 +124,13 @@ namespace ShoppingFood.Application.Features.Products.Queries
             var products = await _productRepository.GetAsync(
                 predicate: predicate,
                 orderBy: orderBy,
-                include: q => q.Include(p => p.Restaurant).Include(p => p.Images).Include(p => p.Category).Include(p => p.GlobalCategory).Include(p => p.Reviews),
+                include: q => q.Include(p => p.Restaurant)
+                               .Include(p => p.Images)
+                               .Include(p => p.Category)
+                               .Include(p => p.GlobalCategory)
+                               .Include(p => p.Reviews)
+                               .Include(p => p.ProductToppings).ThenInclude(pt => pt.Topping)
+                               .Include(p => p.ProductSizes),
                 skip: request.Skip,
                 take: request.Take,
                 disableTracking: true
