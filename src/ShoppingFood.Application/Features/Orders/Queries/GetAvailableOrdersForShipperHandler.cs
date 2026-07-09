@@ -85,6 +85,10 @@ namespace ShoppingFood.Application.Features.Orders.Queries
 
                     var dto = _mapper.Map<ProposedDeliveryOfferDto>(order);
                     dto.DistanceInKm = distance;
+                    dto.TotalIncome = order.ShipperIncome;
+                    dto.BaseFee = order.ShipperBaseFeeAmount;
+                    dto.DistanceFee = order.ShipperDistanceFeeAmount;
+                    dto.PeakBonus = order.ShipperPeakBonus;
 
                     resultList.Add(dto);
                 }

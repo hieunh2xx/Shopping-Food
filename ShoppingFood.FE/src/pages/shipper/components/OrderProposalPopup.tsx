@@ -64,7 +64,23 @@ export function OrderProposalPopup({ offer, onAccept, onReject, onTimeout }: Ord
                 <DollarSign className="w-4 h-4" />
                 <span className="text-xs font-bold uppercase">Thu nhập</span>
               </div>
-              <p className="text-xl font-extrabold text-orange-700">{formatCurrency(offer.shippingFee)}</p>
+              <p className="text-xl font-extrabold text-orange-700">{formatCurrency(offer.totalIncome)}</p>
+              <div className="flex flex-col gap-0.5 mt-2 pt-2 border-t border-orange-200/50">
+                <div className="flex justify-between text-[11px] text-orange-800">
+                  <span>Cơ bản:</span>
+                  <span className="font-bold">{formatCurrency(offer.baseFee)}</span>
+                </div>
+                <div className="flex justify-between text-[11px] text-orange-800">
+                  <span>Km:</span>
+                  <span className="font-bold">{formatCurrency(offer.distanceFee)}</span>
+                </div>
+                {offer.peakBonus > 0 && (
+                  <div className="flex justify-between text-[11px] text-orange-800">
+                    <span>Thưởng:</span>
+                    <span className="font-bold">{formatCurrency(offer.peakBonus)}</span>
+                  </div>
+                )}
+              </div>
             </div>
             
             <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100">
@@ -98,6 +114,27 @@ export function OrderProposalPopup({ offer, onAccept, onReject, onTimeout }: Ord
                 <p className="text-sm text-gray-600 line-clamp-2 mt-0.5">{offer.deliveryAddress}</p>
               </div>
             </div>
+            
+            {/* Items list */}
+            {offer.items && offer.items.length > 0 && (
+              <div className="pt-3 border-t border-gray-100">
+                <div className="flex items-center gap-2 mb-2">
+                  <Package className="w-4 h-4 text-gray-500" />
+                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Chi tiết đơn hàng ({offer.items.reduce((sum, item) => sum + item.quantity, 0)} món)</span>
+                </div>
+                <div className="space-y-1.5 max-h-24 overflow-y-auto pr-2 custom-scrollbar">
+                  {offer.items.map((item, idx) => (
+                    <div key={idx} className="flex justify-between items-start text-[13px]">
+                      <div className="flex-1 flex gap-2">
+                        <span className="font-bold text-gray-900 shrink-0">{item.quantity}x</span>
+                        <span className="text-gray-700 line-clamp-2">{item.itemName}</span>
+                      </div>
+                      <span className="font-medium text-gray-900 ml-2 shrink-0">{formatCurrency(item.totalPrice)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

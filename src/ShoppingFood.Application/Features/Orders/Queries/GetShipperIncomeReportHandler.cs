@@ -56,27 +56,33 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                 var dailyReports = orders.GroupBy(o => o.UpdatedAt.Date).Select(g =>
                 {
                     var ordersInDay = g.ToList();
-                    var dayShippingFee = ordersInDay.Sum(o => o.ShipperIncome);
-                    var dayBonus = 0m;
+                    var dayBaseFee = ordersInDay.Sum(o => o.ShipperBaseFeeAmount);
+                    var dayDistanceFee = ordersInDay.Sum(o => o.ShipperDistanceFeeAmount);
+                    var dayBonus = ordersInDay.Sum(o => o.ShipperPeakBonus);
+                    var dayTotalIncome = ordersInDay.Sum(o => o.ShipperIncome);
+
                     return new DailyIncomeReportDto
                     {
                         Date = g.Key.ToString("yyyy-MM-dd"),
                         CompletedOrdersCount = ordersInDay.Count,
-                        ShippingFees = dayShippingFee,
+                        BaseFees = dayBaseFee,
+                        DistanceFees = dayDistanceFee,
                         Bonus = dayBonus,
-                        TotalIncome = dayShippingFee + dayBonus
+                        TotalIncome = dayTotalIncome
                     };
                 }).OrderBy(d => d.Date).ToList();
 
                 var completedOrderCount = orders.Count();
-                var totalShippingFees = dailyReports.Sum(d => d.ShippingFees);
+                var totalBaseFees = dailyReports.Sum(d => d.BaseFees);
+                var totalDistanceFees = dailyReports.Sum(d => d.DistanceFees);
                 var totalBonuses = dailyReports.Sum(d => d.Bonus);
-                var totalIncome = totalShippingFees + totalBonuses;
+                var totalIncome = dailyReports.Sum(d => d.TotalIncome);
 
                 var result = new ShipperIncomeReportDto
                 {
                     CompletedOrdersCount = completedOrderCount,
-                    TotalShippingFees = totalShippingFees,
+                    TotalBaseFees = totalBaseFees,
+                    TotalDistanceFees = totalDistanceFees,
                     TotalBonuses = totalBonuses,
                     TotalIncome = totalIncome,
                     DailyReports = dailyReports,

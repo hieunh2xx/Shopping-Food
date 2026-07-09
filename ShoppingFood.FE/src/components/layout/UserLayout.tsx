@@ -1,6 +1,6 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { ROUTES } from '../../routes/routeConfig';
-import { User, ShoppingBag, Store, Heart, MapPin, LogOut, Ticket, Award, ClipboardList } from 'lucide-react';
+import { User, ShoppingBag, Store, Heart, MapPin, LogOut, Ticket, Award, ClipboardList, Wallet } from 'lucide-react';
 import { useAuth } from '../../hooks';
 import { Header } from './Header';
 import { Footer } from './Footer';
@@ -78,6 +78,16 @@ export function UserLayout() {
                 }
               >
                 <Award className="w-5 h-5" /> Điểm thưởng
+              </NavLink>
+              <NavLink
+                to={`${ROUTES.PROFILE}?tab=wallet`}
+                className={() =>
+                  `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm ${
+                    isProfileTab('wallet') ? 'bg-orange-50 text-orange-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`
+                }
+              >
+                <Wallet className="w-5 h-5" /> Ví hệ thống
               </NavLink>
 
               <div className="my-2 border-t border-gray-100"></div>

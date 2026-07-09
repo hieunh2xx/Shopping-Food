@@ -1,141 +1,519 @@
 import { useEffect, useState } from 'react';
-import { Banknote, ArrowDownCircle, AlertTriangle } from 'lucide-react';
+import { Banknote, ArrowDownCircle, AlertTriangle, History, TrendingUp, TrendingDown, RefreshCw, ChevronDown, Building2, CreditCard, Sparkles, Wallet, ShieldAlert, CircleDollarSign } from 'lucide-react';
 import { Card, Button, Input } from '../../components/common';
-import { paymentService, type IWalletDto } from '../../services/PaymentService';
+import { paymentService, type IWalletDto, type ITransactionDto } from '../../services/PaymentService';
 import { formatCurrency } from '../../utils/formatters';
 import toast from 'react-hot-toast';
 
+/* ─── Shared helpers ─── */
+
+function getTransactionIcon(type: string, amount: number) {
+  if (type === 'TopUp' || type === 'ShipperIncome' || type === 'Commission' || amount > 0) {
+    return <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center shrink-0"><TrendingUp className="w-5 h-5 text-green-600" /></div>;
+  }
+  if (type === 'Refund') {
+    return <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0"><RefreshCw className="w-5 h-5 text-blue-600" /></div>;
+  }
+  return <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0"><TrendingDown className="w-5 h-5 text-red-600" /></div>;
+}
+
+function getTransactionBadge(type: string) {
+  const map: Record<string, { label: string; cls: string }> = {
+    TopUp: { label: 'Nạp tiền', cls: 'bg-green-100 text-green-700' },
+    Payment: { label: 'Thanh toán', cls: 'bg-orange-100 text-orange-700' },
+    Refund: { label: 'Hoàn tiền', cls: 'bg-blue-100 text-blue-700' },
+    Commission: { label: 'Hoa hồng', cls: 'bg-purple-100 text-purple-700' },
+    Withdrawal: { label: 'Rút tiền', cls: 'bg-red-100 text-red-700' },
+    ShipperIncome: { label: 'Thu nhập', cls: 'bg-emerald-100 text-emerald-700' },
+    CodCollection: { label: 'Thu hộ COD', cls: 'bg-amber-100 text-amber-700' },
+    CodRepayment: { label: 'Nộp COD', cls: 'bg-indigo-100 text-indigo-700' },
+    SellerPayout: { label: 'Thanh toán đơn', cls: 'bg-green-100 text-green-700' },
+  };
+  const info = map[type] || { label: type, cls: 'bg-gray-100 text-gray-700' };
+  return <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${info.cls}`}>{info.label}</span>;
+}
+
+function TransactionHistory({ transactions, take, onLoadMore, onRefresh }: { transactions: ITransactionDto[]; take: number; onLoadMore: () => void; onRefresh: () => void }) {
+  return (
+    <Card className="p-6 border border-gray-100">
+      <div className="flex items-center justify-between mb-5">
+        <h3 className="font-bold text-gray-900 flex items-center gap-2 text-lg">
+          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+            <History className="w-5 h-5 text-blue-600" />
+          </div>
+          Lịch sử giao dịch
+        </h3>
+        <button onClick={onRefresh} className="text-gray-400 hover:text-gray-600 transition-colors p-1.5 rounded-lg hover:bg-gray-100">
+          <RefreshCw className="w-4 h-4" />
+        </button>
+      </div>
+
+      {transactions.length === 0 ? (
+        <div className="text-center py-10">
+          <History className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+          <p className="text-gray-400 text-sm">Chưa có giao dịch nào</p>
+        </div>
+      ) : (
+        <div className="space-y-1">
+          {transactions.map(tx => (
+            <div key={tx.id} className="flex items-center gap-3 py-3 px-3 rounded-xl hover:bg-gray-50 transition-colors">
+              {getTransactionIcon(tx.type, tx.amount)}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <p className="text-sm font-semibold text-gray-900 truncate">{tx.description}</p>
+                  {getTransactionBadge(tx.type)}
+                </div>
+                <div className="flex items-center gap-3 text-xs text-gray-400">
+                  <span>{new Date(tx.createdAt).toLocaleString('vi-VN')}</span>
+                  <span>Số dư: {formatCurrency(tx.balanceAfter)}</span>
+                </div>
+              </div>
+              <span className={`font-bold text-base shrink-0 ${tx.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {tx.amount >= 0 ? '+' : ''}{formatCurrency(tx.amount)}
+              </span>
+            </div>
+          ))}
+          {transactions.length >= take && (
+            <button
+              onClick={onLoadMore}
+              className="w-full py-3 text-sm font-semibold text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded-xl transition-colors flex items-center justify-center gap-1 mt-2"
+            >
+              <ChevronDown className="w-4 h-4" />
+              Xem thêm giao dịch
+            </button>
+          )}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SELLER WALLET PAGE
+   ═══════════════════════════════════════════════════════════ */
+
 export function SellerWalletPage() {
   const [wallet, setWallet] = useState<IWalletDto | null>(null);
+  const [transactions, setTransactions] = useState<ITransactionDto[]>([]);
   const [withdrawForm, setWithdrawForm] = useState({ amount: '', bankName: '', bankAccountNumber: '', bankAccountHolder: '' });
+  const [loading, setLoading] = useState(true);
+  const [withdrawLoading, setWithdrawLoading] = useState(false);
+  const [take, setTake] = useState(10);
 
-  const loadWallet = () => {
-    paymentService.getWallet().then(res => {
-      if (!res.error && res.data) setWallet(res.data);
-    });
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [wRes, tRes] = await Promise.all([
+        paymentService.getWallet(),
+        paymentService.getTransactions({ take }),
+      ]);
+      if (!wRes.error && wRes.data) {
+        setWallet(wRes.data);
+        // Pre-fill bank info if available
+        if (wRes.data.bankName && !withdrawForm.bankName) {
+          setWithdrawForm(prev => ({
+            ...prev,
+            bankName: wRes.data!.bankName || '',
+            bankAccountNumber: wRes.data!.bankAccountNumber || '',
+            bankAccountHolder: wRes.data!.bankAccountHolder || '',
+          }));
+        }
+      }
+      if (!tRes.error && tRes.data) setTransactions(tRes.data);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { loadWallet(); }, []);
+  useEffect(() => { loadData(); }, [take]);
 
   const handleWithdraw = async () => {
     const amount = parseFloat(withdrawForm.amount);
-    if (!amount || !withdrawForm.bankName || !withdrawForm.bankAccountNumber) {
+    if (!amount || !withdrawForm.bankName || !withdrawForm.bankAccountNumber || !withdrawForm.bankAccountHolder) {
       toast.error('Vui lòng điền đầy đủ thông tin');
       return;
     }
-    const res = await paymentService.requestWithdrawal({
-      amount,
-      bankName: withdrawForm.bankName,
-      bankAccountNumber: withdrawForm.bankAccountNumber,
-      bankAccountHolder: withdrawForm.bankAccountHolder,
-    });
-    if (!res.error) {
-      toast.success('Yêu cầu rút tiền đã được gửi');
-      loadWallet();
-    } else {
-      toast.error(res.message || 'Lỗi rút tiền');
+    if (amount < 50000) {
+      toast.error('Số tiền rút tối thiểu 50.000đ');
+      return;
+    }
+    setWithdrawLoading(true);
+    try {
+      const res = await paymentService.requestWithdrawal({
+        amount,
+        bankName: withdrawForm.bankName,
+        bankAccountNumber: withdrawForm.bankAccountNumber,
+        bankAccountHolder: withdrawForm.bankAccountHolder,
+      });
+      if (!res.error) {
+        toast.success('Yêu cầu rút tiền đã được gửi');
+        setWithdrawForm(prev => ({ ...prev, amount: '' }));
+        loadData();
+      } else {
+        toast.error(res.message || 'Lỗi rút tiền');
+      }
+    } finally {
+      setWithdrawLoading(false);
     }
   };
 
+  if (loading && !wallet) return (
+    <div className="flex items-center justify-center py-16">
+      <RefreshCw className="w-6 h-6 text-green-500 animate-spin" />
+      <span className="ml-3 text-gray-500">Đang tải ví...</span>
+    </div>
+  );
+
   return (
-    <div className="space-y-6 max-w-2xl">
-      <Card className="p-6">
-        <div className="flex items-center gap-3">
-          <Banknote className="w-8 h-8 text-green-500" />
-          <div>
-            <p className="text-gray-500 text-sm">Số dư ví nhà hàng</p>
-            <p className="text-3xl font-bold text-gray-900">{formatCurrency(wallet?.balance || 0)}</p>
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-6xl mx-auto">
+      {/* Left Column: Info & Forms */}
+      <div className="lg:col-span-5 space-y-6">
+      {/* Wallet Header */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-green-600 to-teal-600 p-6 text-white shadow-xl shadow-green-500/20">
+        <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                <Banknote className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-green-100 text-sm font-medium">Ví nhà hàng</p>
+                <p className="text-white/80 text-xs">Quản lý doanh thu</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm rounded-full px-3 py-1.5">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span className="text-xs font-semibold">Hoạt động</span>
+            </div>
           </div>
+
+          <div className="mb-4">
+            <p className="text-green-100 text-xs uppercase tracking-wider mb-1">Số dư hiện tại</p>
+            <p className="text-4xl font-black tracking-tight">{formatCurrency(wallet?.balance || 0)}</p>
+          </div>
+
+          {/* Bank info */}
+          {wallet?.bankName && (
+            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2.5">
+              <Building2 className="w-4 h-4 text-green-200" />
+              <span className="text-sm text-green-50">{wallet.bankName} • ****{wallet.bankAccountNumber?.slice(-4)}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Withdrawal Form */}
+      <Card className="p-6 border border-gray-100">
+        <h3 className="font-bold text-gray-900 mb-5 flex items-center gap-2 text-lg">
+          <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+            <ArrowDownCircle className="w-5 h-5 text-orange-600" />
+          </div>
+          Rút tiền về ngân hàng
+        </h3>
+
+        {/* Quick amount chips */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          {[100000, 500000, 1000000, 2000000].map(v => (
+            <button
+              key={v}
+              onClick={() => setWithdrawForm(p => ({ ...p, amount: String(v) }))}
+              className={`px-4 py-2 text-sm font-semibold rounded-xl border-2 transition-all ${
+                String(v) === withdrawForm.amount
+                  ? 'border-orange-500 bg-orange-50 text-orange-700'
+                  : 'border-gray-200 bg-white text-gray-600 hover:border-orange-300'
+              }`}
+            >
+              {formatCurrency(v)}
+            </button>
+          ))}
+        </div>
+
+        <div className="space-y-3">
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-1 block">Số tiền rút</label>
+            <Input placeholder="Nhập số tiền (tối thiểu 50.000đ)" value={withdrawForm.amount} onChange={e => setWithdrawForm(p => ({ ...p, amount: e.target.value.replace(/\D/g, '') }))} />
+            {withdrawForm.amount && !isNaN(parseInt(withdrawForm.amount)) && (
+              <p className="text-xs text-gray-400 mt-1 ml-1">{formatCurrency(parseInt(withdrawForm.amount))}</p>
+            )}
+          </div>
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-1 block">Tên ngân hàng</label>
+            <Input placeholder="VD: Vietcombank, MB Bank, ..." value={withdrawForm.bankName} onChange={e => setWithdrawForm(p => ({ ...p, bankName: e.target.value }))} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">Số tài khoản</label>
+              <Input placeholder="Nhập số tài khoản" value={withdrawForm.bankAccountNumber} onChange={e => setWithdrawForm(p => ({ ...p, bankAccountNumber: e.target.value }))} />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">Chủ tài khoản</label>
+              <Input placeholder="Tên chủ tài khoản" value={withdrawForm.bankAccountHolder} onChange={e => setWithdrawForm(p => ({ ...p, bankAccountHolder: e.target.value }))} />
+            </div>
+          </div>
+          <Button
+            onClick={handleWithdraw}
+            disabled={withdrawLoading}
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl"
+          >
+            {withdrawLoading ? <RefreshCw className="w-4 h-4 animate-spin mx-auto" /> : 'Gửi yêu cầu rút tiền'}
+          </Button>
         </div>
       </Card>
 
-      <Card className="p-6">
-        <h3 className="font-semibold mb-4 flex items-center gap-2">
-          <ArrowDownCircle className="w-5 h-5" /> Rút tiền về ngân hàng
-        </h3>
-        <div className="space-y-3">
-          <Input placeholder="Số tiền rút" value={withdrawForm.amount} onChange={e => setWithdrawForm(p => ({ ...p, amount: e.target.value }))} />
-          <Input placeholder="Tên ngân hàng" value={withdrawForm.bankName} onChange={e => setWithdrawForm(p => ({ ...p, bankName: e.target.value }))} />
-          <Input placeholder="Số tài khoản" value={withdrawForm.bankAccountNumber} onChange={e => setWithdrawForm(p => ({ ...p, bankAccountNumber: e.target.value }))} />
-          <Input placeholder="Chủ tài khoản" value={withdrawForm.bankAccountHolder} onChange={e => setWithdrawForm(p => ({ ...p, bankAccountHolder: e.target.value }))} />
-          <Button onClick={handleWithdraw} className="w-full">Gửi yêu cầu rút tiền</Button>
-        </div>
-      </Card>
+      </div>
+
+      {/* Right Column: Transaction History */}
+      <div className="lg:col-span-7">
+        {/* Transaction History */}
+        <TransactionHistory transactions={transactions} take={take} onLoadMore={() => setTake(prev => prev + 10)} onRefresh={loadData} />
+      </div>
     </div>
   );
 }
 
+/* ═══════════════════════════════════════════════════════════
+   SHIPPER WALLET PAGE
+   ═══════════════════════════════════════════════════════════ */
+
 export function ShipperWalletPage() {
   const [wallet, setWallet] = useState<IWalletDto | null>(null);
+  const [transactions, setTransactions] = useState<ITransactionDto[]>([]);
   const [repayAmount, setRepayAmount] = useState('');
   const [withdrawForm, setWithdrawForm] = useState({ amount: '', bankName: '', bankAccountNumber: '', bankAccountHolder: '' });
+  const [loading, setLoading] = useState(true);
+  const [repayLoading, setRepayLoading] = useState(false);
+  const [withdrawLoading, setWithdrawLoading] = useState(false);
+  const [take, setTake] = useState(10);
 
-  const loadWallet = () => {
-    paymentService.getWallet().then(res => {
-      if (!res.error && res.data) setWallet(res.data);
-    });
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [wRes, tRes] = await Promise.all([
+        paymentService.getWallet(),
+        paymentService.getTransactions({ take }),
+      ]);
+      if (!wRes.error && wRes.data) {
+        setWallet(wRes.data);
+        if (wRes.data.bankName && !withdrawForm.bankName) {
+          setWithdrawForm(prev => ({
+            ...prev,
+            bankName: wRes.data!.bankName || '',
+            bankAccountNumber: wRes.data!.bankAccountNumber || '',
+            bankAccountHolder: wRes.data!.bankAccountHolder || '',
+          }));
+        }
+      }
+      if (!tRes.error && tRes.data) setTransactions(tRes.data);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { loadWallet(); }, []);
+  useEffect(() => { loadData(); }, [take]);
 
   const handleRepay = async () => {
     const amount = parseFloat(repayAmount);
-    if (!amount) return toast.error('Nhập số tiền');
-    const res = await paymentService.repayShipperDebt(amount);
-    if (!res.error) {
-      toast.success(`Đã nộp ${formatCurrency(res.data?.repaid || amount)} công nợ COD`);
-      loadWallet();
-    } else toast.error(res.message || 'Lỗi');
+    if (!amount || amount <= 0) return toast.error('Nhập số tiền hợp lệ');
+    setRepayLoading(true);
+    try {
+      const res = await paymentService.repayShipperDebt(amount);
+      if (!res.error) {
+        toast.success(`Đã nộp ${formatCurrency(res.data?.repaid || amount)} công nợ COD`);
+        setRepayAmount('');
+        loadData();
+      } else toast.error(res.message || 'Lỗi');
+    } finally {
+      setRepayLoading(false);
+    }
   };
 
   const handleWithdraw = async () => {
     const amount = parseFloat(withdrawForm.amount);
-    const res = await paymentService.requestWithdrawal({
-      amount,
-      bankName: withdrawForm.bankName,
-      bankAccountNumber: withdrawForm.bankAccountNumber,
-      bankAccountHolder: withdrawForm.bankAccountHolder,
-    });
-    if (!res.error) { toast.success('Yêu cầu rút tiền đã gửi'); loadWallet(); }
-    else toast.error(res.message || 'Lỗi');
+    if (!amount || !withdrawForm.bankName || !withdrawForm.bankAccountNumber || !withdrawForm.bankAccountHolder) {
+      toast.error('Vui lòng điền đầy đủ thông tin');
+      return;
+    }
+    setWithdrawLoading(true);
+    try {
+      const res = await paymentService.requestWithdrawal({
+        amount,
+        bankName: withdrawForm.bankName,
+        bankAccountNumber: withdrawForm.bankAccountNumber,
+        bankAccountHolder: withdrawForm.bankAccountHolder,
+      });
+      if (!res.error) {
+        toast.success('Yêu cầu rút tiền đã gửi');
+        setWithdrawForm(prev => ({ ...prev, amount: '' }));
+        loadData();
+      } else toast.error(res.message || 'Lỗi');
+    } finally {
+      setWithdrawLoading(false);
+    }
   };
 
-  const debtExceeded = (wallet?.codCollectedAmount || 0) >= (wallet?.debtLimit || 5000000);
+  const codCollected = wallet?.codCollectedAmount || 0;
+  const debtLimit = wallet?.debtLimit || 5000000;
+  const debtExceeded = codCollected >= debtLimit;
+  const codPercentage = Math.min((codCollected / debtLimit) * 100, 100);
+
+  if (loading && !wallet) return (
+    <div className="flex items-center justify-center py-16">
+      <RefreshCw className="w-6 h-6 text-violet-500 animate-spin" />
+      <span className="ml-3 text-gray-500">Đang tải ví...</span>
+    </div>
+  );
 
   return (
-    <div className="space-y-6 max-w-2xl">
-      <Card className="p-6">
-        <p className="text-gray-500 text-sm">Số dư ví tài xế</p>
-        <p className="text-3xl font-bold">{formatCurrency(wallet?.balance || 0)}</p>
-        <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
-          <div><span className="text-gray-500">COD thu hộ:</span> <strong>{formatCurrency(wallet?.codCollectedAmount || 0)}</strong></div>
-          <div><span className="text-gray-500">Hạn mức:</span> <strong>{formatCurrency(wallet?.debtLimit || 0)}</strong></div>
-        </div>
-        {debtExceeded && (
-          <div className="mt-3 p-3 bg-red-50 text-red-700 rounded-lg flex items-center gap-2 text-sm">
-            <AlertTriangle className="w-4 h-4" /> Vượt hạn mức thu hộ COD. Vui lòng nộp tiền trước khi nhận đơn mới.
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-6xl mx-auto">
+      {/* Left Column: Info & Forms */}
+      <div className="lg:col-span-5 space-y-6">
+      {/* Wallet Header */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500 via-purple-600 to-indigo-600 p-6 text-white shadow-xl shadow-purple-500/20">
+        <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                <Wallet className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-purple-100 text-sm font-medium">Ví tài xế</p>
+                <p className="text-white/80 text-xs">Quản lý thu nhập & COD</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm rounded-full px-3 py-1.5">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span className="text-xs font-semibold">Hoạt động</span>
+            </div>
           </div>
+
+          <div className="mb-5">
+            <p className="text-purple-100 text-xs uppercase tracking-wider mb-1">Số dư hiện tại</p>
+            <p className="text-4xl font-black tracking-tight">{formatCurrency(wallet?.balance || 0)}</p>
+          </div>
+
+          {/* COD progress */}
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-purple-100 font-medium">COD thu hộ</span>
+              <span className="text-sm font-bold">{formatCurrency(codCollected)} / {formatCurrency(debtLimit)}</span>
+            </div>
+            <div className="w-full bg-white/20 rounded-full h-2.5 overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${
+                  debtExceeded ? 'bg-red-400' : codPercentage > 70 ? 'bg-amber-400' : 'bg-green-400'
+                }`}
+                style={{ width: `${codPercentage}%` }}
+              />
+            </div>
+            <p className="text-xs text-purple-200 mt-1.5">{codPercentage.toFixed(0)}% hạn mức đã sử dụng</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Debt Warning */}
+      {debtExceeded && (
+        <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-5 flex items-start gap-4">
+          <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center shrink-0">
+            <ShieldAlert className="w-5 h-5 text-red-600" />
+          </div>
+          <div className="flex-1">
+            <p className="font-bold text-red-800 mb-1">Vượt hạn mức thu hộ COD!</p>
+            <p className="text-sm text-red-600">Bạn cần nộp tiền COD trước khi nhận đơn hàng mới. Vui lòng nộp tiền ngay bên dưới.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Repay COD Section */}
+      <Card className="p-6 border border-gray-100">
+        <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2 text-lg">
+          <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+            <CircleDollarSign className="w-5 h-5 text-amber-600" />
+          </div>
+          Nộp tiền thu hộ COD
+        </h3>
+        <div className="flex gap-3">
+          <div className="flex-1">
+            <Input
+              placeholder="Nhập số tiền nộp"
+              value={repayAmount}
+              onChange={e => setRepayAmount(e.target.value.replace(/\D/g, ''))}
+            />
+            {repayAmount && !isNaN(parseInt(repayAmount)) && (
+              <p className="text-xs text-gray-400 mt-1 ml-1">{formatCurrency(parseInt(repayAmount))}</p>
+            )}
+          </div>
+          <Button
+            onClick={handleRepay}
+            disabled={repayLoading}
+            className="px-5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shrink-0"
+          >
+            {repayLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'Nộp tiền'}
+          </Button>
+        </div>
+        {codCollected > 0 && (
+          <button
+            onClick={() => setRepayAmount(String(codCollected))}
+            className="mt-3 text-sm text-amber-600 hover:text-amber-700 font-semibold hover:underline"
+          >
+            Nộp toàn bộ ({formatCurrency(codCollected)})
+          </button>
         )}
       </Card>
 
-      <Card className="p-6">
-        <h3 className="font-semibold mb-3">Nộp tiền thu hộ COD (UC-PAY-014)</h3>
-        <div className="flex gap-3">
-          <Input placeholder="Số tiền nộp" value={repayAmount} onChange={e => setRepayAmount(e.target.value)} />
-          <Button onClick={handleRepay}>Nộp tiền</Button>
+      {/* Withdrawal Form */}
+      <Card className="p-6 border border-gray-100">
+        <h3 className="font-bold text-gray-900 mb-5 flex items-center gap-2 text-lg">
+          <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+            <ArrowDownCircle className="w-5 h-5 text-orange-600" />
+          </div>
+          Rút tiền về ngân hàng
+        </h3>
+
+        <div className="space-y-3">
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-1 block">Số tiền rút</label>
+            <Input placeholder="Nhập số tiền" value={withdrawForm.amount} onChange={e => setWithdrawForm(p => ({ ...p, amount: e.target.value.replace(/\D/g, '') }))} />
+            {withdrawForm.amount && !isNaN(parseInt(withdrawForm.amount)) && (
+              <p className="text-xs text-gray-400 mt-1 ml-1">{formatCurrency(parseInt(withdrawForm.amount))}</p>
+            )}
+          </div>
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-1 block">Tên ngân hàng</label>
+            <Input placeholder="VD: Vietcombank, MB Bank, ..." value={withdrawForm.bankName} onChange={e => setWithdrawForm(p => ({ ...p, bankName: e.target.value }))} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">Số tài khoản</label>
+              <Input placeholder="Nhập số tài khoản" value={withdrawForm.bankAccountNumber} onChange={e => setWithdrawForm(p => ({ ...p, bankAccountNumber: e.target.value }))} />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">Chủ tài khoản</label>
+              <Input placeholder="Tên chủ tài khoản" value={withdrawForm.bankAccountHolder} onChange={e => setWithdrawForm(p => ({ ...p, bankAccountHolder: e.target.value }))} />
+            </div>
+          </div>
+          <Button
+            onClick={handleWithdraw}
+            disabled={withdrawLoading}
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl"
+          >
+            {withdrawLoading ? <RefreshCw className="w-4 h-4 animate-spin mx-auto" /> : 'Gửi yêu cầu rút tiền'}
+          </Button>
         </div>
       </Card>
 
-      <Card className="p-6">
-        <h3 className="font-semibold mb-3">Rút tiền về ngân hàng (UC-PAY-008)</h3>
-        <div className="space-y-3">
-          <Input placeholder="Số tiền" value={withdrawForm.amount} onChange={e => setWithdrawForm(p => ({ ...p, amount: e.target.value }))} />
-          <Input placeholder="Ngân hàng" value={withdrawForm.bankName} onChange={e => setWithdrawForm(p => ({ ...p, bankName: e.target.value }))} />
-          <Input placeholder="Số TK" value={withdrawForm.bankAccountNumber} onChange={e => setWithdrawForm(p => ({ ...p, bankAccountNumber: e.target.value }))} />
-          <Input placeholder="Chủ TK" value={withdrawForm.bankAccountHolder} onChange={e => setWithdrawForm(p => ({ ...p, bankAccountHolder: e.target.value }))} />
-          <Button onClick={handleWithdraw} className="w-full">Rút tiền</Button>
-        </div>
-      </Card>
+      </div>
+
+      {/* Right Column: Transaction History */}
+      <div className="lg:col-span-7">
+        {/* Transaction History */}
+        <TransactionHistory transactions={transactions} take={take} onLoadMore={() => setTake(prev => prev + 10)} onRefresh={loadData} />
+      </div>
     </div>
   );
 }

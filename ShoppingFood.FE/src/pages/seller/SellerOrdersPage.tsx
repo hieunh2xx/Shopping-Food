@@ -444,6 +444,15 @@ export function SellerOrdersPage() {
                 {getStatusBadge(selectedOrder.status)}
               </div>
 
+              {/* Delivery Code for Shipper Verification */}
+              {['Confirmed', 'Preparing', 'WaitingForShipper', 'Shipping', 'Delivered'].includes(selectedOrder.status) && (
+                <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex flex-col items-center justify-center text-center">
+                  <span className="text-xs text-orange-600 font-semibold mb-1 uppercase tracking-wider">Mã xác nhận Shipper</span>
+                  <span className="text-3xl font-black text-orange-600 tracking-widest">{selectedOrder.id.slice(-6).toUpperCase()}</span>
+                  <p className="text-xs text-orange-500 mt-1">Sử dụng 6 ký tự cuối của mã đơn hàng để đối chiếu với tài xế</p>
+                </div>
+              )}
+
               {/* Customer Section */}
               <div className="space-y-3">
                 <h4 className="font-bold text-gray-800 text-sm uppercase tracking-wider">Thông tin giao nhận</h4>

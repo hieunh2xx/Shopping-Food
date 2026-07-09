@@ -927,10 +927,19 @@ namespace ShoppingFood.Domain.Migrations
                         .HasColumnType("decimal(12,2)")
                         .HasDefaultValue(0m);
 
+                    b.Property<decimal>("ShipperBaseFeeAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("ShipperDistanceFeeAmount")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<Guid?>("ShipperId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("ShipperIncome")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("ShipperPeakBonus")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("ShippingFee")

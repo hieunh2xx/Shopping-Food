@@ -27,8 +27,17 @@ export interface IProposedDeliveryOfferDto {
   restaurantLatitude?: number;
   restaurantLongitude?: number;
   distanceInKm: number;
-  shippingFee: number;
+  totalIncome: number;
+  baseFee: number;
+  distanceFee: number;
+  peakBonus: number;
   countdownSeconds: number;
+  items: {
+    itemName: string;
+    quantity: number;
+    unitPrice: number;
+    totalPrice: number;
+  }[];
 }
 
 
@@ -77,14 +86,16 @@ export interface IConfirmDeliveryFailedRequest {
 export interface IDailyIncomeReportDto {
   date: string;
   completedOrdersCount: number;
-  shippingFees: number;
+  baseFees: number;
+  distanceFees: number;
   bonus: number;
   totalIncome: number;
 }
 
 export interface IShipperIncomeReportDto {
   completedOrdersCount: number;
-  totalShippingFees: number;
+  totalBaseFees: number;
+  totalDistanceFees: number;
   totalBonuses: number;
   totalIncome: number;
   dailyReports: IDailyIncomeReportDto[];

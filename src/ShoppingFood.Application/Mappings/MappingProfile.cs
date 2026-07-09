@@ -170,7 +170,10 @@ namespace ShoppingFood.Application.Mappings
                 .ForMember(dest => dest.RestaurantLatitude, opt => opt.MapFrom(src => src.Items.FirstOrDefault() != null && src.Items.FirstOrDefault().Product != null && src.Items.FirstOrDefault().Product.Restaurant != null ? src.Items.FirstOrDefault().Product.Restaurant.Latitude : null))
                 .ForMember(dest => dest.RestaurantLongitude, opt => opt.MapFrom(src => src.Items.FirstOrDefault() != null && src.Items.FirstOrDefault().Product != null && src.Items.FirstOrDefault().Product.Restaurant != null ? src.Items.FirstOrDefault().Product.Restaurant.Longitude : null))
                 .ForMember(dest => dest.DistanceInKm, opt => opt.Ignore())
-                .ForMember(dest => dest.ShippingFee, opt => opt.Ignore())
+                .ForMember(dest => dest.TotalIncome, opt => opt.Ignore())
+                .ForMember(dest => dest.BaseFee, opt => opt.Ignore())
+                .ForMember(dest => dest.DistanceFee, opt => opt.Ignore())
+                .ForMember(dest => dest.PeakBonus, opt => opt.Ignore())
                 .ForMember(dest => dest.CountdownSeconds, opt => opt.MapFrom(src => 60));
 
             CreateMap<Order, DeliveryRouteDto>()
@@ -202,6 +205,7 @@ namespace ShoppingFood.Application.Mappings
                 .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.Items));
 
             CreateMap<OrderItem, DispatchOrderItemDto>();
+            CreateMap<OrderItem, OrderItemDto>();
 
             CreateMap<OrderDispatchHistory, OrderDispatchHistoryDto>();
 

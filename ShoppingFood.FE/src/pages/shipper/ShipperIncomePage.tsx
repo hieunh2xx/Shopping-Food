@@ -55,7 +55,8 @@ export function ShipperIncomePage() {
   }, [fetchIncomeReport]);
 
   const totalIncome = incomeReport?.totalIncome ?? 0;
-  const totalShippingFees = incomeReport?.totalShippingFees ?? 0;
+  const totalBaseFees = incomeReport?.totalBaseFees ?? 0;
+  const totalDistanceFees = incomeReport?.totalDistanceFees ?? 0;
   const totalBonuses = incomeReport?.totalBonuses ?? 0;
   const completedOrders = incomeReport?.completedOrdersCount ?? 0;
   const dailyReports: IDailyIncomeReportDto[] = incomeReport?.dailyReports ?? [];
@@ -125,10 +126,14 @@ export function ShipperIncomePage() {
             <h2 className="text-4xl font-black mt-2">{formatCurrency(totalIncome)}</h2>
           </div>
 
-          <div className="grid grid-cols-3 gap-4 pt-6 border-t border-white/20 mt-4">
+          <div className="grid grid-cols-4 gap-4 pt-6 border-t border-white/20 mt-4">
             <div>
-              <span className="text-[11px] opacity-75 block">Phí giao hàng</span>
-              <span className="font-extrabold text-sm mt-0.5 block">{formatCurrency(totalShippingFees)}</span>
+              <span className="text-[11px] opacity-75 block">Phí cơ bản</span>
+              <span className="font-extrabold text-sm mt-0.5 block">{formatCurrency(totalBaseFees)}</span>
+            </div>
+            <div>
+              <span className="text-[11px] opacity-75 block">Phí theo Km</span>
+              <span className="font-extrabold text-sm mt-0.5 block">{formatCurrency(totalDistanceFees)}</span>
             </div>
             <div>
               <span className="text-[11px] opacity-75 block">Tiền Thưởng</span>
@@ -155,8 +160,8 @@ export function ShipperIncomePage() {
               <span className="font-bold text-emerald-600">{formatCurrency(avgIncomePerOrder)}</span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-gray-50">
-              <span className="text-sm text-gray-500">Phí ship trung bình</span>
-              <span className="font-bold text-gray-800">{formatCurrency(completedOrders > 0 ? totalShippingFees / completedOrders : 0)}</span>
+              <span className="text-sm text-gray-500">Phí cơ bản trung bình</span>
+              <span className="font-bold text-gray-800">{formatCurrency(completedOrders > 0 ? totalBaseFees / completedOrders : 0)}</span>
             </div>
           </div>
 
@@ -237,7 +242,8 @@ export function ShipperIncomePage() {
                 <tr className="border-b border-gray-100">
                   <th className="text-left py-3 px-2 text-xs text-gray-400 font-bold uppercase tracking-wider">Ngày</th>
                   <th className="text-right py-3 px-2 text-xs text-gray-400 font-bold uppercase tracking-wider">Đơn hoàn thành</th>
-                  <th className="text-right py-3 px-2 text-xs text-gray-400 font-bold uppercase tracking-wider">Phí ship</th>
+                  <th className="text-right py-3 px-2 text-xs text-gray-400 font-bold uppercase tracking-wider">Phí cơ bản</th>
+                  <th className="text-right py-3 px-2 text-xs text-gray-400 font-bold uppercase tracking-wider">Phí Km</th>
                   <th className="text-right py-3 px-2 text-xs text-gray-400 font-bold uppercase tracking-wider">Thưởng</th>
                   <th className="text-right py-3 px-2 text-xs text-gray-400 font-bold uppercase tracking-wider">Tổng thu nhập</th>
                 </tr>
@@ -249,7 +255,8 @@ export function ShipperIncomePage() {
                       {new Date(day.date).toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit' })}
                     </td>
                     <td className="py-3 px-2 text-right text-gray-600">{day.completedOrdersCount} đơn</td>
-                    <td className="py-3 px-2 text-right text-gray-600">{formatCurrency(day.shippingFees)}</td>
+                    <td className="py-3 px-2 text-right text-gray-600">{formatCurrency(day.baseFees)}</td>
+                    <td className="py-3 px-2 text-right text-gray-600">{formatCurrency(day.distanceFees)}</td>
                     <td className="py-3 px-2 text-right text-amber-600 font-medium">{formatCurrency(day.bonus)}</td>
                     <td className="py-3 px-2 text-right font-bold text-emerald-600">{formatCurrency(day.totalIncome)}</td>
                   </tr>

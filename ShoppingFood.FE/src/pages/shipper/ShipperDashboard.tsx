@@ -48,7 +48,7 @@ export function ShipperDashboard() {
     restaurantAddress: string;
     deliveryAddress: string;
     distanceInKm: number;
-    shippingFee: number;
+    totalIncome: number;
     totalAmount: number;
     contactName: string;
     contactPhone: string;
@@ -181,7 +181,7 @@ export function ShipperDashboard() {
                 restaurantAddress: res.data.restaurantAddress,
                 deliveryAddress: res.data.deliveryAddress,
                 distanceInKm: res.data.distanceInKm,
-                shippingFee: res.data.shippingFee,
+                totalIncome: res.data.totalIncome,
                 totalAmount: res.data.totalAmount,
                 contactName: res.data.contactName,
                 contactPhone: res.data.contactPhone,
@@ -222,7 +222,7 @@ export function ShipperDashboard() {
         restaurantAddress: proposalPopupOffer.restaurantAddress,
         deliveryAddress: proposalPopupOffer.deliveryAddress,
         distanceInKm: proposalPopupOffer.distanceInKm,
-        shippingFee: proposalPopupOffer.shippingFee,
+        totalIncome: proposalPopupOffer.totalIncome,
         totalAmount: proposalPopupOffer.totalAmount,
         contactName: proposalPopupOffer.contactName,
         contactPhone: proposalPopupOffer.contactPhone,
@@ -231,8 +231,8 @@ export function ShipperDashboard() {
       setProposalPopupOffer(null);
       toast.success('Nhận đơn thành công!');
       fetchAvailableOffers();
-    } catch (err) {
-      toast.error('Không thể nhận đơn. Có thể đơn đã bị hủy hoặc người khác đã nhận.');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Không thể nhận đơn. Có thể đơn đã bị hủy hoặc người khác đã nhận.');
       setProposalPopupOffer(null);
       fetchAvailableOffers();
     }
@@ -365,7 +365,7 @@ export function ShipperDashboard() {
           restaurantAddress: offer.restaurantAddress,
           deliveryAddress: offer.deliveryAddress,
           distanceInKm: offer.distanceInKm,
-          shippingFee: offer.shippingFee,
+          totalIncome: offer.totalIncome,
           totalAmount: offer.totalAmount,
           contactName: offer.contactName,
           contactPhone: offer.contactPhone,
@@ -375,8 +375,8 @@ export function ShipperDashboard() {
         setAvailableOffers(prev => prev.filter(o => o.orderId !== orderId));
       }
       toast.success('Đã chấp nhận đơn hàng!');
-    } catch (err) {
-      toast.error('Không thể nhận đơn hàng. Vui lòng thử lại.');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Không thể nhận đơn hàng. Vui lòng thử lại.');
     } finally {
       setActionLoading(null);
     }
@@ -539,7 +539,7 @@ export function ShipperDashboard() {
               <CheckCircle2 className="w-5 h-5" />
             </div>
             <h2 className="text-2xl font-extrabold">{incomeReport?.completedOrdersCount ?? 0} đơn</h2>
-            <p className="mt-2 text-xs opacity-95">Tổng phí ship: {formatCurrency(incomeReport?.totalShippingFees ?? 0)}</p>
+            <p className="mt-2 text-xs opacity-95">Thu nhập cơ bản: {formatCurrency(incomeReport?.totalBaseFees ?? 0)}</p>
           </div>
 
           <div className="bg-gradient-to-br from-indigo-500 to-violet-600 rounded-3xl p-5 text-white shadow-md shadow-indigo-500/10">
@@ -585,7 +585,7 @@ export function ShipperDashboard() {
                     </div>
                     <div className="text-right">
                       <span className="text-xs text-gray-400 block">Thu nhập của bạn</span>
-                      <span className="font-extrabold text-lg text-emerald-600">{formatCurrency(activeDelivery.shippingFee)}</span>
+                      <span className="font-extrabold text-lg text-emerald-600">{formatCurrency(activeDelivery.totalIncome)}</span>
                     </div>
                   </div>
 
@@ -735,7 +735,7 @@ export function ShipperDashboard() {
                         <h4 className="font-bold text-gray-900 group-hover:text-orange-600 transition-colors">{offer.restaurantName}</h4>
                         <span className="text-[11px] text-gray-400 block mt-0.5">{offer.distanceInKm.toFixed(1)} km • Giao trong khu vực</span>
                       </div>
-                      <span className="font-extrabold text-sm text-emerald-600">{formatCurrency(offer.shippingFee)}</span>
+                      <span className="font-extrabold text-sm text-emerald-600">{formatCurrency(offer.totalIncome)}</span>
                     </div>
 
                     <div className="text-xs text-gray-500 space-y-1.5 bg-white p-2.5 rounded-xl border border-gray-100">

@@ -154,7 +154,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 if (stockValidationResult != null)
                     return stockValidationResult;
 
-                var (totalAmount, shippingFee, shipperIncome) = await CalculateTotalAmountAsync(cart.Items, request.DeliveryLatitude, request.DeliveryLongitude);
+                var (totalAmount, shippingFee, shipperIncome, shipperBaseFee, shipperDistanceFee, shipperPeakBonus) = await CalculateTotalAmountAsync(cart.Items, request.DeliveryLatitude, request.DeliveryLongitude);
                 decimal itemsTotal = cart.Items.Sum(i => i.PriceAtAdded * i.Quantity);
                 var (discountAmount, appliedDiscountId, error) = await ApplyDiscountAsync(request, cart, itemsTotal);
                 if (error != null)
@@ -172,7 +172,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
 
                 totalAmount = Math.Max(0, totalAmount - discountAmount - tierDiscountAmount);
 
-                var order = CreateOrderEntity(request, totalAmount, shippingFee, shipperIncome, itemsTotal);
+                var order = CreateOrderEntity(request, totalAmount, shippingFee, shipperIncome, shipperBaseFee, shipperDistanceFee, shipperPeakBonus, itemsTotal);
                 order.AppliedDiscountId = appliedDiscountId;
                 PopulateOrderItems(order, cart.Items);
 
@@ -356,7 +356,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             return null;
         }
 
-        private async Task<(decimal TotalAmount, decimal ShippingFee, decimal ShipperIncome)> CalculateTotalAmountAsync(IEnumerable<CartItem> items, double? destLat, double? destLon)
+        private async Task<(decimal TotalAmount, decimal ShippingFee, decimal ShipperIncome, decimal ShipperBaseFee, decimal ShipperDistanceFee, decimal ShipperPeakBonus)> CalculateTotalAmountAsync(IEnumerable<CartItem> items, double? destLat, double? destLon)
         {
             var itemsList = items.ToList();
             decimal itemsTotal = itemsList.Sum(i => i.PriceAtAdded * i.Quantity);
@@ -364,6 +364,9 @@ namespace ShoppingFood.Application.Features.Orders.Commands
 
             decimal shippingFeeTotal = 0;
             decimal shipperIncomeTotal = 0;
+            decimal shipperBaseFeeTotal = 0;
+            decimal shipperDistanceFeeTotal = 0;
+            decimal shipperPeakBonusTotal = 0;
 
             var configs = await _configRepository.GetAllAsync();
             var config = configs.FirstOrDefault();
@@ -386,6 +389,9 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 bool hasFreeshipProduct = itemsList.Any(i => i.Product!.RestaurantId == restaurantId && i.Product.IsFreeship);
                 decimal feeForRestaurant = restaurant.ShippingFee;
                 decimal incomeForShipper = restaurant.ShippingFee; // default if no config
+                decimal baseFeeForShipper = restaurant.ShippingFee;
+                decimal distanceFeeForShipper = 0;
+                decimal peakBonusForShipper = 0;
 
                 if (config != null && destLat.HasValue && destLon.HasValue && restaurant.Latitude.HasValue && restaurant.Longitude.HasValue)
                 {
@@ -406,16 +412,12 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     }
                     if (isRushHour) feeForRestaurant *= config.RushHourMultiplier;
 
-                    // Shipper Income
-                    if (distanceKm <= 5.0)
-                    {
-                        incomeForShipper = config.ShipperBaseFee;
-                    }
-                    else
-                    {
-                        incomeForShipper = config.ShipperBaseFee + (decimal)(distanceKm - 5.0) * config.ShipperFeePerKm;
-                    }
-                    if (isRushHour) incomeForShipper = incomeForShipper * (1m + config.ShipperRushHourBonus / 100m);
+                    // Shipper Income Breakdown
+                    baseFeeForShipper = config.ShipperBaseFee;
+                    distanceFeeForShipper = distanceKm > 5.0 ? (decimal)(distanceKm - 5.0) * config.ShipperFeePerKm : 0m;
+                    decimal incomeBeforeBonus = baseFeeForShipper + distanceFeeForShipper;
+                    peakBonusForShipper = isRushHour ? incomeBeforeBonus * (config.ShipperRushHourBonus / 100m) : 0m;
+                    incomeForShipper = incomeBeforeBonus + peakBonusForShipper;
                 }
 
                 if (!hasFreeshipProduct)
@@ -423,11 +425,14 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     shippingFeeTotal += Math.Round(feeForRestaurant, 0);
                 }
                 shipperIncomeTotal += Math.Round(incomeForShipper, 0); // Shipper still earns even if freeship!
+                shipperBaseFeeTotal += Math.Round(baseFeeForShipper, 0);
+                shipperDistanceFeeTotal += Math.Round(distanceFeeForShipper, 0);
+                shipperPeakBonusTotal += Math.Round(peakBonusForShipper, 0);
             }
-            return (itemsTotal + shippingFeeTotal, shippingFeeTotal, shipperIncomeTotal);
+            return (itemsTotal + shippingFeeTotal, shippingFeeTotal, shipperIncomeTotal, shipperBaseFeeTotal, shipperDistanceFeeTotal, shipperPeakBonusTotal);
         }
 
-        private Order CreateOrderEntity(CheckoutCommand request, decimal totalAmount, decimal shippingFee, decimal shipperIncome, decimal itemsSubtotal)
+        private Order CreateOrderEntity(CheckoutCommand request, decimal totalAmount, decimal shippingFee, decimal shipperIncome, decimal shipperBaseFee, decimal shipperDistanceFee, decimal shipperPeakBonus, decimal itemsSubtotal)
         {
             return new Order
             {
@@ -437,6 +442,9 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 TotalAmount = totalAmount,
                 ShippingFee = shippingFee,
                 ShipperIncome = shipperIncome,
+                ShipperBaseFeeAmount = shipperBaseFee,
+                ShipperDistanceFeeAmount = shipperDistanceFee,
+                ShipperPeakBonus = shipperPeakBonus,
                 ItemsSubtotal = itemsSubtotal,
                 DeliveryAddress = request.DeliveryAddress,
                 ContactName = request.ContactName,

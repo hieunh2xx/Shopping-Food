@@ -13,6 +13,9 @@ namespace ShoppingFood.Domain.Models
         public decimal TotalAmount { get; set; }
         public decimal ShippingFee { get; set; } = 0;
         public decimal ShipperIncome { get; set; } = 0;
+        public decimal ShipperBaseFeeAmount { get; set; } = 0;
+        public decimal ShipperDistanceFeeAmount { get; set; } = 0;
+        public decimal ShipperPeakBonus { get; set; } = 0;
         public string DeliveryAddress { get; set; } = string.Empty;
         public string ContactName { get; set; } = string.Empty;
         public string ContactPhone { get; set; } = string.Empty;

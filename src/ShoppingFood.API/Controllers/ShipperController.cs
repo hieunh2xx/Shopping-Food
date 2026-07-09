@@ -21,7 +21,7 @@ namespace ShoppingFood.API.Controllers
         public async Task<ActionResult<ApiResponse>> ToggleOnline([FromBody] ToggleShipperOnlineCommand command)
         {
             var response = await _mediator.Send(command);
-            return Ok(response);
+            return StatusCode(response.Code, response);
         }
         [HttpGet("proposed-offer/{orderId}")]
         public async Task<ActionResult<ApiResponse>> GetProposedOffer(Guid orderId)
@@ -38,8 +38,8 @@ namespace ShoppingFood.API.Controllers
         [HttpPost("accept-offer")]
         public async Task<ActionResult<ApiResponse>> AcceptOffer([FromBody] AcceptDeliveryOfferCommand command)
         {
-            var respone = await _mediator.Send(command);
-            return Ok(respone);
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
         }
 
         [HttpPost("confirm-arrived")]  

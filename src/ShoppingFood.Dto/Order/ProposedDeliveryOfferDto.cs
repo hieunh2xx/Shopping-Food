@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -20,7 +20,11 @@ namespace ShoppingFood.Dto.Order
         public double? RestaurantLatitude { get; set; }
         public double? RestaurantLongitude { get; set; }
         public double DistanceInKm { get; set; }
-        public decimal ShippingFee { get; set; }
+        public decimal TotalIncome { get; set; }
+        public decimal BaseFee { get; set; }
+        public decimal DistanceFee { get; set; }
+        public decimal PeakBonus { get; set; }
         public int CountdownSeconds { get; set; } = 60;
+        public List<OrderItemDto> Items { get; set; } = new List<OrderItemDto>();
     }
 }

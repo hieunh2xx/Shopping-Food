@@ -169,10 +169,14 @@ export function ShipperHistoryPage() {
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-1">
                 <div className="space-y-1">
-                  <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Phí giao hàng</p>
-                  <p className="text-sm font-bold text-gray-800">{formatCurrency(day.shippingFees)}</p>
+                  <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Phí cơ bản</p>
+                  <p className="text-sm font-bold text-gray-800">{formatCurrency(day.baseFees)}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Phí km</p>
+                  <p className="text-sm font-bold text-gray-800">{formatCurrency(day.distanceFees)}</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Tiền thưởng</p>
