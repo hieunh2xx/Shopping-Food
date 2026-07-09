@@ -34,8 +34,7 @@ namespace ShoppingFood.Application.Features.Chat.Queries
 
             var sessions = await _chatSessionRepository.GetAsync(
                 predicate: s => s.RestaurantId == restaurant.Id
-                    && s.OrderId != null
-                    && s.Status == ChatSessionStatus.Open,
+                    && s.OrderId != null,
                 include: q => q.Include(s => s.User).Include(s => s.Messages),
                 orderBy: q => q.OrderByDescending(s => s.CreatedAt),
                 disableTracking: true);

@@ -68,6 +68,7 @@ namespace ShoppingFood.Domain.Context
         public DbSet<PaymentSession> PaymentSessions { get; set; } = null!;
         public DbSet<SepayWebhookLog> SepayWebhookLogs { get; set; } = null!;
         public DbSet<ShipperReputationHistory> ShipperReputationHistories { get; set; } = null!;
+        public DbSet<BlacklistKeyword> BlacklistKeywords { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -247,6 +248,14 @@ namespace ShoppingFood.Domain.Context
                 entity.Property(e => e.Email).HasMaxLength(100);
                 entity.Property(e => e.DeliveryAddress).IsRequired();
                 entity.Property(e => e.IpAddress).IsRequired().HasMaxLength(45);
+            });
+
+            modelBuilder.Entity<BlacklistKeyword>(entity =>
+            {
+                entity.ToTable("BLACKLIST_KEYWORD");
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.Keyword).IsUnique();
+                entity.Property(e => e.Keyword).IsRequired().HasMaxLength(255);
             });
 
             // Cart Entity

@@ -66,12 +66,12 @@ namespace ShoppingFood.Application.Features.Products.Commands
                 var productDto = _mapper.Map<ProductDto>(product);
                 return ApiResponse.Success(productDto, "Update product successfully");
             }
-            catch (DbUpdateConcurrencyException ex)
-            {
-                var details = string.Join("; ", ex.Entries.Select(e => $"Entity: {e.Entity.GetType().Name}, State: {e.State}, Key: {string.Join(",", e.Metadata.FindPrimaryKey().Properties.Select(p => e.Property(p.Name).CurrentValue))}"));
-                await _unitOfWork.LogErrorAsync("UpdateProductHandler.Handle.Concurrency", new Exception($"Concurrency details: {details}", ex));
-                return ApiResponse.Failure(400, $"Lỗi cập nhật: {details}");
-            }
+            //catch (DbUpdateConcurrencyException ex)
+            //{
+            //    var details = string.Join("; ", ex.Entries.Select(e => $"Entity: {e.Entity.GetType().Name}, State: {e.State}, Key: {string.Join(",", e.Metadata.FindPrimaryKey().Properties.Select(p => e.Property(p.Name).CurrentValue))}"));
+            //    await _unitOfWork.LogErrorAsync("UpdateProductHandler.Handle.Concurrency", new Exception($"Concurrency details: {details}", ex));
+            //    return ApiResponse.Failure(400, $"Lỗi cập nhật: {details}");
+            //}
             catch (Exception ex)
             {
                 await _unitOfWork.LogErrorAsync("UpdateProductHandler.Handle", ex);

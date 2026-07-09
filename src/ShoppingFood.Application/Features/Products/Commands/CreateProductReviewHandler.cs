@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ShoppingFood.Application.Services;
 
 namespace ShoppingFood.Application.Features.Products.Commands
 {
@@ -26,6 +27,7 @@ namespace ShoppingFood.Application.Features.Products.Commands
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly ShoppingFoodContext _dbContext;
+        private readonly BlacklistFilterService _blacklistFilterService;
 
         public CreateProductReviewHandler(
             IProductReviewRepository productReviewRepository,
@@ -35,7 +37,8 @@ namespace ShoppingFood.Application.Features.Products.Commands
             INotificationRepository notificationRepository,
             IUnitOfWork unitOfWork,
             IMapper mapper,
-            ShoppingFoodContext dbContext)
+            ShoppingFoodContext dbContext,
+            BlacklistFilterService blacklistFilterService)
         {
             _productReviewRepository = productReviewRepository;
             _productRepository = productRepository;
@@ -45,6 +48,7 @@ namespace ShoppingFood.Application.Features.Products.Commands
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _dbContext = dbContext;
+            _blacklistFilterService = blacklistFilterService;
         }
         public async Task<ApiResponse> Handle(CreateProductReviewCommand request, CancellationToken cancellationToken)
         {
@@ -67,7 +71,13 @@ namespace ShoppingFood.Application.Features.Products.Commands
                 if (userProfile == null)
                     return ApiResponse.Failure(404, "User profile not found");
 
-                var review = await CreateProductReviewAsync(request.ProductId, userProfile.Id, request.Rating, request.Comment);
+                var filteredComment = request.Comment;
+                if (!string.IsNullOrWhiteSpace(filteredComment))
+                {
+                    filteredComment = await _blacklistFilterService.FilterContent(filteredComment);
+                }
+
+                var review = await CreateProductReviewAsync(request.ProductId, userProfile.Id, request.Rating, filteredComment);
 
                 review.UserProfile = userProfile;
 

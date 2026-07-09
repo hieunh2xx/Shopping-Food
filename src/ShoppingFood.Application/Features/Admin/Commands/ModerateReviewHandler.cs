@@ -60,23 +60,39 @@ namespace ShoppingFood.Application.Features.Admin.Commands
                 {
                     var reviews = await _productReviewRepository.GetAsync(
                         predicate: rv => rv.Id == report.TargetId.Value,
+                        include: q => q.Include(rv => rv.UserProfile),
                         disableTracking: false
                         );
                     var review = reviews.FirstOrDefault();
                     if(review != null)
                     {
-                        review.Comment = null;
+                        review.Comment = "[Bình luận đã bị gỡ bỏ do vi phạm]";
                         review.SellerReply = null;
                         review.SellerRepliedAt = null;
                         _productReviewRepository.Update(review);
+
+                        if (review.UserProfile != null)
+                        {
+                            _notificationRepository.Add(new Notification
+                            {
+                                Id = Guid.NewGuid(),
+                                UserId = review.UserProfile.UserAccountId,
+                                Title = "Bình luận vi phạm tiêu chuẩn",
+                                Message = "Một bình luận của bạn đã bị quản trị viên gỡ bỏ do vi phạm quy định cộng đồng.",
+                                NotificationType = Domain.Enums.NotificationType.System,
+                                IsRead = false,
+                                CreateAt = DateTime.UtcNow,
+                            });
+                        }
                     }
                 }
                 report.Status = Domain.Enums.ReportStatus.Resolved;
-                NotifyReviewOwner(report);
+                NotifyReporter(report, true);
             }
             else
             {
                 report.Status = Domain.Enums.ReportStatus.Dismissed;
+                NotifyReporter(report, false);
             }
 
             report.Content = string.IsNullOrEmpty(request.AdminNote)
@@ -93,17 +109,22 @@ namespace ShoppingFood.Application.Features.Admin.Commands
             return ApiResponse.Success(null, message);
         }
 
-        private void NotifyReviewOwner(SystemReport report)
+        private void NotifyReporter(SystemReport report, bool isApproved)
         {
             var reporterUserAccountId = report.Reporter?.UserAccountId;
             if (!reporterUserAccountId.HasValue) return;
+
+            var title = isApproved ? "Báo cáo bình luận đã được xử lý" : "Báo cáo bình luận bị từ chối";
+            var message = isApproved 
+                ? "Báo cáo của bạn đã được xem xét. Bình luận vi phạm đã bị gỡ bỏ." 
+                : "Báo cáo của bạn đã được xem xét. Quản trị viên xác định bình luận không vi phạm tiêu chuẩn cộng đồng.";
 
             _notificationRepository.Add(new Notification
             {
                 Id = Guid.NewGuid(),
                 UserId = reporterUserAccountId.Value,
-                Title = "Báo cáo bình luận đã được xử lý",
-                Message = "Báo cáo của bạn đã được xem xét. Bình luận vi phạm đã bị gỡ bỏ.",
+                Title = title,
+                Message = message,
                 NotificationType = Domain.Enums.NotificationType.System,
                 IsRead = false,
                 CreateAt = DateTime.UtcNow,

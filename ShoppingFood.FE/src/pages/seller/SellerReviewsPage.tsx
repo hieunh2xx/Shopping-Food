@@ -209,7 +209,7 @@ export function SellerReviewsPage() {
                   </div>
 
                   <div className="flex flex-col gap-2 shrink-0">
-                    {!review.sellerReply && (
+                    {!review.sellerReply && review.comment !== '[Bình luận đã bị gỡ bỏ do vi phạm]' && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -219,12 +219,15 @@ export function SellerReviewsPage() {
                         <MessageSquare className="w-3.5 h-3.5 mr-1.5" /> Trả lời
                       </Button>
                     )}
-                    <button
-                      onClick={() => setReportModal({ isOpen: true, reviewId: review.id, reason: '' })}
-                      className="text-xs text-gray-400 hover:text-red-500 flex items-center justify-center py-1 transition-colors"
-                    >
-                      <AlertTriangle className="w-3 h-3 mr-1" /> Báo cáo vi phạm
-                    </button>
+
+                    {review.comment !== '[Bình luận đã bị gỡ bỏ do vi phạm]' && (
+                      <button
+                        onClick={() => setReportModal({ isOpen: true, reviewId: review.id, reason: '' })}
+                        className="text-xs text-gray-400 hover:text-red-500 flex items-center justify-center py-1 transition-colors"
+                      >
+                        <AlertTriangle className="w-3 h-3 mr-1" /> Báo cáo vi phạm
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

@@ -8,6 +8,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using ShoppingFood.Application.Services;
 
 namespace ShoppingFood.Application.Features.Products.Commands
 {
@@ -17,17 +18,20 @@ namespace ShoppingFood.Application.Features.Products.Commands
         private readonly IUserRepository _userRepository;
         private readonly IRestaurantProfileRepository _restaurantProfileRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly BlacklistFilterService _blacklistFilterService;
 
         public ReplyReviewHandler(
             IProductReviewRepository productReviewRepository,
             IUserRepository userRepository,
             IRestaurantProfileRepository restaurantProfileRepository,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            BlacklistFilterService blacklistFilterService)
         {
             _productReviewRepository = productReviewRepository;
             _userRepository = userRepository;
             _restaurantProfileRepository = restaurantProfileRepository;
             _unitOfWork = unitOfWork;
+            _blacklistFilterService = blacklistFilterService;
         }
 
         public async Task<ApiResponse> Handle(ReplyReviewCommand request, CancellationToken cancellationToken)
@@ -73,7 +77,13 @@ namespace ShoppingFood.Application.Features.Products.Commands
             if (!string.IsNullOrEmpty(review.SellerReply))
                 return ApiResponse.Failure(400, "You have already replied to this review.");
 
-            review.SellerReply = request.Reply;
+            var filteredReply = request.Reply;
+            if (!string.IsNullOrWhiteSpace(filteredReply))
+            {
+                filteredReply = await _blacklistFilterService.FilterContent(filteredReply);
+            }
+
+            review.SellerReply = filteredReply;
             review.SellerRepliedAt = DateTime.UtcNow;
 
             _productReviewRepository.Update(review);

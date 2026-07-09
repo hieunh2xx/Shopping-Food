@@ -60,6 +60,31 @@ namespace ShoppingFood.Domain.Migrations
                     b.ToTable("API_ENDPOINT", (string)null);
                 });
 
+            modelBuilder.Entity("ShoppingFood.Domain.Models.BlacklistKeyword", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Keyword")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Keyword")
+                        .IsUnique();
+
+                    b.ToTable("BLACKLIST_KEYWORD", (string)null);
+                });
+
             modelBuilder.Entity("ShoppingFood.Domain.Models.BuyXGetYPromotion", b =>
                 {
                     b.Property<Guid>("Id")

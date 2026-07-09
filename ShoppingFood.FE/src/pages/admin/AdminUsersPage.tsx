@@ -243,35 +243,53 @@ export function AdminUsersPage() {
                     </td>
                     <td className="py-4 px-6 text-sm text-gray-600">{user.email || '—'}</td>
                     <td className="py-4 px-6">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${user.role === 'Admin' ? 'bg-purple-100 text-purple-700' :
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${
+                          user.role === 'Admin' ? 'bg-purple-100 text-purple-700' :
                           user.role === 'Seller' ? 'bg-blue-100 text-blue-700' :
-                            user.role === 'Shipper' ? 'bg-teal-100 text-teal-700' :
-                              'bg-gray-100 text-gray-700'
+                          user.role === 'Shipper' ? 'bg-teal-100 text-teal-700' :
+                          user.role === 'Coordinator' ? 'bg-amber-100 text-amber-700' :
+                          'bg-gray-100 text-gray-700'
                         }`}>
                         {user.role === 'Admin' && <Shield className="w-3 h-3" />}
-                        {user.role === 'Seller' ? 'Đối tác' : user.role === 'Customer' ? 'Khách hàng' : user.role === 'Shipper' ? 'Tài xế' : user.role}
+                        {user.role === 'Seller' ? 'Đối tác' : 
+                         user.role === 'Customer' ? 'Khách hàng' : 
+                         user.role === 'Shipper' ? 'Tài xế' : 
+                         user.role === 'Coordinator' ? 'Điều phối viên' : 
+                         user.role}
                       </span>
                     </td>
                     <td className="py-4 px-6 text-center">
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${TIER_COLORS[user.tier || ''] || 'bg-gray-100 text-gray-600'}`}>
-                        <span>{TIER_ICONS[user.tier || ''] || '🎖️'}</span>
-                        {user.tier || 'Chưa có'}
-                      </span>
+                      {user.role === 'Customer' ? (
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${TIER_COLORS[user.tier || ''] || 'bg-gray-100 text-gray-600'}`}>
+                          <span>{TIER_ICONS[user.tier || ''] || '🎖️'}</span>
+                          {user.tier || 'Chưa có'}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
                     </td>
                     <td className="py-4 px-6 text-center">
-                      <div className="text-xs">
-                        <div className="font-semibold text-gray-900">{(user.pointsBalance || 0).toLocaleString()}</div>
-                        <div className="text-gray-400">/ {(user.totalEarnedPoints || 0).toLocaleString()} tích lũy</div>
-                      </div>
+                      {user.role === 'Customer' ? (
+                        <div className="text-xs">
+                          <div className="font-semibold text-gray-900">{(user.pointsBalance || 0).toLocaleString()}</div>
+                          <div className="text-gray-400">/ {(user.totalEarnedPoints || 0).toLocaleString()} tích lũy</div>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
                     </td>
                     <td className="py-4 px-6 text-center">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${user.status === 'Active'
-                          ? 'bg-green-100 text-green-700'
-                          : user.status === 'Banned'
-                            ? 'bg-red-100 text-red-700'
-                            : 'bg-yellow-100 text-yellow-700'
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${
+                        user.status === 'Active' ? 'bg-green-100 text-green-700' : 
+                        user.status === 'Blocked' || user.status === 'Banned' ? 'bg-red-100 text-red-700' : 
+                        user.status === 'Pending' ? 'bg-blue-100 text-blue-700' :
+                        'bg-gray-100 text-gray-700'
                         }`}>
-                        {user.status === 'Active' ? 'Hoạt động' : user.status === 'Banned' ? 'Bị khóa' : user.status}
+                        {user.status === 'Active' ? 'Hoạt động' : 
+                         user.status === 'Blocked' || user.status === 'Banned' ? 'Bị khóa' : 
+                         user.status === 'Pending' ? 'Chờ duyệt' : 
+                         user.status === 'Inactive' ? 'Ngừng hoạt động' : 
+                         user.status}
                       </span>
                     </td>
                     <td className="py-4 px-6 text-right">

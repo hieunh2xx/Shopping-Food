@@ -55,6 +55,7 @@ import {
   CoordinatorChatPage,
   AdminReviewReportsPage,
   AdminProductReportsPage,
+  AdminBlacklistPage,
   CheckoutPage,
   FlashSalePage,
   RestaurantsPage,
@@ -185,6 +186,7 @@ export function AppRoutes() {
         <Route path="notifications" element={<AdminNotificationsPage />} />
         <Route path="review-reports" element={<AdminReviewReportsPage />} />
         <Route path="product-reports" element={<AdminProductReportsPage />} />
+        <Route path="blacklist" element={<AdminBlacklistPage />} />
         <Route path="incidents" element={<CoordinatorIncidentsPage />} />
         <Route path="faq" element={<AdminFaqPage />} />
         <Route path="chat" element={<AdminChatPage />} />

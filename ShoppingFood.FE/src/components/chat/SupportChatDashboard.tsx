@@ -1,17 +1,33 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { User, Send, Clock, AlertCircle } from 'lucide-react';
+import { User, Send, Clock, AlertCircle, CheckCircle } from 'lucide-react';
 import { chatService } from '../../services';
 import { useAuth } from '../../hooks';
 import type { IChatSession, IChatMessage } from '../../interfaces';
 
-export function SupportChatDashboard() {
+export interface SupportChatDashboardProps {
+  role: 'Admin' | 'Coordinator';
+}
+
+export function SupportChatDashboard({ role }: SupportChatDashboardProps) {
   const { user, token } = useAuth();
   const [sessions, setSessions] = useState<IChatSession[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Record<string, IChatMessage[]>>({});
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [inputText, setInputText] = useState('');
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const activeSessionIdRef = useRef<string | null>(null);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
+
+  useEffect(() => {
+    activeSessionIdRef.current = activeSessionId;
+  }, [activeSessionId]);
 
   const handleReceiveMessage = useCallback((message: IChatMessage) => {
     setMessages(prev => {
@@ -25,10 +41,26 @@ export function SupportChatDashboard() {
         : [...sessionMsgs, message];
       return { ...prev, [message.sessionId]: updatedMsgs };
     });
+
+    if (message.sessionId !== activeSessionIdRef.current) {
+      if (message.senderRole !== 'Admin' && message.senderRole !== 'Coordinator') {
+        setUnreadCounts(prev => ({
+          ...prev,
+          [message.sessionId]: (prev[message.sessionId] || 0) + 1
+        }));
+      }
+    } else {
+      const storedLastRead = localStorage.getItem('chat_last_read');
+      const lastReadTimes = storedLastRead ? JSON.parse(storedLastRead) : {};
+      lastReadTimes[message.sessionId] = new Date().toISOString();
+      localStorage.setItem('chat_last_read', JSON.stringify(lastReadTimes));
+      window.dispatchEvent(new Event('chat_read_updated'));
+    }
   }, []);
 
   const handleNewSession = useCallback((newSession: IChatSession) => {
     setSessions(prev => (prev.find(s => s.id === newSession.id) ? prev : [newSession, ...prev]));
+    setUnreadCounts(prev => ({ ...prev, [newSession.id]: (prev[newSession.id] || 0) + 1 }));
     chatService.joinSession(newSession.id).catch(console.error);
   }, []);
 
@@ -37,13 +69,10 @@ export function SupportChatDashboard() {
   }, []);
 
   const handleSessionClosed = useCallback((sessId: string) => {
-    setSessions(prev => prev.filter(s => s.id !== sessId));
-    setActiveSessionId(prev => (prev === sessId ? null : prev));
+    setSessions(prev => prev.map(s => s.id === sessId ? { ...s, status: 'Closed' } : s));
   }, []);
 
-  useEffect(() => {
-    fetchSessions();
-  }, []);
+  
 
   const fetchSessions = async () => {
     try {
@@ -51,25 +80,62 @@ export function SupportChatDashboard() {
       if (res.data) {
         setSessions(res.data);
         const initialMsgs: Record<string, IChatMessage[]> = {};
+        const initialUnread: Record<string, number> = {};
+        const storedLastRead = localStorage.getItem('chat_last_read');
+        const lastReadTimes = storedLastRead ? JSON.parse(storedLastRead) : {};
+
         res.data.forEach(s => {
           if (s.messages) {
             initialMsgs[s.id] = s.messages;
+            const lastRead = lastReadTimes[s.id];
+            const hasNewMsg = s.messages.some(m => {
+              const msgDate = m.createdAt.endsWith('Z') ? new Date(m.createdAt) : new Date(m.createdAt + 'Z');
+              return m.senderRole === 'Customer' && (!lastRead || msgDate > new Date(lastRead));
+            });
+            if (hasNewMsg) {
+              initialUnread[s.id] = 1;
+            }
           }
         });
         setMessages(prev => ({ ...initialMsgs, ...prev }));
+        setUnreadCounts(prev => ({ ...prev, ...initialUnread }));
+        return res.data;
       }
+      return [];
     } catch (error) {
       console.error('Failed to load sessions', error);
+      return [];
     }
   };
 
   useEffect(() => {
+    console.log('[SupportChat] token:', token ? 'EXISTS' : 'NULL/UNDEFINED');
     if (!token) return;
 
     const connect = async () => {
+      console.log('[SupportChat] Starting connection...');
       try {
         await chatService.startConnection(token);
-        await chatService.joinSupportGroup();
+        // Nếu component đã unmount thì không đăng ký handler nữa
+        if (!isMountedRef.current) {
+          return;
+        }
+        
+        if (role === 'Admin') {
+          await chatService.joinAdminGroup();
+        } else if (role === 'Coordinator') {
+          await chatService.joinCoordinatorGroup();
+        }
+
+        // Join tất cả sessions hiện có SAU KHI connection đã ready
+        // Tránh race condition với useEffect[sessions] bên dưới
+        const fetchedSessions = await fetchSessions();
+        if (fetchedSessions && fetchedSessions.length > 0) {
+          for (const s of fetchedSessions) {
+            await chatService.joinSession(s.id);
+          }
+        }
+        
         chatService.onReceiveMessage(handleReceiveMessage);
         chatService.onNewSession(handleNewSession);
         chatService.onSupportJoined(handleSupportJoined);
@@ -82,11 +148,11 @@ export function SupportChatDashboard() {
     connect();
 
     return () => {
+      isMountedRef.current = false;
       chatService.offReceiveMessage(handleReceiveMessage);
       chatService.offNewSession(handleNewSession);
       chatService.offSupportJoined(handleSupportJoined);
       chatService.offSessionClosed(handleSessionClosed);
-      chatService.stopConnection();
     };
   }, [token, handleReceiveMessage, handleNewSession, handleSupportJoined, handleSessionClosed]);
 
@@ -96,25 +162,28 @@ export function SupportChatDashboard() {
     }
   }, [messages, activeSessionId]);
 
-  // Join all fetched sessions automatically
-  useEffect(() => {
-    if (sessions.length > 0) {
-      sessions.forEach(s => {
-        chatService.joinSession(s.id).catch(err => console.error(err));
-      });
-    }
-  }, [sessions]);
+  // Sessions được join trong connect() sau khi hub đã sẵn sàng
+  // handleNewSession tự join session mới khi có user tạo
 
   const handleSelectSession = async (session: IChatSession) => {
     setActiveSessionId(session.id);
-    
-    try {
-      const historyRes = await chatService.getHistory(session.id);
-      if (historyRes.data) {
-        setMessages(prev => ({ ...prev, [session.id]: historyRes.data! }));
+    setUnreadCounts(prev => ({ ...prev, [session.id]: 0 }));
+
+    const storedLastRead = localStorage.getItem('chat_last_read');
+    const lastReadTimes = storedLastRead ? JSON.parse(storedLastRead) : {};
+    lastReadTimes[session.id] = new Date().toISOString();
+    localStorage.setItem('chat_last_read', JSON.stringify(lastReadTimes));
+    window.dispatchEvent(new Event('chat_read_updated'));
+
+    if (!messages[session.id] || messages[session.id].length === 0) {
+      try {
+        const historyRes = await chatService.getHistory(session.id);
+        if (historyRes.data) {
+          setMessages(prev => ({ ...prev, [session.id]: historyRes.data! }));
+        }
+      } catch (error) {
+        console.error('Failed to load history', error);
       }
-    } catch (error) {
-      console.error('Failed to load history', error);
     }
   };
 
@@ -139,7 +208,7 @@ export function SupportChatDashboard() {
         id: tempId,
         sessionId: activeSessionId,
         senderId: user.id,
-        senderRole: user.role,
+        senderRole: user.role as IChatMessage['senderRole'],
         content: inputText.trim(),
         createdAt: new Date().toISOString()
       };
@@ -161,10 +230,10 @@ export function SupportChatDashboard() {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex overflow-hidden" style={{ height: 'calc(100vh - 120px)' }}>
       {/* Sidebar: Session List */}
-      <div className="w-1/3 border-r border-gray-100 flex flex-col bg-gray-50/50">
+      <div className="w-1/3 border-r border-gray-100 flex flex-col bg-gray-50/50 animate-[fadeIn_0.5s_ease-out]">
         <div className="p-4 border-b border-gray-100 bg-white flex justify-between items-center">
           <h2 className="font-semibold text-gray-800">Phiên hỗ trợ</h2>
-          <button onClick={fetchSessions} className="text-sm text-blue-600 hover:text-blue-700 font-medium">Làm mới</button>
+          <button onClick={fetchSessions} className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors">Làm mới</button>
         </div>
         <div className="flex-1 overflow-y-auto p-2">
           {sessions.length === 0 ? (
@@ -182,11 +251,16 @@ export function SupportChatDashboard() {
               >
                 <div className="flex justify-between items-start mb-1">
                   <span className="font-medium text-gray-800 text-sm">Khách hàng: {session.userId.substring(0, 8)}...</span>
-                  <span className="text-xs text-gray-400">
-                    {new Date(session.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {(unreadCounts[session.id] || 0) > 0 && (
+                      <span className="w-2.5 h-2.5 bg-red-500 rounded-full shadow-sm"></span>
+                    )}
+                    <span className="text-xs text-gray-400">
+                      {new Date(session.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className={`text-xs px-2 py-0.5 rounded-full ${
                     session.topic === 'OrderIssue' ? 'bg-red-100 text-red-700' :
                     session.topic === 'SystemIssue' ? 'bg-purple-100 text-purple-700' :
@@ -194,15 +268,24 @@ export function SupportChatDashboard() {
                   }`}>
                     {session.topic === 'OrderIssue' ? 'Đơn hàng' : session.topic === 'SystemIssue' ? 'Hệ thống' : 'Chung'}
                   </span>
-                  {!session.supportId && (
+                  {session.status === 'Closed' ? (
+                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+                      <CheckCircle className="w-3 h-3" /> Đã đóng
+                    </span>
+                  ) : !session.supportId ? (
                     <span className="text-xs text-orange-600 bg-orange-100 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
                       <AlertCircle className="w-3 h-3" /> Đang chờ
                     </span>
-                  )}
-                  {session.supportId === user?.id && (
-                     <span className="text-xs text-green-600 bg-green-100 px-2 py-0.5 rounded-full font-medium">Của bạn</span>
-                  )}
+                  ) : session.supportId === user?.id ? (
+                    <span className="text-xs text-green-600 bg-green-100 px-2 py-0.5 rounded-full font-medium">Của bạn</span>
+                  ) : null}
                 </div>
+                {(unreadCounts[session.id] || 0) > 0 && (
+                  <span className="absolute top-3 right-3 flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                  </span>
+                )}
               </button>
             ))
           )}
@@ -210,7 +293,7 @@ export function SupportChatDashboard() {
       </div>
 
       {/* Main: Chat Area */}
-      <div className="flex-1 flex flex-col bg-white">
+      <div className="flex-1 flex flex-col bg-white animate-[slideUp_0.5s_ease-out]">
         {activeSession ? (
           <>
             {/* Header */}
@@ -227,7 +310,11 @@ export function SupportChatDashboard() {
                 </div>
               </div>
               <div>
-                {!activeSession.supportId ? (
+                {activeSession.status === 'Closed' ? (
+                  <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1.5 rounded-lg flex items-center gap-1">
+                    <CheckCircle className="w-4 h-4" /> Phiên đã đóng
+                  </span>
+                ) : !activeSession.supportId ? (
                   <button 
                     onClick={() => handleClaimSession(activeSession)}
                     className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
@@ -272,23 +359,29 @@ export function SupportChatDashboard() {
 
             {/* Input Area */}
             <div className="p-4 bg-white border-t border-gray-100">
-              <form onSubmit={handleSendMessage} className="flex gap-3">
-                <input
-                  type="text"
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  placeholder="Nhập tin nhắn hỗ trợ..."
-                  disabled={activeSession.supportId !== user?.id}
-                  className="flex-1 bg-gray-50 border border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl px-4 py-3 text-sm text-gray-900 font-medium placeholder-gray-400 transition-all disabled:opacity-50"
-                />
-                <button 
-                  type="submit"
-                  disabled={!inputText.trim() || activeSession.supportId !== user?.id}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:hover:bg-blue-600 text-white px-5 rounded-xl transition-colors flex items-center justify-center shadow-sm"
-                >
-                  <Send className="w-5 h-5" />
-                </button>
-              </form>
+              {activeSession.status === 'Closed' ? (
+                <div className="text-center py-2 text-sm text-gray-500 bg-gray-50 rounded-lg">
+                  Phiên hỗ trợ này đã đóng
+                </div>
+              ) : (
+                <form onSubmit={handleSendMessage} className="flex gap-3">
+                  <input
+                    type="text"
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    placeholder="Nhập tin nhắn hỗ trợ..."
+                    disabled={activeSession.supportId !== user?.id}
+                    className="flex-1 bg-gray-50 border border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl px-4 py-3 text-sm text-gray-900 font-medium placeholder:text-gray-500 transition-all disabled:opacity-50"
+                  />
+                  <button 
+                    type="submit"
+                    disabled={!inputText.trim() || activeSession.supportId !== user?.id}
+                    className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:hover:bg-blue-600 text-white px-5 rounded-xl transition-colors flex items-center justify-center shadow-sm"
+                  >
+                    <Send className="w-5 h-5" />
+                  </button>
+                </form>
+              )}
             </div>
           </>
         ) : (

@@ -34,11 +34,16 @@ namespace ShoppingFood.Application.Features.Chat.Queries
                 );
             var userProfile = users.FirstOrDefault()?.Profile;
             
-            if (userProfile == null || (userProfile.Role != Domain.Enums.UserRole.Admin && userProfile.Role != Domain.Enums.UserRole.Coordinator))
-                return ApiResponse.Failure(403, "Forbidden. Only Admin or Coordinator can view open sessions.");
+            if (userProfile == null)
+                return ApiResponse.Failure(401, "Unauthorized.");
 
+            var isCoordinator = userProfile.Role == Domain.Enums.UserRole.Coordinator;
             var sessions = await _chatSessionRepository.GetAsync(
-                predicate: s => s.Status == Domain.Enums.ChatSessionStatus.Open,
+                predicate: s => (isCoordinator 
+                                    ? s.Topic == Domain.Enums.ChatTopic.OrderIssue 
+                                    : (s.Topic == Domain.Enums.ChatTopic.SystemIssue || s.Topic == Domain.Enums.ChatTopic.General)),
+                orderBy: q => q.OrderByDescending(s => s.CreatedAt),
+                take: int.MaxValue,
                 include: q => q.Include(s => s.Messages),
                 disableTracking: true
                 );

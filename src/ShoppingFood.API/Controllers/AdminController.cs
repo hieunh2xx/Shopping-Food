@@ -336,5 +336,32 @@ namespace ShoppingFood.API.Controllers
             var response = await _mediator.Send(command);
             return StatusCode(response.Code, response);
         }
+        [HttpGet("blacklist-keywords")]
+        public async Task<ActionResult<ApiResponse>> GetBlacklistKeywords()
+        {
+            var response = await _mediator.Send(new GetBlacklistKeywordsQuery());
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpPost("blacklist-keywords")]
+        public async Task<ActionResult<ApiResponse>> CreateBlacklistKeyword([FromBody] CreateBlacklistKeywordCommand command)
+        {
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpDelete("blacklist-keywords/{id}")]
+        public async Task<ActionResult<ApiResponse>> DeleteBlacklistKeyword(Guid id)
+        {
+            var response = await _mediator.Send(new DeleteBlacklistKeywordCommand { Id = id });
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpPut("blacklist-keywords/{id}/toggle")]
+        public async Task<ActionResult<ApiResponse>> ToggleBlacklistKeyword(Guid id)
+        {
+            var response = await _mediator.Send(new ToggleBlacklistKeywordCommand { Id = id });
+            return StatusCode(response.Code, response);
+        }
     }
 }

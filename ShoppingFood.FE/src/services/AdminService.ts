@@ -125,8 +125,17 @@ class AdminService extends BaseService<unknown> {
     return httpClient.get<IApiResponse<any>>(API_ENDPOINTS.ADMIN.REVIEW_REPORTS, { params });
   }
 
-  async moderateReview(reportId: string, data: { isApproved: boolean, adminNote: string }): Promise<IApiResponse<any>> {
-    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ADMIN.MODERATE_REVIEW_REPORT(reportId), data);
+  async moderateReviewReport(reportId: string, action: number): Promise<IApiResponse<any>> {
+    let isApproved = action > 0;
+    let adminNote = '';
+    if (action === 1) adminNote = 'Deleted review';
+    if (action === 2) adminNote = 'Deleted review & Warned user';
+
+    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ADMIN.MODERATE_REVIEW_REPORT(reportId), {
+      reportId,
+      isApproved,
+      adminNote
+    });
   }
 
   async getProductReports(params?: { skip?: number, take?: number }): Promise<IApiResponse<any>> {
@@ -156,6 +165,23 @@ class AdminService extends BaseService<unknown> {
 
   async updateRestaurantCommission(id: string, customCommissionRate: number | null): Promise<IApiResponse<any>> {
     return httpClient.put<IApiResponse<any>>(API_ENDPOINTS.ADMIN.FINANCE_CONFIG_RESTAURANT_BY_ID(id), { customCommissionRate });
+  }
+
+  // Blacklist Keywords
+  async getBlacklistKeywords(): Promise<IApiResponse<any>> {
+    return httpClient.get<IApiResponse<any>>(API_ENDPOINTS.ADMIN.BLACKLIST_KEYWORDS);
+  }
+
+  async createBlacklistKeyword(data: { keyword: string }): Promise<IApiResponse<any>> {
+    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ADMIN.BLACKLIST_KEYWORDS, data);
+  }
+
+  async deleteBlacklistKeyword(id: string): Promise<IApiResponse<any>> {
+    return httpClient.delete<IApiResponse<any>>(API_ENDPOINTS.ADMIN.BLACKLIST_KEYWORD_BY_ID(id));
+  }
+
+  async toggleBlacklistKeyword(id: string): Promise<IApiResponse<any>> {
+    return httpClient.put<IApiResponse<any>>(API_ENDPOINTS.ADMIN.BLACKLIST_KEYWORD_TOGGLE(id), {});
   }
 }
 

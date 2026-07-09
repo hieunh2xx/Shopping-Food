@@ -9,6 +9,7 @@ export interface NavItem {
   path: string;
   icon: React.ElementType;
   group?: string;
+  badge?: number | boolean;
 }
 
 export interface DashboardLayoutProps {
@@ -43,7 +44,15 @@ function NavGroupDropdown({
           onClick={() => setIsOpen(!isOpen)}
           className="w-full flex items-center justify-between px-3 pt-2 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-600 transition-colors"
         >
-          <span>{groupName}</span>
+          <div className="flex items-center gap-2">
+            <span>{groupName}</span>
+            {items.some(item => item.badge) && (
+              <span className="flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+              </span>
+            )}
+          </div>
           {isOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         </button>
       )}
@@ -64,8 +73,14 @@ function NavGroupDropdown({
                 `}
                 onClick={() => setIsSidebarOpen(false)}
               >
-                <item.icon className={`w-5 h-5 ${isExactMatch ? 'text-orange-600' : 'text-gray-400'}`} />
-                {item.name}
+                <item.icon className={`w-5 h-5 ${isExactMatch ? 'text-blue-600' : 'text-gray-400 group-hover:text-blue-600'}`} />
+                <span className="flex-1">{item.name}</span>
+                {!!item.badge && (
+                  <span className="flex h-2 w-2 mr-1">
+                    <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                  </span>
+                )}
               </Link>
             );
           })}

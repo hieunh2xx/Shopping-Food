@@ -17,6 +17,7 @@ using ShoppingFood.Dto.Product;
 using ShoppingFood.Dto.Promotion;
 using ShoppingFood.Dto.Restaurant;
 using ShoppingFood.Dto.User;
+using ShoppingFood.Dto.Admin;
 using System.Linq;
 
 namespace ShoppingFood.Application.Mappings
@@ -25,6 +26,7 @@ namespace ShoppingFood.Application.Mappings
     {
         public MappingProfile()
         {
+            CreateMap<BlacklistKeyword, BlacklistKeywordDto>();
             // User mappings
             CreateMap<User, UserDto>()
                 .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.Profile != null ? src.Profile.FullName : string.Empty))

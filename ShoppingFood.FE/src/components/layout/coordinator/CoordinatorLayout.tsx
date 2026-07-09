@@ -8,13 +8,14 @@ import {
   User,
   MessageSquare
 } from 'lucide-react';
-import { useAuth } from '../../../hooks';
+import { useAuth, useSupportChatWatcher } from '../../../hooks';
 import { ROUTES } from '../../../routes/routeConfig';
 import { DashboardLayout } from '../DashboardLayout';
 
 export function CoordinatorLayout() {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const unreadChatCount = useSupportChatWatcher(user?.role || null);
 
   const handleLogout = () => {
     logout();
@@ -26,7 +27,7 @@ export function CoordinatorLayout() {
     { name: 'Giám sát Shipper', path: ROUTES.COORDINATOR_SHIPPERS, icon: ShieldAlert },
     { name: 'Lịch sử điều phối', path: ROUTES.COORDINATOR_HISTORY, icon: History },
     { name: 'Xử lý khiếu nại', path: ROUTES.COORDINATOR_INCIDENTS, icon: ShieldCheck },
-    { name: 'Live Chat', path: ROUTES.COORDINATOR_CHAT, icon: MessageSquare },
+    { name: 'Live Chat', path: ROUTES.COORDINATOR_CHAT, icon: MessageSquare, badge: unreadChatCount },
     { name: 'Hồ sơ cá nhân', path: '/coordinator/profile', icon: User },
   ];
 

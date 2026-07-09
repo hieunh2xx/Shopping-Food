@@ -99,6 +99,9 @@ export const API_ENDPOINTS = {
     TOGGLE_VERIFICATION: (id: string) => `/Admin/Restaurants/${id}/toggle-verification`, // POST
     SUSPEND_RESTAURANT: '/Admin/suspend-restaurant', // POST (assuming it exists or will be added, wait I should check if it exists in API)
     BROADCAST_NOTIFICATION: '/Admin/notifications/broadcast', // POST
+    BLACKLIST_KEYWORDS: '/Admin/blacklist-keywords', // GET, POST
+    BLACKLIST_KEYWORD_BY_ID: (id: string) => `/Admin/blacklist-keywords/${id}`, // DELETE
+    BLACKLIST_KEYWORD_TOGGLE: (id: string) => `/Admin/blacklist-keywords/${id}/toggle`, // PUT
     REVIEW_REPORTS: '/Admin/review-reports', // GET
     MODERATE_REVIEW_REPORT: (reportId: string) => `/Admin/review-reports/${reportId}/moderate`, // POST
     PRODUCT_REPORTS: '/Admin/product-reports', // GET
@@ -260,5 +263,15 @@ export const API_ENDPOINTS = {
     HISTORY: '/Payment/history',
     DASHBOARD: '/Payment/dashboard',
   },
-} as const;
 
+  CHAT: {
+    CREATE_SESSION: '/Chat/sessions',
+    GET_MESSAGES: (sessionId: string) => `/Chat/sessions/${sessionId}/messages`,
+    GET_SESSIONS: '/Chat/sessions',
+    GET_CURRENT_SESSION: '/Chat/sessions/current',
+    GET_USER_SESSIONS: '/Chat/sessions/my',
+    CREATE_ORDER_SESSION: (orderId: string) => `/Chat/sessions/order/${orderId}`,
+    GET_SELLER_ORDERS: '/Chat/sessions/seller/orders',
+    CLAIM_SESSION: (sessionId: string) => `/Chat/sessions/${sessionId}/claim`,
+  }
+} as const;

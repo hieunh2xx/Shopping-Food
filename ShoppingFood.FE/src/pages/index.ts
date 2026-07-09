@@ -65,3 +65,4 @@ export { SepayRedirectPage } from './payment/SepayRedirectPage';
 export { PaymentSuccessPage, PaymentErrorPage, PaymentCancelPage } from './payment/PaymentResultPages';
 export { PaymentHistoryPage } from './payment/PaymentHistoryPage';
 export { AdminPaymentDashboardPage } from './admin/AdminPaymentDashboardPage';
+export { AdminBlacklistPage } from './admin/AdminBlacklistPage';

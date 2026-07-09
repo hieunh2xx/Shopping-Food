@@ -140,7 +140,7 @@ export function AdminReviewReportsPage() {
 
           <div>
             <h4 className="text-sm font-semibold text-gray-800 mb-3">Quyết định xử lý:</h4>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button 
                 onClick={() => handleModerate(0)} 
                 disabled={isSubmitting}
@@ -159,16 +159,6 @@ export function AdminReviewReportsPage() {
                 <Trash2 className="w-6 h-6 text-rose-500" />
                 <span className="text-sm font-medium text-rose-700">Xóa bình luận</span>
                 <span className="text-xs text-rose-500/70 text-center">Gỡ bỏ bình luận này khỏi hệ thống</span>
-              </button>
-
-              <button 
-                onClick={() => handleModerate(2)} 
-                disabled={isSubmitting}
-                className="flex flex-col items-center gap-2 p-4 border border-orange-200 rounded-xl hover:border-orange-300 hover:bg-orange-50 transition-colors focus:ring-2 focus:ring-orange-200 focus:outline-none bg-orange-50/30"
-              >
-                <AlertTriangle className="w-6 h-6 text-orange-500" />
-                <span className="text-sm font-medium text-orange-700">Cảnh cáo User</span>
-                <span className="text-xs text-orange-500/70 text-center">Xóa bình luận + Gửi cảnh cáo</span>
               </button>
             </div>
           </div>

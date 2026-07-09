@@ -57,7 +57,6 @@ namespace ShoppingFood.Application.Features.Products.Queries
             }
 
             Expression<Func<Product, bool>> predicate = p => 
-                (isAdmin || p.Status == ProductStatus.Approved || (userProfileId != null && p.Restaurant.OwnerId == userProfileId)) &&
                 (!statusFilter.HasValue || p.Status == statusFilter.Value) &&
                 (!request.CategoryId.HasValue || p.CategoryId == request.CategoryId.Value) &&
                 (!request.RestaurantId.HasValue || p.RestaurantId == request.RestaurantId.Value) &&

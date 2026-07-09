@@ -26,7 +26,13 @@ namespace ShoppingFood.API.Controllers
 
             if (!response.Error && response.Data != null)
             {
-                await _hubContext.Clients.Group("Support").SendAsync("NewSession", response.Data);
+                var data = Newtonsoft.Json.Linq.JObject.FromObject(response.Data);
+                var topicStr = data["topic"]?.ToString();
+                var supportGroup = (topicStr == "SystemIssue" || topicStr == "General") 
+                    ? "Support_Admin" 
+                    : "Support_Coordinator";
+                    
+                await _hubContext.Clients.Group(supportGroup).SendAsync("NewSession", response.Data);
             }
 
             return StatusCode(response.Code, response);
@@ -42,7 +48,6 @@ namespace ShoppingFood.API.Controllers
 
             if (!response.Error && response.Data != null)
             {
-                await _hubContext.Clients.Group("Support").SendAsync("NewOrderChat", response.Data);
                 var data = Newtonsoft.Json.Linq.JObject.FromObject(response.Data);
                 var restaurantId = data["restaurantId"]?.ToString();
                 if (!string.IsNullOrEmpty(restaurantId))
@@ -78,6 +83,16 @@ namespace ShoppingFood.API.Controllers
         public async Task<ActionResult<ApiResponse>> GetCurrentSession()
         {
             var query = new GetCurrentSessionQuery();
+            if (userDto != null)
+                query.CurrentUserId = userDto.Id;
+            var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpGet("sessions/my")]
+        public async Task<ActionResult<ApiResponse>> GetUserSessions()
+        {
+            var query = new GetUserSessionsQuery();
             if (userDto != null)
                 query.CurrentUserId = userDto.Id;
             var response = await _mediator.Send(query);

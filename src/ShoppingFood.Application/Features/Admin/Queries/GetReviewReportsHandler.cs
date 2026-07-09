@@ -2,6 +2,7 @@ using AutoMapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
+using ShoppingFood.Dto.Admin;
 using ShoppingFood.Dto.Support;
 using ShoppingFood.Repository.Interfaces;
 using System;
@@ -16,16 +17,19 @@ namespace ShoppingFood.Application.Features.Admin.Queries
     {
         private readonly IUserRepository _userRepository;
         private readonly ISystemReportRepository _systemReportRepository;
+        private readonly IProductReviewRepository _productReviewRepository;
         private readonly IMapper _mapper;
 
         public GetReviewReportsHandler(
             IUserRepository userRepository,
             ISystemReportRepository systemReportRepository,
+            IProductReviewRepository productReviewRepository,
             IMapper mapper
             )
         {
             _userRepository = userRepository;
             _systemReportRepository = systemReportRepository;
+            _productReviewRepository = productReviewRepository;
             _mapper = mapper;
         }
 
@@ -53,8 +57,29 @@ namespace ShoppingFood.Application.Features.Admin.Queries
                                 r.Status == Domain.Enums.ReportStatus.Pending
                 );
 
-            var dto = _mapper.Map<List<SystemReportDto>>(reports);
-            return ApiResponse.Success( dto, "Review reports retrieved successfully." );
+            var targetIds = reports.Select(r => r.TargetId).Where(id => id.HasValue).Select(id => id.Value).ToList();
+            var reviews = await _productReviewRepository.GetAsync(r => targetIds.Contains(r.Id), disableTracking: true);
+
+            var dtos = reports.Select(r => new ReviewReportDto
+            {
+                Id = r.Id,
+                ReporterId = r.ReporterId,
+                ReporterName = r.Reporter?.FullName ?? string.Empty,
+                TargetId = r.TargetId,
+                Reason = r.Title,
+                Description = r.Content,
+                ReviewContent = reviews.FirstOrDefault(rev => rev.Id == r.TargetId)?.Comment,
+                Status = r.Status.ToString(),
+                CreatedAt = r.CreatedAt
+            }).ToList();
+
+            var result = new 
+            {
+                Items = dtos,
+                TotalCount = total
+            };
+
+            return ApiResponse.Success(result, "Review reports retrieved successfully.");
         }
     }
 }

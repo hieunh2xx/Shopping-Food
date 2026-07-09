@@ -42,6 +42,7 @@ namespace ShoppingFood.Application
             services.AddSingleton<ShoppingFood.Application.Interfaces.IPaymentCacheService, ShoppingFood.Application.Services.PaymentCacheService>();
             services.AddScoped<ShoppingFood.Application.Interfaces.IPaymentOrchestrationService, ShoppingFood.Application.Services.PaymentOrchestrationService>();
             services.AddScoped<ShoppingFood.Application.Interfaces.IFlashSalePricingService, ShoppingFood.Application.Services.FlashSalePricingService>();
+            services.AddScoped<ShoppingFood.Application.Services.BlacklistFilterService>();
             services.Configure<SepayOptions>(configuration.GetSection(SepayOptions.SectionName));
             return services;
         }

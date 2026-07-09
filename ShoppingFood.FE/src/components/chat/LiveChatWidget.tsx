@@ -1,15 +1,20 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { MessageCircle, X, Send } from 'lucide-react';
+import { MessageCircle, X, Send, ChevronLeft, Plus, Clock, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../hooks';
 import { chatService } from '../../services';
 import type { IChatSession, IChatMessage, ChatTopic } from '../../interfaces';
 import toast from 'react-hot-toast';
 
+type WidgetView = 'history' | 'create' | 'chat';
+
 export function LiveChatWidget() {
   const { user, token } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [view, setView] = useState<WidgetView>('history');
+  const [sessionsList, setSessionsList] = useState<IChatSession[]>([]);
   const [session, setSession] = useState<IChatSession | null>(null);
   const [messages, setMessages] = useState<IChatMessage[]>([]);
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [inputText, setInputText] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
   const [supportJoined, setSupportJoined] = useState(false);
@@ -17,22 +22,51 @@ export function LiveChatWidget() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const sessionIdRef = useRef<string | null>(null);
 
-  const handleReceiveMessage = useCallback((message: IChatMessage) => {
-    if (sessionIdRef.current && message.sessionId !== sessionIdRef.current) return;
-    setMessages(prev => {
-      if (prev.some(m => m.id === message.id)) return prev;
-      const optimisticIndex = prev.findIndex(m =>
-        m.senderId === message.senderId &&
-        m.content === message.content &&
-        m.id.length < 20
-      );
-      if (optimisticIndex !== -1) {
-        const updated = [...prev];
-        updated[optimisticIndex] = message;
-        return updated;
+  const loadHistory = useCallback(async () => {
+    if (!token) return;
+    try {
+      setIsConnecting(true);
+      const res = await chatService.getUserSessions();
+      if (res.data) {
+        setSessionsList(res.data);
       }
-      return [...prev, message];
-    });
+    } catch {
+      toast.error('Không tải được lịch sử chat');
+    } finally {
+      setIsConnecting(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    if (user && token && isOpen && view === 'history') {
+      loadHistory();
+    }
+  }, [user, token, isOpen, view, loadHistory]);
+
+  const handleReceiveMessage = useCallback((message: IChatMessage) => {
+    if (message.sessionId === sessionIdRef.current) {
+      setMessages(prev => {
+        if (prev.some(m => m.id === message.id)) return prev;
+        const optimisticIndex = prev.findIndex(m =>
+          m.senderId === message.senderId &&
+          m.content === message.content &&
+          m.id.length < 20
+        );
+        if (optimisticIndex !== -1) {
+          const updated = [...prev];
+          updated[optimisticIndex] = message;
+          return updated;
+        }
+        return [...prev, message];
+      });
+    } else {
+      if (message.senderRole !== 'Customer') {
+        setUnreadCounts(prev => ({
+          ...prev,
+          [message.sessionId]: (prev[message.sessionId] || 0) + 1
+        }));
+      }
+    }
   }, []);
 
   const handleSupportJoined = useCallback((_sessionId: string) => {
@@ -41,34 +75,17 @@ export function LiveChatWidget() {
   }, []);
 
   const handleSessionClosed = useCallback(() => {
-    setSession(null);
-    setMessages([]);
+    setSession(prev => prev ? { ...prev, status: 'Closed' } : null);
     setSupportJoined(false);
-    sessionIdRef.current = null;
     toast('Phiên chat đã kết thúc');
   }, []);
 
   useEffect(() => {
-    if (user && token && isOpen && !session) {
-      chatService.getCurrentSession()
-        .then(res => {
-          if (res.data) {
-            setSession(res.data);
-            setMessages(res.data.messages || []);
-            sessionIdRef.current = res.data.id;
-            setSupportJoined(!!res.data.supportId);
-          }
-        })
-        .catch(() => toast.error('Không tải được phiên chat'));
-    }
-  }, [user, token, isOpen, session]);
-
-  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, view]);
 
   useEffect(() => {
-    if (!session?.id || !token) return;
+    if (view !== 'chat' || !session?.id || !token || session.status === 'Closed') return;
 
     sessionIdRef.current = session.id;
     let active = true;
@@ -95,15 +112,31 @@ export function LiveChatWidget() {
       chatService.offReceiveMessage(handleReceiveMessage);
       chatService.offSupportJoined(handleSupportJoined);
       chatService.offSessionClosed(handleSessionClosed);
-      chatService.leaveSession(session.id).catch(() => {});
+      if (session?.id) chatService.leaveSession(session.id).catch(() => {});
     };
-  }, [session?.id, token, handleReceiveMessage, handleSupportJoined, handleSessionClosed]);
+  }, [session?.id, session?.status, token, view, handleReceiveMessage, handleSupportJoined, handleSessionClosed]);
+
+  const openSession = async (s: IChatSession) => {
+    try {
+      setIsConnecting(true);
+      setSession(s);
+      sessionIdRef.current = s.id;
+      setSupportJoined(!!s.supportId);
+      setUnreadCounts(prev => ({ ...prev, [s.id]: 0 }));
+      
+      const history = await chatService.getHistory(s.id);
+      if (history.data) setMessages(history.data);
+      
+      setView('chat');
+    } catch {
+      toast.error('Không thể mở phiên chat');
+    } finally {
+      setIsConnecting(false);
+    }
+  };
 
   const handleStartChat = async (topic: ChatTopic) => {
-    if (!token) {
-      toast.error('Vui lòng đăng nhập để chat');
-      return;
-    }
+    if (!token) return;
     try {
       setIsConnecting(true);
       const res = await chatService.createSession({ topic });
@@ -116,6 +149,7 @@ export function LiveChatWidget() {
       setSupportJoined(!!res.data.supportId);
       const history = await chatService.getHistory(res.data.id);
       if (history.data) setMessages(history.data);
+      setView('chat');
     } catch {
       toast.error('Không thể bắt đầu chat');
     } finally {
@@ -125,7 +159,7 @@ export function LiveChatWidget() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputText.trim() || !session || !user || !token) return;
+    if (!inputText.trim() || !session || !user || !token || session.status === 'Closed') return;
 
     const tempId = Date.now().toString();
     const content = inputText.trim();
@@ -149,38 +183,96 @@ export function LiveChatWidget() {
     }
   };
 
-  if (!user) return null;
+  if (!user || user.role === 'Admin' || user.role === 'Coordinator') return null;
+
+  const topicLabels: Record<ChatTopic, string> = {
+    OrderIssue: 'Vấn đề đơn hàng',
+    SystemIssue: 'Lỗi hệ thống',
+    General: 'Thông tin chung',
+  };
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
       {isOpen ? (
         <div className="w-80 sm:w-96 h-[500px] max-h-[80vh] bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden mb-4">
-          <div className="bg-gradient-to-r from-orange-500 to-red-500 p-4 text-white flex justify-between items-center">
-            <div>
-              <h3 className="font-semibold text-lg">Hỗ trợ trực tuyến</h3>
-              <p className="text-xs text-orange-100">
-                {session
-                  ? supportJoined
-                    ? 'Nhân viên đang hỗ trợ'
-                    : 'Đang chờ nhân viên...'
-                  : 'Chọn chủ đề để bắt đầu'}
-              </p>
+          <div className="bg-gradient-to-r from-orange-500 to-red-500 p-4 text-white flex justify-between items-center shrink-0">
+            <div className="flex items-center gap-2">
+              {view !== 'history' && (
+                <button 
+                  onClick={() => setView('history')}
+                  className="p-1 hover:bg-white/20 rounded-full"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+              )}
+              <div>
+                <h3 className="font-semibold text-lg">Hỗ trợ trực tuyến</h3>
+                {view === 'chat' && session && (
+                  <p className="text-xs text-orange-100">
+                    {session.status === 'Closed' 
+                      ? 'Phiên đã đóng' 
+                      : supportJoined ? 'Nhân viên đang hỗ trợ' : 'Đang chờ nhân viên...'}
+                  </p>
+                )}
+              </div>
             </div>
             <button onClick={() => setIsOpen(false)} className="p-1 hover:bg-white/20 rounded-full">
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 bg-gray-50 flex flex-col gap-4 relative">
-            {!session ? (
-              <div className="flex flex-col gap-3 justify-center h-full">
+          <div className="flex-1 overflow-y-auto bg-gray-50 flex flex-col relative min-h-0">
+            {view === 'history' && (
+              <div className="p-4 flex flex-col gap-3 h-full">
+                <button
+                  onClick={() => setView('create')}
+                  className="w-full bg-white border border-orange-200 text-orange-600 hover:bg-orange-50 py-3 px-4 rounded-xl shadow-sm flex items-center justify-center gap-2 font-medium"
+                >
+                  <Plus className="w-5 h-5" />
+                  Tạo yêu cầu mới
+                </button>
+
+                <div className="flex-1 overflow-y-auto flex flex-col gap-2 mt-2">
+                  {sessionsList.length === 0 && !isConnecting && (
+                    <p className="text-center text-gray-500 text-sm mt-8">Chưa có lịch sử hỗ trợ.</p>
+                  )}
+                  {sessionsList.map(s => (
+                    <div 
+                      key={s.id} 
+                      onClick={() => openSession(s)}
+                      className="relative bg-white p-3 rounded-xl border border-gray-100 shadow-sm hover:border-orange-200 cursor-pointer transition-colors flex-shrink-0"
+                    >
+                      <div className="flex justify-between items-start mb-1">
+                        <span className="font-medium text-gray-800 text-sm">{topicLabels[s.topic as ChatTopic]}</span>
+                        {s.status === 'Open' ? (
+                          <span className="flex items-center gap-1 text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+                            <Clock className="w-3 h-3" /> Đang mở
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1 text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium">
+                            <CheckCircle className="w-3 h-3" /> Đã đóng
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        {new Date(s.createdAt).toLocaleString('vi-VN')}
+                      </div>
+                      {(unreadCounts[s.id] || 0) > 0 && (
+                        <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {view === 'create' && (
+              <div className="p-4 flex flex-col gap-3 h-full">
                 <p className="text-sm text-gray-500 text-center mb-2">Chọn chủ đề cần hỗ trợ:</p>
                 {(['OrderIssue', 'SystemIssue', 'General'] as ChatTopic[]).map((topic, i) => {
-                  const labels: Record<ChatTopic, string> = {
-                    OrderIssue: 'Vấn đề đơn hàng',
-                    SystemIssue: 'Lỗi hệ thống',
-                    General: 'Thông tin chung',
-                  };
                   const colors = ['border-orange-200 text-orange-600 hover:bg-orange-50', 'border-blue-200 text-blue-600 hover:bg-blue-50', 'border-gray-200 text-gray-700 hover:bg-gray-100'];
                   return (
                     <button
@@ -190,13 +282,15 @@ export function LiveChatWidget() {
                       disabled={isConnecting}
                       className={`w-full bg-white border font-medium py-3 px-4 rounded-xl shadow-sm text-left ${colors[i]}`}
                     >
-                      {labels[topic]}
+                      {topicLabels[topic]}
                     </button>
                   );
                 })}
               </div>
-            ) : (
-              <>
+            )}
+
+            {view === 'chat' && (
+              <div className="p-4 flex flex-col gap-4 flex-1">
                 {messages.length === 0 && (
                   <p className="text-center text-gray-400 text-sm py-8">
                     Gửi tin nhắn — nhân viên sẽ phản hồi realtime
@@ -206,7 +300,7 @@ export function LiveChatWidget() {
                   const isMe = msg.senderId === user.id;
                   return (
                     <div key={msg.id} className={`flex flex-col max-w-[80%] ${isMe ? 'self-end items-end' : 'self-start items-start'}`}>
-                      <div className={`p-3 rounded-2xl text-sm ${isMe ? 'bg-orange-500 text-white rounded-tr-sm' : 'bg-white text-gray-900 border border-gray-200 rounded-tl-sm'}`}>
+                      <div className={`p-3 rounded-2xl text-sm whitespace-pre-wrap ${isMe ? 'bg-orange-500 text-white rounded-tr-sm' : 'bg-white text-gray-900 border border-gray-200 rounded-tl-sm'}`}>
                         {msg.content}
                       </div>
                       <span className="text-[10px] text-gray-400 mt-1">
@@ -216,34 +310,40 @@ export function LiveChatWidget() {
                   );
                 })}
                 <div ref={messagesEndRef} />
-              </>
+              </div>
             )}
 
             {isConnecting && (
-              <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+              <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
                 <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
               </div>
             )}
           </div>
 
-          {session && (
-            <div className="p-3 bg-white border-t border-gray-100">
-              <form onSubmit={handleSendMessage} className="flex gap-2">
-                <input
-                  type="text"
-                  value={inputText}
-                  onChange={e => setInputText(e.target.value)}
-                  placeholder="Nhập tin nhắn..."
-                  className="flex-1 bg-gray-50 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-orange-200 focus:border-orange-500 border border-transparent"
-                />
-                <button
-                  type="submit"
-                  disabled={!inputText.trim() || isConnecting}
-                  className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white p-2.5 rounded-full"
-                >
-                  <Send className="w-4 h-4" />
-                </button>
-              </form>
+          {view === 'chat' && session && (
+            <div className="p-3 bg-white border-t border-gray-100 shrink-0">
+              {session.status === 'Closed' ? (
+                <div className="text-center py-2 text-sm text-gray-500 bg-gray-50 rounded-lg">
+                  Phiên hỗ trợ này đã đóng
+                </div>
+              ) : (
+                <form onSubmit={handleSendMessage} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={inputText}
+                    onChange={e => setInputText(e.target.value)}
+                    placeholder="Nhập tin nhắn..."
+                    className="flex-1 bg-gray-50 rounded-full px-4 py-2 text-sm text-gray-900 placeholder:text-gray-500 font-medium focus:ring-2 focus:ring-orange-200 focus:border-orange-500 border border-transparent"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!inputText.trim() || isConnecting}
+                    className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white p-2.5 rounded-full shrink-0"
+                  >
+                    <Send className="w-4 h-4" />
+                  </button>
+                </form>
+              )}
             </div>
           )}
         </div>
@@ -251,10 +351,16 @@ export function LiveChatWidget() {
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className="bg-gradient-to-r from-orange-500 to-red-500 text-white p-4 rounded-full shadow-lg hover:scale-105 transition-transform"
+          className="relative bg-gradient-to-r from-orange-500 to-red-500 text-white p-4 rounded-full shadow-[0_0_15px_rgba(249,115,22,0.5)] hover:scale-105 transition-all duration-300 group"
           aria-label="Mở chat hỗ trợ"
         >
-          <MessageCircle className="w-7 h-7" />
+          {Object.values(unreadCounts).some(count => count > 0) && (
+            <span className="absolute -top-1 -right-1 flex h-4 w-4">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 border-2 border-white"></span>
+            </span>
+          )}
+          <MessageCircle className="w-7 h-7 group-hover:animate-none" />
         </button>
       )}
     </div>

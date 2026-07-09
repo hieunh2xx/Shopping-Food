@@ -42,6 +42,7 @@ function normalizeSession(raw: Record<string, unknown>): IChatSession {
 class ChatService {
   private hubConnection: HubConnection | null = null;
   private handlersRegistered = false;
+  private isStarting = false;
   private endpoint = '/Chat';
   private messageCallbacks = new Set<(message: IChatMessage) => void>();
   private newSessionCallbacks = new Set<(session: IChatSession) => void>();
@@ -62,7 +63,7 @@ class ChatService {
   }
 
   async getHistory(sessionId: string): Promise<IApiResponse<IChatMessage[]>> {
-    const res = await httpClient.get<IApiResponse<IChatMessage[]>>(API_ENDPOINTS.CHAT.GET_MESSAGES(sessionId));
+    const res = await httpClient.get<IApiResponse<IChatMessage[]>>(`${API_ENDPOINTS.CHAT.GET_MESSAGES(sessionId)}?t=${Date.now()}`);
     if (res.data) {
       res.data = res.data.map(m => normalizeMessage(m as unknown as Record<string, unknown>));
     }
@@ -70,15 +71,24 @@ class ChatService {
   }
 
   async getOpenSessions(): Promise<IApiResponse<IChatSession[]>> {
-    const res = await httpClient.get<IApiResponse<IChatSession[]>>(API_ENDPOINTS.CHAT.GET_SESSIONS);
+    const res = await httpClient.get<IApiResponse<IChatSession[]>>(`${API_ENDPOINTS.CHAT.GET_SESSIONS}?t=${Date.now()}`);
     if (res.data) {
       res.data = res.data.map(s => normalizeSession(s as unknown as Record<string, unknown>));
     }
     return res;
   }
 
+  async getUserSessions(): Promise<IApiResponse<IChatSession[]>> {
+    const res = await httpClient.get<IApiResponse<IChatSession[]>>(`${API_ENDPOINTS.CHAT.GET_USER_SESSIONS}?t=${Date.now()}`);
+    if (res.data) {
+      res.data = res.data.map(s => normalizeSession(s as unknown as Record<string, unknown>));
+    }
+    return res;
+  }
+
+
   async getCurrentSession(): Promise<IApiResponse<IChatSession | null>> {
-    const res = await httpClient.get<IApiResponse<IChatSession | null>>(API_ENDPOINTS.CHAT.GET_CURRENT_SESSION);
+    const res = await httpClient.get<IApiResponse<IChatSession | null>>(`${API_ENDPOINTS.CHAT.GET_CURRENT_SESSION}?t=${Date.now()}`);
     if (res.data) {
       res.data = normalizeSession(res.data as unknown as Record<string, unknown>);
     }
@@ -104,13 +114,21 @@ class ChatService {
 
   async startConnection(token: string): Promise<void> {
     if (this.hubConnection?.state === 'Connected') return;
-
-    if (this.hubConnection?.state === 'Connecting') {
+    if (this.isStarting || this.hubConnection?.state === 'Connecting') {
       await this.waitForConnection();
       return;
     }
 
     const hubUrl = `${this.getHubBaseUrl()}/hubs/chat`;
+    console.log('[ChatService] Connecting to hub:', hubUrl);
+
+    this.isStarting = true;
+    // Stop any stale connection first to avoid "stopped during negotiation" on re-mount
+    if (this.hubConnection) {
+      try { await this.hubConnection.stop(); } catch { /* ignore */ }
+      this.hubConnection = null;
+      this.handlersRegistered = false;
+    }
 
     this.hubConnection = new HubConnectionBuilder()
       .withUrl(hubUrl, { accessTokenFactory: () => token })
@@ -120,7 +138,17 @@ class ChatService {
 
     this.registerHubHandlers();
 
-    await this.hubConnection.start();
+    try {
+      await this.hubConnection.start();
+      console.log('[ChatService] Connected successfully. State:', this.hubConnection.state);
+    } catch (err) {
+      console.error('[ChatService] startConnection FAILED:', err);
+      this.hubConnection = null;
+      this.handlersRegistered = false;
+      throw err;
+    } finally {
+      this.isStarting = false;
+    }
   }
 
   private registerHubHandlers(): void {
@@ -159,6 +187,9 @@ class ChatService {
       if (Date.now() - start > timeoutMs) {
         throw new Error('SignalR connection timeout');
       }
+      if (!this.hubConnection && !this.isStarting) {
+        throw new Error('SignalR connection was cancelled');
+      }
       await new Promise(r => setTimeout(r, 100));
     }
   }
@@ -173,6 +204,7 @@ class ChatService {
   }
 
   async stopConnection(): Promise<void> {
+    this.isStarting = false;
     if (this.hubConnection) {
       await this.hubConnection.stop();
       this.hubConnection = null;
@@ -211,9 +243,14 @@ class ChatService {
     await this.hubConnection!.invoke('CloseSession', sessionId);
   }
 
-  async joinSupportGroup(): Promise<void> {
+  async joinCoordinatorGroup(): Promise<void> {
     await this.ensureConnected();
-    await this.hubConnection!.invoke('JoinSupportGroup');
+    await this.hubConnection!.invoke('JoinCoordinatorGroup');
+  }
+
+  async joinAdminGroup(): Promise<void> {
+    await this.ensureConnected();
+    await this.hubConnection!.invoke('JoinAdminGroup');
   }
 
   onReceiveMessage(callback: (message: IChatMessage) => void): void {
