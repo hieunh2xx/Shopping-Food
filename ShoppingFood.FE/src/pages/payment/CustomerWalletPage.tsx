@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Wallet, ArrowUpCircle, History, TrendingUp, TrendingDown, RefreshCw, ChevronDown, Sparkles } from 'lucide-react';
 import { Card, Button, Input } from '../../components/common';
 import { paymentService, type IWalletDto, type ITransactionDto } from '../../services/PaymentService';
-import { formatCurrency } from '../../utils/formatters';
+import { formatCurrency, formatTransactionDescription } from '../../utils/formatters';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../hooks';
 
@@ -23,6 +23,7 @@ function getTransactionBadge(type: string) {
     Commission: { label: 'Hoa hồng', cls: 'bg-purple-100 text-purple-700' },
     Withdrawal: { label: 'Rút tiền', cls: 'bg-red-100 text-red-700' },
     ShipperIncome: { label: 'Thu nhập', cls: 'bg-emerald-100 text-emerald-700' },
+    ShipperEarning: { label: 'Thu nhập', cls: 'bg-emerald-100 text-emerald-700' },
     CodCollection: { label: 'Thu hộ COD', cls: 'bg-amber-100 text-amber-700' },
     CodRepayment: { label: 'Nộp COD', cls: 'bg-indigo-100 text-indigo-700' },
   };
@@ -92,10 +93,12 @@ export function CustomerWalletPage() {
   const displayAmount = parseInt(topUpAmount, 10);
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto">
-      {/* Wallet Header Card */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-500 via-orange-600 to-amber-600 p-6 text-white shadow-xl shadow-orange-500/20">
-        {/* Background decorations */}
+    <div className="p-6">
+      <div className="space-y-6 w-full">
+        {/* Top Row: Wallet Header & Top Up */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
+          {/* Wallet Header Card */}
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-500 via-orange-600 to-amber-600 p-6 text-white shadow-xl shadow-orange-500/20 h-full">
         <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
         
@@ -124,7 +127,7 @@ export function CustomerWalletPage() {
       </div>
 
       {/* Top Up Section */}
-      <Card className="p-6 border border-gray-100">
+      <Card className="p-6 border border-gray-100 h-full flex flex-col justify-center">
         <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2 text-lg">
           <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
             <ArrowUpCircle className="w-5 h-5 text-green-600" />
@@ -170,9 +173,10 @@ export function CustomerWalletPage() {
           </Button>
         </div>
       </Card>
+      </div>
 
       {/* Transaction History */}
-      <Card className="p-6 border border-gray-100">
+      <Card className="p-6 border border-gray-100 w-full">
         <div className="flex items-center justify-between mb-5">
           <h3 className="font-bold text-gray-900 flex items-center gap-2 text-lg">
             <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -197,7 +201,7 @@ export function CustomerWalletPage() {
                 {getTransactionIcon(tx.type, tx.amount)}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{tx.description}</p>
+                    <p className="text-sm font-semibold text-gray-900 truncate">{formatTransactionDescription(tx.description)}</p>
                     {getTransactionBadge(tx.type)}
                   </div>
                   <div className="flex items-center gap-3 text-xs text-gray-400">
@@ -224,6 +228,7 @@ export function CustomerWalletPage() {
           </div>
         )}
       </Card>
+      </div>
     </div>
   );
 }

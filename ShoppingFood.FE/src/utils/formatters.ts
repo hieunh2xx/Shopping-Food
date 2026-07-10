@@ -1,11 +1,12 @@
 /**
  * Format currency to Vietnamese Dong
  */
-export function formatCurrency(amount: number): string {
+export function formatCurrency(amount: number | undefined | null): string {
+  const validAmount = (typeof amount === 'number' && !isNaN(amount)) ? amount : 0;
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
     currency: 'VND',
-  }).format(amount);
+  }).format(validAmount);
 }
 
 /**
@@ -143,9 +144,19 @@ export function getPaymentMethodLabel(method: string): string {
  */
 export function getRoleLabel(role: string): string {
   const map: Record<string, string> = {
-    Admin: 'Quản trị viên',
-    Seller: 'Người bán',
-    Customer: 'Khách hàng',
+    'Customer': 'Khách hàng',
+    'Shipper': 'Tài xế',
+    'Seller': 'Người bán hàng',
+    'Admin': 'Quản trị viên',
   };
   return map[role] || role;
+}
+
+/**
+ * Format transaction description to truncate UUIDs
+ */
+export function formatTransactionDescription(desc: string): string {
+  if (!desc) return desc;
+  const uuidRegex = /#?([a-fA-F0-9]{8})-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}/g;
+  return desc.replace(uuidRegex, (match, p1) => `#${p1.toUpperCase()}`);
 }

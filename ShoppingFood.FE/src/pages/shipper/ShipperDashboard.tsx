@@ -82,8 +82,9 @@ export function ShipperDashboard() {
   // GPS Coordinates (starts with HCM/Hanoi default, then grabs real Geolocation)
   const [coords, setCoords] = useState({ lat: 10.7769, lng: 106.7009 });
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+  const formatCurrency = (amount: number | undefined | null) => {
+    const validAmount = (typeof amount === 'number' && !isNaN(amount)) ? amount : 0;
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(validAmount);
   };
 
   // Fetch available offers

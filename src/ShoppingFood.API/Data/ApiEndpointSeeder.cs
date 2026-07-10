@@ -206,6 +206,15 @@ namespace ShoppingFood.API.Data
                 roles.Add(UserRole.Coordinator);
             }
 
+            // Payment
+            if (path.StartsWith("/api/payment/wallet") || path.StartsWith("/api/payment/transactions") || path.StartsWith("/api/payment/withdraw"))
+            {
+                roles.Add(UserRole.Customer);
+                roles.Add(UserRole.Seller);
+                roles.Add(UserRole.Shipper);
+                roles.Add(UserRole.Mall);
+            }
+
             // FlashSale
             if (path.StartsWith("/api/flashsale"))
             {

@@ -12,8 +12,9 @@ export function ShipperIncomePage() {
   const [loading, setLoading] = useState(true);
   const [incomeReport, setIncomeReport] = useState<IShipperIncomeReportDto | null>(null);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+  const formatCurrency = (amount: number | undefined | null) => {
+    const validAmount = (typeof amount === 'number' && !isNaN(amount)) ? amount : 0;
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(validAmount);
   };
 
   const getDateRange = useCallback(() => {

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Banknote, ArrowDownCircle, AlertTriangle, History, TrendingUp, TrendingDown, RefreshCw, ChevronDown, Building2, CreditCard, Sparkles, Wallet, ShieldAlert, CircleDollarSign } from 'lucide-react';
 import { Card, Button, Input } from '../../components/common';
 import { paymentService, type IWalletDto, type ITransactionDto } from '../../services/PaymentService';
-import { formatCurrency } from '../../utils/formatters';
+import { formatCurrency, formatTransactionDescription } from '../../utils/formatters';
 import toast from 'react-hot-toast';
 
 /* ─── Shared helpers ─── */
@@ -60,7 +60,7 @@ function TransactionHistory({ transactions, take, onLoadMore, onRefresh }: { tra
               {getTransactionIcon(tx.type, tx.amount)}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
-                  <p className="text-sm font-semibold text-gray-900 truncate">{tx.description}</p>
+                  <p className="text-sm font-semibold text-gray-900 truncate">{formatTransactionDescription(tx.description)}</p>
                   {getTransactionBadge(tx.type)}
                 </div>
                 <div className="flex items-center gap-3 text-xs text-gray-400">
@@ -166,9 +166,8 @@ export function SellerWalletPage() {
 
   return (
     <div className="p-6">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full">
-      {/* Left Column: Info & Forms */}
-      <div className="lg:col-span-5 space-y-6">
+      <div className="space-y-6 w-full">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
       {/* Wallet Header */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-green-600 to-teal-600 p-6 text-white shadow-xl shadow-green-500/20">
         <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
@@ -207,7 +206,7 @@ export function SellerWalletPage() {
       </div>
 
       {/* Withdrawal Form */}
-      <Card className="p-6 border border-gray-100">
+      <Card className="p-6 border border-gray-100 h-full">
         <h3 className="font-bold text-gray-900 mb-5 flex items-center gap-2 text-lg">
           <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
             <ArrowDownCircle className="w-5 h-5 text-orange-600" />
@@ -263,14 +262,13 @@ export function SellerWalletPage() {
           </Button>
         </div>
       </Card>
-
+      </div>
       </div>
 
       {/* Right Column: Transaction History */}
-      <div className="lg:col-span-7">
+      <div className="w-full">
         {/* Transaction History */}
         <TransactionHistory transactions={transactions} take={take} onLoadMore={() => setTake(prev => prev + 10)} onRefresh={loadData} />
-      </div>
       </div>
     </div>
   );
@@ -370,16 +368,17 @@ export function ShipperWalletPage() {
 
   return (
     <div className="p-6">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full">
+      <div className="space-y-6 w-full">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
       {/* Left Column: Info & Forms */}
-      <div className="lg:col-span-5 space-y-6">
+      <div className="space-y-6 h-full flex flex-col">
       {/* Wallet Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500 via-purple-600 to-indigo-600 p-6 text-white shadow-xl shadow-purple-500/20">
+      <div className="relative flex-1 overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500 via-purple-600 to-indigo-600 p-6 text-white shadow-xl shadow-purple-500/20">
         <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
 
-        <div className="relative z-10">
-          <div className="flex items-center justify-between mb-6">
+        <div className="relative z-10 h-full flex flex-col">
+          <div className="flex items-center justify-between mb-6 shrink-0">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
                 <Wallet className="w-6 h-6" />
@@ -395,13 +394,13 @@ export function ShipperWalletPage() {
             </div>
           </div>
 
-          <div className="mb-5">
+          <div className="mb-5 shrink-0">
             <p className="text-purple-100 text-xs uppercase tracking-wider mb-1">Số dư hiện tại</p>
             <p className="text-4xl font-black tracking-tight">{formatCurrency(wallet?.balance || 0)}</p>
           </div>
 
           {/* COD progress */}
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 mt-auto shrink-0">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-purple-100 font-medium">COD thu hộ</span>
               <span className="text-sm font-bold">{formatCurrency(codCollected)} / {formatCurrency(debtLimit)}</span>
@@ -431,6 +430,8 @@ export function ShipperWalletPage() {
           </div>
         </div>
       )}
+      </div>
+      <div className="space-y-6">
 
       {/* Repay COD Section */}
       <Card className="p-6 border border-gray-100">
@@ -509,15 +510,15 @@ export function ShipperWalletPage() {
           </Button>
         </div>
       </Card>
-
+      </div>
+      </div>
       </div>
 
       {/* Right Column: Transaction History */}
-      <div className="lg:col-span-7">
+      <div className="w-full">
         {/* Transaction History */}
         <TransactionHistory transactions={transactions} take={take} onLoadMore={() => setTake(prev => prev + 10)} onRefresh={loadData} />
       </div>
-    </div>
     </div>
   );
 }
