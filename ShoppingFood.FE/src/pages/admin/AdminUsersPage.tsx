@@ -122,7 +122,7 @@ export function AdminUsersPage() {
         toast.error(res.message || 'Lỗi cập nhật hạng');
       }
     } catch {
-      toast.error('Có lỗi xảy ra');
+      toast.error('Thao tác thất bại do lỗi kết nối mạng.');
     } finally {
       setIsUpdating(false);
     }
@@ -147,7 +147,7 @@ export function AdminUsersPage() {
         toast.error(res.message || 'Lỗi tạo tài khoản');
       }
     } catch {
-      toast.error('Có lỗi xảy ra khi tạo tài khoản');
+      toast.error('Tạo tài khoản thất bại do lỗi kết nối mạng.');
     } finally {
       setIsCreating(false);
     }
@@ -163,8 +163,8 @@ export function AdminUsersPage() {
         toast.error(res.message || 'Lỗi cập nhật trạng thái');
       }
     } catch {
-      toast.error('Có lỗi xảy ra khi cập nhật trạng thái');
-    }
+      toast.error('Cập nhật trạng thái thất bại do lỗi kết nối mạng.');
+    } finally { }
   };
 
   const totalPages = Math.ceil(total / take);

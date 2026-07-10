@@ -62,7 +62,7 @@ export function SellerDiscountsPage() {
         setTotal(res.total || 0);
       }
     } catch {
-      toast.error('Lỗi tải danh sách mã giảm giá');
+      toast.error('Tải danh sách mã giảm giá thất bại do lỗi kết nối mạng.');
     } finally {
       setIsLoading(false);
     }
@@ -149,7 +149,7 @@ export function SellerDiscountsPage() {
         }
       }
     } catch {
-      toast.error('Có lỗi xảy ra');
+      toast.error('Lưu mã giảm giá thất bại do lỗi kết nối mạng.');
     }
   };
 
@@ -164,7 +164,7 @@ export function SellerDiscountsPage() {
         toast.error(res.message || 'Lỗi xóa mã');
       }
     } catch {
-      toast.error('Lỗi khi xóa mã');
+      toast.error('Xóa mã giảm giá thất bại do lỗi kết nối mạng.');
     }
   };
 
@@ -178,7 +178,7 @@ export function SellerDiscountsPage() {
         toast.error(res.message || 'Lỗi tải thống kê');
       }
     } catch {
-      toast.error('Lỗi khi tải thống kê mã giảm giá');
+      toast.error('Tải thống kê mã giảm giá thất bại do lỗi kết nối mạng.');
     }
   };
 

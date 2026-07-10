@@ -126,6 +126,8 @@ export const API_ENDPOINTS = {
   SYSTEM: {
     GLOBAL_MENU_CATEGORY: '/System/global-menu-category', // GET
     LEGAL: '/System/legal', // GET
+    ACTION_LOGS: '/System/action-logs', // GET
+    ERROR_LOGS: '/System/error-logs', // GET
   },
 
   // === Shipper (ShipperController) ===

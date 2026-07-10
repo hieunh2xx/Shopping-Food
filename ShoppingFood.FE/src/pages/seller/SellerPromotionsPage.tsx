@@ -51,7 +51,7 @@ export function SellerPromotionsPage() {
         setPromotions(res.data);
       }
     } catch {
-      toast.error('Lỗi tải danh sách khuyến mãi');
+      toast.error('Tải danh sách khuyến mãi thất bại do lỗi kết nối mạng.');
     } finally {
       setIsLoading(false);
     }
@@ -131,7 +131,7 @@ export function SellerPromotionsPage() {
         }
       }
     } catch {
-      toast.error('Có lỗi xảy ra');
+      toast.error('Lưu khuyến mãi thất bại do lỗi kết nối mạng.');
     }
   };
 
@@ -146,7 +146,7 @@ export function SellerPromotionsPage() {
         toast.error(res.message || 'Lỗi xóa');
       }
     } catch {
-      toast.error('Lỗi khi xóa');
+      toast.error('Xóa khuyến mãi thất bại do lỗi kết nối mạng.');
     }
   };
 

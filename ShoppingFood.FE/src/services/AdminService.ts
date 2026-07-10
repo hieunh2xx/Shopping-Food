@@ -58,12 +58,25 @@ class AdminService extends BaseService<unknown> {
   }
 
   async exportFinancialReport(days: number = 30, format: 'excel' | 'pdf' = 'excel'): Promise<Blob> {
-    const response = await httpClient.get(API_ENDPOINTS.ADMIN.REPORTS_FINANCIAL, {
+    return httpClient.get<Blob>(API_ENDPOINTS.ADMIN.REPORTS_FINANCIAL, {
       params: { days, format },
       responseType: 'blob'
     });
-    return response as unknown as Blob;
   }
+
+  async getActionLogs(skip: number = 0, take: number = 10, filter: string = '', orderDirection: string = 'desc'): Promise<IApiResponse<any[]>> {
+    console.log('API_ENDPOINTS.SYSTEM:', API_ENDPOINTS.SYSTEM);
+    return httpClient.get<IApiResponse<any[]>>(API_ENDPOINTS.SYSTEM?.ACTION_LOGS || '/System/action-logs', {
+      params: { skip, take, filter, orderDirection }
+    });
+  }
+
+  async getErrorLogs(skip: number = 0, take: number = 10, filter: string = '', orderDirection: string = 'desc'): Promise<IApiResponse<any[]>> {
+    return httpClient.get<IApiResponse<any[]>>(API_ENDPOINTS.SYSTEM?.ERROR_LOGS || '/System/error-logs', {
+      params: { skip, take, filter, orderDirection }
+    });
+  }
+
 
   async getSellerApplications(params?: { status?: string; skip?: number; take?: number }): Promise<IApiResponse<any>> {
     return httpClient.get<IApiResponse<any>>(API_ENDPOINTS.ADMIN.SELLER_APPLICATIONS, { params });

@@ -52,7 +52,7 @@ export function CreateTicketModal({ isOpen, onClose, onSuccess }: CreateTicketMo
         toast.error(res.message || 'Lỗi khi tải ảnh lên');
       }
     } catch {
-      toast.error('Lỗi kết nối khi tải ảnh');
+      toast.error('Tải ảnh lên thất bại do lỗi kết nối mạng.');
     } finally {
       setIsUploading(false);
       e.target.value = '';
@@ -89,7 +89,7 @@ export function CreateTicketModal({ isOpen, onClose, onSuccess }: CreateTicketMo
         toast.error(res.message || 'Lỗi khi tạo phiếu hỗ trợ');
       }
     } catch {
-      toast.error('Lỗi kết nối mạng');
+      toast.error('Tạo phiếu hỗ trợ thất bại do lỗi mạng.');
     } finally {
       setIsSubmitting(false);
     }

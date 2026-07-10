@@ -51,7 +51,7 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
         toast.error(res.message || 'Không thể tải ảnh lên', { id: toastId });
       }
     } catch {
-      toast.error('Lỗi khi tải ảnh lên', { id: toastId });
+      toast.error('Tải ảnh lên thất bại do lỗi kết nối mạng.', { id: toastId });
     } finally {
       setIsUploading(false);
     }
@@ -214,8 +214,8 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
           toast.error(res.message || 'Lỗi thêm sản phẩm');
         }
       }
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Có lỗi xảy ra');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Lưu sản phẩm thất bại do lỗi kết nối mạng.');
     } finally {
       setIsSubmitting(false);
     }
@@ -574,7 +574,7 @@ export function SellerProductsPage() {
         toast.error('Không thể lấy chi tiết sản phẩm');
       }
     } catch {
-      toast.error('Không thể lấy chi tiết sản phẩm');
+      toast.error('Tải chi tiết sản phẩm thất bại do lỗi kết nối mạng.');
     }
   };
 
@@ -606,7 +606,7 @@ export function SellerProductsPage() {
         toast.error(res.message || 'Lỗi thay đổi trạng thái');
       }
     } catch {
-      toast.error('Có lỗi xảy ra');
+      toast.error('Cập nhật trạng thái hiển thị thất bại do lỗi kết nối mạng.');
     } finally {
       setTogglingId(null);
     }
@@ -624,7 +624,7 @@ export function SellerProductsPage() {
         toast.error(res.message || 'Lỗi cập nhật trạng thái kho');
       }
     } catch {
-      toast.error('Có lỗi xảy ra');
+      toast.error('Cập nhật trạng thái kho thất bại do lỗi kết nối mạng.');
     } finally {
       setTogglingId(null);
     }

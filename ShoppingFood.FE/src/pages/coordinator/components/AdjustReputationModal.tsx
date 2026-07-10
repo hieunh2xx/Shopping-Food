@@ -40,8 +40,8 @@ export const AdjustReputationModal: React.FC<AdjustReputationModalProps> = ({ sh
       } else {
         toast.error(res.message || 'Lỗi khi thay đổi điểm');
       }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Lỗi kết nối');
+    } catch {
+      toast.error('Thay đổi điểm thất bại do lỗi kết nối mạng.');
     } finally {
       setLoading(false);
     }

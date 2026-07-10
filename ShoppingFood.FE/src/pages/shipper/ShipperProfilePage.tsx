@@ -139,8 +139,8 @@ export function ShipperProfilePage() {
       });
       toast.success('Cập nhật lịch làm việc và khu vực thành công!');
       fetchScheduleAndArea();
-    } catch (err) {
-      toast.error('Không thể cập nhật. Vui lòng thử lại.');
+    } catch {
+      toast.error('Cập nhật trạng thái hoạt động thất bại do lỗi kết nối mạng.');
     } finally {
       setSaving(false);
     }

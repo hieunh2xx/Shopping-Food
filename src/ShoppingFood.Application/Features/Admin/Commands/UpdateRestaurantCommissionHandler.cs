@@ -31,7 +31,7 @@ namespace ShoppingFood.Application.Features.Admin.Commands
             }
 
             profile.CustomCommissionRate = request.CustomCommissionRate;
-            profile.UpdatedAt = System.DateTime.UtcNow;
+            profile.UpdatedAt = DateTime.UtcNow;
 
             _repository.Update(profile);
             await _unitOfWork.SaveChangesAsync();

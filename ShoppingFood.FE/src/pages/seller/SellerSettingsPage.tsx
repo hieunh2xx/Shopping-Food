@@ -114,7 +114,7 @@ export function SellerSettingsPage() {
         toast.error(res.message || 'Lỗi khi tải thông tin cá nhân');
       }
     } catch {
-      toast.error('Có lỗi xảy ra khi kết nối máy chủ');
+      toast.error('Không thể lấy thông tin cấu hình cửa hàng. Vui lòng kiểm tra kết nối mạng.');
     } finally {
       setIsLoading(false);
     }
@@ -145,7 +145,7 @@ export function SellerSettingsPage() {
         toast.error(res.message || 'Lỗi khi cập nhật', { id: toastId });
       }
     } catch {
-      toast.error('Lỗi kết nối máy chủ', { id: toastId });
+      toast.error('Cập nhật thông tin cửa hàng thất bại do lỗi kết nối mạng.', { id: toastId });
     } finally {
       setIsSaving(false);
     }
@@ -196,7 +196,7 @@ export function SellerSettingsPage() {
         toast.error(res.message || 'Lỗi khi cập nhật', { id: toastId });
       }
     } catch {
-      toast.error('Lỗi kết nối máy chủ', { id: toastId });
+      toast.error('Cập nhật giờ hoạt động thất bại do lỗi kết nối mạng.', { id: toastId });
     } finally {
       setIsSaving(false);
     }
@@ -215,7 +215,7 @@ export function SellerSettingsPage() {
         toast.error(res.message || 'Lỗi khi cập nhật', { id: toastId });
       }
     } catch {
-      toast.error('Lỗi kết nối máy chủ', { id: toastId });
+      toast.error('Cập nhật trạng thái thất bại do lỗi kết nối mạng.', { id: toastId });
     } finally {
       setIsSaving(false);
     }
@@ -238,7 +238,7 @@ export function SellerSettingsPage() {
         toast.error(res.message || 'Lỗi khi cập nhật', { id: toastId });
       }
     } catch {
-      toast.error('Lỗi kết nối máy chủ', { id: toastId });
+      toast.error('Cập nhật bán kính giao hàng thất bại do lỗi kết nối mạng.', { id: toastId });
     } finally {
       setIsSaving(false);
     }
@@ -261,7 +261,7 @@ export function SellerSettingsPage() {
         toast.error(res.message || 'Lỗi khi cập nhật', { id: toastId });
       }
     } catch {
-      toast.error('Lỗi kết nối máy chủ', { id: toastId });
+      toast.error('Cập nhật phí vận chuyển thất bại do lỗi kết nối mạng.', { id: toastId });
     } finally {
       setIsSaving(false);
     }

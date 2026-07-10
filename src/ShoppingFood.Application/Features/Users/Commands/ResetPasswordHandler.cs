@@ -1,5 +1,7 @@
 using System;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
@@ -47,9 +49,9 @@ namespace ShoppingFood.Application.Features.Users.Commands
 
             // Hash the new password
             string newPasswordHash;
-            using (var sha256 = System.Security.Cryptography.SHA256.Create())
+            using (var sha256 = SHA256.Create())
             {
-                var hashedBytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(request.NewPassword));
+                var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(request.NewPassword));
                 newPasswordHash = Convert.ToBase64String(hashedBytes);
             }
 

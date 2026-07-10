@@ -66,3 +66,4 @@ export { PaymentSuccessPage, PaymentErrorPage, PaymentCancelPage } from './payme
 export { PaymentHistoryPage } from './payment/PaymentHistoryPage';
 export { AdminPaymentDashboardPage } from './admin/AdminPaymentDashboardPage';
 export { AdminBlacklistPage } from './admin/AdminBlacklistPage';
+export { AdminSystemLogsPage } from './admin/AdminSystemLogsPage';

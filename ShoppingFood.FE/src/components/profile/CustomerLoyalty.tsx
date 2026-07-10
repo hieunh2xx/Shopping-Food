@@ -47,7 +47,7 @@ export function CustomerLoyalty() {
         toast.error(res.message || 'Lỗi khi đổi quà');
       }
     } catch {
-      toast.error('Có lỗi xảy ra');
+      toast.error('Đổi quà thất bại do lỗi kết nối mạng.');
     }
   };
 

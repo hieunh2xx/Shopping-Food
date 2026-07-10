@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
@@ -47,7 +48,7 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                 }
 
                 // 2. Build predicate
-                System.Linq.Expressions.Expression<Func<Order, bool>> predicate = o => 
+                Expression<Func<Order, bool>> predicate = o => 
                     o.Items.Any(i => i.Product != null && i.Product.RestaurantId == restaurant.Id)
                     && !(o.PaymentMethod != PaymentMethod.COD && o.PaymentStatus == PaymentStatus.Pending)
                     && (!request.Status.HasValue || o.Status == request.Status.Value);

@@ -20,7 +20,8 @@ import {
   CreditCard,
   ServerCog,
   MessageSquareWarning,
-  ShieldBan
+  ShieldBan,
+  Activity
 } from 'lucide-react';
 import { useAuth, useSupportChatWatcher } from '../../../hooks';
 import { ROUTES } from '../../../routes/routeConfig';
@@ -74,6 +75,7 @@ export function AdminLayout() {
     { name: 'Gửi thông báo', path: ROUTES.ADMIN_NOTIFICATIONS, icon: BellRing, group: 'Hệ thống' },
     { name: 'Quản lý FAQ', path: ROUTES.ADMIN_FAQ, icon: HelpCircle, group: 'Hệ thống' },
     { name: 'Chính sách & Pháp lý', path: '/admin/legal-settings', icon: ShieldCheck, group: 'Hệ thống' },
+    { name: 'Nhật ký hệ thống', path: '/admin/system-logs', icon: Activity, group: 'Hệ thống' },
   ];
 
   return (

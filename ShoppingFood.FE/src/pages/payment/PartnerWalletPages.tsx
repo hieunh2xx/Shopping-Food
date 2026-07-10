@@ -165,7 +165,8 @@ export function SellerWalletPage() {
   );
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-6xl mx-auto">
+    <div className="p-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full">
       {/* Left Column: Info & Forms */}
       <div className="lg:col-span-5 space-y-6">
       {/* Wallet Header */}
@@ -270,6 +271,7 @@ export function SellerWalletPage() {
         {/* Transaction History */}
         <TransactionHistory transactions={transactions} take={take} onLoadMore={() => setTake(prev => prev + 10)} onRefresh={loadData} />
       </div>
+      </div>
     </div>
   );
 }
@@ -367,7 +369,8 @@ export function ShipperWalletPage() {
   );
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-6xl mx-auto">
+    <div className="p-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full">
       {/* Left Column: Info & Forms */}
       <div className="lg:col-span-5 space-y-6">
       {/* Wallet Header */}
@@ -514,6 +517,7 @@ export function ShipperWalletPage() {
         {/* Transaction History */}
         <TransactionHistory transactions={transactions} take={take} onLoadMore={() => setTake(prev => prev + 10)} onRefresh={loadData} />
       </div>
+    </div>
     </div>
   );
 }

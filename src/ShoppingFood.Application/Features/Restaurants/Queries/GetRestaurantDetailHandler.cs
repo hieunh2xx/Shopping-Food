@@ -82,7 +82,7 @@ namespace ShoppingFood.Application.Features.Restaurants.Queries
             }
 
             var products = await GetApprovedProductsAsync(request.Id);
-            restaurantDto.Products = _mapper.Map<System.Collections.Generic.List<ProductDto>>(products);
+            restaurantDto.Products = _mapper.Map<List<ProductDto>>(products);
             await _flashSalePricingService.AttachFlashSalePricesAsync(restaurantDto.Products);
 
             return ApiResponse.Success(restaurantDto, "Restaurant detail retrieved successfully.");

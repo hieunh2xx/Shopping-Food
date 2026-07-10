@@ -41,7 +41,7 @@ export function SellerCategoriesPage() {
         toast.error(res.message || 'Lỗi khi tải danh mục');
       }
     } catch {
-      toast.error('Đã xảy ra lỗi khi tải danh mục');
+      toast.error('Tải danh mục thất bại do lỗi kết nối mạng. Vui lòng kiểm tra lại.');
     } finally {
       setIsLoading(false);
     }
@@ -125,8 +125,8 @@ export function SellerCategoriesPage() {
           toast.error(res.message || 'Lỗi khi thêm danh mục');
         }
       }
-    } catch (err: unknown) {
-      toast.error('Đã xảy ra lỗi khi lưu danh mục');
+    } catch {
+      toast.error('Lưu danh mục thất bại do lỗi kết nối mạng.');
     } finally {
       setIsSubmitting(false);
     }
@@ -146,7 +146,7 @@ export function SellerCategoriesPage() {
         toast.error(res.message || 'Lỗi khi xóa danh mục');
       }
     } catch {
-      toast.error('Có lỗi xảy ra');
+      toast.error('Xóa danh mục thất bại do lỗi kết nối mạng.');
     } finally {
       setIsDeleting(false);
     }

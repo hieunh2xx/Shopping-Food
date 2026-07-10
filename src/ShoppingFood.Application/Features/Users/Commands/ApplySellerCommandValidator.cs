@@ -34,8 +34,8 @@ namespace ShoppingFood.Application.Features.Users.Commands
         {
             if (string.IsNullOrEmpty(url)) return false;
             var cleanUrl = url.Split('?')[0];
-            var extension = System.IO.Path.GetExtension(cleanUrl).ToLower();
-            return System.Linq.Enumerable.Contains(allowedExtensions, extension);
+            var extension = Path.GetExtension(cleanUrl).ToLower();
+            return Enumerable.Contains(allowedExtensions, extension);
         }
     }
 }

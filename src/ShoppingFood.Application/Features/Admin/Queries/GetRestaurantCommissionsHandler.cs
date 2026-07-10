@@ -43,7 +43,7 @@ namespace ShoppingFood.Application.Features.Admin.Queries
 
             return ApiResponse.Success(new
             {
-                Items = _mapper.Map<System.Collections.Generic.List<RestaurantCommissionDto>>(query.ToList()),
+                Items = _mapper.Map<List<RestaurantCommissionDto>>(query.ToList()),
                 TotalCount = totalCount,
                 Page = (request.Skip / request.Take) + 1,
                 PageSize = request.Take

@@ -47,8 +47,8 @@ export function CoordinatorIncidentsPage() {
       } else {
         toast.error(res.message || 'Lỗi khi tải danh sách sự cố');
       }
-    } catch (error) {
-      toast.error('Có lỗi xảy ra khi tải danh sách sự cố');
+    } catch {
+      toast.error('Tải danh sách sự cố thất bại do lỗi kết nối mạng.');
     } finally {
       setIsLoading(false);
     }
@@ -124,8 +124,8 @@ export function CoordinatorIncidentsPage() {
       } else {
         toast.error(res.message || 'Lỗi xử lý sự cố');
       }
-    } catch (err: any) {
-      toast.error(err.message || 'Lỗi xử lý sự cố');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Xử lý sự cố thất bại do lỗi kết nối mạng.');
     } finally {
       setIsSubmitting(false);
     }

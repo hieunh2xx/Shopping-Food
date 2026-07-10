@@ -35,9 +35,9 @@ namespace ShoppingFood.Application.Features.Users.Commands
                 return ApiResponse.Failure(404, "Không tìm thấy người dùng.");
             }
 
-            var extension = System.IO.Path.GetExtension(request.File.FileName).ToLower();
+            var extension = Path.GetExtension(request.File.FileName).ToLower();
             var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
-            if (!System.Linq.Enumerable.Contains(allowedExtensions, extension))
+            if (!Enumerable.Contains(allowedExtensions, extension))
             {
                 return ApiResponse.Failure(400, "Chỉ cho phép tải lên các tệp ảnh (.jpg, .jpeg, .png, .webp).");
             }

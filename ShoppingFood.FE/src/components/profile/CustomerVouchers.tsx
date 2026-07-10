@@ -21,7 +21,7 @@ export function CustomerVouchers() {
         setVouchers(res.data.filter(d => d.status === 'Active' && !d.restaurantId));
       }
     } catch {
-      toast.error('Lỗi tải danh sách mã giảm giá');
+      toast.error('Tải danh sách mã giảm giá thất bại do lỗi kết nối mạng.');
     } finally {
       setIsLoading(false);
     }
@@ -37,7 +37,7 @@ export function CustomerVouchers() {
         toast.error(res.message || 'Bạn đã lưu mã này rồi hoặc có lỗi xảy ra');
       }
     } catch {
-      toast.error('Có lỗi khi lưu mã');
+      toast.error('Lưu mã giảm giá thất bại do lỗi kết nối mạng.');
     }
   };
 

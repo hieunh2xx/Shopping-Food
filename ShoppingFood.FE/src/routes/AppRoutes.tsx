@@ -76,6 +76,7 @@ import {
   PaymentHistoryPage,
   AdminPaymentDashboardPage,
   MaintenancePage,
+  AdminSystemLogsPage,
 } from '../pages';
 
 /**
@@ -194,6 +195,7 @@ export function AppRoutes() {
         <Route path="finance-config" element={<AdminFinanceOperationsPage />} />
         <Route path="payments" element={<AdminPaymentDashboardPage />} />
         <Route path="profile" element={<DashboardProfilePage />} />
+        <Route path="system-logs" element={<AdminSystemLogsPage />} />
       </Route>
 
       {/* Coordinator routes - protected with CoordinatorLayout */}

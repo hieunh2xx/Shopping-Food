@@ -4,6 +4,7 @@ export type { IProductDto, IProductToppingDto, IProductSizeDto, IAddProductReque
 export type { IMenuCategoryDto, IAddMenuCategoryRequest, IUpdateMenuCategoryRequest } from './IMenuCategory';
 export type { IApproveApplicationRequest, IApproveProductRequest, ICreateSupportTicketRequest } from './IAdmin';
 export type { IAuthState, IAuthContext } from './IAuth';
+export type { IActionLogDto, IErrorLogDto } from './ILog';
 export type { ICartItem, ICartState, ICartContext, IAddToCartRequest, IUpdateCartItemQuantityRequest, IRemoveCartItemParams, IClearCartParams } from './ICart';
 export type { IDeliveryRouteDto, IProposedDeliveryOfferDto, IToggleShipperOnlineRequest, IAcceptDeliveryOfferRequest, IConfirmArrivedRequest, IConfirmPickedUpRequest, IUpdateShipperLocationRequest, IConfirmDeliveryFailedRequest, IConfirmDeliverySuccessRequest } from './IShipper';
 export type { IShipperReputationHistory } from './IShipperReputationHistory';

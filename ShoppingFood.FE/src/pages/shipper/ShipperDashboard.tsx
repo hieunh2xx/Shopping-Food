@@ -427,8 +427,8 @@ export function ShipperDashboard() {
         setActiveDelivery({ ...activeDelivery, step: 'picked_up' });
         toast.success('Đã lấy hàng thành công! Bắt đầu giao hàng.');
       }
-    } catch (err) {
-      toast.error('Thao tác thất bại. Vui lòng thử lại.');
+    } catch {
+      toast.error('Cập nhật trạng thái đơn hàng thất bại do lỗi mạng.');
     } finally {
       setActionLoading(null);
     }
@@ -464,8 +464,8 @@ export function ShipperDashboard() {
       setActiveDelivery(null);
       toast.error('Đã báo cáo giao hàng thất bại.');
       fetchAvailableOffers();
-    } catch (err) {
-      toast.error('Không thể báo cáo giao thất bại.');
+    } catch {
+      toast.error('Báo cáo giao hàng thất bại không thành công do lỗi mạng.');
     } finally {
       setActionLoading(null);
     }

@@ -18,6 +18,7 @@ using ShoppingFood.Dto.Promotion;
 using ShoppingFood.Dto.Restaurant;
 using ShoppingFood.Dto.User;
 using ShoppingFood.Dto.Admin;
+using ShoppingFood.Dto.Log;
 using System.Linq;
 
 namespace ShoppingFood.Application.Mappings
@@ -26,6 +27,10 @@ namespace ShoppingFood.Application.Mappings
     {
         public MappingProfile()
         {
+            // System Logs
+            CreateMap<ActionLog, ActionLogDto>();
+            CreateMap<ErrorLog, ErrorLogDto>();
+
             CreateMap<BlacklistKeyword, BlacklistKeywordDto>();
             // User mappings
             CreateMap<User, UserDto>()

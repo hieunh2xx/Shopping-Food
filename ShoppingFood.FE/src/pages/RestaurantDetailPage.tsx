@@ -35,7 +35,7 @@ export function RestaurantDetailPage() {
         toast.error('Không thể tải thông tin nhà hàng');
       }
     } catch {
-      toast.error('Lỗi kết nối máy chủ');
+      toast.error('Tải chi tiết cửa hàng thất bại do lỗi kết nối mạng.');
     } finally {
       setIsLoading(false);
     }
@@ -89,7 +89,7 @@ export function RestaurantDetailPage() {
         toast.error(res.message || 'Lỗi khi thao tác');
       }
     } catch {
-      toast.error('Lỗi kết nối máy chủ');
+      toast.error('Thêm vào danh sách yêu thích thất bại do lỗi kết nối mạng.');
     } finally {
       setIsFavoriting(false);
     }

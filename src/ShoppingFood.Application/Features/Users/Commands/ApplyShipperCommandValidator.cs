@@ -51,7 +51,7 @@ namespace ShoppingFood.Application.Features.Users.Commands
         {
             if (string.IsNullOrEmpty(url)) return false;
             var cleanUrl = url.Split('?')[0];
-            var ext = System.IO.Path.GetExtension(cleanUrl).ToLower();
+            var ext = Path.GetExtension(cleanUrl).ToLower();
             return ext is ".jpg" or ".jpeg" or ".png" or ".webp";
         }
     }

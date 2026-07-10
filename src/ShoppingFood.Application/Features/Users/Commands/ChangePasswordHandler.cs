@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
@@ -5,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Security;
 using ShoppingFood.Domain.Context;
-
+using System.Text;
 namespace ShoppingFood.Application.Features.Users.Commands
 {
     public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, ApiResponse>
@@ -30,16 +31,16 @@ namespace ShoppingFood.Application.Features.Users.Commands
                 return ApiResponse.Failure(404, "Không tìm thấy người dùng.");
             }
 
-            using (var sha256 = System.Security.Cryptography.SHA256.Create())
+            using (var sha256 = SHA256.Create())
             {
-                var oldHashedBytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(request.OldPassword));
+                var oldHashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(request.OldPassword));
                 var oldHash = Convert.ToBase64String(oldHashedBytes);
                 if (oldHash != user.PasswordHash)
                 {
                     return ApiResponse.Failure(400, "Mật khẩu cũ không chính xác.");
                 }
 
-                var newHashedBytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(request.NewPassword));
+                var newHashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(request.NewPassword));
                 user.PasswordHash = Convert.ToBase64String(newHashedBytes);
             }
 

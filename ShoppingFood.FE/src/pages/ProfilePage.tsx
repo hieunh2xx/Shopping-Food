@@ -79,8 +79,8 @@ export function ProfilePage() {
       if (!favRes.error && favRes.data) {
         setPreviewFavorites(favRes.data);
       }
-    } catch (error) {
-      toast.error('Có lỗi xảy ra');
+    } catch {
+      toast.error('Tải thông tin cá nhân thất bại do lỗi kết nối mạng.');
     } finally {
       setIsLoading(false);
     }
@@ -118,8 +118,8 @@ export function ProfilePage() {
       } else {
         toast.error(res.message || 'Lỗi khi tải ảnh lên', { id: toastId });
       }
-    } catch (error) {
-      toast.error('Có lỗi xảy ra khi tải ảnh', { id: toastId });
+    } catch {
+      toast.error('Tải ảnh đại diện thất bại do lỗi kết nối mạng.', { id: toastId });
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) {
@@ -141,7 +141,7 @@ export function ProfilePage() {
         toast.error(res.message || 'Lỗi hệ thống');
       }
     } catch {
-      toast.error('Lỗi hệ thống');
+      toast.error('Khóa tài khoản thất bại do lỗi hệ thống.');
     } finally {
       setIsLoading(false);
     }
@@ -160,7 +160,7 @@ export function ProfilePage() {
         toast.error(res.message || 'Lỗi hệ thống');
       }
     } catch {
-      toast.error('Lỗi hệ thống');
+      toast.error('Mở khóa tài khoản thất bại do lỗi hệ thống.');
     } finally {
       setIsLoading(false);
     }
@@ -185,8 +185,8 @@ export function ProfilePage() {
       } else {
         toast.error(response.message || 'Có lỗi xảy ra');
       }
-    } catch (error) {
-      toast.error('Lỗi hệ thống');
+    } catch {
+      toast.error('Lưu thông tin cá nhân thất bại do lỗi kết nối mạng.');
     } finally {
       setIsSaving(false);
     }

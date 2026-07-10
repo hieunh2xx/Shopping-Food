@@ -37,7 +37,7 @@ export function UserReportIncidentPage() {
         toast.error(res.message || 'Lỗi khi tải ảnh lên');
       }
     } catch {
-      toast.error('Lỗi kết nối khi tải ảnh');
+      toast.error('Tải ảnh lên thất bại do lỗi kết nối mạng.');
     } finally {
       setIsUploading(false);
       e.target.value = '';
@@ -91,7 +91,7 @@ export function UserReportIncidentPage() {
         toast.error(res.message || 'Lỗi khi gửi khiếu nại');
       }
     } catch {
-      toast.error('Lỗi kết nối mạng');
+      toast.error('Gửi khiếu nại thất bại do lỗi kết nối mạng.');
     } finally {
       setIsSubmitting(false);
     }

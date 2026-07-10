@@ -27,8 +27,8 @@ namespace ShoppingFood.Application.Features.Chat.Commands
             if (session.SupportId.HasValue)
                 return ApiResponse.Failure(400, "Session is already claimed by another support member.");
 
-            var supportIdToAssign = request.SupportId != System.Guid.Empty ? request.SupportId : request.CurrentUserId;
-            if (!supportIdToAssign.HasValue || supportIdToAssign.Value == System.Guid.Empty)
+            var supportIdToAssign = request.SupportId != Guid.Empty ? request.SupportId : request.CurrentUserId;
+            if (!supportIdToAssign.HasValue || supportIdToAssign.Value == Guid.Empty)
                 return ApiResponse.Failure(400, "Support ID is required.");
 
             session.SupportId = supportIdToAssign.Value;

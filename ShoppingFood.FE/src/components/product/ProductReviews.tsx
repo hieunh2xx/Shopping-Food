@@ -53,8 +53,8 @@ export function ProductReviews({ productId, restaurantId }: { productId: string;
       } else {
         toast.error(res.message || 'Lỗi khi gửi đánh giá');
       }
-    } catch (error: any) {
-      toast.error(error.message || 'Lỗi khi gửi đánh giá');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Gửi đánh giá thất bại do lỗi mạng.');
     }
   };
 
@@ -71,8 +71,8 @@ export function ProductReviews({ productId, restaurantId }: { productId: string;
       } else {
         toast.error(res.message || 'Lỗi khi gửi phản hồi');
       }
-    } catch (error: any) {
-      toast.error(error.message || 'Lỗi khi gửi phản hồi');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Gửi phản hồi thất bại do lỗi mạng.');
     }
   };
 
@@ -91,8 +91,8 @@ export function ProductReviews({ productId, restaurantId }: { productId: string;
       } else {
         toast.error(res.message || 'Lỗi khi báo cáo bình luận');
       }
-    } catch (error: any) {
-      toast.error(error.message || 'Lỗi khi báo cáo bình luận');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Báo cáo bình luận thất bại do lỗi mạng.');
     } finally {
       setIsReporting(false);
     }

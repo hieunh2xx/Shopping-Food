@@ -45,7 +45,7 @@ export default function DispatchHistoryPage() {
         setTotal(res.total || 0);
       }
     } catch {
-      toast.error('Lỗi tải danh sách lịch sử điều phối');
+      toast.error('Tải lịch sử điều phối thất bại do lỗi kết nối mạng.');
     } finally {
       setIsLoading(false);
     }

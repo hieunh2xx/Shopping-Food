@@ -104,7 +104,7 @@ export default function DispatchBoardPage() {
         setTotal(filteredData.length); // Fallback mock total
       }
     } catch {
-      toast.error('Lỗi tải danh sách đơn hàng điều phối');
+      toast.error('Tải danh sách đơn hàng điều phối thất bại do lỗi kết nối mạng.');
     } finally {
       setIsLoading(false);
     }
@@ -123,7 +123,7 @@ export default function DispatchBoardPage() {
         setSuggestedShippers(res.data);
       }
     } catch {
-      toast.error('Lỗi tải danh sách shipper gợi ý');
+      toast.error('Tải danh sách shipper gợi ý thất bại do lỗi kết nối mạng.');
     } finally {
       setIsShippersLoading(false);
     }
@@ -145,7 +145,7 @@ export default function DispatchBoardPage() {
         toast.error(res.message || 'Lỗi gửi đề xuất');
       }
     } catch {
-      toast.error('Lỗi kết nối khi gửi đề xuất');
+      toast.error('Gửi đề xuất thất bại do lỗi kết nối mạng.');
     }
   };
 
@@ -166,7 +166,7 @@ export default function DispatchBoardPage() {
         toast.error(res.message || 'Lỗi gán đơn');
       }
     } catch {
-      toast.error('Lỗi kết nối khi gán đơn');
+      toast.error('Gán đơn thất bại do lỗi kết nối mạng.');
     }
   };
 
@@ -199,7 +199,7 @@ export default function DispatchBoardPage() {
         toast.error(res.message || 'Lỗi xử lý thu hồi đơn');
       }
     } catch {
-      toast.error('Lỗi kết nối khi giải phóng đơn');
+      toast.error('Giải phóng đơn thất bại do lỗi kết nối mạng.');
     } finally {
       setIsReleasing(false);
     }
@@ -235,7 +235,7 @@ export default function DispatchBoardPage() {
         toast.error(res.message || 'Lỗi giải quyết sự cố');
       }
     } catch {
-      toast.error('Lỗi kết nối xử lý sự cố');
+      toast.error('Xử lý sự cố thất bại do lỗi kết nối mạng.');
     } finally {
       setIsResolving(false);
     }

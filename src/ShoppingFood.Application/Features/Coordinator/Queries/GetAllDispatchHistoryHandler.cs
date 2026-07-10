@@ -45,7 +45,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Queries
             var filterLower = request.Filter?.ToLower();
             
             DispatchActionType? filterAction = null;
-            if (!string.IsNullOrEmpty(request.ActionType) && System.Enum.TryParse<DispatchActionType>(request.ActionType, true, out var parsedAction))
+            if (!string.IsNullOrEmpty(request.ActionType) && Enum.TryParse<DispatchActionType>(request.ActionType, true, out var parsedAction))
             {
                 filterAction = parsedAction;
             }

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ShoppingFood.Application.Features.Admin.Queries;
 using ShoppingFood.Application.Features.Products.GlobalMenuCategories.Queries;
+using ShoppingFood.Application.Features.System.Queries;
 using ShoppingFood.Core.Base;
 using System.Threading.Tasks;
 using MediatR;
@@ -27,6 +28,22 @@ namespace ShoppingFood.API.Controllers
         public async Task<ActionResult<ApiResponse>> GetGlobalMenuCategories()
         {
             var result = await _mediator.Send(new GetGlobalMenuCategoriesQuery { ShowHidden = false });
+            return StatusCode(result.Code, result);
+        }
+
+        [Authorize]
+        [HttpGet("action-logs")]
+        public async Task<ActionResult<ApiResponse>> GetActionLogs([FromQuery] GetSystemLogsQuery query)
+        {
+            var result = await _mediator.Send(query);
+            return StatusCode(result.Code, result);
+        }
+
+        [Authorize]
+        [HttpGet("error-logs")]
+        public async Task<ActionResult<ApiResponse>> GetErrorLogs([FromQuery] GetSystemErrorLogsQuery query)
+        {
+            var result = await _mediator.Send(query);
             return StatusCode(result.Code, result);
         }
     }

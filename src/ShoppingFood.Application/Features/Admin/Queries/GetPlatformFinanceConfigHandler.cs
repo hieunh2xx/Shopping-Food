@@ -31,7 +31,7 @@ namespace ShoppingFood.Application.Features.Admin.Queries
             
             if (config == null)
             {
-                config = new PlatformFinanceConfig { Id = System.Guid.NewGuid() };
+                config = new PlatformFinanceConfig { Id = Guid.NewGuid() };
                 _repository.Add(config);
                 await _unitOfWork.SaveChangesAsync();
             }

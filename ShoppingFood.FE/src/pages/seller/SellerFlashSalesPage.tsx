@@ -62,8 +62,8 @@ export function SellerFlashSalesPage() {
       if (!pRes.error && pRes.data) {
         setProducts(pRes.data.items || pRes.data); // in case search returns paginated response
       }
-    } catch (error) {
-      toast.error('Lỗi khi tải dữ liệu');
+    } catch {
+      toast.error('Tải dữ liệu thất bại do lỗi kết nối mạng.');
     } finally {
       setIsLoading(false);
     }
@@ -83,7 +83,7 @@ export function SellerFlashSalesPage() {
         setParticipatingProducts(res.data.data || []);
       }
     } catch {
-      toast.error('Lỗi khi tải danh sách sản phẩm');
+      toast.error('Tải danh sách sản phẩm thất bại do lỗi kết nối mạng.');
     } finally {
       setIsLoadingProducts(false);
     }
@@ -116,8 +116,8 @@ export function SellerFlashSalesPage() {
       } else {
         toast.error(res.message || 'Lỗi khi đăng ký sản phẩm');
       }
-    } catch (error) {
-      toast.error('Lỗi hệ thống khi đăng ký');
+    } catch {
+      toast.error('Đăng ký Flash Sale thất bại do lỗi kết nối mạng.');
     }
   };
 

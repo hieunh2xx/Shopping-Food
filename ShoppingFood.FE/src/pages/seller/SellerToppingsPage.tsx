@@ -43,7 +43,7 @@ export function SellerToppingsPage() {
         toast.error(res.message || 'Không thể tải ảnh lên', { id: toastId });
       }
     } catch {
-      toast.error('Lỗi khi tải ảnh lên', { id: toastId });
+      toast.error('Tải ảnh lên thất bại do lỗi kết nối mạng.', { id: toastId });
     } finally {
       setIsUploading(false);
     }
@@ -64,7 +64,7 @@ export function SellerToppingsPage() {
         toast.error(res.message || 'Lỗi khi tải danh sách toppings');
       }
     } catch {
-      toast.error('Đã xảy ra lỗi khi tải toppings');
+      toast.error('Tải danh sách topping thất bại do lỗi kết nối mạng.');
     } finally {
       setIsLoading(false);
     }
@@ -127,7 +127,7 @@ export function SellerToppingsPage() {
         toast.error(res.message || 'Không thể cập nhật trạng thái');
       }
     } catch {
-      toast.error('Đã xảy ra lỗi');
+      toast.error('Cập nhật trạng thái topping thất bại do lỗi kết nối mạng.');
     }
   };
 
@@ -179,7 +179,7 @@ export function SellerToppingsPage() {
         }
       }
     } catch {
-      toast.error('Đã xảy ra lỗi khi lưu topping');
+      toast.error('Lưu topping thất bại do lỗi kết nối mạng.');
     } finally {
       setIsSubmitting(false);
     }
@@ -199,7 +199,7 @@ export function SellerToppingsPage() {
         toast.error(res.message || 'Lỗi khi xóa topping');
       }
     } catch {
-      toast.error('Có lỗi xảy ra');
+      toast.error('Xóa topping thất bại do lỗi kết nối mạng.');
     } finally {
       setIsDeleting(false);
     }

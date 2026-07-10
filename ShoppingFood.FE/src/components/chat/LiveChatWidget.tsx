@@ -31,7 +31,7 @@ export function LiveChatWidget() {
         setSessionsList(res.data);
       }
     } catch {
-      toast.error('Không tải được lịch sử chat');
+      toast.error('Tải lịch sử chat thất bại do lỗi kết nối mạng.');
     } finally {
       setIsConnecting(false);
     }
@@ -129,7 +129,7 @@ export function LiveChatWidget() {
       
       setView('chat');
     } catch {
-      toast.error('Không thể mở phiên chat');
+      toast.error('Mở phiên chat thất bại do lỗi kết nối mạng.');
     } finally {
       setIsConnecting(false);
     }
@@ -151,7 +151,7 @@ export function LiveChatWidget() {
       if (history.data) setMessages(history.data);
       setView('chat');
     } catch {
-      toast.error('Không thể bắt đầu chat');
+      toast.error('Bắt đầu chat thất bại do lỗi kết nối mạng.');
     } finally {
       setIsConnecting(false);
     }
@@ -178,7 +178,7 @@ export function LiveChatWidget() {
     try {
       await chatService.sendMessage(session.id, user.id, user.role, content);
     } catch {
-      toast.error('Gửi tin nhắn thất bại');
+      toast.error('Gửi tin nhắn thất bại do lỗi kết nối mạng.');
       setMessages(prev => prev.filter(m => m.id !== tempId));
     }
   };

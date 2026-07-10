@@ -47,7 +47,7 @@ export default function MonitorShippersPage() {
         setShippers(res.data);
       }
     } catch {
-      toast.error('Lỗi tải danh sách giám sát tài xế');
+      toast.error('Tải danh sách giám sát tài xế thất bại do lỗi kết nối mạng.');
     } finally {
       setIsLoading(true); // Wait, setting it to true at the end? Ah, no, it should be false!
       setIsLoading(false);
@@ -86,7 +86,7 @@ export default function MonitorShippersPage() {
         toast.error(res.message || 'Lỗi tạm khóa shipper');
       }
     } catch {
-      toast.error('Lỗi kết nối khi tạm khóa shipper');
+      toast.error('Tạm khóa tài xế thất bại do lỗi kết nối mạng.');
     } finally {
       setIsSubmitting(false);
     }
@@ -107,7 +107,7 @@ export default function MonitorShippersPage() {
         toast.error(res.message || 'Lỗi cập nhật trạng thái');
       }
     } catch {
-      toast.error('Lỗi kết nối khi cập nhật trạng thái');
+      toast.error('Cập nhật trạng thái thất bại do lỗi kết nối mạng.');
     } finally {
       setIsSubmitting(false);
     }
