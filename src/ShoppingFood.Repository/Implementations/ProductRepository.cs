@@ -36,6 +36,7 @@ namespace ShoppingFood.Repository.Implementations
             var products = await dbContext.Products
                 .Include(p => p.Restaurant)
                 .Include(p => p.Images)
+                .Include(p => p.Reviews)
                 .Where(p => bestSellerIds.Contains(p.Id))
                 .ToListAsync();
 

@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
@@ -120,6 +120,7 @@ namespace ShoppingFood.Application.Features.Support.Commands
                     Title = "Khiếu nại đơn hàng mới",
                     Message = $"Có khiếu nại mới về đơn hàng đang chờ bạn xử lý.",
                     NotificationType = NotificationType.Order,
+                    TargetId = orderId,
                     IsRead = false,
                     CreateAt = DateTime.UtcNow
                 });

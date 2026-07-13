@@ -6,6 +6,8 @@ import { supportService } from '../../services/SupportService';
 import { shipperService } from '../../services/ShipperService';
 import { authService } from '../../services/AuthService';
 import { formatCurrency, formatDate, getOrderStatusLabel, getPaymentMethodLabel, getOrderStatusColor } from '../../utils/formatters';
+import { notificationRealtimeService } from '../../services/NotificationRealtimeService';
+import type { INotificationDto } from '../../interfaces';
 import { OrderSellerChatModal } from '../chat/OrderSellerChatModal';
 import { SepayQrPaymentModal } from '../payment/SepayQrPaymentModal';
 import { useAuth } from '../../hooks';
@@ -43,6 +45,18 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId }: OrderDeta
       setOrderData(null);
     }
   }, [isOpen, orderId]);
+
+  useEffect(() => {
+    const handleNotification = (notif: INotificationDto) => {
+      if (notif.targetId === orderId && isOpen) {
+        loadOrderDetails();
+      }
+    };
+    notificationRealtimeService.onNotification(handleNotification);
+    return () => {
+      notificationRealtimeService.offNotification(handleNotification);
+    };
+  }, [orderId, isOpen]);
 
   const loadOrderDetails = async () => {
     setLoading(true);

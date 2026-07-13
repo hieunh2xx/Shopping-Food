@@ -163,6 +163,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
                 Title = "Kết quả phân giải sự cố đơn hàng",
                 Message = message,
                 NotificationType = NotificationType.Order,
+                TargetId = order.Id,
                 IsRead = false,
                 CreateAt = DateTime.UtcNow
             };

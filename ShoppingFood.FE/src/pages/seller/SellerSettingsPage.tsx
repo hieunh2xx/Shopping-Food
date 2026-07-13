@@ -64,7 +64,10 @@ export function SellerSettingsPage() {
   });
 
   const [status, setStatus] = useState<'Active' | 'Inactive'>('Active');
-  const [deliveryRadius, setDeliveryRadius] = useState<number>(5);
+  const [deliveryType, setDeliveryType] = useState<'PlatformDelivery' | 'SelfDelivery'>('PlatformDelivery');
+  const [maxDeliveryRadiusKm, setMaxDeliveryRadiusKm] = useState<number>(5);
+  const [freeDeliveryRadiusKm, setFreeDeliveryRadiusKm] = useState<number>(0);
+  const [freeShippingMinimumOrder, setFreeShippingMinimumOrder] = useState<number>(0);
   const [shippingFee, setShippingFee] = useState<number>(15000);
 
   useEffect(() => {
@@ -106,8 +109,11 @@ export function SellerSettingsPage() {
             });
 
             setStatus((rest.status === 'Active' ? 'Active' : 'Inactive') as 'Active' | 'Inactive');
-            setDeliveryRadius((rest as any).maxDeliveryRadiusKm || 5);
-            setShippingFee((rest as any).shippingFee || 0);
+            setDeliveryType(rest.deliveryType || 'PlatformDelivery');
+            setMaxDeliveryRadiusKm(rest.maxDeliveryRadiusKm || 5);
+            setFreeDeliveryRadiusKm(rest.freeDeliveryRadiusKm || 0);
+            setFreeShippingMinimumOrder(rest.freeShippingMinimumOrder || 0);
+            setShippingFee(rest.shippingFee || 15000);
           }
         }
       } else {
@@ -221,47 +227,34 @@ export function SellerSettingsPage() {
     }
   };
 
-  const handleUpdateDelivery = async (e: React.FormEvent) => {
+  const handleUpdateDeliveryConfig = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (deliveryRadius <= 0) {
+    if (deliveryType === 'SelfDelivery' && maxDeliveryRadiusKm <= 0) {
       toast.error('Bán kính giao hàng phải lớn hơn 0');
       return;
     }
-    setIsSaving(true);
-    const toastId = toast.loading('Đang cập nhật khu vực vận chuyển...');
-    try {
-      const res = await restaurantService.updateDeliveryRadius({ maxDeliveryRadiusKm: deliveryRadius });
-      if (!res.error) {
-        toast.success('Đã cập nhật bán kính giao hàng!', { id: toastId });
-        fetchProfile();
-      } else {
-        toast.error(res.message || 'Lỗi khi cập nhật', { id: toastId });
-      }
-    } catch {
-      toast.error('Cập nhật bán kính giao hàng thất bại do lỗi kết nối mạng.', { id: toastId });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleUpdateShippingFee = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (shippingFee < 0) {
+    if (deliveryType === 'SelfDelivery' && shippingFee < 0) {
       toast.error('Phí vận chuyển không hợp lệ');
       return;
     }
     setIsSaving(true);
-    const toastId = toast.loading('Đang cập nhật phí vận chuyển...');
+    const toastId = toast.loading('Đang cập nhật cấu hình giao hàng...');
     try {
-      const res = await restaurantService.updateShippingFee({ shippingFee });
+      const res = await restaurantService.updateDeliveryConfig({
+        deliveryType,
+        maxDeliveryRadiusKm,
+        freeDeliveryRadiusKm,
+        freeShippingMinimumOrder,
+        shippingFee
+      });
       if (!res.error) {
-        toast.success('Đã cập nhật phí vận chuyển thành công!', { id: toastId });
+        toast.success('Đã cập nhật cấu hình giao hàng thành công!', { id: toastId });
         fetchProfile();
       } else {
         toast.error(res.message || 'Lỗi khi cập nhật', { id: toastId });
       }
     } catch {
-      toast.error('Cập nhật phí vận chuyển thất bại do lỗi kết nối mạng.', { id: toastId });
+      toast.error('Cập nhật cấu hình giao hàng thất bại do lỗi kết nối mạng.', { id: toastId });
     } finally {
       setIsSaving(false);
     }
@@ -462,53 +455,96 @@ export function SellerSettingsPage() {
             </div>
           </Card>
 
-          {/* Delivery & Shipping Radius Settings */}
+          {/* Delivery Config Settings */}
           <Card className="p-6 bg-white border border-gray-100 space-y-6">
             <h3 className="text-xl font-bold text-gray-900 mb-2 flex items-center gap-2">
               <Navigation className="w-5 h-5 text-orange-500" />
-              Bán kính & Vận chuyển
+              Cấu hình giao hàng
             </h3>
 
-            {/* Delivery Radius Form */}
-            <form onSubmit={handleUpdateDelivery} className="space-y-3 pb-4 border-b border-gray-100">
+            <form onSubmit={handleUpdateDeliveryConfig} className="space-y-4">
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-semibold text-gray-700">Bán kính giao hàng tối đa (km)</label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    min="1"
-                    max="100"
-                    step="0.5"
-                    className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-500 transition-colors pr-12"
-                    value={deliveryRadius}
-                    onChange={(e) => setDeliveryRadius(parseFloat(e.target.value))}
-                  />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-medium">km</span>
-                </div>
+                <label className="text-sm font-semibold text-gray-700">Loại hình giao hàng</label>
+                <select
+                  className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-500 transition-colors"
+                  value={deliveryType}
+                  onChange={(e) => setDeliveryType(e.target.value as 'PlatformDelivery' | 'SelfDelivery')}
+                >
+                  <option value="PlatformDelivery">Hệ thống tìm Shipper</option>
+                  <option value="SelfDelivery">Nhà hàng tự giao</option>
+                </select>
+                <p className="text-xs text-gray-500">
+                  {deliveryType === 'PlatformDelivery' ? 'Sử dụng mạng lưới Shipper của hệ thống. Phí ship theo cấu hình của sàn.' : 'Tự quản lý đội ngũ giao hàng. Tùy chỉnh phí ship.'}
+                </p>
               </div>
-              <Button type="submit" disabled={isSaving} className="w-full">
-                <Save className="w-4 h-4 mr-2 inline" /> Cập nhật bán kính
-              </Button>
-            </form>
 
-            {/* Shipping Fee Form */}
-            <form onSubmit={handleUpdateShippingFee} className="space-y-3">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-semibold text-gray-700">Phí giao hàng cơ bản (đ)</label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    min="0"
-                    step="1000"
-                    className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-500 transition-colors pr-12 font-semibold"
-                    value={shippingFee}
-                    onChange={(e) => setShippingFee(parseInt(e.target.value))}
-                  />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-medium">đ</span>
-                </div>
-              </div>
-              <Button type="submit" disabled={isSaving} className="w-full">
-                <Save className="w-4 h-4 mr-2 inline" /> Cập nhật phí ship
+              {deliveryType === 'SelfDelivery' && (
+                <>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm font-semibold text-gray-700">Bán kính giao hàng tối đa (km)</label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="1"
+                        max="100"
+                        step="0.5"
+                        className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-500 transition-colors pr-12"
+                        value={maxDeliveryRadiusKm}
+                        onChange={(e) => setMaxDeliveryRadiusKm(parseFloat(e.target.value))}
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-medium">km</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm font-semibold text-gray-700">Phí giao hàng (đ)</label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="0"
+                        step="1000"
+                        className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-500 transition-colors pr-12 font-semibold"
+                        value={shippingFee}
+                        onChange={(e) => setShippingFee(parseInt(e.target.value))}
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-medium">đ</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm font-semibold text-gray-700">Bán kính miễn phí ship (km)</label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.5"
+                        className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-500 transition-colors pr-12"
+                        value={freeDeliveryRadiusKm}
+                        onChange={(e) => setFreeDeliveryRadiusKm(parseFloat(e.target.value))}
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-medium">km</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm font-semibold text-gray-700">Đơn tối thiểu để freeship (đ)</label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="0"
+                        step="1000"
+                        className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-500 transition-colors pr-12"
+                        value={freeShippingMinimumOrder}
+                        onChange={(e) => setFreeShippingMinimumOrder(parseInt(e.target.value))}
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-medium">đ</span>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <Button type="submit" disabled={isSaving} className="w-full mt-4">
+                <Save className="w-4 h-4 mr-2 inline" /> Cập nhật cấu hình
               </Button>
             </form>
           </Card>

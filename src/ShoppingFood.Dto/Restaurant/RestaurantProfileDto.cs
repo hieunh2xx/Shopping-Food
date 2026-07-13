@@ -24,6 +24,9 @@ namespace ShoppingFood.Dto.Restaurant
         public string? OpeningTime { get; set; }
         public string? ClosingTime { get; set; }
         public double? MaxDeliveryRadiusKm { get; set; }
+        public double? FreeDeliveryRadiusKm { get; set; }
+        public decimal FreeShippingMinimumOrder { get; set; }
+        public string? DeliveryType { get; set; }
         public decimal ShippingFee { get; set; }
         public bool IsFavorite { get; set; }
         public bool IsVerified { get; set; }

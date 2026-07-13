@@ -177,5 +177,17 @@ namespace ShoppingFood.API.Controllers
             var respone = await _mediator.Send(command);
             return StatusCode(respone.Code, respone);
         }
+
+        [HttpPost("{id}/self-delivery/confirm-success")]
+        public async Task<IActionResult> ConfirmSelfDeliverySuccess(Guid id)
+        {
+            var command = new ConfirmSelfDeliverySuccessCommand { OrderId = id };
+            if (userDto != null)
+            {
+                command.CurrentUserId = userDto.Id;
+            }
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
     }
 }

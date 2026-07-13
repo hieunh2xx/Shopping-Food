@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { orderService } from '../../services/OrderService';
 import { authService } from '../../services/AuthService';
 import { chatService } from '../../services/ChatService';
+import { notificationRealtimeService } from '../../services/NotificationRealtimeService';
+import type { INotificationDto } from '../../interfaces';
 import { useAuth } from '../../hooks';
 import {
   ShoppingBag,
@@ -56,6 +58,22 @@ export function SellerOrdersPage() {
   useEffect(() => {
     fetchOrders();
   }, [activeTab, page]);
+
+  useEffect(() => {
+    const handleNotification = (notif: INotificationDto) => {
+      if (notif.targetId) {
+        fetchOrders();
+        // If the selected order is the one being updated, refetch it
+        if (selectedOrder && notif.targetId === selectedOrder.id) {
+          fetchOrderDetails(selectedOrder.id);
+        }
+      }
+    };
+    notificationRealtimeService.onNotification(handleNotification);
+    return () => {
+      notificationRealtimeService.offNotification(handleNotification);
+    };
+  }, [selectedOrder]);
 
   useEffect(() => {
     const handleNotification = () => {
@@ -209,6 +227,24 @@ export function SellerOrdersPage() {
       }
     } catch {
       toast.error('Hủy đơn hàng thất bại do lỗi kết nối mạng.', { id: toastId });
+    }
+  };
+
+  const handleConfirmSelfDelivery = async (orderId: string) => {
+    const toastId = toast.loading('Đang xác nhận giao hàng...');
+    try {
+      const res = await orderService.confirmSelfDelivery(orderId);
+      if (!res.error) {
+        toast.success('Xác nhận giao hàng thành công!', { id: toastId });
+        fetchOrders();
+        if (selectedOrder?.id === orderId) {
+          setSelectedOrder((prev: any) => ({ ...prev, status: 'Delivered' }));
+        }
+      } else {
+        toast.error(res.message || 'Lỗi khi xác nhận giao hàng', { id: toastId });
+      }
+    } catch {
+      toast.error('Xác nhận giao hàng thất bại do lỗi kết nối mạng.', { id: toastId });
     }
   };
 
@@ -391,6 +427,19 @@ export function SellerOrdersPage() {
                       </Button>
                     )}
 
+                    {order.status === 'Shipping' && !order.shipperId && (
+                      <Button
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleConfirmSelfDelivery(order.id);
+                        }}
+                      >
+                        Đã giao thành công
+                      </Button>
+                    )}
+
                     {['Pending', 'Confirmed', 'Preparing'].includes(order.status) && (
                       <Button
                         variant="danger"
@@ -538,6 +587,14 @@ export function SellerOrdersPage() {
                     onClick={() => handleWaitingForShipper(selectedOrder.id)}
                   >
                     <Truck className="w-4 h-4 mr-2 inline" /> Chờ Shipper đến lấy
+                  </Button>
+                )}
+                {selectedOrder.status === 'Shipping' && !selectedOrder.shipperId && (
+                  <Button
+                    className="w-full bg-green-600 hover:bg-green-700 text-white"
+                    onClick={() => handleConfirmSelfDelivery(selectedOrder.id)}
+                  >
+                    <Check className="w-4 h-4 mr-2 inline" /> Đã giao thành công
                   </Button>
                 )}
                 {['Pending', 'Confirmed', 'Preparing'].includes(selectedOrder.status) && (

@@ -76,21 +76,14 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                         Title = "Đơn hàng đã được xác nhận",
                         Message = $"Nhà hàng đã xác nhận đơn #{order.Id.ToString()[..8]}. Bạn không thể tự hủy — nhắn tin người bán nếu cần hủy.",
                         NotificationType = NotificationType.Order,
+                        TargetId = order.Id,
                         IsRead = false,
                         CreateAt = DateTime.UtcNow
                     };
                     _notificationRepository.Add(notification);
                     await _unitOfWork.SaveChangesAsync();
 
-                    await _notificationPushService.PushToUserAsync(order.UserAccountId.Value, new
-                    {
-                        id = notification.Id,
-                        title = notification.Title,
-                        message = notification.Message,
-                        notificationType = notification.NotificationType.ToString(),
-                        isRead = false,
-                        createAt = notification.CreateAt
-                    });
+                    // Remove manual push service call since Interceptor handles it
                 }
                 else
                 {

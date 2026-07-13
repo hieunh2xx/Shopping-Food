@@ -1,5 +1,11 @@
 namespace ShoppingFood.Domain.Enums
 {
+    public enum DeliveryType
+    {
+        PlatformDelivery,
+        SelfDelivery
+    }
+
     public enum UserStatus
     {
         Pending,

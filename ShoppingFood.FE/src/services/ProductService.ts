@@ -12,6 +12,7 @@ import type {
   ISearchProductQuery,
   IMenuCategoryDto,
   IProductReviewDto,
+  IProductRecommendationDto,
 } from '../interfaces';
 
 /**
@@ -33,6 +34,10 @@ class ProductService extends BaseService<IProductDto, IAddProductRequest, IUpdat
 
   async getBestSellers(take: number = 10): Promise<IApiResponse<IProductDto[]>> {
     return httpClient.get<IApiResponse<IProductDto[]>>(API_ENDPOINTS.PRODUCT.BEST_SELLERS, { params: { take } });
+  }
+
+  async getRecommendations(params?: { latitude?: number; longitude?: number; take?: number }): Promise<IApiResponse<IProductRecommendationDto[]>> {
+    return httpClient.get<IApiResponse<IProductRecommendationDto[]>>(API_ENDPOINTS.PRODUCT.RECOMMENDATIONS, { params });
   }
 
   async getCategories(): Promise<IApiResponse<IMenuCategoryDto[]>> {

@@ -8,6 +8,7 @@ import type {
   IUpdateRestaurantStatus,
   IUpdateRestaurantDeliveryRadius,
   IUpdateRestaurantShippingFee,
+  IUpdateRestaurantDeliveryConfig,
   INearbyRestaurantDto,
   IFavoriteRestaurantDto
 } from '../interfaces';
@@ -48,12 +49,8 @@ class RestaurantService {
     return httpClient.put<IApiResponse<any>>(API_ENDPOINTS.RESTAURANT.UPDATE_STATUS, data);
   }
 
-  async updateDeliveryRadius(data: IUpdateRestaurantDeliveryRadius): Promise<IApiResponse<any>> {
-    return httpClient.put<IApiResponse<any>>(API_ENDPOINTS.RESTAURANT.UPDATE_DELIVERY_RADIUS, data);
-  }
-
-  async updateShippingFee(data: IUpdateRestaurantShippingFee): Promise<IApiResponse<any>> {
-    return httpClient.put<IApiResponse<any>>(API_ENDPOINTS.RESTAURANT.UPDATE_SHIPPING_FEE, data);
+  async updateDeliveryConfig(data: IUpdateRestaurantDeliveryConfig): Promise<IApiResponse<any>> {
+    return httpClient.put<IApiResponse<any>>(API_ENDPOINTS.RESTAURANT.UPDATE_DELIVERY_CONFIG, data);
   }
 }
 

@@ -1,6 +1,5 @@
 using System;
 using ShoppingFood.Domain.Enums;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ShoppingFood.Domain.Models
 {
@@ -22,7 +21,9 @@ namespace ShoppingFood.Domain.Models
         public TimeSpan? ClosingTime { get; set; }
         public double? MaxDeliveryRadiusKm { get; set; }
         public decimal ShippingFee { get; set; } = 0;
-        [Column(TypeName = "decimal(18,2)")]
+        public DeliveryType DeliveryType { get; set; } = DeliveryType.PlatformDelivery;
+        public double FreeDeliveryRadiusKm { get; set; } = 3.0;
+        public decimal FreeShippingMinimumOrder { get; set; } = 0;
         public decimal? CustomCommissionRate { get; set; }
         public double AverageRating { get; set; } = 0.0;
         public int ReviewCount { get; set; } = 0;

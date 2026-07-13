@@ -175,6 +175,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     Title = "Đơn hàng đang được giao",
                     Message = $"Tài xế '{shipperName}' đã nhận vận chuyển đơn hàng mã '{order.Id}' của bạn.",
                     NotificationType = NotificationType.Delivery,
+                    TargetId = order.Id,
                     IsRead = false,
                     CreateAt = DateTime.UtcNow,
                 };

@@ -153,21 +153,14 @@ namespace ShoppingFood.API.Hubs
                             Title = title,
                             Message = content.Length > 120 ? content[..120] + "…" : content,
                             NotificationType = NotificationType.Order,
+                            TargetId = session.OrderId,
                             IsRead = false,
                             CreateAt = DateTime.UtcNow
                         };
                         _notificationRepository.Add(notification);
                         await _unitOfWork.SaveChangesAsync();
 
-                        await _notificationPushService.PushToUserAsync(recipientUserId.Value, new
-                        {
-                            id = notification.Id,
-                            title = notification.Title,
-                            message = notification.Message,
-                            notificationType = notification.NotificationType.ToString(),
-                            isRead = false,
-                            createAt = notification.CreateAt
-                        });
+                        // Removed manual push because NotificationPushInterceptor handles it
                     }
                 }
             }

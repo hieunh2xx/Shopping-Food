@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Loading, Input, Card } from '../../components/common';
-import { Save, Settings, Percent, Truck, Clock, Store } from 'lucide-react';
+import { Save, Settings, Truck, Clock, Store, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { adminService } from '../../services';
 import toast from 'react-hot-toast';
 
@@ -20,9 +20,31 @@ export function AdminFinanceOperationsPage() {
   const [rushHourStartTime, setRushHourStartTime] = useState<string>('');
   const [rushHourEndTime, setRushHourEndTime] = useState<string>('');
 
+  // Tabs state
+  const [activeTab, setActiveTab] = useState<'delivery' | 'shipper' | 'restaurant'>('delivery');
+
+  // Delivery Settings state
+  const [maxDeliveryRadiusKm, setMaxDeliveryRadiusKm] = useState<number | ''>('');
+  const [freeDeliveryRadiusKm, setFreeDeliveryRadiusKm] = useState<number | ''>('');
+  const [freeShippingMinimumOrder, setFreeShippingMinimumOrder] = useState<number | ''>('');
+  const [shippingFee, setShippingFee] = useState<number | ''>('');
+  const [isSavingDelivery, setIsSavingDelivery] = useState(false);
+
   // Restaurants config state
   const [restaurants, setRestaurants] = useState<any[]>([]);
   const [restLoading, setRestLoading] = useState(false);
+  const [restaurantPage, setRestaurantPage] = useState(1);
+  const [restaurantTotal, setRestaurantTotal] = useState(0);
+  const [restaurantSearch, setRestaurantSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(restaurantSearch);
+      setRestaurantPage(1); // Reset to page 1 on new search
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [restaurantSearch]);
 
   const fetchPlatformConfig = async () => {
     setIsLoading(true);
@@ -47,12 +69,31 @@ export function AdminFinanceOperationsPage() {
     }
   };
 
+  const fetchDeliverySettings = async () => {
+    try {
+      const delRes = await adminService.getDeliverySettings();
+      if (!delRes.error && delRes.data) {
+        setMaxDeliveryRadiusKm(delRes.data.maxDeliveryRadiusKm ?? '');
+        setFreeDeliveryRadiusKm(delRes.data.freeDeliveryRadiusKm ?? '');
+        setFreeShippingMinimumOrder(delRes.data.freeShippingMinimumOrder ?? '');
+        setShippingFee(delRes.data.shippingFee ?? '');
+      }
+    } catch {
+      toast.error('Lỗi tải cấu hình giao hàng');
+    }
+  };
+
   const fetchRestaurants = async () => {
     setRestLoading(true);
     try {
-      const res = await adminService.getRestaurantCommissions({ take: 50 });
+      const res = await adminService.getRestaurantCommissions({ 
+        skip: (restaurantPage - 1) * 10, 
+        take: 10,
+        filter: debouncedSearch
+      });
       if (!res.error && res.data) {
         setRestaurants(res.data.items || []);
+        setRestaurantTotal(res.data.totalCount || 0);
       }
     } finally {
       setRestLoading(false);
@@ -61,8 +102,14 @@ export function AdminFinanceOperationsPage() {
 
   useEffect(() => {
     fetchPlatformConfig();
-    fetchRestaurants();
+    fetchDeliverySettings();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'restaurant') {
+      fetchRestaurants();
+    }
+  }, [activeTab, restaurantPage, debouncedSearch]);
 
   const handleSaveConfig = async () => {
     setIsSaving(true);
@@ -95,6 +142,28 @@ export function AdminFinanceOperationsPage() {
     }
   };
 
+  const handleSaveDeliverySettings = async () => {
+    setIsSavingDelivery(true);
+    try {
+      const payload = {
+        maxDeliveryRadiusKm: maxDeliveryRadiusKm === '' ? null : Number(maxDeliveryRadiusKm),
+        freeDeliveryRadiusKm: Number(freeDeliveryRadiusKm) || 0,
+        freeShippingMinimumOrder: Number(freeShippingMinimumOrder) || 0,
+        shippingFee: Number(shippingFee) || 0
+      };
+      const res = await adminService.updateDeliverySettings(payload);
+      if (!res.error) {
+        toast.success(res.message || 'Cập nhật cấu hình giao hàng thành công');
+      } else {
+        toast.error(res.message || 'Có lỗi xảy ra');
+      }
+    } catch {
+      toast.error('Lỗi kết nối khi cập nhật cấu hình giao hàng');
+    } finally {
+      setIsSavingDelivery(false);
+    }
+  };
+
   const handleUpdateRestaurantCommission = async (id: string, rate: number | null) => {
     try {
       const res = await adminService.updateRestaurantCommission(id, rate);
@@ -120,35 +189,52 @@ export function AdminFinanceOperationsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Phí Giao Hàng & Thu Nhập Shipper */}
+      {/* Tabs */}
+      <div className="flex border-b border-gray-200 mb-8 bg-gray-50 p-1.5 rounded-2xl w-fit">
+        <button
+          onClick={() => setActiveTab('delivery')}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+            activeTab === 'delivery'
+              ? 'bg-white text-blue-600 shadow-sm'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/50'
+          }`}
+        >
+          <Settings className="w-4 h-4" />
+          Cấu hình Giao Hàng
+        </button>
+        <button
+          onClick={() => setActiveTab('shipper')}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+            activeTab === 'shipper'
+              ? 'bg-white text-blue-600 shadow-sm'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/50'
+          }`}
+        >
+          <Truck className="w-4 h-4" />
+          Thu nhập Shipper
+        </button>
+        <button
+          onClick={() => setActiveTab('restaurant')}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+            activeTab === 'restaurant'
+              ? 'bg-white text-blue-600 shadow-sm'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/50'
+          }`}
+        >
+          <Store className="w-4 h-4" />
+          Chiết khấu Nhà hàng
+        </button>
+      </div>
+
+      <div className="w-full">
+        {activeTab === 'shipper' && (
         <Card className="p-6">
-          <div className="flex items-center gap-2 mb-6 pb-4 border-b border-gray-100">
+            <div className="flex items-center gap-2 mb-6 pb-4 border-b border-gray-100">
             <Truck className="w-5 h-5 text-blue-500" />
-            <h2 className="text-lg font-semibold text-gray-800">Cấu hình Giao hàng & Shipper</h2>
+            <h2 className="text-lg font-semibold text-gray-800">Thu nhập Shipper</h2>
           </div>
           
           <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phí vận chuyển cơ bản (VNĐ)</label>
-                <Input
-                  type="number"
-                  value={baseDeliveryFee}
-                  onChange={(e) => setBaseDeliveryFee(e.target.value === '' ? '' : Number(e.target.value))}
-                  placeholder="VD: 15000"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phí theo Km (VNĐ)</label>
-                <Input
-                  type="number"
-                  value={feePerKm}
-                  onChange={(e) => setFeePerKm(e.target.value === '' ? '' : Number(e.target.value))}
-                  placeholder="VD: 5000"
-                />
-              </div>
-            </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -224,66 +310,183 @@ export function AdminFinanceOperationsPage() {
             </div>
           </div>
         </Card>
+        )}
 
-        {/* Chiết khấu Nhà Hàng */}
+        {activeTab === 'delivery' && (
+        <Card className="p-6">
+          <div className="flex items-center gap-2 mb-6 pb-4 border-b border-gray-100">
+            <Settings className="w-5 h-5 text-blue-500" />
+            <h2 className="text-lg font-semibold text-gray-800">Cấu hình Giao Hàng (Nền tảng)</h2>
+          </div>
+          <div className="space-y-4">
+            <Input
+              label="Bán kính giao hàng tối đa (km)"
+              type="number"
+              value={maxDeliveryRadiusKm}
+              onChange={(e) => setMaxDeliveryRadiusKm(e.target.value === '' ? '' : Number(e.target.value))}
+              placeholder="VD: 15 (Để trống nếu không giới hạn)"
+            />
+            <Input
+              label="Phí giao hàng mặc định (VNĐ)"
+              type="number"
+              value={shippingFee}
+              onChange={(e) => setShippingFee(e.target.value === '' ? '' : Number(e.target.value))}
+              placeholder="VD: 15000"
+            />
+            <Input
+              label="Bán kính miễn phí giao hàng (km)"
+              type="number"
+              value={freeDeliveryRadiusKm}
+              onChange={(e) => setFreeDeliveryRadiusKm(e.target.value === '' ? '' : Number(e.target.value))}
+              placeholder="VD: 3"
+            />
+            <Input
+              label="Đơn tối thiểu để freeship (VNĐ)"
+              type="number"
+              value={freeShippingMinimumOrder}
+              onChange={(e) => setFreeShippingMinimumOrder(e.target.value === '' ? '' : Number(e.target.value))}
+              placeholder="VD: 150000"
+            />
+          </div>
+          
+          <div className="flex justify-end pt-4 border-t border-gray-100 mt-6">
+            <Button 
+              onClick={handleSaveDeliverySettings} 
+              isLoading={isSavingDelivery}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              Lưu Cấu Hình Giao Hàng
+            </Button>
+          </div>
+        </Card>
+        )}
+
+        {activeTab === 'restaurant' && (
         <Card className="p-6">
           <div className="flex items-center gap-2 mb-6 pb-4 border-b border-gray-100">
             <Store className="w-5 h-5 text-green-500" />
             <h2 className="text-lg font-semibold text-gray-800">Tùy chỉnh Chiết Khấu Nhà Hàng</h2>
           </div>
           
-          <div className="space-y-4">
-            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Chiết khấu sàn mặc định (%)</label>
-              <div className="flex gap-2">
-                <Input
-                  type="number"
-                  value={commissionRate}
-                  onChange={(e) => setCommissionRate(e.target.value === '' ? '' : Number(e.target.value))}
-                  placeholder="Ví dụ: 10"
-                />
-                <Button onClick={handleSaveConfig} isLoading={isSaving} className="bg-indigo-600 hover:bg-indigo-700 text-white shrink-0">
-                  Lưu
-                </Button>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Cột 1: Chiết khấu mặc định */}
+              <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100 flex flex-col justify-center">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Chiết khấu sàn mặc định (%)</label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    value={commissionRate}
+                    onChange={(e) => setCommissionRate(e.target.value === '' ? '' : Number(e.target.value))}
+                    placeholder="Ví dụ: 10"
+                  />
+                  <Button onClick={handleSaveConfig} isLoading={isSaving} className="bg-indigo-600 hover:bg-indigo-700 text-white shrink-0">
+                    Lưu
+                  </Button>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">Mức này áp dụng cho toàn bộ nhà hàng chưa được cài đặt chiết khấu riêng.</p>
               </div>
-              <p className="text-xs text-gray-500 mt-2">Mức này áp dụng cho toàn bộ nhà hàng chưa được cài đặt chiết khấu riêng bên dưới.</p>
+
+              {/* Cột 2: Tìm kiếm nhà hàng */}
+              <div className="bg-blue-50/50 p-5 rounded-2xl border border-blue-100 flex flex-col justify-center">
+                <label className="block text-sm font-medium text-blue-900 mb-2">Tìm kiếm & Cài đặt riêng từng nhà hàng</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search className="h-5 w-5 text-blue-400" />
+                  </div>
+                  <input
+                    type="text"
+                    className="block w-full pl-10 pr-3 py-2 border border-blue-200 rounded-xl leading-5 bg-white placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors"
+                    placeholder="Nhập tên nhà hàng..."
+                    value={restaurantSearch}
+                    onChange={(e) => setRestaurantSearch(e.target.value)}
+                  />
+                </div>
+                <p className="text-xs text-blue-600 mt-2">Cài đặt riêng sẽ ghi đè lên mức chiết khấu mặc định.</p>
+              </div>
             </div>
             
-            <p className="text-sm font-medium text-gray-800">Cài đặt riêng từng nhà hàng (Ghi đè mặc định)</p>
-            
-            {restLoading ? (
-              <div className="text-center py-4 text-gray-500">Đang tải...</div>
-            ) : (
-              <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
-                {restaurants.map(rest => (
-                  <div key={rest.restaurantId} className="flex items-center justify-between p-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+            <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
+              <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+                <span className="text-sm font-medium text-gray-700">Danh sách nhà hàng</span>
+                <span className="text-xs text-gray-500">Tổng cộng {restaurantTotal} nhà hàng</span>
+              </div>
+              
+              {restLoading ? (
+                <div className="text-center py-10 text-gray-500">
+                  <Loading />
+                  <div className="mt-2 text-sm">Đang tải dữ liệu...</div>
+                </div>
+              ) : restaurants.length === 0 ? (
+                <div className="text-center py-10 text-gray-500 text-sm">Không tìm thấy nhà hàng nào phù hợp.</div>
+              ) : (
+                <div className="divide-y divide-gray-100 max-h-[500px] overflow-y-auto">
+                  {restaurants.map(rest => (
+                    <div key={rest.restaurantId} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors">
+                      <div>
+                        <h4 className="font-medium text-gray-900">{rest.restaurantName}</h4>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Chiết khấu hiện tại: <span className="font-semibold text-gray-700">{rest.customCommissionRate !== null ? rest.customCommissionRate + '%' : 'Theo Mặc định'}</span>
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Input 
+                          type="number"
+                          placeholder="%"
+                          className="w-20 text-center"
+                          defaultValue={rest.customCommissionRate || ''}
+                          onBlur={(e) => {
+                            const val = e.target.value;
+                            const num = val === '' ? null : Number(val);
+                            if (num !== rest.customCommissionRate) {
+                              handleUpdateRestaurantCommission(rest.restaurantId, num);
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {/* Phân trang */}
+              {restaurantTotal > 10 && (
+                <div className="px-4 py-3 border-t border-gray-200 bg-gray-50 flex items-center justify-between sm:px-6">
+                  <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                     <div>
-                      <h4 className="font-medium text-gray-900">{rest.restaurantName}</h4>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Chiết khấu hiện tại: <span className="font-medium text-gray-700">{rest.customCommissionRate !== null ? rest.customCommissionRate + '%' : 'Mặc định'}</span>
+                      <p className="text-sm text-gray-700">
+                        Hiển thị <span className="font-medium">{(restaurantPage - 1) * 10 + 1}</span> đến <span className="font-medium">{Math.min(restaurantPage * 10, restaurantTotal)}</span> trong số <span className="font-medium">{restaurantTotal}</span> kết quả
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Input 
-                        type="number"
-                        placeholder="%"
-                        className="w-20 text-center"
-                        defaultValue={rest.customCommissionRate || ''}
-                        onBlur={(e) => {
-                          const val = e.target.value;
-                          const num = val === '' ? null : Number(val);
-                          if (num !== rest.customCommissionRate) {
-                            handleUpdateRestaurantCommission(rest.restaurantId, num);
-                          }
-                        }}
-                      />
+                    <div>
+                      <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                        <button
+                          onClick={() => setRestaurantPage(p => Math.max(1, p - 1))}
+                          disabled={restaurantPage === 1}
+                          className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <ChevronLeft className="h-5 w-5" />
+                        </button>
+                        <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                          Trang {restaurantPage} / {Math.ceil(restaurantTotal / 10)}
+                        </span>
+                        <button
+                          onClick={() => setRestaurantPage(p => Math.min(Math.ceil(restaurantTotal / 10), p + 1))}
+                          disabled={restaurantPage >= Math.ceil(restaurantTotal / 10)}
+                          className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <ChevronRight className="h-5 w-5" />
+                        </button>
+                      </nav>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
+                </div>
+              )}
+            </div>
           </div>
         </Card>
+        )}
       </div>
     </div>
   );

@@ -266,6 +266,21 @@ namespace ShoppingFood.API.Controllers
             return StatusCode(response.Code, response);
         }
 
+        [HttpGet("system/delivery")]
+        public async Task<ActionResult<ApiResponse>> GetDeliverySettings()
+        {
+            var query = new GetDeliverySettingsQuery();
+            var response = await _mediator.Send(query);
+            return Ok(ApiResponse.Success(response));
+        }
+
+        [HttpPost("system/delivery")]
+        public async Task<ActionResult<ApiResponse>> UpdateDeliverySettings([FromBody] UpdateDeliverySettingsCommand command)
+        {
+            var response = await _mediator.Send(command);
+            return response ? Ok(ApiResponse.Success(null, "Cập nhật cấu hình giao hàng thành công")) : BadRequest(ApiResponse.Failure(400, "Cập nhật thất bại"));
+        }
+
         [HttpPost("system/legal")]
         public async Task<ActionResult<ApiResponse>> UpdateLegalSettings([FromBody] UpdateLegalSettingsCommand command)
         {

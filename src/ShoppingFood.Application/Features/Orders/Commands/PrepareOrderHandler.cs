@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
@@ -17,15 +17,18 @@ namespace ShoppingFood.Application.Features.Orders.Commands
     {
         private readonly IOrderRepository _orderRepository;
         private readonly IRestaurantProfileRepository _restaurantProfileRepository;
+        private readonly INotificationRepository _notificationRepository;
         private readonly IUnitOfWork _unitOfWork;
 
         public PrepareOrderHandler(
             IOrderRepository orderRepository,
             IRestaurantProfileRepository restaurantProfileRepository,
+            INotificationRepository notificationRepository,
             IUnitOfWork unitOfWork) 
         {
             _orderRepository = orderRepository;
             _restaurantProfileRepository = restaurantProfileRepository;
+            _notificationRepository = notificationRepository;
             _unitOfWork = unitOfWork;
         }
         public async Task<ApiResponse> Handle(PrepareOrderCommand request, CancellationToken cancellationToken)
@@ -64,6 +67,20 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 order.UpdatedAt = DateTime.UtcNow;
 
                 _orderRepository.Update(order);
+                
+                var notification = new Notification
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = order.UserAccountId.Value,
+                    Title = "Đơn hàng đang được chuẩn bị",
+                    Message = $"Nhà hàng đang chuẩn bị món cho đơn hàng #{order.Id.ToString()[..8]}.",
+                    NotificationType = NotificationType.Order,
+                    TargetId = order.Id,
+                    IsRead = false,
+                    CreateAt = DateTime.UtcNow
+                };
+                _notificationRepository.Add(notification);
+
                 await _unitOfWork.SaveChangesAsync();
 
                 return ApiResponse.Success(null, "Order status updated to Preparing successfully.");

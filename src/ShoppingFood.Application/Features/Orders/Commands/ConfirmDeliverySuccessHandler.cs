@@ -182,6 +182,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 Title = "Tích lũy điểm thưởng thành công",
                 Message = $"Chúc mừng! Bạn đã tích lũy thành công {pointEarned} điểm thưởng từ đơn hàng #{order.Id}. Hạng thành viên hiện tại: {loyaltyPoints.Tier.ToString()}.",
                 NotificationType = NotificationType.Loyalty,
+                TargetId = order.Id,
                 IsRead = false,
                 CreateAt = DateTime.UtcNow
             };
@@ -240,6 +241,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     Title = "Giao hàng thành công",
                     Message = $"Đơn hàng của bạn đã được giao thành công bởi tài xế '{shipperName}'. Chúc bạn ngon miệng!",
                     NotificationType = NotificationType.Delivery,
+                    TargetId = order.Id,
                     IsRead = false,
                     CreateAt = DateTime.UtcNow
                 };

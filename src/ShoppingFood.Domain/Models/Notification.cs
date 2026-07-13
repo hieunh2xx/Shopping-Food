@@ -16,6 +16,7 @@ namespace ShoppingFood.Domain.Models
         public NotificationType? NotificationType { get; set; } 
         public bool IsRead { get; set; } = false;
         public DateTime CreateAt { get; set; } = DateTime.UtcNow;
+        public Guid? TargetId { get; set; }
 
         public virtual User User { get; set; } = null!;
     }

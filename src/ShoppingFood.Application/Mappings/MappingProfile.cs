@@ -73,6 +73,22 @@ namespace ShoppingFood.Application.Mappings
                 (DateTime.UtcNow.AddHours(7).TimeOfDay >= src.AvailableFrom.Value && DateTime.UtcNow.AddHours(7).TimeOfDay <= src.AvailableTo.Value)))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
 
+            CreateMap<Product, ProductRecommendationDto>()
+                .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category != null ? src.Category.Title : string.Empty))
+                .ForMember(dest => dest.RestaurantName, opt => opt.MapFrom(src => src.Restaurant != null ? src.Restaurant.RestaurantName : string.Empty))
+                .ForMember(dest => dest.GlobalCategoryName, opt => opt.MapFrom(src => src.GlobalCategory != null ? src.GlobalCategory.Name : null))
+                .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.Images != null ? src.Images.Select(i => i.ImageUrl) : null))
+                .ForMember(dest => dest.PrimaryImageUrl, opt => opt.MapFrom(src => src.Images != null && src.Images.Any(i => i.IsPrimary) ? src.Images.First(i => i.IsPrimary).ImageUrl : (src.Images != null && src.Images.Any() ? src.Images.First().ImageUrl : null)))
+                .ForMember(dest => dest.StockStatus, opt => opt.MapFrom(src => src.StockStatus.ToString()))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+                .ForMember(dest => dest.AverageRating, opt => opt.MapFrom(src => src.Reviews != null && src.Reviews.Any() ? src.Reviews.Average(r => r.Rating) : 0.0))
+                .ForMember(dest => dest.ReviewCount, opt => opt.MapFrom(src => src.Reviews != null ? src.Reviews.Count : 0))
+                .ForMember(dest => dest.IsAvailableNow, opt => opt.MapFrom(src => (!src.AvailableFrom.HasValue || !src.AvailableTo.HasValue) || (DateTime.UtcNow.AddHours(7).TimeOfDay >= src.AvailableFrom.Value && DateTime.UtcNow.AddHours(7).TimeOfDay <= src.AvailableTo.Value)))
+                .ForMember(dest => dest.AvailableFrom, opt => opt.MapFrom(src => src.AvailableFrom.HasValue ? src.AvailableFrom.Value.ToString(@"hh\:mm") : null))
+                .ForMember(dest => dest.AvailableTo, opt => opt.MapFrom(src => src.AvailableTo.HasValue ? src.AvailableTo.Value.ToString(@"hh\:mm") : null))
+                .ForMember(dest => dest.ReasonTag, opt => opt.Ignore())
+                .ForMember(dest => dest.ScoreRank, opt => opt.Ignore());
+
             CreateMap<ProductTopping, ProductToppingDto>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.ToppingId))
                 .ForMember(dest => dest.ToppingName, opt => opt.MapFrom(src => src.Topping != null ? src.Topping.ToppingName : string.Empty))
@@ -114,6 +130,7 @@ namespace ShoppingFood.Application.Mappings
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
                 .ForMember(dest => dest.OpeningTime, opt => opt.MapFrom(src => src.OpeningTime.HasValue ? src.OpeningTime.Value.ToString(@"hh\:mm") : null))
                 .ForMember(dest => dest.ClosingTime, opt => opt.MapFrom(src => src.ClosingTime.HasValue ? src.ClosingTime.Value.ToString(@"hh\:mm") : null))
+                .ForMember(dest => dest.DeliveryType, opt => opt.MapFrom(src => src.DeliveryType.ToString()))
                 .ForMember(dest => dest.Products, opt => opt.Ignore());
 
             //FavoriteRestaurant mappings

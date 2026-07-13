@@ -5,6 +5,8 @@ import { orderService } from '../../services/OrderService';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import toast from 'react-hot-toast';
 import { CustomerOrderDetailModal } from '../order/CustomerOrderDetailModal';
+import { notificationRealtimeService } from '../../services/NotificationRealtimeService';
+import type { INotificationDto } from '../../interfaces';
 import { useAuth } from '../../hooks';
 
 interface OrderTrackingDrawerProps {
@@ -31,6 +33,20 @@ export function OrderTrackingDrawer({ isOpen, onClose }: OrderTrackingDrawerProp
       fetchOrders(false, 0);
     }
   }, [isOpen, isAuthenticated]);
+
+  useEffect(() => {
+    const handleNotification = (notif: INotificationDto) => {
+      if (notif.targetId && isOpen) {
+        // Optional: you could check if targetId is in the currently displayed orders list
+        // but fetching the first page again is safer to show latest changes
+        fetchOrders(false, 0);
+      }
+    };
+    notificationRealtimeService.onNotification(handleNotification);
+    return () => {
+      notificationRealtimeService.offNotification(handleNotification);
+    };
+  }, [isOpen]);
 
   const fetchOrders = async (isLoadMore = false, currentSkip = 0) => {
     if (isLoadMore) {

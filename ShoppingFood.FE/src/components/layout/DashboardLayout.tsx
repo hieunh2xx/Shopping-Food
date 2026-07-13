@@ -47,7 +47,7 @@ function NavGroupDropdown({
           <div className="flex items-center gap-2">
             <span>{groupName}</span>
             {items.some(item => item.badge) && (
-              <span className="flex h-2 w-2">
+              <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-red-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
               </span>
@@ -76,7 +76,7 @@ function NavGroupDropdown({
                 <item.icon className={`w-5 h-5 ${isExactMatch ? 'text-blue-600' : 'text-gray-400 group-hover:text-blue-600'}`} />
                 <span className="flex-1">{item.name}</span>
                 {!!item.badge && (
-                  <span className="flex h-2 w-2 mr-1">
+                  <span className="relative flex h-2 w-2 mr-1">
                     <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-red-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
                   </span>

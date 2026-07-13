@@ -27,6 +27,11 @@ export interface IProductDto {
   status: string;
 }
 
+export interface IProductRecommendationDto extends IProductDto {
+  reasonTag: 'frequently_ordered' | 'flash_sale' | 'trending_category' | 'top_rated' | '';
+  scoreRank: number;
+}
+
 /**
  * Mirrors backend ProductToppingDto.cs
  */

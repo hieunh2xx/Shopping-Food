@@ -59,6 +59,7 @@ export const API_ENDPOINTS = {
     STOCK_STATUS: (id: string) => `/Product/StockStatus/${id}`,       // PATCH
     VISIBILITY: (id: string) => `/Product/Visibility/${id}`,          // PATCH
     AVAILABILITY: (id: string) => `/Product/TimeAvailability/${id}`,  // PATCH
+    RECOMMENDATIONS: '/Product/recommendations',                      // GET
     REPORT: '/Product/Report',                     // POST
     REVIEW: '/Product/review',                     // POST
     REVIEWS: (productId: string) => `/Product/${productId}/reviews`, // GET
@@ -115,6 +116,7 @@ export const API_ENDPOINTS = {
     DASHBOARD_STATS: '/Admin/dashboard/stats', // GET
     DASHBOARD_HEATMAP: '/Admin/dashboard/heatmap', // GET
     SYSTEM_MAINTENANCE: '/Admin/system/maintenance', // GET, POST
+    SYSTEM_DELIVERY: '/Admin/system/delivery', // GET, POST
     SYSTEM_LEGAL: '/Admin/system/legal', // POST
     REPORTS_FINANCIAL: '/Admin/reports/financial', // GET
     FINANCE_CONFIG: '/Admin/finance-config', // GET, PUT
@@ -168,8 +170,7 @@ export const API_ENDPOINTS = {
     UPDATE_BASIC_INFO: '/Restaurant/basic-info',
     UPDATE_OPERATING_HOURS: '/Restaurant/operating-hours',
     UPDATE_STATUS: '/Restaurant/status',
-    UPDATE_DELIVERY_RADIUS: '/Restaurant/delivery-radius',
-    UPDATE_SHIPPING_FEE: '/Restaurant/shipping-fee',
+    UPDATE_DELIVERY_CONFIG: '/Restaurant/delivery-config',
   },
 
   // === Topping (ToppingController) ===

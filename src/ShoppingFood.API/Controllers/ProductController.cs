@@ -82,10 +82,19 @@ namespace ShoppingFood.API.Controllers
         }
 
         [HttpGet("BestSellers")]
-        public async Task<ActionResult<ApiResponse>> BestSellers([FromQuery] int take = 10)
+        public async Task<ActionResult<ApiResponse>> GetBestSellers([FromQuery] GetBestSellersQuery query)
         {
-            var response = await _mediator.Send(new GetBestSellersQuery { Take = take });
-            return Ok(response);
+            var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpGet("recommendations")]
+        public async Task<ActionResult<ApiResponse>> GetRecommendations([FromQuery] GetRecommendationsQuery query)
+        {
+            if (userDto != null)
+                query.CurrentUserId = userDto.Id;
+            var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
         }
 
         [HttpGet("Categories")]

@@ -6,4 +6,5 @@ export interface INotificationDto {
   notificationType: string;
   isRead: boolean;
   createAt: string;
+  targetId?: string;
 }

@@ -118,6 +118,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     Title = "Đơn hàng đang trên đường giao",
                     Message = $"Tài xế '{shipperName}' đã lấy đồ ăn thành công và đang trên đường giao tới địa chỉ của bạn.",
                     NotificationType = NotificationType.Delivery,
+                    TargetId = order.Id,
                     IsRead = false,
                     CreateAt = DateTime.UtcNow
 

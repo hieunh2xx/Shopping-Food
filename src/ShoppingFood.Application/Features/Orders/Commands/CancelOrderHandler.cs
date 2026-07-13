@@ -78,6 +78,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                         Title = "Đơn hàng đã bị hủy",
                         Message = $"Đơn hàng #{order.Id.ToString().Substring(0, 8)} đã bị khách hàng hủy.",
                         NotificationType = NotificationType.System,
+                        TargetId = order.Id,
                         IsRead = false,
                         CreateAt = DateTime.UtcNow
                     };

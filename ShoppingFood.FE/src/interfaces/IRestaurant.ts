@@ -25,6 +25,10 @@ export interface IRestaurantProfileDto {
   isVerified?: boolean;
   openingTime?: string;
   closingTime?: string;
+  deliveryType?: 'PlatformDelivery' | 'SelfDelivery';
+  maxDeliveryRadiusKm?: number;
+  freeDeliveryRadiusKm?: number;
+  freeShippingMinimumOrder?: number;
   shippingFee: number;
   products: IProductDto[];
 }
@@ -65,10 +69,10 @@ export interface IUpdateRestaurantStatus {
   isTemporarilyClosed: boolean;
 }
 
-export interface IUpdateRestaurantDeliveryRadius {
-  maxDeliveryRadiusKm: number;
-}
-
-export interface IUpdateRestaurantShippingFee {
+export interface IUpdateRestaurantDeliveryConfig {
+  deliveryType: 'PlatformDelivery' | 'SelfDelivery';
+  maxDeliveryRadiusKm?: number;
+  freeDeliveryRadiusKm: number;
+  freeShippingMinimumOrder: number;
   shippingFee: number;
 }

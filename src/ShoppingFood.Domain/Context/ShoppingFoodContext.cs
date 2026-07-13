@@ -163,6 +163,8 @@ namespace ShoppingFood.Domain.Context
                 entity.Property(e => e.ClosingTime);
                 entity.Property(e => e.MaxDeliveryRadiusKm);
                 entity.Property(e => e.ShippingFee).HasColumnType("decimal(12,2)").IsRequired().HasDefaultValue(0);
+                entity.Property(e => e.FreeShippingMinimumOrder).HasColumnType("decimal(18,2)").IsRequired().HasDefaultValue(0);
+                entity.Property(e => e.CustomCommissionRate).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.AverageRating).HasDefaultValue(0.0).IsRequired();
                 entity.Property(e => e.ReviewCount).HasDefaultValue(0).IsRequired();
                 entity.HasOne(d => d.SellerApplication)
@@ -311,6 +313,10 @@ namespace ShoppingFood.Domain.Context
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.TotalAmount).HasColumnType("decimal(12,2)").IsRequired();
                 entity.Property(e => e.ShippingFee).HasColumnType("decimal(12,2)").IsRequired().HasDefaultValue(0);
+                entity.Property(e => e.ShipperIncome).HasColumnType("decimal(12,2)").IsRequired().HasDefaultValue(0);
+                entity.Property(e => e.ShipperBaseFeeAmount).HasColumnType("decimal(12,2)").IsRequired().HasDefaultValue(0);
+                entity.Property(e => e.ShipperDistanceFeeAmount).HasColumnType("decimal(12,2)").IsRequired().HasDefaultValue(0);
+                entity.Property(e => e.ShipperPeakBonus).HasColumnType("decimal(12,2)").IsRequired().HasDefaultValue(0);
                 entity.Property(e => e.DeliveryAddress).IsRequired();
                 entity.Property(e => e.ContactName).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.ContactPhone).IsRequired().HasMaxLength(15);

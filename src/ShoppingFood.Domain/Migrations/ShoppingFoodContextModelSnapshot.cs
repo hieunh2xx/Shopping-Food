@@ -828,6 +828,9 @@ namespace ShoppingFood.Domain.Migrations
                     b.Property<string>("NotificationType")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid?>("TargetId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(150)
@@ -928,19 +931,27 @@ namespace ShoppingFood.Domain.Migrations
                         .HasDefaultValue(0m);
 
                     b.Property<decimal>("ShipperBaseFeeAmount")
-                        .HasColumnType("decimal(18,2)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(12,2)")
+                        .HasDefaultValue(0m);
 
                     b.Property<decimal>("ShipperDistanceFeeAmount")
-                        .HasColumnType("decimal(18,2)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(12,2)")
+                        .HasDefaultValue(0m);
 
                     b.Property<Guid?>("ShipperId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("ShipperIncome")
-                        .HasColumnType("decimal(18,2)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(12,2)")
+                        .HasDefaultValue(0m);
 
                     b.Property<decimal>("ShipperPeakBonus")
-                        .HasColumnType("decimal(18,2)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(12,2)")
+                        .HasDefaultValue(0m);
 
                     b.Property<decimal>("ShippingFee")
                         .ValueGeneratedOnAdd()
@@ -1498,10 +1509,21 @@ namespace ShoppingFood.Domain.Migrations
                     b.Property<decimal?>("CustomCommissionRate")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int>("DeliveryType")
+                        .HasColumnType("int");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<double>("FreeDeliveryRadiusKm")
+                        .HasColumnType("float");
+
+                    b.Property<decimal>("FreeShippingMinimumOrder")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(18,2)")
+                        .HasDefaultValue(0m);
 
                     b.Property<bool>("IsVerified")
                         .HasColumnType("bit");

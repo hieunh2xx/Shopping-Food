@@ -170,7 +170,7 @@ export function ProductReviews({ productId, restaurantId }: { productId: string;
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   placeholder="Chia sẻ trải nghiệm của bạn về món ăn này..."
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 font-medium focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
                 />
               </div>
               <Button type="submit" className="shrink-0">

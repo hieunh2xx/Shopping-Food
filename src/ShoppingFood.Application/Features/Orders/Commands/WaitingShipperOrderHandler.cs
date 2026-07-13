@@ -18,15 +18,18 @@ namespace ShoppingFood.Application.Features.Orders.Commands
         private readonly IUnitOfWork _unitOfWork;
         private readonly IOrderRepository _orderRepository;
         private readonly IRestaurantProfileRepository _restaurantProfileRepository;
+        private readonly INotificationRepository _notificationRepository;
 
         public WaitingShipperOrderHandler(
             IOrderRepository orderRepository, 
             IRestaurantProfileRepository restaurantProfileRepository,
+            INotificationRepository notificationRepository,
             IUnitOfWork unitOfWork
             ) 
         {
             _orderRepository = orderRepository;
             _restaurantProfileRepository = restaurantProfileRepository;
+            _notificationRepository = notificationRepository;
             _unitOfWork = unitOfWork;
         }
         public async Task<ApiResponse> Handle(WaitingShipperOrderCommand request, CancellationToken cancellationToken)
@@ -61,13 +64,50 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 if (!isAuthorized)
                     return ApiResponse.Failure(403, "This order contains dishes that are not from your restaurant.");
 
-                order.Status = OrderStatus.WaitingForShipper;
-                order.UpdatedAt = DateTime.UtcNow;
+                if (restaurant.DeliveryType == Domain.Enums.DeliveryType.SelfDelivery)
+                {
+                    order.Status = OrderStatus.Shipping;
+                    order.UpdatedAt = DateTime.UtcNow;
+                    _orderRepository.Update(order);
 
-                _orderRepository.Update(order);
-                await _unitOfWork.SaveChangesAsync();
+                    var notification = new Notification
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = order.UserAccountId.Value,
+                        Title = "Đơn hàng đang giao",
+                        Message = $"Nhà hàng đang tự giao đơn hàng #{order.Id.ToString()[..8]} cho bạn.",
+                        NotificationType = NotificationType.Order,
+                        TargetId = order.Id,
+                        IsRead = false,
+                        CreateAt = DateTime.UtcNow
+                    };
+                    _notificationRepository.Add(notification);
 
-                return ApiResponse.Success(null, "Order status updated to Waiting for Shipper successfully.");
+                    await _unitOfWork.SaveChangesAsync();
+                    return ApiResponse.Success(null, "Order status updated to Shipping (Self Delivery).");
+                }
+                else
+                {
+                    order.Status = OrderStatus.WaitingForShipper;
+                    order.UpdatedAt = DateTime.UtcNow;
+                    _orderRepository.Update(order);
+
+                    var notification = new Notification
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = order.UserAccountId.Value,
+                        Title = "Đang tìm tài xế",
+                        Message = $"Đơn hàng #{order.Id.ToString()[..8]} đang được tìm tài xế giao hàng.",
+                        NotificationType = NotificationType.Order,
+                        TargetId = order.Id,
+                        IsRead = false,
+                        CreateAt = DateTime.UtcNow
+                    };
+                    _notificationRepository.Add(notification);
+
+                    await _unitOfWork.SaveChangesAsync();
+                    return ApiResponse.Success(null, "Order status updated to Waiting for Shipper successfully.");
+                }
             }
             catch (Exception ex)
             {

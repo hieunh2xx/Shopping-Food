@@ -31,7 +31,7 @@ export function AdminSystemConfigPage() {
         }
       }
     } catch {
-      toast.error('Không thể tải cấu hình bảo trì');
+      toast.error('Không thể tải cấu hình');
     } finally {
       setIsLoading(false);
     }

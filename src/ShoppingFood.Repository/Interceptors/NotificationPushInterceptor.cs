@@ -71,6 +71,7 @@ namespace ShoppingFood.Repository.Interceptors
                         title = n.Title,
                         message = n.Message,
                         notificationType = n.NotificationType.ToString(),
+                        targetId = n.TargetId,
                         isRead = n.IsRead,
                         createAt = n.CreateAt.ToString("o")
                     };

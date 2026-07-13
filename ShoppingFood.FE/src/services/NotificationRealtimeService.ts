@@ -29,6 +29,7 @@ class NotificationRealtimeService {
             notificationType: String(raw.notificationType ?? 'System'),
             isRead: Boolean(raw.isRead ?? false),
             createAt: String(raw.createAt ?? new Date().toISOString()),
+            targetId: raw.targetId ? String(raw.targetId) : undefined,
         };
         this.callbacks.forEach(cb => cb(notification));
         });

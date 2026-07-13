@@ -53,6 +53,14 @@ class AdminService extends BaseService<unknown> {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ADMIN.SYSTEM_MAINTENANCE, data);
   }
 
+  async getDeliverySettings(): Promise<IApiResponse<any>> {
+    return httpClient.get<IApiResponse<any>>(API_ENDPOINTS.ADMIN.SYSTEM_DELIVERY);
+  }
+
+  async updateDeliverySettings(data: any): Promise<IApiResponse<any>> {
+    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ADMIN.SYSTEM_DELIVERY, data);
+  }
+
   async updateLegalSettings(data: { termsOfUseCustomer: string, termsOfUseSeller: string, termsOfUseShipper: string, privacyPolicy: string }): Promise<IApiResponse<any>> {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ADMIN.SYSTEM_LEGAL, data);
   }

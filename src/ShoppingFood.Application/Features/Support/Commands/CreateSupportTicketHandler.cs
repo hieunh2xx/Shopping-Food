@@ -84,13 +84,13 @@ namespace ShoppingFood.Application.Features.Support.Commands
             };
             _systemReportRepository.Add(report );
 
-            await NotifyCoordinatorsAsync();
+            await NotifyCoordinatorsAsync(request.OrderId);
             await _unitOfWork.SaveChangesAsync();
 
             return ApiResponse.Success(new { TicketId = report.Id }, "Support ticket created successfully.");
         }
 
-        private async Task NotifyCoordinatorsAsync()
+        private async Task NotifyCoordinatorsAsync(Guid orderId)
         {
             var coordinators = await _userRepository.GetAsync(
                 predicate: u => u.Profile != null && u.Profile.Role == Domain.Enums.UserRole.Coordinator,
@@ -107,6 +107,7 @@ namespace ShoppingFood.Application.Features.Support.Commands
                     Title = "Ticket hỗ trợ mới từ CSKH",
                     Message = "Nhân viên CSKH vừa tiếp nhận và mở ticket hỗ trợ mới. Vui lòng xử lý.",
                     NotificationType = Domain.Enums.NotificationType.Order,
+                    TargetId = orderId,
                     IsRead = false,
                     CreateAt = DateTime.UtcNow,
                 });

@@ -4,6 +4,7 @@ import { ArrowRight, ChefHat, Truck, Shield, Star, History, RotateCcw, MapPin, T
 import { useProducts, useCart, useAuth, useCategories } from '../hooks';
 import { FlashSaleSection } from '../components/promotions/FlashSaleSection';
 import { BuyXGetYSection } from '../components/promotions/BuyXGetYSection';
+import { RecommendationSection } from '../components/recommendations/RecommendationSection';
 import { restaurantService } from '../services/RestaurantService';
 import { orderService } from '../services/OrderService';
 import { adminService } from '../services';
@@ -210,6 +211,14 @@ export function HomePage() {
         {/* Buy X Get Y */}
         <BuyXGetYSection />
 
+        {/* Gợi ý cho bạn */}
+        {isAuthenticated && (
+          <RecommendationSection 
+            latitude={locationStatus === 'success' ? 10.7769 : undefined} 
+            longitude={locationStatus === 'success' ? 106.7009 : undefined} 
+          />
+        )}
+
         {/* ── Món bán chạy hôm nay ── */}
         <section>
           <SectionHeader
@@ -230,7 +239,7 @@ export function HomePage() {
                 <Link to={`/products/${item.id}`} key={item.id} className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all group cursor-pointer h-full flex flex-col">
                   <div className="relative h-36 overflow-hidden bg-gray-100 shrink-0">
                     {item.primaryImageUrl ? (
-                      <img src={item.primaryImageUrl} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      <img src={item.primaryImageUrl} alt={item.itemName || item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-3xl">🍲</div>
                     )}
@@ -240,7 +249,7 @@ export function HomePage() {
                   </div>
                   <div className="p-3 flex flex-col flex-1">
                     <p className="text-[11px] text-gray-400 truncate">{item.restaurantName}</p>
-                    <p className="text-sm font-semibold text-gray-800 line-clamp-2 mt-0.5 min-h-[40px] leading-tight">{item.name}</p>
+                    <p className="text-sm font-semibold text-gray-800 line-clamp-2 mt-0.5 min-h-[40px] leading-tight">{item.itemName || item.name}</p>
                     <div className="flex items-center justify-between mt-auto pt-2">
                       <span className="text-orange-500 font-bold text-sm">{formatCurrency(item.price)}</span>
                       <div className="flex items-center gap-1 text-xs text-gray-500">

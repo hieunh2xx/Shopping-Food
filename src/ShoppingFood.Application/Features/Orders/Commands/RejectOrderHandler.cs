@@ -78,6 +78,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                         Title = "Đơn hàng đã bị từ chối",
                         Message = $"Đơn hàng #{order.Id.ToString().Substring(0, 8)} của bạn đã bị từ chối bởi cửa hàng. Lý do: {request.RejectReason}",
                         NotificationType = NotificationType.System,
+                        TargetId = order.Id,
                         IsRead = false,
                         CreateAt = DateTime.UtcNow
                     };

@@ -64,11 +64,15 @@ namespace ShoppingFood.Application.Services
         }
 
         public (decimal ItemsSubtotal, decimal PlatformCommission, decimal SellerPayout, decimal ShipperEarning) CalculateSplit(
-            decimal totalAmount, decimal shippingFee, decimal shipperIncome, decimal commissionRate)
+            decimal totalAmount, decimal shippingFee, decimal shipperIncome, decimal commissionRate, bool isSelfDelivery = false)
         {
             var itemsSubtotal = Math.Max(0, totalAmount - shippingFee);
             var platformCommission = Math.Round(itemsSubtotal * commissionRate, 0);
             var sellerPayout = itemsSubtotal - platformCommission;
+            if (isSelfDelivery)
+            {
+                sellerPayout += shippingFee;
+            }
             var shipperEarning = shipperIncome;
             return (itemsSubtotal, platformCommission, sellerPayout, shipperEarning);
         }
@@ -369,6 +373,55 @@ namespace ShoppingFood.Application.Services
             order.UpdatedAt = DateTime.UtcNow;
             _orderRepository.Update(order);
             _shipperProfileRepository.Update(shipper);
+        }
+
+        public async Task SettleSelfDeliveryOrderAsync(Order order)
+        {
+            if (order.IsFinancialSettled) return;
+
+            var config = await GetConfigAsync();
+            var split = CalculateSplit(order.TotalAmount, order.ShippingFee, order.ShipperIncome, config.CommissionRate, isSelfDelivery: true);
+            order.ItemsSubtotal = split.ItemsSubtotal;
+            order.PlatformCommission = split.PlatformCommission;
+            order.SellerPayout = split.SellerPayout;
+
+            var restaurantId = await GetOrderRestaurantIdAsync(order);
+            if (restaurantId == null) return;
+
+            var sellerWallet = await GetOrCreateWalletAsync(WalletOwnerType.Seller, restaurantId.Value);
+            var platformWallet = await GetOrCreateWalletAsync(WalletOwnerType.Platform, Guid.Empty);
+
+            if (order.PaymentMethod == PaymentMethod.COD)
+            {
+                // Nhà hàng tự giao và đã thu đủ tiền mặt (TotalAmount).
+                // Nhà hàng được giữ SellerPayout (bao gồm tiền món + tiền ship), phải nộp lại PlatformCommission cho nền tảng.
+                await RecordTransactionAsync(sellerWallet, FinancialTransactionType.SellerPayout, split.SellerPayout,
+                    $"Doanh thu đơn #{order.Id} (COD tự giao - chờ đối soát)", order.Id, "Order");
+                
+                await RecordTransactionAsync(sellerWallet, FinancialTransactionType.Commission, -split.PlatformCommission,
+                    $"Trừ chiết khấu sàn đơn #{order.Id} (COD tự giao)", order.Id, "Order");
+
+                await RecordTransactionAsync(platformWallet, FinancialTransactionType.Commission, split.PlatformCommission,
+                    $"Chiết khấu sàn đơn #{order.Id} (COD tự giao)", order.Id, "Order");
+
+                order.PaymentStatus = PaymentStatus.Settled;
+            }
+            else if (order.PaymentStatus == PaymentStatus.Paid)
+            {
+                // Khách đã thanh toán online cho nền tảng (nền tảng đã thu đủ tiền).
+                // Nền tảng trả cho nhà hàng SellerPayout (bao gồm tiền món + tiền ship).
+                await RecordTransactionAsync(sellerWallet, FinancialTransactionType.SellerPayout, split.SellerPayout,
+                    $"Doanh thu đơn #{order.Id} (Tự giao)", order.Id, "Order");
+                
+                await RecordTransactionAsync(platformWallet, FinancialTransactionType.Commission, split.PlatformCommission,
+                    $"Chiết khấu sàn đơn #{order.Id} (Tự giao)", order.Id, "Order");
+
+                order.PaymentStatus = PaymentStatus.Settled;
+            }
+
+            order.IsFinancialSettled = true;
+            order.UpdatedAt = DateTime.UtcNow;
+            _orderRepository.Update(order);
         }
 
         public async Task<string?> ProcessRefundAsync(Order order)

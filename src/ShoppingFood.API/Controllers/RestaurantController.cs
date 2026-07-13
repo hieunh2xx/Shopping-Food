@@ -84,6 +84,13 @@ namespace ShoppingFood.API.Controllers
             return Ok(response);
         }
 
+        [HttpPut("delivery-config")]
+        public async Task<ActionResult<ApiResponse>> UpdateDeliveryConfig([FromBody] UpdateRestaurantDeliveryConfigCommand command)
+        {
+            var response = await _mediator.Send(command);
+            return Ok(response);
+        }
+
         [HttpPut("shipping-fee")]
         public async Task<ActionResult<ApiResponse>> UpdateShippingFee([FromBody] UpdateRestaurantShippingFeeCommand command)
         {

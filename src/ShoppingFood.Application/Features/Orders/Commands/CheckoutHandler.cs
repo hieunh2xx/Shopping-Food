@@ -15,6 +15,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static System.Net.WebRequestMethods;
+using ShoppingFood.Dto.System;
 
 
 namespace ShoppingFood.Application.Features.Orders.Commands
@@ -205,6 +206,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                             Title = "Đơn hàng mới",
                             Message = $"Bạn có đơn hàng mới #{order.Id.ToString().Substring(0, 8)} (Thanh toán khi nhận hàng).",
                             NotificationType = NotificationType.System,
+                            TargetId = order.Id,
                             IsRead = false,
                             CreateAt = DateTime.UtcNow
                         };
@@ -369,13 +371,20 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             decimal shipperPeakBonusTotal = 0;
 
             var configs = await _configRepository.GetAllAsync();
-            var config = configs.FirstOrDefault();
-            
+            var platformFinanceConfig = configs.FirstOrDefault();
+
+            var systemConfigs = await _dbContext.SystemConfigs.FirstOrDefaultAsync(c => c.Key == "DeliverySettings");
+            DeliverySettingsDto deliverySettings = null;
+            if (systemConfigs != null && !string.IsNullOrEmpty(systemConfigs.Value))
+            {
+                deliverySettings = global::System.Text.Json.JsonSerializer.Deserialize<ShoppingFood.Dto.System.DeliverySettingsDto>(systemConfigs.Value);
+            }
+
             bool isRushHour = false;
-            if (config != null)
+            if (platformFinanceConfig != null)
             {
                 var nowTime = DateTime.UtcNow.AddHours(7).TimeOfDay; // Vietnam time
-                if (nowTime >= config.RushHourStartTime && nowTime <= config.RushHourEndTime)
+                if (nowTime >= platformFinanceConfig.RushHourStartTime && nowTime <= platformFinanceConfig.RushHourEndTime)
                 {
                     isRushHour = true;
                 }
@@ -393,38 +402,65 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 decimal distanceFeeForShipper = 0;
                 decimal peakBonusForShipper = 0;
 
-                if (config != null && destLat.HasValue && destLon.HasValue && restaurant.Latitude.HasValue && restaurant.Longitude.HasValue)
+                double distanceKm = 0;
+                if (destLat.HasValue && destLon.HasValue && restaurant.Latitude.HasValue && restaurant.Longitude.HasValue)
                 {
                     double dLat = (destLat.Value - restaurant.Latitude.Value) * Math.PI / 180.0;
                     double dLon = (destLon.Value - restaurant.Longitude.Value) * Math.PI / 180.0;
                     double a = Math.Pow(Math.Sin(dLat / 2.0), 2.0) + Math.Cos(restaurant.Latitude.Value * Math.PI / 180.0) * Math.Cos(destLat.Value * Math.PI / 180.0) * Math.Pow(Math.Sin(dLon / 2.0), 2.0);
                     double c = 2.0 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1.0 - a));
-                    double distanceKm = 6371.0 * c;
+                    distanceKm = 6371.0 * c;
+                }
 
-                    // Customer Shipping Fee
-                    if (distanceKm <= 5.0)
-                    {
-                        feeForRestaurant = config.BaseDeliveryFee;
-                    }
+                if (restaurant.DeliveryType == ShoppingFood.Domain.Enums.DeliveryType.PlatformDelivery)
+                {
+                    // Platform Delivery Logic
+                    double freeDeliveryRadiusKm = deliverySettings?.FreeDeliveryRadiusKm ?? 3.0;
+                    decimal freeShippingMinimumOrder = deliverySettings?.FreeShippingMinimumOrder ?? 0m;
+                    decimal shippingFee = deliverySettings?.ShippingFee ?? 15000m;
+
+                    if (itemsTotal >= freeShippingMinimumOrder && freeShippingMinimumOrder > 0)
+                        feeForRestaurant = 0;
+                    else if (distanceKm <= freeDeliveryRadiusKm)
+                        feeForRestaurant = 0;
                     else
-                    {
-                        feeForRestaurant = config.BaseDeliveryFee + (decimal)(distanceKm - 5.0) * config.FeePerKm;
-                    }
-                    if (isRushHour) feeForRestaurant *= config.RushHourMultiplier;
+                        feeForRestaurant = shippingFee;
 
-                    // Shipper Income Breakdown
-                    baseFeeForShipper = config.ShipperBaseFee;
-                    distanceFeeForShipper = distanceKm > 5.0 ? (decimal)(distanceKm - 5.0) * config.ShipperFeePerKm : 0m;
-                    decimal incomeBeforeBonus = baseFeeForShipper + distanceFeeForShipper;
-                    peakBonusForShipper = isRushHour ? incomeBeforeBonus * (config.ShipperRushHourBonus / 100m) : 0m;
-                    incomeForShipper = incomeBeforeBonus + peakBonusForShipper;
+                    if (platformFinanceConfig != null)
+                    {
+                        baseFeeForShipper = platformFinanceConfig.ShipperBaseFee;
+                        distanceFeeForShipper = distanceKm > 5.0 ? (decimal)(distanceKm - 5.0) * platformFinanceConfig.ShipperFeePerKm : 0m;
+                        decimal incomeBeforeBonus = baseFeeForShipper + distanceFeeForShipper;
+                        peakBonusForShipper = isRushHour ? incomeBeforeBonus * (platformFinanceConfig.ShipperRushHourBonus / 100m) : 0m;
+                        incomeForShipper = incomeBeforeBonus + peakBonusForShipper;
+                    }
+                }
+                else
+                {
+                    // Self Delivery Logic
+                    if (restaurant.MaxDeliveryRadiusKm.HasValue && distanceKm > restaurant.MaxDeliveryRadiusKm.Value)
+                    {
+                        throw new Exception("Nhà hàng không hỗ trợ giao đến địa chỉ này.");
+                    }
+
+                    if (itemsTotal >= restaurant.FreeShippingMinimumOrder && restaurant.FreeShippingMinimumOrder > 0)
+                        feeForRestaurant = 0;
+                    else if (distanceKm <= restaurant.FreeDeliveryRadiusKm)
+                        feeForRestaurant = 0;
+                    else
+                        feeForRestaurant = restaurant.ShippingFee;
+
+                    incomeForShipper = 0;
+                    baseFeeForShipper = 0;
+                    distanceFeeForShipper = 0;
+                    peakBonusForShipper = 0;
                 }
 
                 if (!hasFreeshipProduct)
                 {
                     shippingFeeTotal += Math.Round(feeForRestaurant, 0);
                 }
-                shipperIncomeTotal += Math.Round(incomeForShipper, 0); // Shipper still earns even if freeship!
+                shipperIncomeTotal += Math.Round(incomeForShipper, 0); 
                 shipperBaseFeeTotal += Math.Round(baseFeeForShipper, 0);
                 shipperDistanceFeeTotal += Math.Round(distanceFeeForShipper, 0);
                 shipperPeakBonusTotal += Math.Round(peakBonusForShipper, 0);

@@ -85,7 +85,11 @@ class OrderService {
   }
 
   public async sellerCancelOrder(data: ISellerCancelOrderRequest): Promise<IApiResponse<any>> {
-    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ORDER.SELLER_CANCEL, data);
+    return httpClient.post<IApiResponse<any>>(`${API_ENDPOINTS.ORDER.BASE}/seller-cancel`, data);
+  }
+
+  public async confirmSelfDelivery(orderId: string): Promise<IApiResponse<any>> {
+    return httpClient.post<IApiResponse<any>>(`${API_ENDPOINTS.ORDER.BASE}/${orderId}/self-delivery/confirm-success`);
   }
 }
 
