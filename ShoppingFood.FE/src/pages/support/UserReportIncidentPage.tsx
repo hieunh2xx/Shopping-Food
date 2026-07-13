@@ -60,6 +60,8 @@ export function UserReportIncidentPage() {
     fetchOrders();
   }, []);
 
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!orderId) {
@@ -88,10 +90,11 @@ export function UserReportIncidentPage() {
         toast.success('Gửi khiếu nại thành công! Chúng tôi sẽ xem xét trong 24h.');
         navigate(-1);
       } else {
-        toast.error(res.message || 'Lỗi khi gửi khiếu nại');
+        toast.error(res.message || 'Gửi khiếu nại thất bại, vui lòng kiểm tra lại');
       }
-    } catch {
-      toast.error('Gửi khiếu nại thất bại do lỗi kết nối mạng.');
+    } catch (error: any) {
+      const rawMessage = error?.response?.data?.message || 'Lỗi kết nối đến máy chủ, không thể gửi khiếu nại.';
+      toast.error(rawMessage);
     } finally {
       setIsSubmitting(false);
     }

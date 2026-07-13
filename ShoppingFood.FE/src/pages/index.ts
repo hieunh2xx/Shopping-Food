@@ -67,3 +67,5 @@ export { PaymentHistoryPage } from './payment/PaymentHistoryPage';
 export { AdminPaymentDashboardPage } from './admin/AdminPaymentDashboardPage';
 export { AdminBlacklistPage } from './admin/AdminBlacklistPage';
 export { AdminSystemLogsPage } from './admin/AdminSystemLogsPage';
+export { AdminOrderComplaintsPage } from './admin/AdminOrderComplaintsPage';
+export { SellerChatPage } from './seller/SellerChatPage';

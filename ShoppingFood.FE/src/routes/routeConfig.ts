@@ -65,6 +65,7 @@ export const ROUTES = {
   PAYMENT_CANCEL: '/payment/cancel',
   PAYMENT_HISTORY: '/payment/history',
   ADMIN_PAYMENTS: '/admin/payments',
+  SELLER_CHAT: '/seller/chat',
 } as const;
 
 /**

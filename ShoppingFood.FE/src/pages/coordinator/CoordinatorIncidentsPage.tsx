@@ -124,8 +124,9 @@ export function CoordinatorIncidentsPage() {
       } else {
         toast.error(res.message || 'Lỗi xử lý sự cố');
       }
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Xử lý sự cố thất bại do lỗi kết nối mạng.');
+    } catch (err: any) {
+      const rawMessage = err?.response?.data?.message || (err instanceof Error ? err.message : 'Xử lý sự cố thất bại do lỗi kết nối mạng.');
+      toast.error(rawMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -275,6 +276,7 @@ export function CoordinatorIncidentsPage() {
               <option value="ShipperFault">Lỗi tài xế (Phạt điểm)</option>
               <option value="CustomerFault">Lỗi khách hàng (Khách hủy đơn)</option>
               <option value="CompensateCustomer">Đền bù khách hàng (Voucher/Hoàn tiền)</option>
+              <option value="EscalateToAdmin">Chuyển cho Admin xử lý đền bù</option>
               <option value="ForceCancelNoPenalty">Hủy đơn không phạt (Sự cố khách quan)</option>
               <option value="Dismiss">Bỏ qua (Khiếu nại không hợp lệ)</option>
             </select>

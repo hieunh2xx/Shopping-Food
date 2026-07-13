@@ -195,6 +195,16 @@ namespace ShoppingFood.API.Controllers
             var response = await _mediator.Send(command);
             return StatusCode(response.Code, response);
         }
+
+        [HttpGet("complaints/orders")]
+        public async Task<ActionResult<ApiResponse>> GetOrderComplaints([FromQuery] string? status, [FromQuery] int skip = 0, [FromQuery] int take = 20)
+        {
+            var query = new GetOrderComplaintsQuery { Status = status, Skip = skip, Take = take };
+            if (userDto != null)
+                query.CurrentUserId = userDto.Id;
+            var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
+        }
     }
 }
 

@@ -11,9 +11,6 @@ using ShoppingFood.Domain.Enums;
 using ShoppingFood.Domain.Models;
 using ShoppingFood.Dto.User;
 using ShoppingFood.Repository.Interfaces;
-using Microsoft.EntityFrameworkCore;
-using ShoppingFood.Domain.Context;
-using ShoppingFood.Core.Interfaces;
 
 namespace ShoppingFood.Application.Features.Admin.Commands
 {

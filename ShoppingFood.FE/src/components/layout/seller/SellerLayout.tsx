@@ -1,4 +1,5 @@
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, 
   Package, 
@@ -11,15 +12,19 @@ import {
   Ticket,
   Gift,
   Zap,
-  Star
+  Star,
+  MessageSquare
 } from 'lucide-react';
 import { useAuth } from '../../../hooks';
 import { ROUTES } from '../../../routes/routeConfig';
 import { DashboardLayout } from '../DashboardLayout';
+import { useSellerChatWatcher } from '../../../hooks/useSellerChatWatcher';
 
 export function SellerLayout() {
   const { user, logout, upgradeToMall } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const hasUnreadChat = useSellerChatWatcher();
 
   const handleLogout = () => {
     logout();
@@ -37,6 +42,7 @@ export function SellerLayout() {
     { name: 'Mua X Tặng Y', path: '/seller/promotions', icon: Gift },
     { name: 'Flash Sale', path: ROUTES.SELLER_FLASH_SALES, icon: Zap },
     { name: 'Ví & Rút tiền', path: ROUTES.SELLER_WALLET, icon: Ticket },
+    { name: 'Hộp thư', path: '/seller/chat', icon: MessageSquare, badge: hasUnreadChat },
     { name: 'Thông tin cửa hàng', path: '/seller/settings', icon: Settings },
   ];
 

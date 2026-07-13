@@ -77,6 +77,8 @@ import {
   AdminPaymentDashboardPage,
   MaintenancePage,
   AdminSystemLogsPage,
+  AdminOrderComplaintsPage,
+  SellerChatPage,
 } from '../pages';
 
 /**
@@ -159,6 +161,7 @@ export function AppRoutes() {
         <Route path="flash-sales" element={<SellerFlashSalesPage />} />
         <Route path="wallet" element={<SellerWalletPage />} />
         <Route path="appeal" element={<SellerAppealPage />} />
+        <Route path="chat" element={<SellerChatPage />} />
       </Route>
 
       {/* Admin routes - protected with AdminLayout */}
@@ -188,6 +191,7 @@ export function AppRoutes() {
         <Route path="review-reports" element={<AdminReviewReportsPage />} />
         <Route path="product-reports" element={<AdminProductReportsPage />} />
         <Route path="blacklist" element={<AdminBlacklistPage />} />
+        <Route path="order-complaints" element={<AdminOrderComplaintsPage />} />
         <Route path="incidents" element={<CoordinatorIncidentsPage />} />
         <Route path="faq" element={<AdminFaqPage />} />
         <Route path="chat" element={<AdminChatPage />} />

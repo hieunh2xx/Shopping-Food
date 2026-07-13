@@ -102,7 +102,6 @@ namespace ShoppingFood.Application.Services
         {
             wallet.Balance += amount;
             wallet.UpdatedAt = DateTime.UtcNow;
-            _walletRepository.Update(wallet);
 
             _transactionRepository.Add(new FinancialTransaction
             {

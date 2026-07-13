@@ -12,6 +12,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using ShoppingFood.Application.Services;
+
 namespace ShoppingFood.Application.Features.Orders.Commands
 {
     public class CancelOrderHandler : IRequestHandler<CancelOrderCommand, ApiResponse>
@@ -19,17 +21,23 @@ namespace ShoppingFood.Application.Features.Orders.Commands
         private readonly IOrderRepository _orderRepository;
         private readonly IPaymentSettlementService _paymentSettlementService;
         private readonly INotificationRepository _notificationRepository;
+        private readonly IChatSessionRepository _chatSessionRepository;
+        private readonly ChatSessionCloseService _chatSessionCloseService;
         private readonly IUnitOfWork _unitOfWork;
 
         public CancelOrderHandler(
             IOrderRepository orderRepository,
             IPaymentSettlementService paymentSettlementService,
             INotificationRepository notificationRepository,
+            IChatSessionRepository chatSessionRepository,
+            ChatSessionCloseService chatSessionCloseService,
             IUnitOfWork unitOfWork) 
         {
             _orderRepository = orderRepository;
             _paymentSettlementService = paymentSettlementService;
             _notificationRepository = notificationRepository;
+            _chatSessionRepository = chatSessionRepository;
+            _chatSessionCloseService = chatSessionCloseService;
             _unitOfWork = unitOfWork;
         }
         public async Task<ApiResponse> Handle(CancelOrderCommand request, CancellationToken cancellationToken)
@@ -67,6 +75,9 @@ namespace ShoppingFood.Application.Features.Orders.Commands
 
                 _orderRepository.Update(order);
                 await _unitOfWork.SaveChangesAsync();
+
+                // Đóng session chat liên quan ngay khi đơn bị hủy
+                await _chatSessionCloseService.CloseSessionsForCancelledOrderAsync(order.Id);
 
                 var restaurant = order.Items.FirstOrDefault()?.Product?.Restaurant;
                 if (restaurant != null)

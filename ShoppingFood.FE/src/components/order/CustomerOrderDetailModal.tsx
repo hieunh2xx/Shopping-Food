@@ -128,6 +128,18 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId }: OrderDeta
     }
   };
 
+  const translateError = (msg: string) => {
+    if (!msg) return 'Lỗi kết nối đến máy chủ, không thể gửi khiếu nại.';
+    if (msg.includes('Unauthorized')) return 'Không có quyền truy cập.';
+    if (msg.includes('Only customers')) return 'Chỉ khách hàng mới có quyền gửi khiếu nại.';
+    if (msg.includes('Order not found')) return 'Không tìm thấy đơn hàng.';
+    if (msg.includes('your own orders')) return 'Bạn chỉ có thể khiếu nại đơn hàng của chính mình.';
+    if (msg.includes('delivered order')) return 'Bạn chỉ có thể gửi khiếu nại cho đơn hàng đã giao thành công.';
+    if (msg.includes('within 24 hours')) return 'Thời gian gửi khiếu nại phải trong vòng 24 giờ sau khi nhận hàng. Đơn hàng này đã quá hạn.';
+    if (msg.includes('already been submitted')) return 'Đơn hàng này đã được gửi khiếu nại trước đó.';
+    return msg;
+  };
+
   const handleSubmitOrderComplaint = async () => {
     if (!orderComplaintModal.reason.trim()) {
       toast.error('Vui lòng nhập lý do khiếu nại');
@@ -143,7 +155,8 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId }: OrderDeta
       toast.success('Gửi khiếu nại đơn hàng thành công');
       setOrderComplaintModal({ isOpen: false, orderId: '', reason: '', description: '', evidenceImageUrl: '' });
     } catch (error: any) {
-      toast.error(error.message || 'Lỗi khi gửi khiếu nại');
+      const rawMessage = error?.response?.data?.message;
+      toast.error(translateError(rawMessage));
     }
   };
 
@@ -162,7 +175,8 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId }: OrderDeta
       toast.success('Gửi báo cáo tài xế thành công');
       setShipperComplaintModal({ isOpen: false, orderId: '', reason: '', description: '', evidenceImageUrl: '' });
     } catch (error: any) {
-      toast.error(error.message || 'Lỗi khi gửi báo cáo');
+      const errorMessage = error?.response?.data?.message || 'Lỗi kết nối đến máy chủ, không thể gửi báo cáo.';
+      toast.error(errorMessage);
     }
   };
 
@@ -176,7 +190,8 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId }: OrderDeta
       toast.success('Đánh giá tài xế thành công');
       setShipperReviewModal({ isOpen: false, orderId: '', rating: 5, comment: '' });
     } catch (error: any) {
-      toast.error(error.message || 'Lỗi khi gửi đánh giá');
+      const errorMessage = error?.response?.data?.message || 'Lỗi kết nối đến máy chủ, không thể gửi đánh giá.';
+      toast.error(errorMessage);
     }
   };
 
@@ -470,6 +485,19 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId }: OrderDeta
           </div>
         </div>
       </Modal>
+
+      {sellerChat.isOpen && (
+        <OrderSellerChatModal
+          isOpen={sellerChat.isOpen}
+          onClose={() => setSellerChat(prev => ({ ...prev, isOpen: false }))}
+          orderId={sellerChat.orderId}
+          sessionId={sellerChat.sessionId}
+          restaurantId={sellerChat.restaurantId}
+          title={`Chat với ${sellerChat.restaurantName || 'Nhà hàng'}`}
+          isSeller={false}
+          sessionStatus={orderData?.orderChatSessionStatus}
+        />
+      )}
     </>
   );
 }

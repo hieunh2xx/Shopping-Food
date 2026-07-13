@@ -43,6 +43,7 @@ namespace ShoppingFood.Application
             services.AddScoped<ShoppingFood.Application.Interfaces.IPaymentOrchestrationService, ShoppingFood.Application.Services.PaymentOrchestrationService>();
             services.AddScoped<ShoppingFood.Application.Interfaces.IFlashSalePricingService, ShoppingFood.Application.Services.FlashSalePricingService>();
             services.AddScoped<ShoppingFood.Application.Services.BlacklistFilterService>();
+            services.AddScoped<ShoppingFood.Application.Services.ChatSessionCloseService>();
             services.Configure<SepayOptions>(configuration.GetSection(SepayOptions.SectionName));
             return services;
         }

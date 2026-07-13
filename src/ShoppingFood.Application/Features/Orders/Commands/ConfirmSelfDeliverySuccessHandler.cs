@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Application.Interfaces;
+using ShoppingFood.Application.Services;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
 using ShoppingFood.Domain.Enums;
@@ -24,6 +25,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
         private readonly ILoyaltyPointHistoryRepository _loyaltyPointHistoryRepository;
         private readonly IMemberTierConfigRepository _memberTierConfigRepository;
         private readonly IRestaurantProfileRepository _restaurantProfileRepository;
+        private readonly ChatSessionCloseService _chatSessionCloseService;
 
         public ConfirmSelfDeliverySuccessHandler(
             IOrderRepository orderRepository,
@@ -33,7 +35,8 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             ILoyaltyPointRepository loyaltyPointRepository,
             ILoyaltyPointHistoryRepository loyaltyPointHistoryRepository,
             IMemberTierConfigRepository memberTierConfigRepository,
-            IRestaurantProfileRepository restaurantProfileRepository)
+            IRestaurantProfileRepository restaurantProfileRepository,
+            ChatSessionCloseService chatSessionCloseService)
         {
             _orderRepository = orderRepository;
             _unitOfWork = unitOfWork;
@@ -43,6 +46,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             _loyaltyPointHistoryRepository = loyaltyPointHistoryRepository;
             _memberTierConfigRepository = memberTierConfigRepository;
             _restaurantProfileRepository = restaurantProfileRepository;
+            _chatSessionCloseService = chatSessionCloseService;
         }
 
         public async Task<ApiResponse> Handle(ConfirmSelfDeliverySuccessCommand request, CancellationToken cancellationToken)
@@ -93,6 +97,10 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 AddDeliveryNotification(order, restaurant.RestaurantName);
 
                 await _unitOfWork.SaveChangesAsync();
+
+                // Đóng session chat sau khi giao (cửa sổ 24h vẫn mở)
+                await _chatSessionCloseService.CloseSessionsForDeliveredOrderIfExpiredAsync(order.Id, order.UpdatedAt);
+
                 return ApiResponse.Success(new { order.Id, Status = order.Status.ToString() }, "Order self-delivered successfully.");
             }
             catch (Exception ex)

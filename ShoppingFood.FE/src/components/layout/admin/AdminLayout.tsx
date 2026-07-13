@@ -53,7 +53,8 @@ export function AdminLayout() {
 
     // Vận hành
     { name: 'Lịch sử điều phối', path: ROUTES.ADMIN_DISPATCH_HISTORY, icon: History, group: 'Vận hành' },
-    { name: 'Xử lý khiếu nại', path: ROUTES.ADMIN_INCIDENTS, icon: ShieldAlert, group: 'Vận hành' },
+    { name: 'Khiếu nại đơn hàng', path: '/admin/order-complaints', icon: ShieldAlert, group: 'Vận hành' },
+    { name: 'Sự cố điều phối', path: ROUTES.ADMIN_INCIDENTS, icon: ShieldAlert, group: 'Vận hành' },
     { name: 'Live Chat', path: ROUTES.ADMIN_CHAT, icon: MessageSquare, group: 'Vận hành', badge: unreadChatCount },
     { name: 'Báo cáo Bình luận', path: '/admin/review-reports', icon: MessageSquareWarning, group: 'Vận hành' },
     { name: 'Báo cáo Sản phẩm', path: '/admin/product-reports', icon: ShieldAlert, group: 'Vận hành' },

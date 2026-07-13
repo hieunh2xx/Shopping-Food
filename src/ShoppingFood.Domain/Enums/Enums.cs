@@ -214,7 +214,8 @@ namespace ShoppingFood.Domain.Enums
     {
         Pending,
         Resolved,
-        Dismissed
+        Dismissed,
+        Escalated
     }
 
     public enum ReportTargetType
@@ -246,5 +247,18 @@ namespace ShoppingFood.Domain.Enums
         OrderCancellation,
         SystemIssue,
         General
+    }
+
+    public enum ComplaintResolutionType
+    {
+        Warning,
+        ShipperFault,
+        SellerFault,
+        CustomerFault,
+        CompensateCustomer,
+        ForceCancelNoPenalty,
+        Dismiss,
+        EscalateToAdmin,
+        NoFault
     }
 }

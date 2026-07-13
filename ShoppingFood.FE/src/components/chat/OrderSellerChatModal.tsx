@@ -14,6 +14,7 @@ export interface OrderSellerChatModalProps {
   restaurantId?: string;
   title?: string;
   isSeller?: boolean;
+  sessionStatus?: 'Open' | 'Closed';
 }
 
 export function OrderSellerChatModal({
@@ -24,6 +25,7 @@ export function OrderSellerChatModal({
   restaurantId,
   title,
   isSeller = false,
+  sessionStatus,
 }: OrderSellerChatModalProps) {
   const { user, token } = useAuth();
   const [sessionId, setSessionId] = useState<string | null>(initialSessionId ?? null);
@@ -151,23 +153,29 @@ export function OrderSellerChatModal({
         </div>
 
         <div className="flex gap-2 mt-3 pt-3 border-t border-gray-100">
-          <input
-            type="text"
-            value={inputText}
-            onChange={e => setInputText(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
-            placeholder="Nhập tin nhắn..."
-            className="flex-1 px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/30"
-            disabled={loading || !sessionId}
-          />
-          <button
-            type="button"
-            onClick={handleSend}
-            disabled={loading || sending || !inputText.trim() || !sessionId}
-            className="p-2.5 rounded-xl bg-orange-500 text-white disabled:opacity-50 hover:bg-orange-600"
-          >
-            <Send className="w-4 h-4" />
-          </button>
+          {sessionStatus === 'Closed' ? (
+            <p className="text-sm text-center w-full text-gray-400 italic py-1">Phiên chat này đã kết thúc</p>
+          ) : (
+            <>
+              <input
+                type="text"
+                value={inputText}
+                onChange={e => setInputText(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
+                placeholder="Nhập tin nhắn..."
+                className="flex-1 px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/30"
+                disabled={loading || !sessionId}
+              />
+              <button
+                type="button"
+                onClick={handleSend}
+                disabled={loading || sending || !inputText.trim() || !sessionId}
+                className="p-2.5 rounded-xl bg-orange-500 text-white disabled:opacity-50 hover:bg-orange-600"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </>
+          )}
         </div>
       </div>
     </Modal>

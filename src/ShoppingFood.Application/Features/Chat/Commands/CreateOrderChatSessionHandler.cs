@@ -15,7 +15,8 @@ namespace ShoppingFood.Application.Features.Chat.Commands
             OrderStatus.Confirmed,
             OrderStatus.Preparing,
             OrderStatus.WaitingForShipper,
-            OrderStatus.Shipping
+            OrderStatus.Shipping,
+            OrderStatus.Delivered
         };
 
         private readonly IOrderRepository _orderRepository;
@@ -49,12 +50,23 @@ namespace ShoppingFood.Application.Features.Chat.Commands
             if (order.UserAccountId != request.CurrentUserId)
                 return ApiResponse.Failure(403, "Bạn không có quyền nhắn tin về đơn này.");
 
+            if (order.Status == OrderStatus.Cancelled)
+                return ApiResponse.Failure(400, "Đơn hàng đã bị hủy, không thể nhắn tin.");
+
             if (!MessageableStatuses.Contains(order.Status))
             {
                 return ApiResponse.Failure(400,
                     order.Status == OrderStatus.Pending
                         ? "Đơn chưa được xác nhận — bạn có thể hủy trực tiếp thay vì nhắn tin."
                         : "Không thể nhắn tin về đơn ở trạng thái hiện tại.");
+            }
+
+            // Nếu đơn đã giao, chỉ cho chat trong vòng 24 giờ
+            if (order.Status == OrderStatus.Delivered)
+            {
+                var cutoff = DateTime.UtcNow.AddHours(-24);
+                if (order.UpdatedAt < cutoff)
+                    return ApiResponse.Failure(400, "Thời gian nhắn tin đã kết thúc (24 giờ sau khi giao hàng).");
             }
 
             var restaurantId = order.Items.FirstOrDefault()?.Product?.RestaurantId;

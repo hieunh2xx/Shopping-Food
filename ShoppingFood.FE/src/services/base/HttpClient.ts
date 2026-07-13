@@ -85,6 +85,16 @@ class HttpClient {
       if (lower.includes('already in use') || lower.includes('taken')) return 'Đã được sử dụng';
       if (lower.includes('format') || lower.includes('must contain') || lower.includes('digits')) return 'Định dạng không hợp lệ';
 
+      // Complaint & Appeal
+      if (lower.includes('only customers')) return 'Chỉ khách hàng mới có quyền gửi khiếu nại.';
+      if (lower.includes('your own orders')) return 'Bạn chỉ có thể khiếu nại đơn hàng của chính mình.';
+      if (lower.includes('delivered order')) return 'Bạn chỉ có thể gửi khiếu nại cho đơn hàng đã giao thành công.';
+      if (lower.includes('within 24 hours')) return 'Thời gian gửi khiếu nại phải trong vòng 24 giờ sau khi nhận hàng. Đơn hàng này đã quá hạn.';
+      if (lower.includes('already been submitted')) return 'Đơn hàng hoặc yêu cầu này đã được gửi khiếu nại trước đó.';
+      if (lower.includes('complaint not found')) return 'Không tìm thấy sự cố/khiếu nại này.';
+      if (lower.includes('already been processed')) return 'Sự cố/khiếu nại này đã được xử lý trước đó.';
+      if (lower.includes('save failed')) return 'Lỗi hệ thống: Không thể lưu quyết định xử lý.';
+
       return msg; // Return original if not translated to avoid empty strings
     };
 

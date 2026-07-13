@@ -77,6 +77,10 @@ class CoordinatorService extends BaseService<any, any, any> {
   async adjustShipperReputation(shipperId: string, data: { points: number, reason: string }): Promise<IApiResponse<any>> {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.COORDINATOR.ADJUST_SHIPPER_REPUTATION(shipperId), data);
   }
+
+  async getOrderComplaints(status?: string, skip = 0, take = 20): Promise<IApiResponse<any[]>> {
+    return httpClient.get<IApiResponse<any[]>>(API_ENDPOINTS.COORDINATOR.ORDER_COMPLAINTS, { params: { status, skip, take } });
+  }
 }
 
 export const coordinatorService = new CoordinatorService();

@@ -5,6 +5,7 @@ using ShoppingFood.Core.Interfaces;
 using ShoppingFood.Domain.Enums;
 using ShoppingFood.Domain.Models;
 using ShoppingFood.Application.Interfaces;
+using ShoppingFood.Application.Services;
 using ShoppingFood.Repository.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -25,6 +26,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
         private readonly IMemberTierConfigRepository _memberTierConfigRepository;
         private readonly IShipperReputationHistoryRepository _reputationHistoryRepository;
         private readonly IPaymentSettlementService _paymentSettlementService;
+        private readonly ChatSessionCloseService _chatSessionCloseService;
         private readonly IUnitOfWork _unitOfWork;
 
         public ConfirmDeliverySuccessHandler(
@@ -37,6 +39,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             IMemberTierConfigRepository memberTierConfigRepository,
             IShipperReputationHistoryRepository reputationHistoryRepository,
             IPaymentSettlementService paymentSettlementService,
+            ChatSessionCloseService chatSessionCloseService,
             IUnitOfWork unitOfWork)
         {
             _orderRepository = orderRepository;
@@ -48,6 +51,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             _memberTierConfigRepository = memberTierConfigRepository;
             _reputationHistoryRepository = reputationHistoryRepository;
             _paymentSettlementService = paymentSettlementService;
+            _chatSessionCloseService = chatSessionCloseService;
             _unitOfWork = unitOfWork;
         }
 
@@ -111,6 +115,10 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 AddDeliveryNotification(order, shipperProfile.UserProfile.FullName);
 
                 await _unitOfWork.SaveChangesAsync();
+
+                // Đóng session chat khi đơn đã giao (cửa sổ 24h vẫn mở, auto-close sau 24h)
+                await _chatSessionCloseService.CloseSessionsForDeliveredOrderIfExpiredAsync(order.Id, order.UpdatedAt);
+
                 return ApiResponse.Success(new {order.Id, Status = order.Status.ToString()}, "Order delivery successfully.");
             }
             catch (Exception ex)

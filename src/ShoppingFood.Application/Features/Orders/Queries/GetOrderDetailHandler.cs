@@ -19,17 +19,32 @@ namespace ShoppingFood.Application.Features.Orders.Queries
         private readonly IUserRepository _userRepository;
         private readonly IRestaurantProfileRepository _restaurantProfileRepository;
         private readonly IShipperProfileRepository _shipperProfileRepository;
+        private readonly IChatSessionRepository _chatSessionRepository;
+        private readonly IPaymentSessionRepository _paymentSessionRepository;
+
+        private static readonly OrderStatus[] MessageableStatuses =
+        {
+            OrderStatus.Confirmed,
+            OrderStatus.Preparing,
+            OrderStatus.WaitingForShipper,
+            OrderStatus.Shipping,
+            OrderStatus.Delivered
+        };
 
         public GetOrderDetailHandler(
             IOrderRepository orderRepository,
             IUserRepository userRepository,
             IRestaurantProfileRepository restaurantProfileRepository,
-            IShipperProfileRepository shipperProfileRepository)
+            IShipperProfileRepository shipperProfileRepository,
+            IChatSessionRepository chatSessionRepository,
+            IPaymentSessionRepository paymentSessionRepository)
         {
             _orderRepository = orderRepository;
             _userRepository = userRepository;
             _restaurantProfileRepository = restaurantProfileRepository;
             _shipperProfileRepository = shipperProfileRepository;
+            _chatSessionRepository = chatSessionRepository;
+            _paymentSessionRepository = paymentSessionRepository;
         }
 
         public async Task<ApiResponse> Handle(GetOrderDetailQuery request, CancellationToken cancellationToken)
@@ -38,7 +53,7 @@ namespace ShoppingFood.Application.Features.Orders.Queries
             {
                 var orders = await _orderRepository.GetAsync(
                     predicate: o => o.Id == request.OrderId,
-                    include: q => q.Include(o => o.Items).ThenInclude(i => i.Product),
+                    include: q => q.Include(o => o.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Restaurant),
                     disableTracking: true
                 );
 
@@ -60,7 +75,27 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                     }
                 }
 
-                var dto = MapToOrderDetailDto(order);
+                var chatSessionList = await _chatSessionRepository.GetAsync(
+                    predicate: s => s.OrderId == order.Id,
+                    disableTracking: true
+                );
+                var chatSession = chatSessionList.OrderByDescending(s => s.CreatedAt).FirstOrDefault();
+
+                var paymentSessionList = await _paymentSessionRepository.GetAsync(
+                    predicate: p => p.OrderId == order.Id,
+                    disableTracking: true
+                );
+                var paymentSession = paymentSessionList.OrderByDescending(p => p.CreatedAt).FirstOrDefault();
+
+                var restaurant = order.Items.FirstOrDefault()?.Product?.Restaurant;
+                if (restaurant == null)
+                {
+                    // Fallback just in case Include wasn't fully loaded
+                    var products = order.Items.Select(i => i.Product).Where(p => p != null).ToList();
+                    restaurant = products.FirstOrDefault()?.Restaurant;
+                }
+
+                var dto = MapToOrderDetailDto(order, chatSession, paymentSession, restaurant);
                 return ApiResponse.Success(dto, "Order details retrieved successfully");
             }
             catch (Exception ex)
@@ -122,7 +157,7 @@ namespace ShoppingFood.Application.Features.Orders.Queries
             return false;
         }
 
-        private OrderDetailDto MapToOrderDetailDto(Order order)
+        private OrderDetailDto MapToOrderDetailDto(Order order, Domain.Models.ChatSession? chatSession, Domain.Models.PaymentSession? paymentSession, RestaurantProfile? restaurant)
         {
             return new OrderDetailDto
             {
@@ -138,6 +173,14 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                 Status = order.Status.ToString(),
                 CreatedAt = order.CreatedAt,
                 UpdatedAt = order.UpdatedAt,
+                CanCancel = order.Status == OrderStatus.Pending,
+                CanMessageSeller = order.UserAccountId.HasValue && MessageableStatuses.Contains(order.Status),
+                RestaurantId = restaurant?.Id,
+                RestaurantName = restaurant?.RestaurantName,
+                OrderChatSessionId = chatSession?.Id,
+                OrderChatSessionStatus = chatSession?.Status.ToString(),
+                PaymentStatus = paymentSession?.Status.ToString() ?? "",
+                PaymentSessionId = paymentSession?.Id,
                 Items = order.Items.Select(i => new OrderItemDto
                 {
                     Id = i.Id,

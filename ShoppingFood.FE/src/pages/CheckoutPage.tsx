@@ -105,7 +105,7 @@ export function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sepaySessionId, setSepaySessionId] = useState<string | null>(null);
   const [isSepayModalOpen, setIsSepayModalOpen] = useState(false);
-  const [restaurantShippingFee, setRestaurantShippingFee] = useState(0);
+  const [restaurantInfo, setRestaurantInfo] = useState<any>(null);
   const [savedAddresses, setSavedAddresses] = useState<IUserAddressDto[]>([]);
   const [saveAddress, setSaveAddress] = useState(true);
 
@@ -131,16 +131,42 @@ export function CheckoutPage() {
     [checkoutItems]
   );
 
-  const shippingFee = useMemo(
-    () => (hasFreeshipItem ? 0 : restaurantShippingFee),
-    [hasFreeshipItem, restaurantShippingFee]
-  );
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const p = 0.017453292519943295;
+    const c = Math.cos;
+    const a = 0.5 - c((lat2 - lat1) * p) / 2 +
+      c(lat1 * p) * c(lat2 * p) * (1 - c((lon2 - lon1) * p)) / 2;
+    return 12742 * Math.asin(Math.sqrt(a));
+  };
+
+  const shippingFee = useMemo(() => {
+    if (hasFreeshipItem) return 0;
+    if (!restaurantInfo) return 0;
+
+    const freeMinOrder = restaurantInfo.freeShippingMinimumOrder || 0;
+    if (checkoutTotal >= freeMinOrder && freeMinOrder > 0) return 0;
+
+    let distanceKm = 0;
+    if (formData.deliveryLatitude && formData.deliveryLongitude && restaurantInfo.latitude && restaurantInfo.longitude) {
+      distanceKm = calculateDistance(
+        formData.deliveryLatitude, 
+        formData.deliveryLongitude, 
+        restaurantInfo.latitude, 
+        restaurantInfo.longitude
+      );
+    }
+    
+    const freeRadius = restaurantInfo.freeDeliveryRadiusKm || 0;
+    if (distanceKm <= freeRadius) return 0;
+
+    return restaurantInfo.shippingFee || 0;
+  }, [hasFreeshipItem, restaurantInfo, formData.deliveryLatitude, formData.deliveryLongitude, checkoutTotal]);
 
   useEffect(() => {
     if (!restaurantId) return;
     restaurantService.getDetail(restaurantId).then(res => {
       if (!res.error && res.data) {
-        setRestaurantShippingFee(res.data.shippingFee ?? 0);
+        setRestaurantInfo(res.data);
       }
     });
   }, [restaurantId]);

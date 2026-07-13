@@ -23,6 +23,14 @@ namespace ShoppingFood.Dto.Order
         public double? DeliveryLongitude { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
+        public bool CanCancel { get; set; }
+        public bool CanMessageSeller { get; set; }
+        public Guid? RestaurantId { get; set; }
+        public string? RestaurantName { get; set; }
+        public Guid? OrderChatSessionId { get; set; }
+        public string? OrderChatSessionStatus { get; set; }
+        public string PaymentStatus { get; set; } = string.Empty;
+        public Guid? PaymentSessionId { get; set; }
         public List<OrderItemDto> Items { get; set; } = new List<OrderItemDto>();
     }
 }

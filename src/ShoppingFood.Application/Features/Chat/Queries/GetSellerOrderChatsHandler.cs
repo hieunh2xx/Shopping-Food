@@ -37,9 +37,13 @@ namespace ShoppingFood.Application.Features.Chat.Queries
                     && s.OrderId != null,
                 include: q => q.Include(s => s.User).Include(s => s.Messages),
                 orderBy: q => q.OrderByDescending(s => s.CreatedAt),
+                take: int.MaxValue,
                 disableTracking: true);
 
-            var result = sessions.Select(s => new
+            var result = sessions
+                .GroupBy(s => s.OrderId)
+                .Select(g => g.First())
+                .Select(s => new
             {
                 id = s.Id,
                 userId = s.UserId,

@@ -26,7 +26,7 @@ export function CoordinatorLayout() {
     { name: 'Bảng điều phối', path: ROUTES.COORDINATOR_DISPATCH, icon: LayoutDashboard },
     { name: 'Giám sát Shipper', path: ROUTES.COORDINATOR_SHIPPERS, icon: ShieldAlert },
     { name: 'Lịch sử điều phối', path: ROUTES.COORDINATOR_HISTORY, icon: History },
-    { name: 'Xử lý khiếu nại', path: ROUTES.COORDINATOR_INCIDENTS, icon: ShieldCheck },
+    { name: 'Sự cố điều phối', path: ROUTES.COORDINATOR_INCIDENTS, icon: ShieldCheck },
     { name: 'Live Chat', path: ROUTES.COORDINATOR_CHAT, icon: MessageSquare, badge: unreadChatCount },
     { name: 'Hồ sơ cá nhân', path: '/coordinator/profile', icon: User },
   ];

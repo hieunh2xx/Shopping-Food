@@ -22,6 +22,7 @@ export default function SellerAppealPage() {
       const res = await httpClient.post<any>(API_ENDPOINTS.SUPPORT.APPEAL, {
         content: reason
       });
+      
       if (!res.error) {
         toast.success('Đã gửi khiếu nại thành công! Vui lòng chờ Admin xử lý.');
         setReason('');
@@ -29,7 +30,8 @@ export default function SellerAppealPage() {
         toast.error(res.message || 'Gửi khiếu nại thất bại');
       }
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Có lỗi xảy ra khi gửi khiếu nại');
+      const rawMessage = err?.response?.data?.message || 'Lỗi kết nối đến máy chủ, không thể gửi khiếu nại.';
+      toast.error(rawMessage);
     } finally {
       setIsSubmitting(false);
     }
