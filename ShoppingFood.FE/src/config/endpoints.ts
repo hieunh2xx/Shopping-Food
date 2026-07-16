@@ -32,7 +32,7 @@ export const API_ENDPOINTS = {
     MY_ORDERS: '/Order/MyOrders', // GET
     RECENT_ITEMS: '/Order/recent-items', // GET
     RESTAURANT_ORDERS: '/Order/RestaurantOrders', // GET
-    DETAILS: (id: string) => `/Order/details/${id}`, // GET
+    DETAILS: (id: string) => `/Order/details/${encodeURIComponent(id.replace(/^#/, ''))}`, // GET
     CHECKOUT: '/Order/checkout', // POST
     CHECKOUT_SEND_OTP: '/Order/checkout/sent-otp', // POST
     UPDATE: '/Order/update', // PUT

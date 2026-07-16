@@ -99,7 +99,7 @@ export function OrderTrackingDrawer({ isOpen, onClose }: OrderTrackingDrawerProp
     }
     
     // Mở modal chi tiết luôn
-    setDetailModal({ isOpen: true, orderId: orderCode.trim() });
+    setDetailModal({ isOpen: true, orderId: orderCode.trim().replace(/^#/, '') });
   };
 
   const getStatusIcon = (status: string) => {
@@ -161,8 +161,8 @@ export function OrderTrackingDrawer({ isOpen, onClose }: OrderTrackingDrawerProp
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-gray-50/50">
-          <form onSubmit={handleSearch} className="space-y-3 bg-white p-4 rounded-xl border shadow-sm">
-            <p className="text-sm text-gray-600 font-medium">Nhập mã đơn hàng để tra cứu chi tiết</p>
+          <div className="space-y-3 bg-white p-4 rounded-xl border shadow-sm">
+            <p className="text-sm text-gray-600 font-medium">Nhập mã đơn hàng để tìm nhanh</p>
             <div className="flex gap-2">
               <Input
                 placeholder="VD: ABCD-1234..."
@@ -170,11 +170,8 @@ export function OrderTrackingDrawer({ isOpen, onClose }: OrderTrackingDrawerProp
                 onChange={e => setOrderCode(e.target.value)}
                 className="flex-1"
               />
-              <Button type="submit" variant="primary" className="bg-orange-500">
-                Tìm
-              </Button>
             </div>
-          </form>
+          </div>
 
           <div>
             <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
@@ -191,41 +188,59 @@ export function OrderTrackingDrawer({ isOpen, onClose }: OrderTrackingDrawerProp
               </div>
             ) : (
               <div className="space-y-3">
-                {orders.map(order => (
-                  <div 
-                    key={order.id} 
-                    onClick={() => setDetailModal({ isOpen: true, orderId: order.id })}
-                    className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:border-orange-200 cursor-pointer transition-colors"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <span className="font-semibold text-gray-800">#{order.id.substring(0, 8).toUpperCase()}</span>
-                        <p className="text-xs text-gray-500 mt-1">{formatDate(order.createdAt)}</p>
+                {(() => {
+                  const filtered = orderCode.trim() 
+                    ? orders.filter(o => o.id.substring(0, 8).toLowerCase().includes(orderCode.trim().toLowerCase().replace(/^#/, ''))) 
+                    : orders;
+                    
+                  if (filtered.length === 0) {
+                    return (
+                      <div className="text-center py-8 text-gray-500">
+                        Không tìm thấy đơn hàng nào khớp với mã "{orderCode}" trong lịch sử.
                       </div>
-                      <div className={`flex items-center gap-1.5 text-sm font-bold ${getStatusColorClass(order.status)}`}>
-                        {getStatusIcon(order.status)}
-                        <span>{getStatusText(order.status)}</span>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-end mt-4 pt-3 border-t border-gray-50">
-                      <p className="text-sm text-gray-600 truncate flex-1 pr-2">{order.restaurantName}</p>
-                      <p className="font-bold text-orange-600">{formatCurrency(order.totalAmount)}</p>
-                    </div>
-                  </div>
-                ))}
-                
-                {hasMore && (
-                  <div className="flex justify-center pt-2 pb-4">
-                    <Button 
-                      variant="outline" 
-                      onClick={handleLoadMore} 
-                      disabled={isLoadingMore}
-                      className="w-full text-sm border-gray-200 text-orange-600 hover:bg-orange-50 hover:border-orange-200"
-                    >
-                      {isLoadingMore ? 'Đang tải thêm...' : 'Xem thêm đơn cũ'}
-                    </Button>
-                  </div>
-                )}
+                    );
+                  }
+                  
+                  return (
+                    <>
+                      {filtered.map(order => (
+                        <div 
+                          key={order.id} 
+                          onClick={() => setDetailModal({ isOpen: true, orderId: order.id })}
+                          className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:border-orange-200 cursor-pointer transition-colors"
+                        >
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <span className="font-semibold text-gray-800">#{order.id.substring(0, 8).toUpperCase()}</span>
+                              <p className="text-xs text-gray-500 mt-1">{formatDate(order.createdAt)}</p>
+                            </div>
+                            <div className={`flex items-center gap-1.5 text-sm font-bold ${getStatusColorClass(order.status)}`}>
+                              {getStatusIcon(order.status)}
+                              <span>{getStatusText(order.status)}</span>
+                            </div>
+                          </div>
+                          <div className="flex justify-between items-end mt-4 pt-3 border-t border-gray-50">
+                            <p className="text-sm text-gray-600 truncate flex-1 pr-2">{order.restaurantName}</p>
+                            <p className="font-bold text-orange-600">{formatCurrency(order.totalAmount)}</p>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {hasMore && (
+                        <div className="flex justify-center pt-2 pb-4">
+                          <Button 
+                            variant="outline" 
+                            onClick={handleLoadMore} 
+                            disabled={isLoadingMore}
+                            className="w-full text-sm border-gray-200 text-orange-600 hover:bg-orange-50 hover:border-orange-200"
+                          >
+                            {isLoadingMore ? 'Đang tải thêm...' : 'Xem thêm đơn cũ'}
+                          </Button>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             )}
           </div>

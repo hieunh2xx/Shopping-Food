@@ -199,7 +199,7 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId }: OrderDeta
 
   return (
     <>
-      <Modal isOpen={isOpen} onClose={onClose} title={`Chi tiết đơn hàng #${orderId.substring(0, 8).toUpperCase()}`}>
+      <Modal isOpen={isOpen} onClose={onClose} title={`Chi tiết đơn hàng #${(orderData?.id || orderId).substring(0, 8).toUpperCase()}`}>
         {loading ? (
           <div className="py-12 flex justify-center text-gray-500">Đang tải chi tiết...</div>
         ) : orderData ? (

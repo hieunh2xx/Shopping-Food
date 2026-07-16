@@ -43,10 +43,20 @@ namespace ShoppingFood.API.Controllers
             return StatusCode(response.Code, response);
         }
 
-        [HttpGet("details/{id}")]
-        public async Task<IActionResult> GetOrderDetails(Guid id)
+        [HttpGet("details/{idOrCode}")]
+        public async Task<IActionResult> GetOrderDetails(string idOrCode)
         {
-            var query = new GetOrderDetailQuery { OrderId = id };
+            idOrCode = idOrCode.Replace("#", "").Trim();
+            var query = new GetOrderDetailQuery();
+            
+            if (Guid.TryParse(idOrCode, out var guid))
+            {
+                query.OrderId = guid;
+            }
+            else
+            {
+                query.OrderCode = idOrCode;
+            }
             if (userDto != null)
             {
                 query.CurrentUserId = userDto.Id;

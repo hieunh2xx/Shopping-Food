@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using ShoppingFood.Core.Base;
 using System;
 using System.Collections.Generic;
@@ -10,6 +10,7 @@ namespace ShoppingFood.Application.Features.Orders.Queries
 {
     public class GetOrderDetailQuery : BaseQuery, IRequest<ApiResponse>
     {
-        public Guid OrderId { get; set; }
+        public Guid? OrderId { get; set; }
+        public string? OrderCode { get; set; }
     }
 }

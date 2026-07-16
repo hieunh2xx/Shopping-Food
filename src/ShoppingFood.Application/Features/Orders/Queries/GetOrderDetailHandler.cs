@@ -52,7 +52,8 @@ namespace ShoppingFood.Application.Features.Orders.Queries
             try
             {
                 var orders = await _orderRepository.GetAsync(
-                    predicate: o => o.Id == request.OrderId,
+                    predicate: o => (request.OrderId.HasValue && o.Id == request.OrderId.Value)
+                                 || (!string.IsNullOrEmpty(request.OrderCode) && o.Id.ToString().StartsWith(request.OrderCode.ToLower())),
                     include: q => q.Include(o => o.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Restaurant),
                     disableTracking: true
                 );
