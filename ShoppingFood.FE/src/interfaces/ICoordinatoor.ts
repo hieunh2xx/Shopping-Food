@@ -36,6 +36,7 @@ export interface ISuggestedShipper{
     distanceInKm: number;
     reputationScore: number;
     rating: number;
+    activeOrderCount: number;
 }
 
 export interface ISendProposalRequest{

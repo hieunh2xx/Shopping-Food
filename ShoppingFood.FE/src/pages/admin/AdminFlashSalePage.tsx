@@ -3,7 +3,7 @@ import { toast } from 'react-hot-toast';
 import { Plus, Edit2, Trash2, Zap, Clock, PlayCircle, CheckCircle2, XCircle, Package } from 'lucide-react';
 import { flashSaleService } from '../../services/FlashSaleService';
 import type { IFlashSale, ICreateFlashSaleRequest, IFlashSaleProduct } from '../../interfaces';
-import { Button, Input, Modal } from '../../components/common';
+import { Button, Input, Modal, PromptModal } from '../../components/common';
 import { formatDate } from '../../utils/formatters';
 
 export function AdminFlashSalePage() {
@@ -24,6 +24,9 @@ export function AdminFlashSalePage() {
   const [selectedFlashSale, setSelectedFlashSale] = useState<IFlashSale | null>(null);
   const [flashSaleProducts, setFlashSaleProducts] = useState<IFlashSaleProduct[]>([]);
   const [isReviewing, setIsReviewing] = useState(false);
+
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [rejectingProductId, setRejectingProductId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchFlashSales();
@@ -371,10 +374,8 @@ export function AdminFlashSalePage() {
                             </button>
                             <button
                               onClick={() => {
-                                const reason = window.prompt('Nhập lý do từ chối:');
-                                if (reason !== null) {
-                                  handleReviewProduct(p.id, false, reason);
-                                }
+                                setRejectingProductId(p.id);
+                                setIsRejectModalOpen(true);
                               }}
                               className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                               title="Từ chối"
@@ -397,6 +398,27 @@ export function AdminFlashSalePage() {
           </div>
         </div>
       </Modal>
+
+      {/* Reject Product Prompt Modal */}
+      <PromptModal
+        isOpen={isRejectModalOpen}
+        onClose={() => {
+          setIsRejectModalOpen(false);
+          setRejectingProductId(null);
+        }}
+        onConfirm={(reason) => {
+          if (rejectingProductId) {
+            handleReviewProduct(rejectingProductId, false, reason);
+          }
+          setIsRejectModalOpen(false);
+          setRejectingProductId(null);
+        }}
+        title="Từ chối sản phẩm"
+        description="Vui lòng cung cấp lý do từ chối sản phẩm này khỏi Flash Sale."
+        placeholder="Nhập lý do từ chối..."
+        confirmLabel="Từ chối"
+        confirmVariant="danger"
+      />
     </div>
   );
 }

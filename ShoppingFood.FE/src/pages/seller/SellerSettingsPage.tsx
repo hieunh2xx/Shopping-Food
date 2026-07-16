@@ -4,6 +4,8 @@ import { restaurantService } from '../../services/RestaurantService';
 import type { IUserDto } from '../../interfaces';
 import { Card, Button, Input } from '../../components/common';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../hooks';
+import { ChangeContactModal } from '../../components/auth/ChangeContactModal';
 import {
   Store,
   Clock,
@@ -11,7 +13,9 @@ import {
   Activity,
   Save,
   Info,
-  ShieldAlert
+  ShieldAlert,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
@@ -44,9 +48,11 @@ function LocationMarker({ position, setPosition }: { position: [number, number] 
 }
 
 export function SellerSettingsPage() {
+  const { user } = useAuth();
   const [profile, setProfile] = useState<IUserDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isChangeContactOpen, setIsChangeContactOpen] = useState(false);
 
   const [basicInfo, setBasicInfo] = useState({
     restaurantName: '',
@@ -367,13 +373,42 @@ export function SellerSettingsPage() {
                   placeholder="Ví dụ: 0987654321"
                 />
                 <Input
-                  label="Email cửa hàng"
+                  label="Email cửa hàng (Hiển thị cho khách)"
                   type="email"
                   value={basicInfo.email}
                   onChange={(e) => setBasicInfo({ ...basicInfo, email: e.target.value })}
                   placeholder="Ví dụ: contact@restaurant.com"
                 />
               </div>
+              
+              <div className="pt-4 border-t border-gray-100">
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">Tài khoản chủ cửa hàng</h4>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Email Đăng Nhập</span>
+                  <button 
+                    type="button"
+                    onClick={() => setIsChangeContactOpen(true)}
+                    className="text-xs text-orange-600 hover:text-orange-700 font-medium hover:underline"
+                  >
+                    {user?.email && user.isEmailActive ? 'Thay đổi' : 'Xác thực / Thêm email'}
+                  </button>
+                </div>
+                <div className="flex items-center justify-between bg-gray-50 p-3 rounded-xl border border-gray-100 mt-1">
+                  <span className="text-sm font-bold text-gray-800">{user?.email || 'N/A'}</span>
+                  {user?.email && (
+                    user.isEmailActive ? (
+                      <span className="flex items-center gap-1 text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-md border border-green-100">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Đã xác thực
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1 text-xs font-semibold text-red-500 bg-red-50 px-2 py-0.5 rounded-md border border-red-100">
+                        <AlertCircle className="w-3.5 h-3.5" /> Chưa xác thực
+                      </span>
+                    )
+                  )}
+                </div>
+              </div>
+              
               <div className="flex justify-end pt-2">
                 <Button type="submit" disabled={isSaving}>
                   <Save className="w-4 h-4 mr-2 inline" /> Lưu thông tin
@@ -558,6 +593,11 @@ export function SellerSettingsPage() {
           </div>
         </div>
       </div>
+      <ChangeContactModal 
+        isOpen={isChangeContactOpen} 
+        onClose={() => setIsChangeContactOpen(false)} 
+        onSuccess={() => window.location.reload()} 
+      />
     </div>
   );
 }

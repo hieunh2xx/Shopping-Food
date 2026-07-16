@@ -20,8 +20,8 @@ class ShipperService {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.SHIPPER.TOGGLE_ONLINE, data);
   }
 
-  async getProposedOffer(orderId: string): Promise<IApiResponse<IProposedDeliveryOfferDto>> {
-    return httpClient.get<IApiResponse<IProposedDeliveryOfferDto>>(API_ENDPOINTS.SHIPPER.PROPOSED_OFFER(orderId));
+  async getProposedOffer(orderId: string, latitude: number, longitude: number): Promise<IApiResponse<IProposedDeliveryOfferDto>> {
+    return httpClient.get<IApiResponse<IProposedDeliveryOfferDto>>(`${API_ENDPOINTS.SHIPPER.PROPOSED_OFFER(orderId)}?latitude=${latitude}&longitude=${longitude}`);
   }
 
   async acceptOffer(data: IAcceptDeliveryOfferRequest): Promise<IApiResponse<any>> {

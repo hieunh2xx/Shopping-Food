@@ -54,6 +54,22 @@ export default function DispatchBoardPage() {
 
   useEffect(() => {
     fetchOrders();
+
+    // Lắng nghe notification nếu có
+    const handleNotification = () => {
+      fetchOrders();
+    };
+    window.addEventListener('ON_REALTIME_NOTIFICATION', handleNotification);
+    
+    // Tự động làm mới danh sách mỗi 15 giây (Polling)
+    const interval = setInterval(() => {
+      fetchOrders();
+    }, 15000);
+
+    return () => {
+      window.removeEventListener('ON_REALTIME_NOTIFICATION', handleNotification);
+      clearInterval(interval);
+    };
   }, [activeTab, page]);
 
   // Handle countdown for active proposals
@@ -167,6 +183,22 @@ export default function DispatchBoardPage() {
       }
     } catch {
       toast.error('Gán đơn thất bại do lỗi kết nối mạng.');
+    }
+  };
+
+  // Broadcast Order
+  const handleBroadcastOrder = async (order: any) => {
+    if (!window.confirm(`Bạn có muốn gửi thông báo cho tất cả tài xế gần đơn hàng ${order.id.substring(0, 8)}?`)) return;
+    try {
+      const res = await coordinatorService.broadcastOrder(order.id);
+      if (!res.error) {
+        toast.success(res.message || 'Đã gửi thông báo đến các tài xế thành công!');
+        fetchOrders();
+      } else {
+        toast.error(res.message || 'Lỗi gửi thông báo');
+      }
+    } catch {
+      toast.error('Lỗi kết nối mạng khi gửi thông báo.');
     }
   };
 
@@ -396,13 +428,23 @@ export default function DispatchBoardPage() {
                 </div>
 
                 {order.status === 'WaitingForShipper' && (
-                  <Button 
-                    size="sm" 
-                    onClick={() => handleOpenSuggestModal(order)}
-                    className="bg-orange-500 hover:bg-orange-600 text-white font-medium"
-                  >
-                    Gợi ý & Điều phối
-                  </Button>
+                  <div className="flex flex-col gap-2">
+                    <Button 
+                      size="sm" 
+                      onClick={() => handleOpenSuggestModal(order)}
+                      className="bg-orange-500 hover:bg-orange-600 text-white font-medium w-full"
+                    >
+                      Gợi ý & Điều phối
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      onClick={() => handleBroadcastOrder(order)}
+                      className="bg-purple-600 hover:bg-purple-700 text-white font-medium w-full flex items-center justify-center gap-1.5"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      Broadcast
+                    </Button>
+                  </div>
                 )}
 
                 {order.status === 'Shipping' && (
@@ -459,6 +501,11 @@ export default function DispatchBoardPage() {
                     <div className="font-semibold text-gray-900 text-sm flex items-center gap-2">
                       {shipper.fullName}
                       <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-[10px]">{shipper.vehicleType === 'Motorcycle' ? 'Xe máy' : shipper.vehicleType}</span>
+                      {shipper.activeOrderCount > 0 && (
+                        <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px] font-medium border border-blue-200">
+                          Đang giao {shipper.activeOrderCount} đơn
+                        </span>
+                      )}
                     </div>
                     <div className="text-xs text-gray-500">
                       SĐT: {shipper.phone} | Điểm uy tín: <strong className="text-orange-600">{shipper.reputationScore} ⭐</strong>

@@ -10,12 +10,14 @@ import {
   Loader2,
   MapPin,
   Clock,
-  Save
+  Save,
+  AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../../hooks';
 import { shipperService } from '../../services';
 import type { IShipperScheduleAndAreaDto, IWorkingScheduleItemDto } from '../../interfaces/IShipper';
 import { ShipperReputationTab } from './components/ShipperReputationTab';
+import { ChangeContactModal } from '../../components/auth/ChangeContactModal';
 import { MapContainer, TileLayer, Marker, useMapEvents, Circle } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -51,6 +53,7 @@ export function ShipperProfilePage() {
   const [activeTab, setActiveTab] = useState("Info");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isChangeContactOpen, setIsChangeContactOpen] = useState(false);
   
   // Schedule and area from API
   const [scheduleData, setScheduleData] = useState<IShipperScheduleAndAreaDto | null>(null);
@@ -254,8 +257,29 @@ export function ShipperProfilePage() {
                 <p className="text-sm font-bold text-gray-800 bg-gray-50 p-3 rounded-xl border border-gray-100">{user?.phone || 'N/A'}</p>
               </div>
               <div className="space-y-1">
-                <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Địa chỉ Email</span>
-                <p className="text-sm font-bold text-gray-800 bg-gray-50 p-3 rounded-xl border border-gray-100">{user?.email || 'N/A'}</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Địa chỉ Email</span>
+                  <button 
+                    onClick={() => setIsChangeContactOpen(true)}
+                    className="text-xs text-orange-600 hover:text-orange-700 font-medium hover:underline"
+                  >
+                    {user?.email && user.isEmailActive ? 'Thay đổi' : 'Xác thực / Thêm email'}
+                  </button>
+                </div>
+                <div className="flex items-center justify-between bg-gray-50 p-3 rounded-xl border border-gray-100">
+                  <span className="text-sm font-bold text-gray-800">{user?.email || 'N/A'}</span>
+                  {user?.email && (
+                    user.isEmailActive ? (
+                      <span className="flex items-center gap-1 text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-md border border-green-100">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Đã xác thực
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1 text-xs font-semibold text-red-500 bg-red-50 px-2 py-0.5 rounded-md border border-red-100">
+                        <AlertCircle className="w-3.5 h-3.5" /> Chưa xác thực
+                      </span>
+                    )
+                  )}
+                </div>
               </div>
               <div className="space-y-1">
                 <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Khu vực hoạt động</span>
@@ -463,6 +487,11 @@ export function ShipperProfilePage() {
         )}
       </div>
 
+      <ChangeContactModal 
+        isOpen={isChangeContactOpen} 
+        onClose={() => setIsChangeContactOpen(false)} 
+        onSuccess={() => window.location.reload()} 
+      />
     </div>
   );
 }

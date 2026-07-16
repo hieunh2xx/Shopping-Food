@@ -195,7 +195,8 @@ export const API_ENDPOINTS = {
     INCIDENTS: '/Coordinator/incidents',
     RESOLVE_COMPLAINT: (id: string) => `/Coordinator/complaint/${id}/resolve`,
     ADJUST_SHIPPER_REPUTATION: (shipperId: string) => `/Coordinator/shippers/${shipperId}/adjust-reputation`,
-    ORDER_COMPLAINTS: '/Coordinator/complaints/orders'
+    ORDER_COMPLAINTS: '/Coordinator/complaints/orders',
+    BROADCAST: (orderId: string) => `/Coordinator/orders/${orderId}/broadcast`
   },
 
   DISCOUNT: {

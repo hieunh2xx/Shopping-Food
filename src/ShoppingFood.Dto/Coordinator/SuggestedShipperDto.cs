@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,5 +18,6 @@ namespace ShoppingFood.Dto.Coordinator
         public double DistanceInKm { get; set; }
         public double ReputationScore { get; set; }
         public double Rating { get; set; }
+        public int ActiveOrderCount { get; set; }
     }
 }

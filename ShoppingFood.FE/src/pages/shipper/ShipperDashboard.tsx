@@ -22,6 +22,8 @@ import type { IProposedDeliveryOfferDto, IShipperIncomeReportDto } from '../../i
 import { ReportIncidentModal } from './components/ReportIncidentModal';
 import { SuccessDeliveryModal } from './components/SuccessDeliveryModal';
 import { OrderProposalPopup } from './components/OrderProposalPopup';
+import { PickupCodeModal } from './components/PickupCodeModal';
+import { PromptModal } from '../../components/common';
 
 export function ShipperDashboard() {
   const { user } = useAuth();
@@ -35,14 +37,19 @@ export function ShipperDashboard() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const [availableOffers, setAvailableOffers] = useState<IProposedDeliveryOfferDto[]>([]);
-  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [reportModalOrderId, setReportModalOrderId] = useState<string | null>(null);
+  const [successModalOrderId, setSuccessModalOrderId] = useState<string | null>(null);
+
+  // Modals for prompt replacement
+  const [isPickupCodeModalOpen, setIsPickupCodeModalOpen] = useState(false);
+  const [pendingPickupOrderId, setPendingPickupOrderId] = useState<string | null>(null);
+  const [isDeliveryFailedModalOpen, setIsDeliveryFailedModalOpen] = useState(false);
+  const [pendingFailedOrderId, setPendingFailedOrderId] = useState<string | null>(null);
 
   // State cho Popup đề xuất 60s
   const [proposalPopupOffer, setProposalPopupOffer] = useState<IProposedDeliveryOfferDto | null>(null);
 
-  // Active delivery (locally tracked after accept)
-  const [activeDelivery, setActiveDelivery] = useState<{
+  interface ActiveDelivery {
     orderId: string;
     restaurantName: string;
     restaurantAddress: string;
@@ -55,26 +62,24 @@ export function ShipperDashboard() {
     note?: string;
     step: 'accepted' | 'arrived' | 'picked_up';
     googleMapNavigationUrl?: string;
-  } | null>(() => {
-    const saved = localStorage.getItem('shipper_active_delivery');
+  }
+
+  const [activeDeliveries, setActiveDeliveries] = useState<ActiveDelivery[]>(() => {
+    const saved = localStorage.getItem('shipper_active_deliveries');
     if (saved) {
       try {
         return JSON.parse(saved);
       } catch {
-        return null;
+        return [];
       }
     }
-    return null;
+    return [];
   });
 
-  // Save activeDelivery to localStorage whenever it changes
+  // Save activeDeliveries to localStorage whenever it changes
   useEffect(() => {
-    if (activeDelivery) {
-      localStorage.setItem('shipper_active_delivery', JSON.stringify(activeDelivery));
-    } else {
-      localStorage.removeItem('shipper_active_delivery');
-    }
-  }, [activeDelivery]);
+    localStorage.setItem('shipper_active_deliveries', JSON.stringify(activeDeliveries));
+  }, [activeDeliveries]);
 
   // Income report from API
   const [incomeReport, setIncomeReport] = useState<IShipperIncomeReportDto | null>(null);
@@ -117,7 +122,32 @@ export function ShipperDashboard() {
   // Initial load
   useEffect(() => {
     const loadData = async () => {
-      // Only show full screen loader on initial render
+      // Validate active deliveries stored in localStorage
+      const saved = localStorage.getItem('shipper_active_deliveries');
+      if (saved) {
+        try {
+          const deliveries = JSON.parse(saved);
+          if (deliveries.length > 0) {
+            const promises = deliveries.map(async (d: any) => {
+              try {
+                await shipperService.getDeliveryRoute(d.orderId);
+                return { valid: true, id: d.orderId };
+              } catch {
+                return { valid: false, id: d.orderId };
+              }
+            });
+            const results = await Promise.all(promises);
+            const invalidIds = results.filter(r => !r.valid).map(r => r.id);
+            if (invalidIds.length > 0) {
+              setActiveDeliveries(prev => prev.filter(d => !invalidIds.includes(d.orderId)));
+              toast.error("Một số đơn hàng đã hoàn thành hoặc bị thu hồi và được gỡ khỏi danh sách.");
+            }
+          }
+        } catch (e) {
+          // ignore parsing error
+        }
+      }
+
       if (loading) {
         await Promise.all([
           fetchAvailableOffers(),
@@ -125,7 +155,6 @@ export function ShipperDashboard() {
         ]);
         setLoading(false);
       } else {
-        // Just fetch in background without full screen loader
         await Promise.all([
           fetchAvailableOffers(),
           fetchIncomeReport()
@@ -156,7 +185,7 @@ export function ShipperDashboard() {
         if (match && match[1]) {
           const orderId = match[1];
           try {
-            const res = await shipperService.getProposedOffer(orderId);
+            const res = await shipperService.getProposedOffer(orderId, coords.lat, coords.lng);
             if (res.data) {
               setProposalPopupOffer(res.data);
             }
@@ -173,10 +202,10 @@ export function ShipperDashboard() {
           const orderId = match[1];
           try {
             toast.success(`Bắt đầu lấy thông tin đơn: ${orderId}`, { duration: 3000 });
-            const res = await shipperService.getProposedOffer(orderId);
+            const res = await shipperService.getProposedOffer(orderId, coords.lat, coords.lng);
             if (res.data) {
-              // Tự động ghi đè và gán thành active delivery
-              setActiveDelivery({
+              // Tự động gán vào danh sách active deliveries
+              setActiveDeliveries(prev => [...prev, {
                 orderId: res.data.orderId,
                 restaurantName: res.data.restaurantName,
                 restaurantAddress: res.data.restaurantAddress,
@@ -187,7 +216,7 @@ export function ShipperDashboard() {
                 contactName: res.data.contactName,
                 contactPhone: res.data.contactPhone,
                 step: 'accepted'
-              });
+              }]);
               toast.success('Bạn vừa được điều phối viên gán trực tiếp một đơn hàng mới!');
               // Ẩn popup đề xuất nếu đang hiển thị cho đơn này
               setProposalPopupOffer(prev => prev?.orderId === orderId ? null : prev);
@@ -200,6 +229,15 @@ export function ShipperDashboard() {
           }
         } else {
           toast.error(`Không thể trích xuất orderId từ message: ${n.message}`);
+        }
+      }
+      // 3. Nếu bị thu hồi đơn hàng hoặc chuyển giao cho người khác
+      else if ((n.title === 'Thu hồi đơn hàng' || n.title === 'Đơn hàng đã được chuyển giao') && n.message) {
+        toast.error(`Đơn hàng đã bị thu hồi! Message: ${n.message}`, { duration: 5000 });
+        const match = n.message.match(/'([a-fA-F0-9\-]{36})'/);
+        if (match && match[1]) {
+          const orderId = match[1];
+          setActiveDeliveries(prev => prev.filter(d => d.orderId !== orderId));
         }
       }
     };
@@ -217,7 +255,7 @@ export function ShipperDashboard() {
         latitude: coords.lat,
         longitude: coords.lng
       });
-      setActiveDelivery({
+      setActiveDeliveries(prev => [...prev, {
         orderId: proposalPopupOffer.orderId,
         restaurantName: proposalPopupOffer.restaurantName,
         restaurantAddress: proposalPopupOffer.restaurantAddress,
@@ -228,7 +266,7 @@ export function ShipperDashboard() {
         contactName: proposalPopupOffer.contactName,
         contactPhone: proposalPopupOffer.contactPhone,
         step: 'accepted'
-      });
+      }]);
       setProposalPopupOffer(null);
       toast.success('Nhận đơn thành công!');
       fetchAvailableOffers();
@@ -292,26 +330,39 @@ export function ShipperDashboard() {
     return () => clearInterval(locInterval);
   }, [isOnline]);
 
-  // Load routing details for active delivery
+  // Load routing details cho tất cả các đơn hàng chưa có link Map
   useEffect(() => {
-    if (!activeDelivery || activeDelivery.googleMapNavigationUrl) return;
+    const fetchRoutes = async () => {
+      const deliveriesToUpdate = activeDeliveries.filter(d => !d.googleMapNavigationUrl);
+      if (deliveriesToUpdate.length === 0) return;
 
-    const fetchRoute = async () => {
       try {
-        const res = await shipperService.getDeliveryRoute(activeDelivery.orderId);
-        if (res.data?.googleMapNavigationUrl) {
-          setActiveDelivery(prev => prev ? {
-            ...prev,
-            googleMapNavigationUrl: res.data.googleMapNavigationUrl
-          } : null);
+        const promises = deliveriesToUpdate.map(async (delivery) => {
+          const res = await shipperService.getDeliveryRoute(delivery.orderId);
+          if (res.data) {
+            return { orderId: delivery.orderId, url: res.data.googleMapNavigationUrl };
+          }
+          return null;
+        });
+
+        const results = await Promise.all(promises);
+        const validResults = results.filter(r => r !== null) as { orderId: string, url: string }[];
+
+        if (validResults.length > 0) {
+          setActiveDeliveries(prev => prev.map(d => {
+            const match = validResults.find(r => r.orderId === d.orderId);
+            if (match) {
+              return { ...d, googleMapNavigationUrl: match.url };
+            }
+            return d;
+          }));
         }
-      } catch (err) {
-        console.error("Lỗi lấy thông tin đường đi:", err);
+      } catch (e) {
+        console.error("Lỗi khi fetch routing:", e);
       }
     };
-
-    fetchRoute();
-  }, [activeDelivery?.orderId]);
+    fetchRoutes();
+  }, [activeDeliveries]);
 
   // Toggle online/offline
   const handleToggleOnline = async () => {
@@ -326,6 +377,7 @@ export function ShipperDashboard() {
       }
 
       setIsOnline(newStatus);
+
       localStorage.setItem('shipper_is_online', newStatus ? 'true' : 'false');
       toast.success(newStatus ? 'Bạn đã BẬT trạng thái trực tuyến!' : 'Bạn đã TẮT trạng thái trực tuyến!');
       if (newStatus) {
@@ -340,15 +392,72 @@ export function ShipperDashboard() {
   };
 
   // Accept an available offer
+  const handleStepTransition = async (orderId: string) => {
+    const activeDelivery = activeDeliveries.find(d => d.orderId === orderId);
+    if (!activeDelivery) return;
+
+    setActionLoading(activeDelivery.orderId);
+    try {
+      if (activeDelivery.step === 'accepted') {
+        const res = await shipperService.confirmArrived({
+          orderId: activeDelivery.orderId,
+          latitude: coords.lat,
+          longitude: coords.lng
+        });
+        if (!res.error) {
+          setActiveDeliveries(prev => prev.map(d => d.orderId === orderId ? { ...d, step: 'arrived' } : d));
+        }
+      } else if (activeDelivery.step === 'arrived') {
+        setPendingPickupOrderId(activeDelivery.orderId);
+        setIsPickupCodeModalOpen(true);
+      }
+    } catch (err: any) {
+      const status = err.response?.status;
+      if (status === 403 || status === 404 || status === 400) {
+        setActiveDeliveries(prev => prev.filter(d => d.orderId !== orderId));
+        toast.error('Đơn hàng không còn hợp lệ hoặc đã bị thu hồi.');
+      } else {
+        toast.error(err.response?.data?.message || 'Lỗi khi cập nhật trạng thái đơn hàng');
+      }
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleConfirmPickup = async (code: string) => {
+    if (!pendingPickupOrderId) return;
+    setIsPickupCodeModalOpen(false);
+    setActionLoading(pendingPickupOrderId);
+    try {
+      const res = await shipperService.confirmPickedUp({
+        orderId: pendingPickupOrderId,
+        verificationCode: code,
+        latitude: coords.lat,
+        longitude: coords.lng
+      });
+      if (!res.error) {
+        setActiveDeliveries(prev => prev.map(d => d.orderId === pendingPickupOrderId ? { ...d, step: 'picked_up' } : d));
+      }
+    } catch (err: any) {
+      const status = err.response?.status;
+      if (status === 403 || status === 404 || status === 400) {
+        setActiveDeliveries(prev => prev.filter(d => d.orderId !== pendingPickupOrderId));
+        toast.error('Đơn hàng không còn hợp lệ hoặc đã bị thu hồi.');
+      } else {
+        toast.error(err.response?.data?.message || 'Lỗi khi xác nhận lấy đồ ăn');
+      }
+    } finally {
+      setActionLoading(null);
+      setPendingPickupOrderId(null);
+    }
+  };
+
   const handleAcceptOffer = async (orderId: string) => {
     if (!isOnline) {
       toast.error('Vui lòng bật trạng thái trực tuyến để nhận đơn');
       return;
     }
-    if (activeDelivery) {
-      toast.error('Bạn đang có đơn hàng chưa hoàn thành');
-      return;
-    }
+
 
     setActionLoading(orderId);
     try {
@@ -360,7 +469,7 @@ export function ShipperDashboard() {
 
       const offer = availableOffers.find(o => o.orderId === orderId);
       if (offer) {
-        setActiveDelivery({
+        setActiveDeliveries(prev => [...prev, {
           orderId: offer.orderId,
           restaurantName: offer.restaurantName,
           restaurantAddress: offer.restaurantAddress,
@@ -372,7 +481,7 @@ export function ShipperDashboard() {
           contactPhone: offer.contactPhone,
           note: offer.note,
           step: 'accepted'
-        });
+        }]);
         setAvailableOffers(prev => prev.filter(o => o.orderId !== orderId));
       }
       toast.success('Đã chấp nhận đơn hàng!');
@@ -397,72 +506,38 @@ export function ShipperDashboard() {
     }
   };
 
-  // Progress delivery steps
-  const handleProgressDelivery = async () => {
-    if (!activeDelivery) return;
-
-    setActionLoading('progress');
-    try {
-      if (activeDelivery.step === 'accepted') {
-        await shipperService.confirmArrived({
-          orderId: activeDelivery.orderId,
-          latitude: coords.lat,
-          longitude: coords.lng
-        });
-        setActiveDelivery({ ...activeDelivery, step: 'arrived' });
-        toast.success('Đã xác nhận đến cửa hàng!');
-      } else if (activeDelivery.step === 'arrived') {
-        // For confirm picked up, we need verification code from restaurant
-        // For now, prompt user or use a default
-        const verificationCode = prompt('Nhập mã xác nhận từ nhà hàng:');
-        if (!verificationCode) {
-          setActionLoading(null);
-          return;
-        }
-        await shipperService.confirmPickedUp({
-          orderId: activeDelivery.orderId,
-          verificationCode,
-          latitude: coords.lat,
-          longitude: coords.lng
-        });
-        setActiveDelivery({ ...activeDelivery, step: 'picked_up' });
-        toast.success('Đã lấy hàng thành công! Bắt đầu giao hàng.');
-      }
-    } catch {
-      toast.error('Cập nhật trạng thái đơn hàng thất bại do lỗi mạng.');
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
   // Complete delivery
-  const handleDeliverySuccess = () => {
-    if (!activeDelivery) return;
-    setIsSuccessModalOpen(true);
-  };
-
-  const handleDeliverySuccessComplete = () => {
-    setActiveDelivery(null);
-    fetchIncomeReport();
+  const handleSuccessCallback = () => {
+    if (!successModalOrderId) return;
+    setActiveDeliveries(prev => prev.filter(d => d.orderId !== successModalOrderId));
+    setSuccessModalOrderId(null);
     fetchAvailableOffers();
+    fetchIncomeReport();
   };
 
   // Failed delivery
-  const handleDeliveryFailed = async () => {
+  const handleDeliveryFailedClick = (orderId: string) => {
+    setPendingFailedOrderId(orderId);
+    setIsDeliveryFailedModalOpen(true);
+  };
+
+  const handleDeliveryFailedConfirm = async (reason: string) => {
+    if (!pendingFailedOrderId) return;
+    const orderId = pendingFailedOrderId;
+    setIsDeliveryFailedModalOpen(false);
+    setPendingFailedOrderId(null);
+
+    const activeDelivery = activeDeliveries.find(d => d.orderId === orderId);
     if (!activeDelivery) return;
 
-    const reason = prompt('Nhập lý do giao hàng thất bại:');
-    if (!reason) return;
-
-    setActionLoading('failed');
+    setActionLoading(activeDelivery.orderId);
     try {
-      await shipperService.confirmFailed({
+      await shipperService.updateStatus({
         orderId: activeDelivery.orderId,
-        reason,
-        latitude: coords.lat,
-        longitude: coords.lng
+        status: 'Cancelled',
+        rejectReason: reason
       });
-      setActiveDelivery(null);
+      setActiveDeliveries(prev => prev.filter(d => d.orderId !== orderId));
       toast.error('Đã báo cáo giao hàng thất bại.');
       fetchAvailableOffers();
     } catch {
@@ -574,129 +649,131 @@ export function ShipperDashboard() {
                 <Navigation className="w-5 h-5 text-orange-500" /> Đơn hàng đang thực hiện
               </h2>
 
-              {activeDelivery ? (
-                <div className="space-y-6">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-50 p-4 rounded-2xl border border-gray-100 gap-3">
-                    <div>
-                      <span className="text-xs text-orange-600 font-bold uppercase tracking-wider">Đơn hàng active</span>
-                      <h3 className="font-bold text-gray-900 text-lg">#{activeDelivery.orderId.slice(0, 8)} - {activeDelivery.restaurantName}</h3>
-                      <p className="text-xs text-gray-500 mt-1">
-                        <strong>Khách hàng:</strong> {activeDelivery.contactName} • {activeDelivery.contactPhone}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-xs text-gray-400 block">Thu nhập của bạn</span>
-                      <span className="font-extrabold text-lg text-emerald-600">{formatCurrency(activeDelivery.totalIncome)}</span>
-                    </div>
-                  </div>
+              {activeDeliveries.length > 0 ? (
+                <div className="space-y-8">
+                  {activeDeliveries.map((activeDelivery, index) => (
+                    <div key={activeDelivery.orderId} className="space-y-6 pb-8 border-b border-gray-100 last:border-0 last:pb-0">
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-50 p-4 rounded-2xl border border-gray-100 gap-3">
+                        <div>
+                          <span className="text-xs text-orange-600 font-bold uppercase tracking-wider">Đơn hàng #{index + 1}</span>
+                          <h3 className="font-bold text-gray-900 text-lg">#{activeDelivery.orderId.slice(0, 8)} - {activeDelivery.restaurantName}</h3>
+                          <p className="text-xs text-gray-500 mt-1">
+                            <strong>Khách hàng:</strong> {activeDelivery.contactName} • {activeDelivery.contactPhone}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-xs text-gray-400 block">Thu nhập của bạn</span>
+                          <span className="font-extrabold text-lg text-emerald-600">{formatCurrency(activeDelivery.totalIncome)}</span>
+                        </div>
+                      </div>
 
-                  {/* Progress tracker */}
-                  <div className="relative py-4 px-2">
-                    <div className="absolute left-[20px] top-[30px] bottom-[30px] w-0.5 bg-gray-200"></div>
+                      {/* Progress tracker */}
+                      <div className="relative py-4 px-2">
+                        <div className="absolute left-[20px] top-[30px] bottom-[30px] w-0.5 bg-gray-200"></div>
 
-                    <div className="relative flex items-start gap-4 mb-6">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center z-10 shrink-0 font-bold text-sm ${activeDelivery.step === 'accepted' || activeDelivery.step === 'arrived' || activeDelivery.step === 'picked_up'
-                          ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20'
-                          : 'bg-gray-200 text-gray-500'
-                        }`}>
-                        1
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-gray-900 text-sm">Đã nhận đơn</h4>
-                        <p className="text-xs text-gray-500 mt-0.5">Xác nhận chuyển giao cho tài xế</p>
-                      </div>
-                    </div>
+                        <div className="relative flex items-start gap-4 mb-6">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center z-10 shrink-0 font-bold text-sm ${activeDelivery.step === 'accepted' || activeDelivery.step === 'arrived' || activeDelivery.step === 'picked_up'
+                            ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20'
+                            : 'bg-gray-200 text-gray-500'
+                            }`}>
+                            1
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-gray-900 text-sm">Đã nhận đơn</h4>
+                            <p className="text-xs text-gray-500 mt-0.5">Xác nhận chuyển giao cho tài xế</p>
+                          </div>
+                        </div>
 
-                    <div className="relative flex items-start gap-4 mb-6">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center z-10 shrink-0 font-bold text-sm ${activeDelivery.step === 'arrived' || activeDelivery.step === 'picked_up'
-                          ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20'
-                          : 'bg-gray-200 text-gray-500'
-                        }`}>
-                        2
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-gray-900 text-sm">Đã đến cửa hàng</h4>
-                        <p className="text-xs text-gray-500 mt-0.5">Lấy đồ ăn tại: {activeDelivery.restaurantAddress}</p>
-                      </div>
-                    </div>
+                        <div className="relative flex items-start gap-4 mb-6">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center z-10 shrink-0 font-bold text-sm ${activeDelivery.step === 'arrived' || activeDelivery.step === 'picked_up'
+                            ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20'
+                            : 'bg-gray-200 text-gray-500'
+                            }`}>
+                            2
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-gray-900 text-sm">Đã đến cửa hàng</h4>
+                            <p className="text-xs text-gray-500 mt-0.5">Lấy đồ ăn tại: {activeDelivery.restaurantAddress}</p>
+                          </div>
+                        </div>
 
-                    <div className="relative flex items-start gap-4">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center z-10 shrink-0 font-bold text-sm ${activeDelivery.step === 'picked_up'
-                          ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20'
-                          : 'bg-gray-200 text-gray-500'
-                        }`}>
-                        3
+                        <div className="relative flex items-start gap-4">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center z-10 shrink-0 font-bold text-sm ${activeDelivery.step === 'picked_up'
+                            ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20'
+                            : 'bg-gray-200 text-gray-500'
+                            }`}>
+                            3
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-gray-900 text-sm">Đang giao / Hoàn thành</h4>
+                            <p className="text-xs text-gray-500 mt-0.5">Giao đến cho khách tại: {activeDelivery.deliveryAddress}</p>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-bold text-gray-900 text-sm">Đang giao / Hoàn thành</h4>
-                        <p className="text-xs text-gray-500 mt-0.5">Giao đến cho khách tại: {activeDelivery.deliveryAddress}</p>
-                      </div>
-                    </div>
-                  </div>
 
-                  <div className="border-t border-gray-100 pt-4 space-y-2 text-sm text-gray-600">
-                    {activeDelivery.note && (
-                      <p><strong>Ghi chú:</strong> {activeDelivery.note}</p>
-                    )}
-                    <p><strong>Khoảng cách:</strong> {activeDelivery.distanceInKm.toFixed(1)} km</p>
-                    <p><strong>Tổng tiền thu hộ (COD):</strong> <span className="font-bold text-orange-600">{formatCurrency(activeDelivery.totalAmount)}</span></p>
-                    {activeDelivery.googleMapNavigationUrl && (
-                      <div className="pt-2">
-                        <a
-                          href={activeDelivery.googleMapNavigationUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 text-xs font-bold text-orange-500 hover:text-orange-600 transition-colors bg-orange-50 px-3.5 py-2 rounded-xl border border-orange-100 hover:bg-orange-100/50"
-                        >
-                          <Navigation className="w-3.5 h-3.5" /> Xem bản đồ dẫn đường (Google Maps)
-                        </a>
+                      <div className="border-t border-gray-100 pt-4 space-y-2 text-sm text-gray-600">
+                        {activeDelivery.note && (
+                          <p><strong>Ghi chú:</strong> {activeDelivery.note}</p>
+                        )}
+                        <p><strong>Khoảng cách:</strong> {activeDelivery.distanceInKm.toFixed(1)} km</p>
+                        <p><strong>Tổng tiền thu hộ (COD):</strong> <span className="font-bold text-orange-600">{formatCurrency(activeDelivery.totalAmount)}</span></p>
+                        {activeDelivery.googleMapNavigationUrl && (
+                          <div className="pt-2">
+                            <a
+                              href={activeDelivery.googleMapNavigationUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 text-xs font-bold text-orange-500 hover:text-orange-600 transition-colors bg-orange-50 px-3.5 py-2 rounded-xl border border-orange-100 hover:bg-orange-100/50"
+                            >
+                              <Navigation className="w-3.5 h-3.5" /> Xem bản đồ dẫn đường (Google Maps)
+                            </a>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
 
-                  {/* Action buttons based on steps */}
-                  <div className="flex flex-wrap gap-3 pt-2">
-                    {activeDelivery.step !== 'picked_up' ? (
-                      <button
-                        onClick={handleProgressDelivery}
-                        disabled={actionLoading === 'progress'}
-                        className="flex-1 py-3 px-4 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-2xl shadow-lg shadow-orange-500/20 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
-                      >
-                        {actionLoading === 'progress' && <Loader2 className="w-4 h-4 animate-spin" />}
-                        {activeDelivery.step === 'accepted' ? 'Đã đến cửa hàng' : 'Đã lấy đồ ăn'}
-                      </button>
-                    ) : (
-                      <>
+                      {/* Action buttons based on steps */}
+                      <div className="flex flex-wrap gap-3 pt-2">
+                        {activeDelivery.step !== 'picked_up' ? (
+                          <button
+                            onClick={() => handleStepTransition(activeDelivery.orderId)}
+                            disabled={actionLoading === activeDelivery.orderId}
+                            className="flex-1 py-3 px-4 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-2xl shadow-lg shadow-orange-500/20 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                          >
+                            {actionLoading === activeDelivery.orderId && <Loader2 className="w-4 h-4 animate-spin" />}
+                            {activeDelivery.step === 'accepted' ? 'Đã đến cửa hàng' : 'Đã lấy đồ ăn'}
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => setSuccessModalOrderId(activeDelivery.orderId)}
+                              disabled={actionLoading === activeDelivery.orderId}
+                              className="flex-1 py-3 px-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-2xl shadow-lg shadow-green-500/20 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                              Giao thành công
+                            </button>
+                            <button
+                              onClick={() => handleDeliveryFailedClick(activeDelivery.orderId)}
+                              disabled={actionLoading === activeDelivery.orderId}
+                              className="py-3 px-6 bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 font-bold rounded-2xl transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                              Thất bại
+                            </button>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Báo cáo sự cố */}
+                      <div className="pt-3 border-t border-gray-100 mt-2">
                         <button
-                          onClick={handleDeliverySuccess}
-                          disabled={actionLoading === 'success'}
-                          className="flex-1 py-3 px-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-2xl shadow-lg shadow-green-500/20 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                          onClick={() => setReportModalOrderId(activeDelivery.orderId)}
+                          className="w-full py-2.5 px-4 bg-gray-50 border border-gray-200 hover:bg-red-50 hover:border-red-200 hover:text-red-600 text-gray-600 font-medium rounded-xl transition-all flex items-center justify-center gap-2 text-sm"
                         >
-                          {actionLoading === 'success' && <Loader2 className="w-4 h-4 animate-spin" />}
-                          Giao thành công
+                          <AlertTriangle className="w-4 h-4" />
+                          Báo cáo sự cố (Khách hàng/Nhà hàng)
                         </button>
-                        <button
-                          onClick={handleDeliveryFailed}
-                          disabled={actionLoading === 'failed'}
-                          className="py-3 px-6 bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 font-bold rounded-2xl transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
-                        >
-                          {actionLoading === 'failed' && <Loader2 className="w-4 h-4 animate-spin" />}
-                          Thất bại
-                        </button>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Báo cáo sự cố */}
-                  <div className="pt-3 border-t border-gray-100 mt-2">
-                    <button
-                      onClick={() => setIsReportModalOpen(true)}
-                      className="w-full py-2.5 px-4 bg-gray-50 border border-gray-200 hover:bg-red-50 hover:border-red-200 hover:text-red-600 text-gray-600 font-medium rounded-xl transition-all flex items-center justify-center gap-2 text-sm"
-                    >
-                      <AlertTriangle className="w-4 h-4" />
-                      Báo cáo sự cố (Khách hàng/Nhà hàng)
-                    </button>
-                  </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-3xl flex flex-col items-center">
@@ -766,7 +843,7 @@ export function ShipperDashboard() {
                           e.stopPropagation();
                           handleAcceptOffer(offer.orderId);
                         }}
-                        disabled={actionLoading === offer.orderId || !!activeDelivery}
+                        disabled={actionLoading === offer.orderId || activeDeliveries.length >= 100}
                         className="flex-1 py-2 bg-white hover:bg-orange-500 hover:text-white border border-gray-200 hover:border-orange-500 text-gray-700 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1 disabled:opacity-50"
                       >
                         {actionLoading === offer.orderId ? (
@@ -810,22 +887,22 @@ export function ShipperDashboard() {
       </div>
 
       {/* Modals */}
-      {activeDelivery && (
-        <>
-          <ReportIncidentModal
-            isOpen={isReportModalOpen}
-            onClose={() => setIsReportModalOpen(false)}
-            orderId={activeDelivery.orderId}
-          />
-          <SuccessDeliveryModal
-            isOpen={isSuccessModalOpen}
-            onClose={() => setIsSuccessModalOpen(false)}
-            orderId={activeDelivery.orderId}
-            latitude={coords?.lat || 0}
-            longitude={coords?.lng || 0}
-            onSuccess={handleDeliverySuccessComplete}
-          />
-        </>
+      {reportModalOrderId && (
+        <ReportIncidentModal
+          isOpen={!!reportModalOrderId}
+          onClose={() => setReportModalOrderId(null)}
+          orderId={reportModalOrderId}
+        />
+      )}
+      {successModalOrderId && (
+        <SuccessDeliveryModal
+          isOpen={!!successModalOrderId}
+          onClose={() => setSuccessModalOrderId(null)}
+          orderId={successModalOrderId}
+          latitude={coords?.lat || 0}
+          longitude={coords?.lng || 0}
+          onSuccess={handleSuccessCallback}
+        />
       )}
 
       {/* Popup Đề xuất đơn hàng */}
@@ -837,6 +914,33 @@ export function ShipperDashboard() {
           onTimeout={handleTimeoutProposal}
         />
       )}
+
+      {/* Pickup Code Modal */}
+      <PickupCodeModal
+        isOpen={isPickupCodeModalOpen}
+        onClose={() => {
+          setIsPickupCodeModalOpen(false);
+          setPendingPickupOrderId(null);
+        }}
+        onConfirm={handleConfirmPickup}
+        isLoading={actionLoading === pendingPickupOrderId}
+      />
+
+      {/* Delivery Failed Prompt Modal */}
+      <PromptModal
+        isOpen={isDeliveryFailedModalOpen}
+        onClose={() => {
+          setIsDeliveryFailedModalOpen(false);
+          setPendingFailedOrderId(null);
+        }}
+        onConfirm={handleDeliveryFailedConfirm}
+        title="Báo cáo giao hàng thất bại"
+        description="Vui lòng cho biết lý do tại sao không thể giao đơn hàng này (VD: Không liên lạc được với khách, địa chỉ sai...)."
+        placeholder="Nhập lý do giao thất bại..."
+        confirmLabel="Gửi báo cáo"
+        confirmVariant="danger"
+        isLoading={actionLoading === pendingFailedOrderId}
+      />
     </div>
   );
 }

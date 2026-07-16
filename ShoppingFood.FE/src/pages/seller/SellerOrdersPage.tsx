@@ -18,7 +18,7 @@ import {
   AlertCircle,
   MessageCircle
 } from 'lucide-react';
-import { Card, Button, Pagination } from '../../components/common';
+import { Card, Button, Pagination, PromptModal } from '../../components/common';
 import { OrderSellerChatModal } from '../../components/chat/OrderSellerChatModal';
 import toast from 'react-hot-toast';
 
@@ -42,6 +42,11 @@ export function SellerOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  
+  // Cancel Modal state
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
+
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [orderChatMap, setOrderChatMap] = useState<Record<string, string>>({});
   const [sellerChat, setSellerChat] = useState<{ isOpen: boolean; orderId: string; sessionId?: string }>({
@@ -210,9 +215,17 @@ export function SellerOrdersPage() {
     }
   };
 
-  const handleSellerCancel = async (orderId: string) => {
-    const reason = window.prompt('Nhập lý do hủy đơn hàng:');
-    if (!reason) return;
+  const handleSellerCancelClick = (orderId: string) => {
+    setCancellingOrderId(orderId);
+    setIsCancelModalOpen(true);
+  };
+
+  const handleSellerCancelConfirm = async (reason: string) => {
+    if (!cancellingOrderId) return;
+    const orderId = cancellingOrderId;
+    setIsCancelModalOpen(false);
+    setCancellingOrderId(null);
+
     const toastId = toast.loading('Đang hủy đơn hàng...');
     try {
       const res = await orderService.sellerCancelOrder({ orderId, reason });
@@ -446,7 +459,7 @@ export function SellerOrdersPage() {
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleSellerCancel(order.id);
+                          handleSellerCancelClick(order.id);
                         }}
                       >
                         Hủy

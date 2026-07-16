@@ -5,3 +5,4 @@ export { DocumentViewerModal } from './DocumentViewerModal';
 export { Loading } from './Loading';
 export { Pagination } from './Pagination';
 export { Card } from './Card';
+export { PromptModal } from './PromptModal';

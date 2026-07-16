@@ -64,10 +64,14 @@ namespace ShoppingFood.Application.Features.Coordinator.Queries
                     predicate: o => o.ShipperId.HasValue && (o.Status == Domain.Enums.OrderStatus.WaitingForShipper || o.Status == Domain.Enums.OrderStatus.Shipping),
                     disableTracking: true
                     );
-                var busyShipperIds = activeOrders.Select(o => o.ShipperId!.Value).Distinct().ToList();
+                
+                // Group active orders by ShipperId to count them
+                var activeOrderCountByShipper = activeOrders
+                    .GroupBy(o => o.ShipperId!.Value)
+                    .ToDictionary(g => g.Key, g => g.Count());
 
                 var onlineShippers = await _shipperProfileRepository.GetAsync(
-                    predicate: s => s.IsOnline && s.Status == UserStatus.Active && !busyShipperIds.Contains(s.Id),
+                    predicate: s => s.IsOnline && s.Status == UserStatus.Active,
                     include: q => q.Include(s => s.UserProfile)
                                         .ThenInclude(u => u.UserAccount),
                     disableTracking: true
@@ -86,6 +90,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Queries
 
                     var dto = _mapper.Map<SuggestedShipperDto>(shipper);
                     dto.DistanceInKm = distance;
+                    dto.ActiveOrderCount = activeOrderCountByShipper.ContainsKey(shipper.Id) ? activeOrderCountByShipper[shipper.Id] : 0;
                     suggestedShipper.Add(dto);
                 }
 

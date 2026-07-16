@@ -69,12 +69,6 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
                 if (!shipper.IsOnline || shipper.Status != UserStatus.Active)
                     return ApiResponse.Failure(400, "Shipper is offline or inactive");
 
-                var isShipperBusy = await _orderRepository.ExistsAsync(o =>
-                    o.ShipperId == shipper.Id &&
-                    (o.Status == OrderStatus.WaitingForShipper || o.Status == OrderStatus.Shipping));
-                if (isShipperBusy)
-                    return ApiResponse.Failure(400, "The target shipper already has an active order.");
-
                 CreateProposal(request.OrderId, request.ShipperId);
 
                 var coordinator = (await _userRepository.GetAsync(

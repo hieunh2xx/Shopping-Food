@@ -49,6 +49,19 @@ namespace ShoppingFood.API.Controllers
             return StatusCode(response.Code, response);
         }
 
+        [HttpPost("orders/{orderId}/broadcast")]
+        public async Task<IActionResult> BroadcastOrder(Guid orderId)
+        {
+            var command = new BroadcastOrderToNearbyShippersCommand { OrderId = orderId };
+            if (userDto != null)
+            {
+                command.CurrentUserId = userDto.Id;
+            }
+
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
+
         [HttpPost("proposals")]
         public async Task<IActionResult> SendProposal([FromBody] SendProposalCommand command)
         {

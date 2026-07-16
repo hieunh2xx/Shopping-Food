@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera } from 'lucide-react';
+import { Camera, BadgeCheck, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { authService } from '../../services';
@@ -148,7 +148,20 @@ export function DashboardProfilePage() {
             <div className="space-y-4">
               <div>
                 <span className="text-sm text-gray-500 block mb-1">Email</span>
-                <p className="font-medium text-gray-900">{profile.email}</p>
+                <div className="flex items-center gap-3">
+                  <p className="font-medium text-gray-900">{profile.email || 'Chưa cập nhật'}</p>
+                  {profile.email && (
+                    profile.isEmailActive ? (
+                      <span className="flex items-center gap-1 text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-md border border-green-100">
+                        <BadgeCheck className="w-4 h-4" /> Đã xác thực
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1 text-xs font-medium text-red-500 bg-red-50 px-2 py-1 rounded-md border border-red-100">
+                        <AlertCircle className="w-4 h-4" /> Chưa xác thực
+                      </span>
+                    )
+                  )}
+                </div>
               </div>
             </div>
           </div>

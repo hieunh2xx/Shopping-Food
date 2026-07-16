@@ -24,9 +24,9 @@ namespace ShoppingFood.API.Controllers
             return StatusCode(response.Code, response);
         }
         [HttpGet("proposed-offer/{orderId}")]
-        public async Task<ActionResult<ApiResponse>> GetProposedOffer(Guid orderId)
+        public async Task<ActionResult<ApiResponse>> GetProposedOffer(Guid orderId, [FromQuery] double latitude, [FromQuery] double longitude)
         {
-            var query = new GetProposedDeliveryOfferQuery { OrderId = orderId };
+            var query = new GetProposedDeliveryOfferQuery { OrderId = orderId, Latitude = latitude, Longitude = longitude };
             if (userDto != null)
             {
                 query.CurrentUserId = userDto.Id;

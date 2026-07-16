@@ -26,6 +26,10 @@ class CoordinatorService extends BaseService<any, any, any> {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.COORDINATOR.FORCE_ASSIGN, data);
   }
 
+  async broadcastOrder(orderId: string): Promise<IApiResponse<any>> {
+    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.COORDINATOR.BROADCAST(orderId), {});
+  }
+
   async resolveIncident(orderId: string, data: any): Promise<IApiResponse<any>> {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.COORDINATOR.RESOLVE_INCIDENT(orderId), data);
   }

@@ -19,12 +19,14 @@ import { useAuth } from '../../../hooks';
 import { ROUTES } from '../../../routes/routeConfig';
 import { DashboardLayout } from '../DashboardLayout';
 import { useSellerChatWatcher } from '../../../hooks/useSellerChatWatcher';
+import { PromptModal } from '../../common';
 
 export function SellerLayout() {
   const { user, logout, upgradeToMall } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const hasUnreadChat = useSellerChatWatcher();
+  const [isMallModalOpen, setIsMallModalOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -51,6 +53,7 @@ export function SellerLayout() {
   }
 
   return (
+    <>
     <DashboardLayout
       navItems={navItems}
       brandName="Seller Center"
@@ -61,10 +64,7 @@ export function SellerLayout() {
       extraAction={
         user?.role === 'Seller' && (
           <button 
-            onClick={() => {
-              const reason = window.prompt('Nhập lý do muốn lên Mall:');
-              if (reason) upgradeToMall(reason);
-            }}
+            onClick={() => setIsMallModalOpen(true)}
             className="w-full flex items-center gap-2 mt-4 px-4 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors"
           >
             Đăng ký lên Mall
@@ -90,5 +90,18 @@ export function SellerLayout() {
         ) : null
       }
     />
+    <PromptModal
+      isOpen={isMallModalOpen}
+      onClose={() => setIsMallModalOpen(false)}
+      onConfirm={(reason) => {
+        setIsMallModalOpen(false);
+        upgradeToMall(reason);
+      }}
+      title="Đăng ký lên Mall"
+      description="Vui lòng cung cấp lý do hoặc thông tin thêm để xét duyệt lên Mall."
+      placeholder="Nhập lý do muốn lên Mall..."
+      confirmLabel="Gửi yêu cầu"
+    />
+    </>
   );
 }
