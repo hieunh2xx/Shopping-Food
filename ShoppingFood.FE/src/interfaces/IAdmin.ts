@@ -6,7 +6,8 @@
  */
 export interface IApproveApplicationRequest {
   applicationId: string;
-  isApproved: boolean;
+  action?: string;
+  isApproved?: boolean;
   rejectionReason?: string;
 }
 

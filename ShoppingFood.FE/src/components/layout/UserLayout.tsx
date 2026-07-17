@@ -90,6 +90,17 @@ export function UserLayout() {
                 <Wallet className="w-5 h-5" /> Ví hệ thống
               </NavLink>
 
+              <NavLink
+                to={`${ROUTES.PROFILE}?tab=applications`}
+                className={() =>
+                  `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm ${
+                    isProfileTab('applications') ? 'bg-orange-50 text-orange-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`
+                }
+              >
+                <ClipboardList className="w-5 h-5" /> Lịch sử đăng ký
+              </NavLink>
+
               <div className="my-2 border-t border-gray-100"></div>
               
               {user?.role === 'Customer' && (

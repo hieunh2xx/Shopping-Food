@@ -31,7 +31,6 @@ namespace ShoppingFood.API.Controllers
             return StatusCode(result.Code, result);
         }
 
-        [Authorize]
         [HttpGet("action-logs")]
         public async Task<ActionResult<ApiResponse>> GetActionLogs([FromQuery] GetSystemLogsQuery query)
         {
@@ -39,7 +38,6 @@ namespace ShoppingFood.API.Controllers
             return StatusCode(result.Code, result);
         }
 
-        [Authorize]
         [HttpGet("error-logs")]
         public async Task<ActionResult<ApiResponse>> GetErrorLogs([FromQuery] GetSystemErrorLogsQuery query)
         {

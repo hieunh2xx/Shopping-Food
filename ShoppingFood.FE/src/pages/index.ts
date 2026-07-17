@@ -69,3 +69,4 @@ export { AdminBlacklistPage } from './admin/AdminBlacklistPage';
 export { AdminSystemLogsPage } from './admin/AdminSystemLogsPage';
 export { AdminOrderComplaintsPage } from './admin/AdminOrderComplaintsPage';
 export { SellerChatPage } from './seller/SellerChatPage';
+export { SellerMallApplicationPage } from './seller/SellerMallApplicationPage';

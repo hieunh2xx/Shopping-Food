@@ -2,10 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { authService } from '../services/AuthService';
 import { restaurantService } from '../services/RestaurantService';
 import type { IUserDto, IFavoriteRestaurantDto } from '../interfaces';
-import { Button, Input } from '../components/common';
+import { Button, Input, Modal } from '../components/common';
 import toast from 'react-hot-toast';
 import { useAuthContext } from '../contexts/AuthContext';
-import { Camera, Store, MapPin as MapPinIcon, Star, BadgeCheck, AlertCircle, Heart, Lock, Trash2, Ticket, Plus } from 'lucide-react';
+import { Camera, MapPin as MapPinIcon, BadgeCheck, AlertCircle, Heart, Lock, Trash2, Ticket, Plus } from 'lucide-react';
 import { ChangePasswordModal } from '../components/auth/ChangePasswordModal';
 import { UpdateProfileModal } from '../components/auth/UpdateProfileModal';
 import { ChangeContactModal } from '../components/auth/ChangeContactModal';
@@ -16,6 +16,7 @@ import { FavoriteRestaurants } from '../components/profile/FavoriteRestaurants';
 import { CustomerVouchers } from '../components/profile/CustomerVouchers';
 import { CustomerLoyalty } from '../components/profile/CustomerLoyalty';
 import { CustomerWalletPage } from './payment/CustomerWalletPage';
+import { CustomerApplications } from '../components/profile/CustomerApplications';
 
 export function ProfilePage() {
   const navigate = useNavigate();
@@ -31,6 +32,8 @@ export function ProfilePage() {
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [isUpdateProfileOpen, setIsUpdateProfileOpen] = useState(false);
   const [isChangeContactOpen, setIsChangeContactOpen] = useState(false);
+  const [isLockModalOpen, setIsLockModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
@@ -55,7 +58,7 @@ export function ProfilePage() {
   }, []);
 
   useEffect(() => {
-    const handleNotification = (e: CustomEvent) => {
+    const handleNotification = () => {
       // Reload profile if there's any notification that might change user's status/role
       fetchProfile();
     };
@@ -129,8 +132,8 @@ export function ProfilePage() {
   };
 
   const handleLockAccount = async () => {
-    if (!confirm('Bạn có chắc muốn KHÓA tài khoản này? Bạn sẽ bị đăng xuất và cần dùng Email/SĐT để lấy lại quyền truy cập.')) return;
     setIsLoading(true);
+    setIsLockModalOpen(false);
     try {
       const res = await authService.lockAccount();
       if (!res.error) {
@@ -148,8 +151,8 @@ export function ProfilePage() {
   };
 
   const handleRequestDeletion = async () => {
-    if (!confirm('CẢNH BÁO: Xóa tài khoản là hành động không thể hoàn tác! Tài khoản sẽ bị xóa sau 30 ngày. Bạn chắc chứ?')) return;
     setIsLoading(true);
+    setIsDeleteModalOpen(false);
     try {
       const res = await authService.requestDeletion();
       if (!res.error) {
@@ -160,7 +163,7 @@ export function ProfilePage() {
         toast.error(res.message || 'Lỗi hệ thống');
       }
     } catch {
-      toast.error('Mở khóa tài khoản thất bại do lỗi hệ thống.');
+      toast.error('Gửi yêu cầu xóa tài khoản thất bại do lỗi hệ thống.');
     } finally {
       setIsLoading(false);
     }
@@ -173,12 +176,12 @@ export function ProfilePage() {
     }
     setIsSaving(true);
     try {
-      const response = await authService.updateProfile({ 
-        fullName: formData.fullName, 
-        gender: formData.gender || undefined, 
-        dateOfBirth: formData.dateOfBirth ? new Date(formData.dateOfBirth).toISOString() : undefined 
+      const response = await authService.updateProfile({
+        fullName: formData.fullName,
+        gender: formData.gender || undefined,
+        dateOfBirth: formData.dateOfBirth ? new Date(formData.dateOfBirth).toISOString() : undefined
       });
-      
+
       if (!response.error) {
         toast.success(response.message || 'Cập nhật thông tin thành công!');
         fetchProfile();
@@ -219,6 +222,7 @@ export function ProfilePage() {
         {activeTab === 'vouchers' && 'Ví Voucher'}
         {activeTab === 'loyalty' && 'Điểm thưởng'}
         {activeTab === 'wallet' && 'Ví tích lũy'}
+        {activeTab === 'applications' && 'Lịch sử đăng ký'}
       </h1>
 
       {activeTab === 'info' && (
@@ -343,8 +347,8 @@ export function ProfilePage() {
               <Button variant="outline" onClick={() => setIsChangePasswordOpen(true)} className="px-6 border-gray-200 text-gray-700 hover:bg-gray-50">
                 Đổi mật khẩu
               </Button>
-              <Button 
-                onClick={handleSaveProfile} 
+              <Button
+                onClick={handleSaveProfile}
                 disabled={isSaving}
                 className="px-6 bg-orange-600 hover:bg-orange-700"
               >
@@ -422,13 +426,13 @@ export function ProfilePage() {
             </h3>
             <div className="flex flex-col sm:flex-row gap-4">
               <button
-                onClick={handleLockAccount}
+                onClick={() => setIsLockModalOpen(true)}
                 className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium hover:bg-gray-50 transition-colors shadow-sm"
               >
                 <Lock className="w-4 h-4" /> Khóa tài khoản khẩn cấp
               </button>
               <button
-                onClick={handleRequestDeletion}
+                onClick={() => setIsDeleteModalOpen(true)}
                 className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-red-200 bg-white text-red-600 font-medium hover:bg-red-50 transition-colors shadow-sm"
               >
                 <Trash2 className="w-4 h-4" /> Yêu cầu xóa tài khoản vĩnh viễn
@@ -476,6 +480,12 @@ export function ProfilePage() {
         </div>
       )}
 
+      {activeTab === 'applications' && (
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+          <CustomerApplications />
+        </div>
+      )}
+
       <ChangePasswordModal
         isOpen={isChangePasswordOpen}
         onClose={() => setIsChangePasswordOpen(false)}
@@ -493,6 +503,65 @@ export function ProfilePage() {
         onClose={() => setIsChangeContactOpen(false)}
         onSuccess={fetchProfile}
       />
+
+      {/* Lock Account Modal */}
+      <Modal
+        isOpen={isLockModalOpen}
+        onClose={() => setIsLockModalOpen(false)}
+        title="Xác nhận khóa tài khoản"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600 text-[15px]">
+            Bạn có chắc muốn <span className="font-semibold text-red-600">KHÓA</span> tài khoản này? Bạn sẽ bị đăng xuất và cần dùng Email/SĐT đã liên kết để lấy lại quyền truy cập sau này.
+          </p>
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setIsLockModalOpen(false)}
+              disabled={isLoading}
+            >
+              Hủy
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleLockAccount}
+              isLoading={isLoading}
+            >
+              Khóa tài khoản
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete Account Modal */}
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        title="Yêu cầu xóa tài khoản"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600 text-[15px]">
+            <span className="font-bold text-red-600">CẢNH BÁO:</span> Hành động này không thể hoàn tác!
+            Tài khoản của bạn sẽ bị xóa vĩnh viễn sau 30 ngày. Bạn có chắc chắn muốn tiếp tục không?
+          </p>
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteModalOpen(false)}
+              disabled={isLoading}
+            >
+              Hủy
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleRequestDeletion}
+              isLoading={isLoading}
+            >
+              Xác nhận xóa
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

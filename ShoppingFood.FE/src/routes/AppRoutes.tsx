@@ -79,6 +79,7 @@ import {
   AdminSystemLogsPage,
   AdminOrderComplaintsPage,
   SellerChatPage,
+  SellerMallApplicationPage
 } from '../pages';
 
 /**
@@ -162,6 +163,7 @@ export function AppRoutes() {
         <Route path="wallet" element={<SellerWalletPage />} />
         <Route path="appeal" element={<SellerAppealPage />} />
         <Route path="chat" element={<SellerChatPage />} />
+        <Route path="mall-application" element={<SellerMallApplicationPage />} />
       </Route>
 
       {/* Admin routes - protected with AdminLayout */}

@@ -23,6 +23,7 @@ namespace ShoppingFood.Application.Features.Admin.Commands
         private readonly IEmailService _emailService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ShoppingFoodContext _dbContext;
+        private readonly INotificationPushService _notificationPushService;
 
         public ApproveShipperApplicationHandler(
             IShipperApplicationRepository shipperApplicationRepository,
@@ -31,7 +32,8 @@ namespace ShoppingFood.Application.Features.Admin.Commands
             INotificationRepository notificationRepository, 
             IEmailService emailService,
             IUnitOfWork unitOfWork,
-            ShoppingFoodContext dbContext) 
+            ShoppingFoodContext dbContext,
+            INotificationPushService notificationPushService) 
         {
             _shipperApplicationRepository = shipperApplicationRepository;
             _shipperProfileRepository = shipperProfileRepository;
@@ -40,6 +42,7 @@ namespace ShoppingFood.Application.Features.Admin.Commands
             _emailService = emailService;
             _unitOfWork = unitOfWork;
             _dbContext = dbContext;
+            _notificationPushService = notificationPushService;
         }
         public async Task<ApiResponse> Handle(ApproveShipperApplicationCommand request, CancellationToken cancellationToken)
         {
@@ -60,20 +63,20 @@ namespace ShoppingFood.Application.Features.Admin.Commands
                 if (application.Status != ApplicationStatus.Pending)
                     return ApiResponse.Failure(400, $"Shipper application is already processed. Current status: {application.Status}");
 
-                if (request.IsApproved)
+                if (request.Action == "Approve")
                     ApproveApplication(application, adminProfile.Id);
-                else
+                else if (request.Action == "Reject")
                     RejectApplication(application, request.RejectionReason, adminProfile.Id);
+                else if (request.Action == "NeedsInfo")
+                    NeedsInfoApplication(application, request.RejectionReason, adminProfile.Id);
 
-                AddDbNotification(application, request.IsApproved);
-
-                await _unitOfWork.SaveChangesAsync();
+                var notification = AddDbNotification(application, request.Action);
 
                 await _unitOfWork.SaveChangesAsync();
 
                 try 
                 {
-                    await SendEmailNotificationAsync(application, request.IsApproved);
+                    await SendEmailNotificationAsync(application, request.Action);
                 }
                 catch (Exception emailEx)
                 {
@@ -83,9 +86,24 @@ namespace ShoppingFood.Application.Features.Admin.Commands
 
                 await transaction.CommitAsync(cancellationToken);
 
-                string successMessage = request.IsApproved
-                    ? "Shipper application has been approved. The user is now active as shipper."
-                    : "Shipper application has been rejected.";
+                if (notification != null)
+                {
+                    await _notificationPushService.PushToUserAsync(notification.UserId, new
+                    {
+                        title = notification.Title,
+                        message = notification.Message,
+                        type = "System",
+                        link = "/profile"
+                    });
+                }
+
+                string successMessage = request.Action switch
+                {
+                    "Approve" => "Shipper application has been approved. The user is now active as shipper.",
+                    "Reject" => "Shipper application has been rejected.",
+                    "NeedsInfo" => "Shipper application has been returned for additional information.",
+                    _ => "Shipper application processed."
+                };
                 return ApiResponse.Success(null, successMessage);
             }
             catch (Exception ex) 
@@ -156,6 +174,13 @@ namespace ShoppingFood.Application.Features.Admin.Commands
             application.RejectionReason = rejectionReason;
             SetReviewMetaData(application, adminProfileId);
         }
+
+        private void NeedsInfoApplication(ShipperApplication application, string rejectionReason, Guid adminProfileId)
+        {
+            application.Status = ApplicationStatus.NeedsInfo;
+            application.RejectionReason = rejectionReason;
+            SetReviewMetaData(application, adminProfileId);
+        }
         private void SetReviewMetaData(ShipperApplication application, Guid adminProfileId)
         {
             application.ReviewedBy = adminProfileId;
@@ -163,37 +188,63 @@ namespace ShoppingFood.Application.Features.Admin.Commands
             application.UpdatedAt = DateTime.UtcNow;
         }
 
-        private void AddDbNotification(ShipperApplication application, bool isApproved)
+        private Notification? AddDbNotification(ShipperApplication application, string action)
         {
             var userAccountId = application.UserProfile?.UserAccountId;
             if (userAccountId.HasValue)
             {
+                string title = action switch
+                {
+                    "Approve" => "Yêu cầu đăng ký tài xế đã được duyệt",
+                    "Reject" => "Yêu cầu đăng ký tài xế bị từ chối",
+                    "NeedsInfo" => "Yêu cầu đăng ký tài xế cần bổ sung",
+                    _ => "Thông báo trạng thái"
+                };
+
+                string message = action switch
+                {
+                    "Approve" => "Chúc mừng! Đơn đăng ký trở thành đối tác tài xế của bạn đã được phê duyệt thành công. Vui lòng đăng nhập lại để bắt đầu nhận đơn.",
+                    "Reject" => $"Đơn đăng ký trở thành đối tác tài xế của bạn đã bị từ chối. Lý do {application.RejectionReason}.",
+                    "NeedsInfo" => $"Đơn đăng ký trở thành đối tác tài xế của bạn cần bổ sung thông tin. Yêu cầu: {application.RejectionReason}.",
+                    _ => ""
+                };
+
                 var notification = new Notification
                 {
                     Id = Guid.NewGuid(),
                     UserId = userAccountId.Value,
-                    Title = isApproved ? "Yêu cầu đăng ký tài xế đã được duyệt" : "Yêu cầu đăng ký tài xế bị từ chối",
-                    Message = isApproved ? "Chúc mừng! Đơn đăng ký trở thành đối tác tài xế của bạn đã được phê duyệt thành công. Vui lòng đăng nhập lại để bắt đầu nhận đơn." :
-                                           $"Đơn đăng ký trở thành đối tác tài xế của bạn đã bị từ chối. Lý do {application.RejectionReason}.",
+                    Title = title,
+                    Message = message,
                     NotificationType = NotificationType.System,
                     IsRead = false,
                     CreateAt = DateTime.UtcNow
                 };
                 _notificationRepository.Add(notification);
+                return notification;
             }
+            return null;
         }
 
-        private async Task SendEmailNotificationAsync(ShipperApplication application, bool isApprove)
+        private async Task SendEmailNotificationAsync(ShipperApplication application, string action)
         {
             var email = application.UserProfile?.UserAccount?.Email;
             if (!string.IsNullOrEmpty(email))
             {
-                string subject = isApprove ? "Thông báo duyệt hồ sơ đối tác tài xế - ShoppingFood" :
-                                             "Thông báo kết quả hồ sơ đối tác tài xế - ShoppingFood";
+                string subject = action switch
+                {
+                    "Approve" => "Thông báo duyệt hồ sơ đối tác tài xế - ShoppingFood",
+                    "Reject" => "Thông báo kết quả hồ sơ đối tác tài xế - ShoppingFood",
+                    "NeedsInfo" => "Yêu cầu bổ sung hồ sơ đối tác tài xế - ShoppingFood",
+                    _ => "Thông báo trạng thái đăng ký"
+                };
 
-                string body = isApprove
-                    ? $"<p>Xin chào <strong>{application.UserProfile.FullName}</strong>,</p><p>Hồ sơ đăng ký đối tác tài xế của bạn đã được phê duyệt thành công trên hệ thống ShoppingFood.</p><p>Bạn đã có thể bắt đầu hoạt động và nhận đơn giao hành. Chúc bạn có những hành trình thuận lợi!</p>"
-                    : $"<p>Xin chào <strong>{application.UserProfile.FullName}</strong>,</p><p>Đơn đăng ký đối tác tài xế của bạn chưa được phê duyệt.</p><p><strong>Lý do từ chối:</strong> {application.RejectionReason}</p><p>Vui lòng cập nhật lại thông tin chính xác và gửi lại yêu cầu duyệt.</p>";
+                string body = action switch
+                {
+                    "Approve" => $"<p>Xin chào <strong>{application.UserProfile.FullName}</strong>,</p><p>Hồ sơ đăng ký đối tác tài xế của bạn đã được phê duyệt thành công trên hệ thống ShoppingFood.</p><p>Bạn đã có thể bắt đầu hoạt động và nhận đơn giao hành. Chúc bạn có những hành trình thuận lợi!</p>",
+                    "Reject" => $"<p>Xin chào <strong>{application.UserProfile.FullName}</strong>,</p><p>Đơn đăng ký đối tác tài xế của bạn chưa được phê duyệt.</p><p><strong>Lý do từ chối:</strong> {application.RejectionReason}</p>",
+                    "NeedsInfo" => $"<p>Xin chào <strong>{application.UserProfile.FullName}</strong>,</p><p>Đơn đăng ký đối tác tài xế của bạn cần bổ sung thêm thông tin.</p><p><strong>Yêu cầu từ Admin:</strong> {application.RejectionReason}</p><p>Vui lòng cập nhật lại thông tin chính xác và gửi lại yêu cầu duyệt trên hệ thống.</p>",
+                    _ => ""
+                };
 
                 await _emailService.SendEmailAsync(email, subject, body);
             }

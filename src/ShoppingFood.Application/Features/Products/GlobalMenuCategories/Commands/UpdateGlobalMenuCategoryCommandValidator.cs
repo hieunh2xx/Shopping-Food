@@ -22,6 +22,11 @@ namespace ShoppingFood.Application.Features.Products.GlobalMenuCategories.Comman
             RuleFor(p => p.SortOrder)
                 .NotEmpty().WithMessage("{PropertyName} is required")
                 .GreaterThan(0).WithMessage("{PropertyName} must be greater than 0");
+
+            RuleFor(p => p.ImageUrl)
+                .Must(url => string.IsNullOrEmpty(url) || HasValidImageExtension(url))
+                .WithMessage("{PropertyName} must be a valid image file (.jpg, .jpeg, .png, .webp).");
+
             RuleFor(p => p)
                 .MustAsync(BeUniqueName).WithMessage("This category already exist");
         }
@@ -31,6 +36,14 @@ namespace ShoppingFood.Application.Features.Products.GlobalMenuCategories.Comman
             var existing = await _globalMenuCategoryRepository.GetAsync(p =>
                 p.Name.ToLower() == command.Name.ToLower() && p.Id != command.Id);
             return existing.Count == 0;
+        }
+
+        private bool HasValidImageExtension(string url)
+        {
+            if (string.IsNullOrEmpty(url)) return false;
+            var cleanUrl = url.Split('?')[0];
+            var ext = Path.GetExtension(cleanUrl).ToLower();
+            return ext is ".jpg" or ".jpeg" or ".png" or ".webp";
         }
     }
 }

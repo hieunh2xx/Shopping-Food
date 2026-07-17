@@ -136,7 +136,9 @@ export function CustomerLoyalty() {
             {loyaltyData.history.map(item => (
               <div key={item.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-xl border border-gray-100">
                 <div>
-                  <p className="font-medium text-gray-900 text-sm">{item.description}</p>
+                  <p className="font-medium text-gray-900 text-sm">
+                    {item.description.replace(/#([a-fA-F0-9\-]{36})/g, (match, p1) => '#' + p1.substring(0, 8).toUpperCase())}
+                  </p>
                   <p className="text-xs text-gray-500 mt-1">{new Date(item.createdAt).toLocaleString('vi-VN')}</p>
                 </div>
                 <div className={`font-bold text-sm ${item.transactionType === 'Earned' ? 'text-green-600' : 'text-red-600'}`}>

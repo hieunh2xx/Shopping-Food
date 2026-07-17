@@ -23,8 +23,15 @@ export function BuyXGetYPage() {
     try {
       const res = await promotionService.getPromotions({ isActive: true });
       if (!res.error && res.data) {
+        const now = new Date();
+        const validPromos = res.data.filter(promo => {
+          const endDate = new Date(promo.endDate);
+          endDate.setHours(23, 59, 59, 999);
+          return endDate >= now;
+        });
+
         // Fetch product and restaurant details
-        const combined = await Promise.all(res.data.map(async (promo) => {
+        const combined = await Promise.all(validPromos.map(async (promo) => {
           let p: IProductDto | null = null;
           let r: IRestaurantDto | null = null;
           

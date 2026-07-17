@@ -22,7 +22,17 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 .InclusiveBetween(-180.0, 180.0).WithMessage("Longitude must be between -180 and 180.");
 
             RuleFor(x => x.DeliveryProofImageUrl)
-                .NotEmpty().WithMessage("Delivery proof image is required.");
+                .NotEmpty().WithMessage("Delivery proof image is required.")
+                .Must(url => HasValidImageExtension(url))
+                .WithMessage("Delivery proof image must be a valid image file (.jpg, .jpeg, .png, .webp).");
+        }
+
+        private bool HasValidImageExtension(string url)
+        {
+            if (string.IsNullOrEmpty(url)) return false;
+            var cleanUrl = url.Split('?')[0];
+            var ext = Path.GetExtension(cleanUrl).ToLower();
+            return ext is ".jpg" or ".jpeg" or ".png" or ".webp";
         }
     }
 }

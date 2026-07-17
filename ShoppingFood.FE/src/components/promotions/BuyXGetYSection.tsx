@@ -26,7 +26,13 @@ export function BuyXGetYSection() {
     try {
       const res = await promotionService.getPromotions({ isActive: true });
       if (!res.error && res.data) {
-        const topPromos = res.data.slice(0, 4);
+        const now = new Date();
+        const validPromos = res.data.filter(promo => {
+          const endDate = new Date(promo.endDate);
+          endDate.setHours(23, 59, 59, 999);
+          return endDate >= now;
+        });
+        const topPromos = validPromos.slice(0, 4);
         
         // Fetch product and restaurant details to match UI requirements
         const combined = await Promise.all(topPromos.map(async (promo) => {

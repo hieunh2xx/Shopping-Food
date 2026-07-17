@@ -476,8 +476,22 @@ namespace ShoppingFood.API.Controllers
             return StatusCode(response.Code, response);
         }
 
+        [HttpGet("my-applications")]
+        public async Task<ActionResult<ApiResponse>> GetMyApplications()
+        {
+            var query = new GetMyApplicationsQuery { CurrentUserId = userDto!.Id };
+            var response = await _mediator.Send(query);
+            return Ok(response);
+        }
+
+        [HttpPut("update-shipper-application")]
+        public async Task<ActionResult<ApiResponse>> UpdateShipperApplication([FromBody] UpdateShipperApplicationCommand command)
+        {
+            var response = await _mediator.Send(command);
+            return Ok(response);
+        }
+
         [HttpPost("LockAccount")]
-        [Authorize]
         public async Task<ActionResult<ApiResponse>> LockAccount()
         {
             var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? Guid.Empty.ToString());

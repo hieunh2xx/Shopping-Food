@@ -106,7 +106,7 @@ class AdminService extends BaseService<unknown> {
     return httpClient.put<IApiResponse<any>>(API_ENDPOINTS.ADMIN.SUSPEND_SHIPPER(id), { isLocked });
   }
 
-  async approveShipperApplication(data: { applicationId: string; isApproved: boolean; rejectionReason?: string }): Promise<IApiResponse<any>> {
+  async approveShipperApplication(data: { applicationId: string; action: string; rejectionReason?: string }): Promise<IApiResponse<any>> {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.ADMIN.APPROVE_SHIPPER, data);
   }
 

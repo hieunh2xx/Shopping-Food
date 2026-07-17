@@ -4,6 +4,7 @@ import { notificationService } from '../../services';
 import { notificationRealtimeService } from '../../services/NotificationRealtimeService';
 import { useAuth } from '../../hooks';
 import type { INotificationDto } from '../../interfaces';
+import { Modal } from '../common';
 import toast from 'react-hot-toast';
 
 export function NotificationBell() {
@@ -12,6 +13,7 @@ export function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedNotification, setSelectedNotification] = useState<INotificationDto | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on click outside
@@ -193,6 +195,7 @@ export function NotificationBell() {
                   key={n.id} 
                   onClick={() => {
                     if (!n.isRead) handleMarkAsRead(n.id);
+                    setSelectedNotification(n);
                   }}
                   className={`p-4 flex gap-3 cursor-pointer transition-colors ${
                     n.isRead ? 'hover:bg-gray-50/50' : 'bg-orange-50/30 hover:bg-orange-50/50'
@@ -226,6 +229,42 @@ export function NotificationBell() {
           </div>
         </div>
       )}
+
+      {/* Notification Detail Modal */}
+      <Modal
+        isOpen={!!selectedNotification}
+        onClose={() => setSelectedNotification(null)}
+        title="Chi tiết thông báo"
+      >
+        {selectedNotification && (
+          <div className="space-y-4 text-gray-900 mt-2">
+            <div className="flex items-center gap-3 mb-4">
+               <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center border border-gray-100 shrink-0">
+                 {getNotificationIcon(selectedNotification.notificationType)}
+               </div>
+               <div>
+                  <h3 className="font-bold text-lg leading-tight">{selectedNotification.title}</h3>
+                  <p className="text-xs text-gray-500 font-medium mt-1">
+                    {formatTime(selectedNotification.createAt)}
+                  </p>
+               </div>
+            </div>
+            
+            <div className="bg-orange-50/50 p-4 rounded-xl border border-orange-100 text-sm leading-relaxed text-gray-700 whitespace-pre-wrap">
+              {selectedNotification.message}
+            </div>
+
+            <div className="pt-4 flex justify-end">
+              <button
+                onClick={() => setSelectedNotification(null)}
+                className="px-6 py-2.5 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-all active:scale-95"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

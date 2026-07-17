@@ -5,6 +5,7 @@ import { adminService, productService } from '../../services';
 import { formatCurrency } from '../../utils/formatters';
 import { ENV } from '../../config/env';
 import toast from 'react-hot-toast';
+import { notificationRealtimeService } from '../../services/NotificationRealtimeService';
 
 type TabType = 'sellers' | 'shippers' | 'products';
 
@@ -24,7 +25,7 @@ export function AdminApprovalsPage() {
   // Action/Reason Modal state
   const [actionModal, setActionModal] = useState<{
     isOpen: boolean;
-    type: 'approve' | 'reject';
+    type: 'approve' | 'reject' | 'needsInfo';
     targetTab: TabType;
     targetId: string;
     targetName: string;
@@ -67,28 +68,26 @@ export function AdminApprovalsPage() {
         setProducts(productsRes.data);
         setTotals(prev => ({ ...prev, products: productsRes.total || 0 }));
       }
-    } catch {
-      toast.error('Không thể tải danh sách phê duyệt');
+    } catch (err) {
+      console.error(err);
+      toast.error('Lỗi khi tải danh sách');
     } finally {
       setIsLoading(false);
     }
-  }, [activeTab]);
+  }, [page, take, activeTab]);
 
   useEffect(() => {
     fetchData();
-  }, [fetchData, take]);
 
-  // Lắng nghe sự kiện notification real-time để tự động tải lại danh sách
-  useEffect(() => {
     const handleNotification = () => {
       fetchData();
     };
 
-    window.addEventListener('ON_REALTIME_NOTIFICATION', handleNotification as EventListener);
-    return () => window.removeEventListener('ON_REALTIME_NOTIFICATION', handleNotification as EventListener);
+    notificationRealtimeService.onNotification(handleNotification);
+    return () => notificationRealtimeService.offNotification(handleNotification);
   }, [fetchData]);
 
-  const openActionModal = (type: 'approve' | 'reject', tab: TabType, id: string, name: string) => {
+  const openActionModal = (type: 'approve' | 'reject' | 'needsInfo', tab: TabType, id: string, name: string) => {
     setRejectionReason('');
     setActionModal({
       isOpen: true,
@@ -99,41 +98,43 @@ export function AdminApprovalsPage() {
     });
   };
 
-  const handleActionConfirm = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const { type, targetTab, targetId } = actionModal;
-    const isApproved = type === 'approve';
-
-    if (!isApproved && !rejectionReason.trim()) {
-      toast.error('Vui lòng nhập lý do từ chối');
+  const handleActionSubmit = async () => {
+    if ((actionModal.type === 'reject' || actionModal.type === 'needsInfo') && !rejectionReason.trim()) {
+      toast.error('Vui lòng nhập lý do/thông báo.');
       return;
     }
 
     setIsSubmitting(true);
     try {
+      const { targetId, targetTab, type } = actionModal;
       let res: any;
+
+      let action = 'Approve';
+      if (type === 'reject') action = 'Reject';
+      if (type === 'needsInfo') action = 'NeedsInfo';
+
       if (targetTab === 'sellers') {
         res = await adminService.approveSellerApplication({
           applicationId: targetId,
-          isApproved,
-          rejectionReason: isApproved ? undefined : rejectionReason.trim()
+          action: action,
+          rejectionReason: type !== 'approve' ? rejectionReason.trim() : undefined
         });
       } else if (targetTab === 'shippers') {
         res = await adminService.approveShipperApplication({
           applicationId: targetId,
-          isApproved,
-          rejectionReason: isApproved ? undefined : rejectionReason.trim()
+          action: action,
+          rejectionReason: type !== 'approve' ? rejectionReason.trim() : undefined
         });
       } else if (targetTab === 'products') {
         res = await adminService.approveProduct({
           productId: targetId,
-          isApproved,
-          rejectionReason: isApproved ? undefined : rejectionReason.trim()
+          isApproved: type === 'approve',
+          rejectionReason: type !== 'approve' ? rejectionReason.trim() : undefined
         });
       }
 
       if (!res.error) {
-        toast.success(isApproved ? 'Đã phê duyệt thành công!' : 'Đã từ chối đơn đăng ký.');
+        toast.success(type === 'approve' ? 'Đã phê duyệt thành công!' : type === 'needsInfo' ? 'Đã gửi yêu cầu bổ sung.' : 'Đã từ chối đơn đăng ký.');
         setActionModal(prev => ({ ...prev, isOpen: false }));
         fetchData();
       } else {
@@ -283,6 +284,12 @@ export function AdminApprovalsPage() {
                               <CheckCircle className="w-4 h-4 text-green-600" /> Duyệt
                             </button>
                             <button
+                              onClick={() => openActionModal('needsInfo', 'sellers', app.id, app.businessName)}
+                              className="inline-flex items-center gap-1 bg-orange-50 text-orange-700 hover:bg-orange-100 font-bold text-xs px-3 py-1.5 rounded-xl transition-all"
+                            >
+                              Yêu cầu bổ sung
+                            </button>
+                            <button
                               onClick={() => openActionModal('reject', 'sellers', app.id, app.businessName)}
                               className="inline-flex items-center gap-1 bg-red-50 text-red-700 hover:bg-red-100 font-bold text-xs px-3 py-1.5 rounded-xl transition-all"
                             >
@@ -371,6 +378,12 @@ export function AdminApprovalsPage() {
                               className="inline-flex items-center gap-1 bg-green-50 text-green-700 hover:bg-green-100 font-bold text-xs px-3 py-1.5 rounded-xl transition-all"
                             >
                               <CheckCircle className="w-4 h-4 text-green-600" /> Duyệt
+                            </button>
+                            <button
+                              onClick={() => openActionModal('needsInfo', 'shippers', app.id, app.fullName)}
+                              className="inline-flex items-center gap-1 bg-orange-50 text-orange-700 hover:bg-orange-100 font-bold text-xs px-3 py-1.5 rounded-xl transition-all"
+                            >
+                              Yêu cầu bổ sung
                             </button>
                             <button
                               onClick={() => openActionModal('reject', 'shippers', app.id, app.fullName)}
@@ -519,24 +532,24 @@ export function AdminApprovalsPage() {
       <Modal
         isOpen={actionModal.isOpen}
         onClose={() => setActionModal(prev => ({ ...prev, isOpen: false }))}
-        title={actionModal.type === 'approve' ? 'Xác nhận phê duyệt' : 'Xác nhận từ chối'}
+        title={actionModal.type === 'approve' ? 'Xác nhận phê duyệt' : actionModal.type === 'needsInfo' ? 'Yêu cầu bổ sung thông tin' : 'Xác nhận từ chối'}
         size="md"
       >
-        <form onSubmit={handleActionConfirm} className="space-y-4">
+        <form onSubmit={(e) => { e.preventDefault(); handleActionSubmit(); }} className="space-y-4">
           <div className="py-2 text-center sm:text-left">
             <p className="text-gray-700">
-              Bạn đang chuẩn bị {actionModal.type === 'approve' ? 'phê duyệt' : 'từ chối'} hồ sơ/món ăn:
+              Bạn đang chuẩn bị {actionModal.type === 'approve' ? 'phê duyệt' : actionModal.type === 'needsInfo' ? 'yêu cầu bổ sung' : 'từ chối'} hồ sơ/món ăn:
             </p>
             <p className="font-bold text-gray-900 text-lg mt-1">"{actionModal.targetName}"</p>
           </div>
 
-          {actionModal.type === 'reject' && (
+          {(actionModal.type === 'reject' || actionModal.type === 'needsInfo') && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Lý do từ chối <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Lý do / Yêu cầu <span className="text-red-500">*</span></label>
               <textarea
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
-                placeholder="Nhập lý do từ chối đơn ứng tuyển/món ăn (VD: Giấy phép KD hết hạn, thông tin không trùng khớp...)"
+                placeholder={actionModal.type === 'needsInfo' ? "Nhập yêu cầu bổ sung thông tin (VD: Ảnh mờ, thiếu thông tin...)" : "Nhập lý do từ chối đơn ứng tuyển/món ăn"}
                 rows={3}
                 required
                 className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all resize-none"
@@ -555,11 +568,11 @@ export function AdminApprovalsPage() {
             </Button>
             <Button
               type="submit"
-              variant={actionModal.type === 'approve' ? 'primary' : 'danger'}
+              variant={actionModal.type === 'approve' ? 'primary' : actionModal.type === 'needsInfo' ? 'secondary' : 'danger'}
               isLoading={isSubmitting}
               disabled={isSubmitting}
             >
-              {actionModal.type === 'approve' ? 'Xác nhận duyệt' : 'Xác nhận từ chối'}
+              {actionModal.type === 'approve' ? 'Xác nhận duyệt' : actionModal.type === 'needsInfo' ? 'Xác nhận yêu cầu' : 'Xác nhận từ chối'}
             </Button>
           </div>
         </form>

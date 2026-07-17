@@ -25,6 +25,7 @@ namespace ShoppingFood.Application.Features.Admin.Commands
         private readonly IMapper _mapper;
         private readonly IEmailService _emailService;
         private readonly INotificationRepository _notificationRepository;
+        private readonly INotificationPushService _notificationPushService;
         private readonly ShoppingFoodContext _dbContext;
 
         public ApproveApplicationHandler(
@@ -35,6 +36,7 @@ namespace ShoppingFood.Application.Features.Admin.Commands
             IMapper mapper,
             IEmailService emailService,
             INotificationRepository notificationRepository,
+            INotificationPushService notificationPushService,
             ShoppingFoodContext dbContext)
         {
             _sellerApplicationRepository = sellerApplicationRepository;
@@ -44,6 +46,7 @@ namespace ShoppingFood.Application.Features.Admin.Commands
             _mapper = mapper;
             _emailService = emailService;
             _notificationRepository = notificationRepository;
+            _notificationPushService = notificationPushService;
             _dbContext = dbContext;
         }
 
@@ -72,7 +75,7 @@ namespace ShoppingFood.Application.Features.Admin.Commands
                 if (application.Status != ApplicationStatus.Pending)
                     return ApiResponse.Failure(400, $"Seller application is already processed. Current status: {application.Status}");
 
-                if (request.IsApproved)
+                if (request.Action == "Approve")
                 {
                     application.Status = ApplicationStatus.Approved;
                     
@@ -96,10 +99,15 @@ namespace ShoppingFood.Application.Features.Admin.Commands
                         _restaurantProfileRepository.Add(restaurant);
                     }
                 }
-                else
+                else if (request.Action == "Reject")
                 {
                     application.Status = ApplicationStatus.Rejected;
                     application.RejectionReason = request.RejectionReason;
+                }
+                else if (request.Action == "NeedsInfo")
+                {
+                    application.Status = ApplicationStatus.NeedsInfo;
+                    application.RejectionReason = request.RejectionReason; // Re-use this field to store what info is needed
                 }
 
                 application.ReviewedBy = adminProfile.Id;
@@ -107,13 +115,13 @@ namespace ShoppingFood.Application.Features.Admin.Commands
                 application.UpdatedAt = DateTime.UtcNow;
 
                 
-                AddDbNotification(application, request.IsApproved);
+                var notification = AddDbNotification(application, request.Action);
 
                 await _unitOfWork.SaveChangesAsync();
-
+                
                 try 
                 {
-                    await SendEmailNotificationAsync(application, request.IsApproved);
+                    await SendEmailNotificationAsync(application, request.Action);
                 }
                 catch (Exception emailEx)
                 {
@@ -122,9 +130,24 @@ namespace ShoppingFood.Application.Features.Admin.Commands
 
                 await transaction.CommitAsync(cancellationToken);
 
-                string statusMessage = request.IsApproved 
-                    ? "Seller application has been approved and restaurant profile has been created."
-                    : "Seller application has been rejected.";
+                if (notification != null)
+                {
+                    await _notificationPushService.PushToUserAsync(notification.UserId, new
+                    {
+                        title = notification.Title,
+                        message = notification.Message,
+                        type = "System",
+                        link = "/profile"
+                    });
+                }
+
+                string statusMessage = request.Action switch
+                {
+                    "Approve" => "Seller application has been approved and restaurant profile has been created.",
+                    "Reject" => "Seller application has been rejected.",
+                    "NeedsInfo" => "Seller application has been returned for additional information.",
+                    _ => "Seller application processed."
+                };
 
                 return ApiResponse.Success(null, statusMessage);
             }
@@ -164,48 +187,76 @@ namespace ShoppingFood.Application.Features.Admin.Commands
             };
         }
 
-        private async Task SendEmailNotificationAsync(SellerApplication application, bool isApproved)
+        private async Task SendEmailNotificationAsync(SellerApplication application, string action)
         {
             var sellerEmail = application.UserProfile?.UserAccount?.Email;
             if (!string.IsNullOrEmpty(sellerEmail))
             {
                 bool isMall = application.Type == ApplicationType.UpgradeToMall;
-                string subject = isApproved
-                    ? (isMall ? "Yêu cầu nâng cấp lên ShoppingFood Mall đã được duyệt" : "Yêu cầu đăng ký làm đối tác cửa hàng đã được duyệt")
-                    : (isMall ? "Yêu cầu nâng cấp lên ShoppingFood Mall đã bị từ chối" : "Yêu cầu đăng ký làm đối tác cửa hàng đã bị từ chối");
+                string subject = action switch
+                {
+                    "Approve" => isMall ? "Yêu cầu nâng cấp lên ShoppingFood Mall đã được duyệt" : "Yêu cầu đăng ký làm đối tác cửa hàng đã được duyệt",
+                    "Reject" => isMall ? "Yêu cầu nâng cấp lên ShoppingFood Mall đã bị từ chối" : "Yêu cầu đăng ký làm đối tác cửa hàng đã bị từ chối",
+                    "NeedsInfo" => isMall ? "Yêu cầu nâng cấp lên ShoppingFood Mall cần bổ sung thông tin" : "Yêu cầu đăng ký làm đối tác cửa hàng cần bổ sung thông tin",
+                    _ => "Thông báo trạng thái đăng ký"
+                };
 
-                string body = isApproved
-                    ? (isMall ? $"<p>Xin chúc mừng,</p><p>Yêu cầu nâng cấp lên ShoppingFood Mall cho cửa hàng <strong>{application.BusinessName}</strong> đã được phê duyệt thành công.</p><p>Cửa hàng của bạn giờ đây đã có huy hiệu Mall và sẽ được ưu tiên hiển thị.</p>" : $"<p>Xin chúc mừng,</p><p>Yêu cầu đăng ký đối tác bán hàng cho cửa hàng <strong>{application.BusinessName}</strong> đã được phê duyệt thành công.</p><p>Hồ sơ cửa hàng của bạn đã được khởi tạo và bạn có thể bắt đầu đăng bán sản phẩm.</p>")
-                    : (isMall ? $"<p>Xin chào,</p><p>Yêu cầu nâng cấp lên ShoppingFood Mall cho cửa hàng <strong>{application.BusinessName}</strong> đã bị từ chối phê duyệt.</p><p><strong>Lý do từ chối:</strong> {application.RejectionReason}</p>" : $"<p>Xin chào,</p><p>Yêu cầu đăng ký đối tác bán hàng cho cửa hàng <strong>{application.BusinessName}</strong> đã bị từ chối phê duyệt.</p><p><strong>Lý do từ chối:</strong> {application.RejectionReason}</p><p>Vui lòng cập nhật hồ sơ và gửi lại yêu cầu.</p>");
-
+                string body = action switch
+                {
+                    "Approve" => isMall 
+                        ? $"<p>Xin chúc mừng,</p><p>Yêu cầu nâng cấp lên ShoppingFood Mall cho cửa hàng <strong>{application.BusinessName}</strong> đã được phê duyệt thành công.</p><p>Cửa hàng của bạn giờ đây đã có huy hiệu Mall và sẽ được ưu tiên hiển thị.</p>" 
+                        : $"<p>Xin chúc mừng,</p><p>Yêu cầu đăng ký đối tác bán hàng cho cửa hàng <strong>{application.BusinessName}</strong> đã được phê duyệt thành công.</p><p>Hồ sơ cửa hàng của bạn đã được khởi tạo và bạn có thể bắt đầu đăng bán sản phẩm.</p>",
+                    "Reject" => isMall 
+                        ? $"<p>Xin chào,</p><p>Yêu cầu nâng cấp lên ShoppingFood Mall cho cửa hàng <strong>{application.BusinessName}</strong> đã bị từ chối phê duyệt.</p><p><strong>Lý do từ chối:</strong> {application.RejectionReason}</p>" 
+                        : $"<p>Xin chào,</p><p>Yêu cầu đăng ký đối tác bán hàng cho cửa hàng <strong>{application.BusinessName}</strong> đã bị từ chối phê duyệt.</p><p><strong>Lý do từ chối:</strong> {application.RejectionReason}</p>",
+                    "NeedsInfo" => isMall 
+                        ? $"<p>Xin chào,</p><p>Yêu cầu nâng cấp lên ShoppingFood Mall cho cửa hàng <strong>{application.BusinessName}</strong> cần bổ sung thông tin.</p><p><strong>Yêu cầu từ Admin:</strong> {application.RejectionReason}</p><p>Vui lòng cập nhật hồ sơ và gửi lại yêu cầu trên hệ thống.</p>" 
+                        : $"<p>Xin chào,</p><p>Yêu cầu đăng ký đối tác bán hàng cho cửa hàng <strong>{application.BusinessName}</strong> cần bổ sung thông tin.</p><p><strong>Yêu cầu từ Admin:</strong> {application.RejectionReason}</p><p>Vui lòng cập nhật hồ sơ và gửi lại yêu cầu trên hệ thống.</p>",
+                    _ => ""
+                };
                
                 await _emailService.SendEmailAsync(sellerEmail, subject, body);
             }
         }
 
-        private void AddDbNotification(SellerApplication application, bool isApproved)
+        private Notification? AddDbNotification(SellerApplication application, string action)
         {
             var userAccountId = application.UserProfile?.UserAccountId;
             if (userAccountId.HasValue)
             {
                 bool isMall = application.Type == ApplicationType.UpgradeToMall;
+                
+                string title = action switch
+                {
+                    "Approve" => isMall ? "Nâng cấp Mall thành công" : "Yêu cầu đối tác đã được duyệt",
+                    "Reject" => isMall ? "Từ chối nâng cấp Mall" : "Yêu cầu đối tác bị từ chối",
+                    "NeedsInfo" => isMall ? "Nâng cấp Mall cần bổ sung" : "Yêu cầu đối tác cần bổ sung",
+                    _ => "Thông báo trạng thái"
+                };
+
+                string message = action switch
+                {
+                    "Approve" => isMall ? $"Yêu cầu nâng cấp lên Mall của cửa hàng '{application.BusinessName}' đã được duyệt." : $"Đơn đăng ký đối tác cửa hàng '{application.BusinessName}' của bạn đã được phê duyệt.",
+                    "Reject" => isMall ? $"Yêu cầu nâng cấp lên Mall của cửa hàng '{application.BusinessName}' đã bị từ chối. Lý do: {application.RejectionReason}." : $"Đơn đăng ký đối tác cửa hàng '{application.BusinessName}' của bạn đã bị từ chối. Lý do: {application.RejectionReason}.",
+                    "NeedsInfo" => isMall ? $"Yêu cầu nâng cấp lên Mall của cửa hàng '{application.BusinessName}' cần bổ sung thông tin. Yêu cầu: {application.RejectionReason}." : $"Đơn đăng ký đối tác cửa hàng '{application.BusinessName}' của bạn cần bổ sung thông tin. Yêu cầu: {application.RejectionReason}.",
+                    _ => ""
+                };
+
                 var notification = new Notification
                 {
                     Id = Guid.NewGuid(),
                     UserId = userAccountId.Value,
-                    Title = isApproved 
-                        ? (isMall ? "Nâng cấp Mall thành công" : "Yêu cầu đối tác đã được duyệt") 
-                        : (isMall ? "Từ chối nâng cấp Mall" : "Yêu cầu đối tác bị từ chối"),
-                    Message = isApproved
-                        ? (isMall ? $"Yêu cầu nâng cấp lên Mall của cửa hàng '{application.BusinessName}' đã được duyệt." : $"Đơn đăng ký đối tác cửa hàng '{application.BusinessName}' của bạn đã được phê duyệt.")
-                        : (isMall ? $"Yêu cầu nâng cấp lên Mall của cửa hàng '{application.BusinessName}' đã bị từ chối. Lý do: {application.RejectionReason}." : $"Đơn đăng ký đối tác cửa hàng '{application.BusinessName}' của bạn đã bị từ chối. Lý do: {application.RejectionReason}."),
+                    Title = title,
+                    Message = message,
                     NotificationType = NotificationType.System,
                     IsRead = false,
                     CreateAt = DateTime.UtcNow
                 };
 
                 _notificationRepository.Add(notification);
+                return notification;
             }
+            return null;
         }
     }
 }

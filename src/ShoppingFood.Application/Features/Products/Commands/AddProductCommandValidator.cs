@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using ShoppingFood.Repository.Interfaces;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,6 +30,9 @@ namespace ShoppingFood.Application.Features.Products.Commands
             RuleFor(p => p)
                 .MustAsync(BeUniqueNameInRestaurant)
                 .WithMessage("The name of this dish already exists on the restaurant's menu.");
+            RuleForEach(p => p.ImageUrls)
+                .Must(url => string.IsNullOrEmpty(url) || HasValidImageExtension(url))
+                .WithMessage("Each image must be a valid image file (.jpg, .jpeg, .png, .webp).");
         }
 
         private async Task<bool> BeUniqueNameInRestaurant(AddProductCommand command, CancellationToken cancellationToken)
@@ -39,6 +42,14 @@ namespace ShoppingFood.Application.Features.Products.Commands
                 p.RestaurantId == command.RestaurantId);
 
             return existingProduct.Count == 0;
+        }
+
+        private bool HasValidImageExtension(string url)
+        {
+            if (string.IsNullOrEmpty(url)) return false;
+            var cleanUrl = url.Split('?')[0];
+            var ext = Path.GetExtension(cleanUrl).ToLower();
+            return ext is ".jpg" or ".jpeg" or ".png" or ".webp";
         }
     }
 }

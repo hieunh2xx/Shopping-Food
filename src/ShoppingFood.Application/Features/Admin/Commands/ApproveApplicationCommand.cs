@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using ShoppingFood.Core.Base;
 using System;
 using System.Collections.Generic;
@@ -11,7 +11,7 @@ namespace ShoppingFood.Application.Features.Admin.Commands
     public class ApproveApplicationCommand : BaseCommand, IRequest<ApiResponse>
     {
         public Guid ApplicationId { get; set; }
-        public bool IsApproved { get; set; }
+        public string Action { get; set; } = string.Empty; // "Approve", "Reject", "NeedsInfo"
         public string RejectionReason { get; set; } = string.Empty;
     }
 }

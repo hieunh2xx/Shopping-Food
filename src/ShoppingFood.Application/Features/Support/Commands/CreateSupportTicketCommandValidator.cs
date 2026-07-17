@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,7 +22,17 @@ namespace ShoppingFood.Application.Features.Support.Commands
 
             RuleFor(x => x.EvidenceImageUrl)
                 .MaximumLength(255).WithMessage("{PropertyName} must not exceed 255 characters.")
+                .Must(url => string.IsNullOrEmpty(url) || HasValidImageExtension(url))
+                .WithMessage("{PropertyName} must be a valid image file (.jpg, .jpeg, .png, .webp).")
                 .When(x => x.EvidenceImageUrl != null);
+        }
+
+        private bool HasValidImageExtension(string url)
+        {
+            if (string.IsNullOrEmpty(url)) return false;
+            var cleanUrl = url.Split('?')[0];
+            var ext = Path.GetExtension(cleanUrl).ToLower();
+            return ext is ".jpg" or ".jpeg" or ".png" or ".webp";
         }
     }
 }

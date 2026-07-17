@@ -19,6 +19,18 @@ class UserService extends BaseService<IUserDto, IRegisterRequest> {
   async getUserComplaintHistory(userId: string): Promise<IApiResponse<any>> {
     return httpClient.get<IApiResponse<any>>(`/Admin/users/${userId}/complaints`);
   }
+
+  async getMyApplications(): Promise<IApiResponse<any>> {
+    return httpClient.get<IApiResponse<any>>(API_ENDPOINTS.USER.MY_APPLICATIONS);
+  }
+
+  async updateSellerApplication(data: any): Promise<IApiResponse<any>> {
+    return httpClient.put<IApiResponse<any>>(API_ENDPOINTS.USER.UPDATE_SELLER_APPLICATION, data);
+  }
+
+  async updateShipperApplication(data: any): Promise<IApiResponse<any>> {
+    return httpClient.put<IApiResponse<any>>(API_ENDPOINTS.USER.UPDATE_SHIPPER_APPLICATION, data);
+  }
 }
 
 // Export singleton instance

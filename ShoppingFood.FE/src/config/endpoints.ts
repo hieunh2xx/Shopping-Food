@@ -23,6 +23,8 @@ export const API_ENDPOINTS = {
     REGISTER_SHIPPER: '/User/register-shipper',
     SELLER_APPLICATION_STATUS: '/User/SellerApplication/Status',
     UPDATE_SELLER_APPLICATION: '/User/SellerApplication',
+    UPDATE_SHIPPER_APPLICATION: '/User/update-shipper-application',
+    MY_APPLICATIONS: '/User/my-applications',
     CHANGE_PASSWORD: '/User/ChangePassword',
   },
 
