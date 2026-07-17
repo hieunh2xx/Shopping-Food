@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Bell, Check, Loader2, Info, AlertTriangle, ShieldCheck, Heart } from 'lucide-react';
+import { Bell, Check, Loader2, Info, ShieldCheck, Heart } from 'lucide-react';
 import { notificationService } from '../../services';
 import { notificationRealtimeService } from '../../services/NotificationRealtimeService';
 import { useAuth } from '../../hooks';

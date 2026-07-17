@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { Send, Users, BellRing, Zap } from 'lucide-react';
+import { Send, Users, Zap } from 'lucide-react';
 import { adminService } from '../../services/AdminService';
 import { flashSaleService } from '../../services/FlashSaleService';
 import type { IFlashSale } from '../../interfaces';

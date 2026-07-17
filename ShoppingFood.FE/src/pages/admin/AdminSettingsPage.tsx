@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Edit, Trash2, Eye, EyeOff, Layers, ArrowUpDown, ImagePlus } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, EyeOff, Layers, ArrowUpDown } from 'lucide-react';
 import { Button, Input, Modal, Loading } from '../../components/common';
 import { adminService, authService } from '../../services';
 import toast from 'react-hot-toast';

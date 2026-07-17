@@ -169,13 +169,14 @@ namespace ShoppingFood.Application.Features.Admin.Commands
             var sellerEmail = application.UserProfile?.UserAccount?.Email;
             if (!string.IsNullOrEmpty(sellerEmail))
             {
+                bool isMall = application.Type == ApplicationType.UpgradeToMall;
                 string subject = isApproved
-                    ? "Yêu cầu đăng ký làm đối tác cửa hàng đã được duyệt"
-                    : "Yêu cầu đăng ký làm đối tác cửa hàng đã bị từ chối";
+                    ? (isMall ? "Yêu cầu nâng cấp lên ShoppingFood Mall đã được duyệt" : "Yêu cầu đăng ký làm đối tác cửa hàng đã được duyệt")
+                    : (isMall ? "Yêu cầu nâng cấp lên ShoppingFood Mall đã bị từ chối" : "Yêu cầu đăng ký làm đối tác cửa hàng đã bị từ chối");
 
                 string body = isApproved
-                    ? $"<p>Xin chúc mừng,</p><p>Yêu cầu đăng ký đối tác bán hàng cho cửa hàng <strong>{application.BusinessName}</strong> đã được phê duyệt thành công.</p><p>Hồ sơ cửa hàng của bạn đã được khởi tạo và bạn có thể bắt đầu đăng bán sản phẩm.</p>"
-                    : $"<p>Xin chào,</p><p>Yêu cầu đăng ký đối tác bán hàng cho cửa hàng <strong>{application.BusinessName}</strong> đã bị từ chối phê duyệt.</p><p><strong>Lý do từ chối:</strong> {application.RejectionReason}</p><p>Vui lòng cập nhật hồ sơ và gửi lại yêu cầu.</p>";
+                    ? (isMall ? $"<p>Xin chúc mừng,</p><p>Yêu cầu nâng cấp lên ShoppingFood Mall cho cửa hàng <strong>{application.BusinessName}</strong> đã được phê duyệt thành công.</p><p>Cửa hàng của bạn giờ đây đã có huy hiệu Mall và sẽ được ưu tiên hiển thị.</p>" : $"<p>Xin chúc mừng,</p><p>Yêu cầu đăng ký đối tác bán hàng cho cửa hàng <strong>{application.BusinessName}</strong> đã được phê duyệt thành công.</p><p>Hồ sơ cửa hàng của bạn đã được khởi tạo và bạn có thể bắt đầu đăng bán sản phẩm.</p>")
+                    : (isMall ? $"<p>Xin chào,</p><p>Yêu cầu nâng cấp lên ShoppingFood Mall cho cửa hàng <strong>{application.BusinessName}</strong> đã bị từ chối phê duyệt.</p><p><strong>Lý do từ chối:</strong> {application.RejectionReason}</p>" : $"<p>Xin chào,</p><p>Yêu cầu đăng ký đối tác bán hàng cho cửa hàng <strong>{application.BusinessName}</strong> đã bị từ chối phê duyệt.</p><p><strong>Lý do từ chối:</strong> {application.RejectionReason}</p><p>Vui lòng cập nhật hồ sơ và gửi lại yêu cầu.</p>");
 
                
                 await _emailService.SendEmailAsync(sellerEmail, subject, body);
@@ -187,14 +188,17 @@ namespace ShoppingFood.Application.Features.Admin.Commands
             var userAccountId = application.UserProfile?.UserAccountId;
             if (userAccountId.HasValue)
             {
+                bool isMall = application.Type == ApplicationType.UpgradeToMall;
                 var notification = new Notification
                 {
                     Id = Guid.NewGuid(),
                     UserId = userAccountId.Value,
-                    Title = isApproved ? "Yêu cầu đối tác đã được duyệt" : "Yêu cầu đối tác bị từ chối",
+                    Title = isApproved 
+                        ? (isMall ? "Nâng cấp Mall thành công" : "Yêu cầu đối tác đã được duyệt") 
+                        : (isMall ? "Từ chối nâng cấp Mall" : "Yêu cầu đối tác bị từ chối"),
                     Message = isApproved
-                        ? $"Đơn đăng ký đối tác cửa hàng '{application.BusinessName}' của bạn đã được phê duyệt."
-                        : $"Đơn đăng ký đối tác cửa hàng '{application.BusinessName}' của bạn đã bị từ chối. Lý do: {application.RejectionReason}.",
+                        ? (isMall ? $"Yêu cầu nâng cấp lên Mall của cửa hàng '{application.BusinessName}' đã được duyệt." : $"Đơn đăng ký đối tác cửa hàng '{application.BusinessName}' của bạn đã được phê duyệt.")
+                        : (isMall ? $"Yêu cầu nâng cấp lên Mall của cửa hàng '{application.BusinessName}' đã bị từ chối. Lý do: {application.RejectionReason}." : $"Đơn đăng ký đối tác cửa hàng '{application.BusinessName}' của bạn đã bị từ chối. Lý do: {application.RejectionReason}."),
                     NotificationType = NotificationType.System,
                     IsRead = false,
                     CreateAt = DateTime.UtcNow

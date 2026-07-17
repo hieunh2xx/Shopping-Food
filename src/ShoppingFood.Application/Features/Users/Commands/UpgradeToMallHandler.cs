@@ -14,21 +14,24 @@ namespace ShoppingFood.Application.Features.Users.Commands
 {
     public class UpgradeToMallHandler : IRequestHandler<UpgradeToMallCommand, ApiResponse>
     {
-        private readonly IUserRepository _userRepository;
-        private readonly IRestaurantProfileRepository _restaurantRepository;
-        private readonly ISellerApplicationRepository _sellerApplicationRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IUserRepository _userRepository;
+        private readonly IRestaurantProfileRepository _restaurantProfileRepository;
+        private readonly ISellerApplicationRepository _sellerApplicationRepository;
+        private readonly INotificationRepository _notificationRepository;
 
         public UpgradeToMallHandler(
+            IUnitOfWork unitOfWork,
             IUserRepository userRepository,
-            IRestaurantProfileRepository restaurantRepository,
+            IRestaurantProfileRepository restaurantProfileRepository,
             ISellerApplicationRepository sellerApplicationRepository,
-            IUnitOfWork unitOfWork)
+            INotificationRepository notificationRepository)
         {
-            _userRepository = userRepository;
-            _restaurantRepository = restaurantRepository;
-            _sellerApplicationRepository = sellerApplicationRepository;
             _unitOfWork = unitOfWork;
+            _userRepository = userRepository;
+            _restaurantProfileRepository = restaurantProfileRepository;
+            _sellerApplicationRepository = sellerApplicationRepository;
+            _notificationRepository = notificationRepository;
         }
 
         public async Task<ApiResponse> Handle(UpgradeToMallCommand request, CancellationToken cancellationToken)
@@ -52,7 +55,8 @@ namespace ShoppingFood.Application.Features.Users.Commands
                     return ApiResponse.Failure(403, "Only sellers can request to upgrade to Mall.");
                 }
 
-                var restaurants = await _restaurantRepository.GetAsync(r => r.OwnerId == user.Profile.Id);
+                // Check if restaurant profile exists
+                var restaurants = await _restaurantProfileRepository.GetAsync(r => r.OwnerId == user.Profile.Id && r.Status == RestaurantStatus.Active);
                 var restaurant = restaurants.FirstOrDefault();
 
                 if (restaurant == null)
@@ -74,6 +78,7 @@ namespace ShoppingFood.Application.Features.Users.Commands
                     BusinessName = restaurant.RestaurantName,
                     BusinessAddress = restaurant.Address,
                     ContactInfo = restaurant.Phone,
+                    ApplicationReason = request.Reason,
                     Type = ApplicationType.UpgradeToMall,
                     Status = ApplicationStatus.Pending,
                     CreatedAt = DateTime.UtcNow,
@@ -81,6 +86,10 @@ namespace ShoppingFood.Application.Features.Users.Commands
                 };
 
                 _sellerApplicationRepository.Add(application);
+
+                // Notify Admins
+                await NotifyAdminsAsync(restaurant.RestaurantName);
+
                 await _unitOfWork.SaveChangesAsync();
 
                 return ApiResponse.Success(null, "Your request to upgrade to Mall has been submitted and is pending review.");
@@ -89,6 +98,29 @@ namespace ShoppingFood.Application.Features.Users.Commands
             {
                 await _unitOfWork.LogErrorAsync("UpgradeToMallHandler.Handle", ex);
                 return ApiResponse.Failure(400, $"An error occurred: {ex.Message}");
+            }
+        }
+
+        private async Task NotifyAdminsAsync(string businessName)
+        {
+            var admins = await _userRepository.GetAsync(
+                predicate: u => u.Profile != null && u.Profile.Role == Domain.Enums.UserRole.Admin,
+                include: q => q.Include(u => u.Profile),
+                disableTracking: true
+                );
+
+            foreach (var admin in admins)
+            {
+                _notificationRepository.Add(new Notification
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = admin.Id,
+                    Title = "Yêu cầu lên Mall mới",
+                    Message = $"Cửa hàng {businessName} vừa gửi yêu cầu nâng cấp lên Mall. Vui lòng kiểm tra và duyệt.",
+                    NotificationType = NotificationType.System,
+                    IsRead = false,
+                    CreateAt = DateTime.UtcNow,
+                });
             }
         }
     }

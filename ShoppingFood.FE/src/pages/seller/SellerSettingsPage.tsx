@@ -330,7 +330,7 @@ export function SellerSettingsPage() {
                             toast.success('Đã lấy vị trí hiện tại', { id: 'gps' });
                             reverseGeocode(pos.coords.latitude, pos.coords.longitude);
                           },
-                          (error) => {
+                          () => {
                             toast.error('Không thể lấy vị trí. Vui lòng cấp quyền vị trí cho trình duyệt.', { id: 'gps' });
                           }
                         );

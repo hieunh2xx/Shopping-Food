@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ShieldCheck, Store, Bike, UtensilsCrossed, CheckCircle, XCircle, FileText, Image as ImageIcon } from 'lucide-react';
+import { Store, Bike, UtensilsCrossed, CheckCircle, XCircle, FileText, Image as ImageIcon } from 'lucide-react';
 import { Button, Modal, Loading, Pagination } from '../../components/common';
 import { adminService, productService } from '../../services';
 import { formatCurrency } from '../../utils/formatters';
@@ -80,7 +80,7 @@ export function AdminApprovalsPage() {
 
   // Lắng nghe sự kiện notification real-time để tự động tải lại danh sách
   useEffect(() => {
-    const handleNotification = (e: CustomEvent) => {
+    const handleNotification = () => {
       fetchData();
     };
 
@@ -175,33 +175,30 @@ export function AdminApprovalsPage() {
       <div className="flex border-b border-gray-200 mb-8 bg-gray-50 p-1.5 rounded-2xl w-fit">
         <button
           onClick={() => { setActiveTab('sellers'); setPage(1); }}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-            activeTab === 'sellers'
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${activeTab === 'sellers'
               ? 'bg-white text-orange-600 shadow-sm'
               : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/50'
-          }`}
+            }`}
         >
           <Store className="w-4 h-4" />
           Cửa hàng ({totals.sellers})
         </button>
         <button
           onClick={() => { setActiveTab('shippers'); setPage(1); }}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-            activeTab === 'shippers'
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${activeTab === 'shippers'
               ? 'bg-white text-orange-600 shadow-sm'
               : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/50'
-          }`}
+            }`}
         >
           <Bike className="w-4 h-4" />
           Tài xế ({totals.shippers})
         </button>
         <button
           onClick={() => { setActiveTab('products'); setPage(1); }}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-            activeTab === 'products'
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${activeTab === 'products'
               ? 'bg-white text-orange-600 shadow-sm'
               : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/50'
-          }`}
+            }`}
         >
           <UtensilsCrossed className="w-4 h-4" />
           Món ăn mới ({totals.products})
@@ -232,14 +229,30 @@ export function AdminApprovalsPage() {
                     {sellers.map((app) => (
                       <tr key={app.id} className="hover:bg-gray-50/50 transition-colors">
                         <td className="py-4 px-6">
-                          <div className="font-semibold text-gray-900">{app.fullName}</div>
-                          <div className="text-xs text-gray-500 mt-0.5">Email: {app.email}</div>
+                          <div className="font-semibold text-gray-900 flex items-center gap-2">
+                            {app.fullName}
+                            {app.type === 'UpgradeToMall' ? (
+                              <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-[10px] font-bold rounded-full border border-purple-200">
+                                Lên Mall
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-bold rounded-full border border-blue-200">
+                                Mới
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">Email: {app.email}</div>
                           <div className="text-xs text-gray-500 mt-0.5">SĐT: {app.phone}</div>
                         </td>
                         <td className="py-4 px-6">
                           <div className="font-semibold text-orange-600">Tên shop: {app.businessName}</div>
                           <div className="text-xs text-gray-600 mt-1 max-w-xs">Địa chỉ: {app.businessAddress}</div>
                           <div className="text-[11px] text-gray-400 mt-1 italic">Liên hệ: {app.contactInfo}</div>
+                          {app.type === 'UpgradeToMall' && app.applicationReason && (
+                            <div className="text-xs text-purple-700 bg-purple-50 p-2 rounded mt-2 border border-purple-100">
+                              <span className="font-semibold">Lý do lên Mall:</span> {app.applicationReason}
+                            </div>
+                          )}
                         </td>
                         <td className="py-4 px-6 text-center">
                           <div className="flex justify-center gap-3">
@@ -405,7 +418,7 @@ export function AdminApprovalsPage() {
                             <div>
                               <div className="font-semibold text-gray-900">{prod.itemName}</div>
                               <div className="text-xs text-gray-500 mt-0.5 line-clamp-1 max-w-xs">{prod.description || 'Không có mô tả.'}</div>
-                              
+
                               {prod.sizes && prod.sizes.length > 0 && (
                                 <div className="mt-2">
                                   <div className="text-[11px] font-semibold text-gray-700">Kích cỡ:</div>
@@ -470,30 +483,30 @@ export function AdminApprovalsPage() {
       {!isLoading && (
         <div className="mt-6">
           {activeTab === 'sellers' && (
-            <Pagination 
-              currentPage={page} 
-              totalPages={Math.ceil(totals.sellers / take)} 
-              onPageChange={setPage} 
+            <Pagination
+              currentPage={page}
+              totalPages={Math.ceil(totals.sellers / take)}
+              onPageChange={setPage}
               pageSize={take}
               pageSizeOptions={[10, 20, 50]}
               onPageSizeChange={(size) => { setTake(size); setPage(1); }}
             />
           )}
           {activeTab === 'shippers' && (
-            <Pagination 
-              currentPage={page} 
-              totalPages={Math.ceil(totals.shippers / take)} 
-              onPageChange={setPage} 
+            <Pagination
+              currentPage={page}
+              totalPages={Math.ceil(totals.shippers / take)}
+              onPageChange={setPage}
               pageSize={take}
               pageSizeOptions={[10, 20, 50]}
               onPageSizeChange={(size) => { setTake(size); setPage(1); }}
             />
           )}
           {activeTab === 'products' && (
-            <Pagination 
-              currentPage={page} 
-              totalPages={Math.ceil(totals.products / take)} 
-              onPageChange={setPage} 
+            <Pagination
+              currentPage={page}
+              totalPages={Math.ceil(totals.products / take)}
+              onPageChange={setPage}
               pageSize={take}
               pageSizeOptions={[10, 20, 50]}
               onPageSizeChange={(size) => { setTake(size); setPage(1); }}
@@ -560,10 +573,10 @@ export function AdminApprovalsPage() {
         size="lg"
       >
         <div className="flex justify-center bg-gray-950 p-2 rounded-2xl overflow-hidden max-h-[80vh]">
-          <img 
-            src={photoModal.url?.startsWith('http') ? photoModal.url : `${ENV.API_BASE_URL}${photoModal.url?.startsWith('/') ? '' : '/'}${photoModal.url}`} 
-            alt={photoModal.title} 
-            className="max-w-full max-h-[70vh] object-contain rounded-lg" 
+          <img
+            src={photoModal.url?.startsWith('http') ? photoModal.url : `${ENV.API_BASE_URL}${photoModal.url?.startsWith('/') ? '' : '/'}${photoModal.url}`}
+            alt={photoModal.title}
+            className="max-w-full max-h-[70vh] object-contain rounded-lg"
             onError={(e) => {
               (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Image+Not+Found';
             }}

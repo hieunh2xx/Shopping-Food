@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Gift, Search, Plus, Trash2, Edit2 } from 'lucide-react';
+import { Gift, Plus, Trash2, Edit2 } from 'lucide-react';
 import { Button, Input, Modal, Pagination } from '../../components/common';
 import toast from 'react-hot-toast';
 import { promotionService } from '../../services/PromotionService';
@@ -110,7 +110,8 @@ export function SellerPromotionsPage() {
       if (editingPromo) {
         const updateData: IUpdatePromotionRequest = {
           id: editingPromo.id,
-          ...payload
+          ...payload,
+          isActive: payload.isActive ?? editingPromo.isActive
         };
         const res = await promotionService.updatePromotion(editingPromo.id, updateData);
         if (!res.error) {
@@ -174,7 +175,25 @@ export function SellerPromotionsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {paginatedPromotions.map((promo) => (
+              {paginatedPromotions.map((promo) => {
+                const now = new Date();
+                const endDate = new Date(promo.endDate);
+                // Set the time of endDate to 23:59:59 to consider the whole day
+                endDate.setHours(23, 59, 59, 999);
+                const isExpired = endDate < now;
+                
+                let statusText = 'Đang bật';
+                let statusClass = 'bg-green-50 text-green-700 border-green-200';
+
+                if (!promo.isActive) {
+                  statusText = 'Đã tắt';
+                  statusClass = 'bg-gray-50 text-gray-600 border-gray-200';
+                } else if (isExpired) {
+                  statusText = 'Hết hạn';
+                  statusClass = 'bg-red-50 text-red-600 border-red-200';
+                }
+
+                return (
                 <tr key={promo.id} className="hover:bg-orange-50/50 transition-colors group">
                   <td className="py-4 px-6">
                     <div className="flex items-start gap-3">
@@ -192,8 +211,8 @@ export function SellerPromotionsPage() {
                     <div>Đến: {new Date(promo.endDate).toLocaleDateString()}</div>
                   </td>
                   <td className="py-4 px-6 text-center">
-                    <span className={`px-2.5 py-1 rounded-md text-xs font-medium border ${promo.isActive ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-600 border-gray-200'}`}>
-                      {promo.isActive ? 'Đang bật' : 'Đã tắt'}
+                    <span className={`px-2.5 py-1 rounded-md text-xs font-medium border ${statusClass}`}>
+                      {statusText}
                     </span>
                   </td>
                   <td className="py-4 px-6 text-right">
@@ -207,7 +226,7 @@ export function SellerPromotionsPage() {
                     </div>
                   </td>
                 </tr>
-              ))}
+              )})}
               {promotions.length === 0 && !isLoading && (
                 <tr>
                   <td colSpan={4} className="py-8 text-center text-gray-500">Chưa có chương trình Mua X Tặng Y nào</td>

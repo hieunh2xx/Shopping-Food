@@ -17,8 +17,8 @@ export function useSellerChatWatcher() {
     const init = async () => {
       try {
         await chatService.startConnection(token);
-        if (user?.restaurantId) {
-          await chatService.joinSellerInbox(user.restaurantId);
+        if (user?.sellerInfo?.restaurantId) {
+          await chatService.joinSellerInbox(user.sellerInfo.restaurantId);
         }
 
         const res = await chatService.getSellerOrderChats();

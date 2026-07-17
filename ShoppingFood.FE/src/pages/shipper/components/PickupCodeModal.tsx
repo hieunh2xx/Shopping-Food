@@ -1,4 +1,5 @@
-import { useState, useRef, KeyboardEvent, ClipboardEvent, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import type { KeyboardEvent, ClipboardEvent } from 'react';
 import { Modal, Button } from '../../../components/common';
 
 interface PickupCodeModalProps {
@@ -91,7 +92,7 @@ export function PickupCodeModal({ isOpen, onClose, onConfirm, isLoading = false 
           {code.map((digit, index) => (
             <input
               key={index}
-              ref={el => (inputRefs.current[index] = el)}
+              ref={el => { inputRefs.current[index] = el; }}
               type="text"
               inputMode="text"
               maxLength={1}

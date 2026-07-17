@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Button, Loading, Input } from '../../components/common';
-import { ShieldAlert, Save, Clock, ServerCog } from 'lucide-react';
+import { ShieldAlert, Save, Clock } from 'lucide-react';
 import { adminService } from '../../services';
 import toast from 'react-hot-toast';
 

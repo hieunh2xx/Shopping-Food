@@ -14,9 +14,11 @@ namespace ShoppingFood.Dto.User
         public string BusinessLicenseUrl { get; set; } = string.Empty;
         public string ShopImageUrl { get; set; } = string.Empty;
         public string ContactInfo { get; set; } = string.Empty;
+        public string? ApplicationReason { get; set; }
         public string Status { get; set; } = string.Empty;
         public DateTime? ReviewedAt { get; set; }
         public string? RejectionReason { get; set; }
+        public string Type { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
     }
 }

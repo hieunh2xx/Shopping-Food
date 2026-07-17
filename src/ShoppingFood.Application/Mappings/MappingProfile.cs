@@ -149,6 +149,7 @@ namespace ShoppingFood.Application.Mappings
                 .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.UserProfile != null ? src.UserProfile.FullName : string.Empty))
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.UserProfile != null && src.UserProfile.UserAccount != null ? src.UserProfile.UserAccount.Email : string.Empty))
                 .ForMember(dest => dest.Phone, opt => opt.MapFrom(src => src.UserProfile != null && src.UserProfile.UserAccount != null ? src.UserProfile.UserAccount.Phone : string.Empty))
+                .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type.ToString()))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
 
             CreateMap<ShipperApplication, ShipperApplicationDto>()

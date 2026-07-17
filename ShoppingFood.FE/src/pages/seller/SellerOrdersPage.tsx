@@ -70,7 +70,9 @@ export function SellerOrdersPage() {
         fetchOrders();
         // If the selected order is the one being updated, refetch it
         if (selectedOrder && notif.targetId === selectedOrder.id) {
-          fetchOrderDetails(selectedOrder.id);
+          orderService.getOrderDetails(selectedOrder.id).then(res => {
+            if (!res.error && res.data) setSelectedOrder(res.data);
+          });
         }
       }
     };
@@ -614,7 +616,7 @@ export function SellerOrdersPage() {
                   <Button
                     variant="danger"
                     className="w-full"
-                    onClick={() => handleSellerCancel(selectedOrder.id)}
+                    onClick={() => handleSellerCancelClick(selectedOrder.id)}
                   >
                     Hủy đơn hàng
                   </Button>
@@ -667,6 +669,21 @@ export function SellerOrdersPage() {
         sessionId={sellerChat.sessionId}
         restaurantId={restaurantId ?? undefined}
         isSeller
+      />
+
+      {/* Cancel Order Prompt Modal */}
+      <PromptModal
+        isOpen={isCancelModalOpen}
+        onClose={() => {
+          setIsCancelModalOpen(false);
+          setCancellingOrderId(null);
+        }}
+        onConfirm={handleSellerCancelConfirm}
+        title="Hủy đơn hàng"
+        description="Vui lòng cho biết lý do bạn muốn hủy đơn hàng này (VD: Hết món, không thể chuẩn bị...)."
+        placeholder="Nhập lý do hủy đơn..."
+        confirmLabel="Hủy đơn hàng"
+        confirmVariant="danger"
       />
     </div>
   );

@@ -18,7 +18,7 @@ export function AdminReviewReportsPage() {
   const fetchReports = async () => {
     setIsLoading(true);
     try {
-      const res = await adminService.getReviewReports(0, 100);
+      const res = await adminService.getReviewReports({ skip: 0, take: 100 });
       if (!res.error && res.data) {
         setReports(res.data.items || res.data); // Assuming paginated response or flat array
       } else {
