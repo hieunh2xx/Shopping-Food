@@ -357,6 +357,8 @@ export function CheckoutPage() {
       contactName: addr.contactName,
       contactPhone: addr.contactPhone,
       deliveryAddress: addr.addressLine,
+      deliveryLatitude: addr.latitude,
+      deliveryLongitude: addr.longitude
     }));
   };
 
@@ -398,14 +400,14 @@ export function CheckoutPage() {
       await persistDeliveryAddress();
       clearCart();
       if (isAuthenticated) {
-        toast.success('Đặt hàng thành công!');
-        navigate(ROUTES.ORDERS);
+        toast.success(`Đặt hàng thành công! Mã đơn hàng của bạn là: ${orderId.substring(0, 8).toUpperCase()}.`);
+        navigate(`${ROUTES.HOME}?track=true&orderId=${orderId}`);
       } else {
         toast.success(
-          `Đặt hàng thành công! Mã đơn hàng của bạn là: ${orderId}. Vui lòng lưu lại mã này.`,
+          `Đặt hàng thành công! Mã đơn hàng của bạn là: ${orderId.substring(0, 8).toUpperCase()}. Vui lòng lưu lại mã này.`,
           { duration: 10000 }
         );
-        navigate(`${ROUTES.GUEST_ORDER_TRACKING}?orderId=${orderId}`);
+        navigate(`${ROUTES.HOME}?track=true&orderId=${orderId}`);
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Lỗi khi đặt hàng');
@@ -482,22 +484,22 @@ export function CheckoutPage() {
                       <MapPin className="w-4 h-4 mr-1.5 text-gray-400" /> Địa chỉ giao hàng
                     </label>
                     {isAuthenticated && savedAddresses.length > 0 && (
-                      <div className="mb-2 flex flex-wrap gap-2">
-                        {savedAddresses.map(addr => (
-                          <button
-                            key={addr.id}
-                            type="button"
-                            onClick={() => handleSelectSavedAddress(addr)}
-                            className={`text-left text-xs px-3 py-2 rounded-lg border transition-colors max-w-full ${
-                              formData.deliveryAddress === addr.addressLine
-                                ? 'border-orange-500 bg-orange-50 text-orange-800'
-                                : 'border-gray-200 hover:border-orange-300'
-                            }`}
-                          >
-                            <span className="font-semibold block">{addr.contactName}</span>
-                            <span className="text-gray-500 line-clamp-1">{addr.addressLine}</span>
-                          </button>
-                        ))}
+                      <div className="mb-3">
+                        <select
+                          className="w-full px-4 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-sm"
+                          value={savedAddresses.find(a => a.addressLine === formData.deliveryAddress && a.contactName === formData.contactName)?.id || ''}
+                          onChange={(e) => {
+                            const addr = savedAddresses.find(a => a.id === e.target.value);
+                            if (addr) handleSelectSavedAddress(addr);
+                          }}
+                        >
+                          <option value="" disabled>-- Chọn địa chỉ đã lưu --</option>
+                          {savedAddresses.map(addr => (
+                            <option key={addr.id} value={addr.id}>
+                              {addr.contactName} - {addr.addressLine}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     )}
                     <Input 
@@ -576,7 +578,7 @@ export function CheckoutPage() {
 
                   <div className="pt-4">
                     <label className="block text-sm font-medium text-gray-700 mb-3">Phương thức thanh toán</label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="flex flex-col sm:flex-row gap-3">
                       {(paymentMethods.length > 0 ? paymentMethods : [
                         { code: 'COD', name: 'Tiền mặt', requiresAuth: false },
                         { code: 'CreditCard', name: 'Thẻ tín dụng', requiresAuth: true },
@@ -585,7 +587,7 @@ export function CheckoutPage() {
                       ] as IPaymentMethod[]).filter(m => !m.requiresAuth || isAuthenticated).map((method) => (
                         <label 
                           key={method.code}
-                          className={`flex items-center justify-center p-3 border rounded-xl cursor-pointer transition-all ${
+                          className={`flex-1 flex items-center justify-center p-3 border rounded-xl cursor-pointer transition-all ${
                             formData.paymentMethod === method.code 
                               ? 'border-orange-500 bg-orange-50 text-orange-700 ring-1 ring-orange-500' 
                               : 'border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50'
@@ -833,13 +835,10 @@ export function CheckoutPage() {
         onClose={() => {
           setIsSepayModalOpen(false);
           clearCart();
-          navigate(ROUTES.ORDERS);
+          navigate(`${ROUTES.HOME}?track=true`);
         }}
-        onPaid={(invoiceNumber) => {
-          setIsSepayModalOpen(false);
-          setSepaySessionId(null);
+        onPaid={() => {
           clearCart();
-          navigate(`${ROUTES.PAYMENT_SUCCESS}?invoice=${invoiceNumber}&sessionId=${sepaySessionId}`);
         }}
       />
     </div>

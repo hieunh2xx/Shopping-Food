@@ -4,12 +4,14 @@ import { loyaltyPointService } from '../../services/LoyaltyPointService';
 import { pointGiftConfigService } from '../../services/PointGiftConfigService';
 import type { ILoyaltyPointDto, IPointGiftConfigDto } from '../../interfaces';
 import toast from 'react-hot-toast';
-import { Button } from '../common';
+import { Button, Modal } from '../common';
 
 export function CustomerLoyalty() {
   const [loyaltyData, setLoyaltyData] = useState<ILoyaltyPointDto | null>(null);
   const [gifts, setGifts] = useState<IPointGiftConfigDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [redeemingGiftId, setRedeemingGiftId] = useState<string | null>(null);
+  const [isRedeeming, setIsRedeeming] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -36,10 +38,15 @@ export function CustomerLoyalty() {
     }
   };
 
-  const handleRedeemGift = async (giftId: string) => {
-    if (!confirm('Bạn có chắc muốn đổi quà này?')) return;
+  const handleRedeemGift = (giftId: string) => {
+    setRedeemingGiftId(giftId);
+  };
+
+  const confirmRedeem = async () => {
+    if (!redeemingGiftId) return;
+    setIsRedeeming(true);
     try {
-      const res = await loyaltyPointService.redeemGift({ pointGiftConfigId: giftId });
+      const res = await loyaltyPointService.redeemGift({ pointGiftConfigId: redeemingGiftId });
       if (!res.error) {
         toast.success('Đổi quà thành công! Mã giảm giá đã được thêm vào ví.');
         fetchData(); // refresh points
@@ -48,6 +55,9 @@ export function CustomerLoyalty() {
       }
     } catch {
       toast.error('Đổi quà thất bại do lỗi kết nối mạng.');
+    } finally {
+      setIsRedeeming(false);
+      setRedeemingGiftId(null);
     }
   };
 
@@ -149,6 +159,32 @@ export function CustomerLoyalty() {
           </div>
         )}
       </div>
+
+      <Modal
+        isOpen={!!redeemingGiftId}
+        onClose={() => !isRedeeming && setRedeemingGiftId(null)}
+        title="Xác nhận đổi quà"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600">Bạn có chắc chắn muốn sử dụng điểm thưởng để đổi phần quà này không?</p>
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              variant="secondary"
+              onClick={() => setRedeemingGiftId(null)}
+              disabled={isRedeeming}
+            >
+              Hủy
+            </Button>
+            <Button
+              variant="primary"
+              onClick={confirmRedeem}
+              isLoading={isRedeeming}
+            >
+              Đổi quà ngay
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -56,7 +56,9 @@ namespace ShoppingFood.Application.Features.UserAddresses.Commands
                 ContactName = request.ContactName,
                 ContactPhone = request.ContactPhone,
                 AddressLine = request.AddressLine,
-                IsDefault = request.IsDefault
+                IsDefault = request.IsDefault,
+                Latitude = request.Latitude,
+                Longitude = request.Longitude
             };
 
             _dbContext.UserAddresses.Add(newAddress);

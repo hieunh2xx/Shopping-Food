@@ -42,7 +42,7 @@ class PaymentService {
     return httpClient.get(API_ENDPOINTS.PAYMENT.WALLET, { params });
   }
 
-  async topUpWallet(amount: number): Promise<IApiResponse<{ balance: number }>> {
+  async topUpWallet(amount: number): Promise<IApiResponse<{ sessionId: string }>> {
     return httpClient.post(API_ENDPOINTS.PAYMENT.TOP_UP, { amount });
   }
 

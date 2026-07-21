@@ -8,8 +8,6 @@ export * from './SellerDashboardPage';
 export { AdminDashboardPage } from './AdminDashboardPage';
 export * from './RestaurantsPage';
 export * from './support/HelpCenterPage';
-export * from './support/TermsOfUsePage';
-export * from './support/PrivacyPolicyPage';
 export * from './support/UserReportIncidentPage';
 export { AdminPermissionsPage } from './admin/AdminPermissionsPage';
 export { AdminRestaurantsPage } from './admin/AdminRestaurantsPage';

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Banknote, ArrowDownCircle, AlertTriangle, History, TrendingUp, TrendingDown, RefreshCw, ChevronDown, Building2, CreditCard, Sparkles, Wallet, ShieldAlert, CircleDollarSign } from 'lucide-react';
+import { Banknote, ArrowDownCircle, History, TrendingUp, TrendingDown, RefreshCw, ChevronDown, Building2, Sparkles, Wallet, ShieldAlert, CircleDollarSign } from 'lucide-react';
 import { Card, Button, Input } from '../../components/common';
 import { paymentService, type IWalletDto, type ITransactionDto } from '../../services/PaymentService';
 import { formatCurrency, formatTransactionDescription } from '../../utils/formatters';
@@ -25,8 +25,10 @@ function getTransactionBadge(type: string) {
     Commission: { label: 'Hoa hồng', cls: 'bg-purple-100 text-purple-700' },
     Withdrawal: { label: 'Rút tiền', cls: 'bg-red-100 text-red-700' },
     ShipperIncome: { label: 'Thu nhập', cls: 'bg-emerald-100 text-emerald-700' },
+    ShipperEarning: { label: 'Thu nhập', cls: 'bg-emerald-100 text-emerald-700' },
     CodCollection: { label: 'Thu hộ COD', cls: 'bg-amber-100 text-amber-700' },
     CodRepayment: { label: 'Nộp COD', cls: 'bg-indigo-100 text-indigo-700' },
+    CodRemittance: { label: 'Nộp COD', cls: 'bg-indigo-100 text-indigo-700' },
     SellerPayout: { label: 'Thanh toán đơn', cls: 'bg-green-100 text-green-700' },
   };
   const info = map[type] || { label: type, cls: 'bg-gray-100 text-gray-700' };
@@ -120,6 +122,8 @@ export function SellerWalletPage() {
         }
       }
       if (!tRes.error && tRes.data) setTransactions(tRes.data);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'Lỗi tải dữ liệu');
     } finally {
       setLoading(false);
     }
@@ -152,6 +156,8 @@ export function SellerWalletPage() {
       } else {
         toast.error(res.message || 'Lỗi rút tiền');
       }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'Lỗi rút tiền');
     } finally {
       setWithdrawLoading(false);
     }
@@ -307,6 +313,8 @@ export function ShipperWalletPage() {
         }
       }
       if (!tRes.error && tRes.data) setTransactions(tRes.data);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'Lỗi tải dữ liệu');
     } finally {
       setLoading(false);
     }
@@ -324,7 +332,9 @@ export function ShipperWalletPage() {
         toast.success(`Đã nộp ${formatCurrency(res.data?.repaid || amount)} công nợ COD`);
         setRepayAmount('');
         loadData();
-      } else toast.error(res.message || 'Lỗi');
+      } else toast.error(res.message || 'Lỗi nộp tiền');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'Lỗi nộp tiền');
     } finally {
       setRepayLoading(false);
     }
@@ -349,6 +359,8 @@ export function ShipperWalletPage() {
         setWithdrawForm(prev => ({ ...prev, amount: '' }));
         loadData();
       } else toast.error(res.message || 'Lỗi');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'Lỗi');
     } finally {
       setWithdrawLoading(false);
     }

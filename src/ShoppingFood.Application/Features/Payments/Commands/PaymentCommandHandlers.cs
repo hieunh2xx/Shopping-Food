@@ -32,12 +32,13 @@ namespace ShoppingFood.Application.Features.Payments.Commands
             if (request.Amount < 10_000)
                 return ApiResponse.Failure(400, "Số tiền nạp tối thiểu là 10.000đ.");
 
-            var wallet = await _paymentService.GetOrCreateWalletAsync(WalletOwnerType.Customer, request.CurrentUserId.Value);
-            await _paymentService.RecordTransactionAsync(wallet, FinancialTransactionType.TopUp, request.Amount,
-                $"Nạp tiền vào ví hệ thống");
+            var session = await _paymentService.CreateTopUpSessionAsync(request.CurrentUserId.Value, request.Amount);
+            if (session == null)
+                return ApiResponse.Failure(500, "Không thể khởi tạo phiên nạp tiền qua SePay.");
+
             await _unitOfWork.SaveChangesAsync();
 
-            return ApiResponse.Success(new { balance = wallet.Balance }, "Nạp tiền thành công.");
+            return ApiResponse.Success(new { sessionId = session.Id }, "Khởi tạo thanh toán thành công.");
         }
     }
 

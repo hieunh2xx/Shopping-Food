@@ -213,6 +213,52 @@ namespace ShoppingFood.Application.Services
             }
         }
 
+        public async Task<PaymentSession?> CreateTopUpSessionAsync(Guid userId, decimal amount)
+        {
+            if (!_sepayService.IsEnabled)
+                return null;
+
+            var bank = await _bankAccountResolver.ResolveAsync();
+            if (bank == null)
+                return null;
+
+            var sepaySessionId = Guid.NewGuid();
+            var invoiceNumber = _sepayService.GenerateInvoiceNumber(sepaySessionId);
+            var qrUrl = _sepayService.BuildQrImageUrl(invoiceNumber, amount, bank);
+
+            var sepaySession = new PaymentSession
+            {
+                Id = sepaySessionId,
+                OrderId = null,
+                UserAccountId = userId,
+                PaymentMethod = PaymentMethod.Sepay,
+                Amount = amount,
+                Status = PaymentSessionStatus.Pending,
+                InvoiceNumber = invoiceNumber,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(10),
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            
+            // Note: PaymentSession in DB does not have QrImageUrl. But we don't need to store it in DB, we cache it.
+            _paymentSessionRepository.Add(sepaySession);
+
+            _paymentCache.Set(new Application.Models.PaymentCacheEntry
+            {
+                PaymentId = sepaySession.Id,
+                InvoiceNumber = invoiceNumber,
+                Amount = amount,
+                OrderId = null,
+                UserId = userId,
+                Status = "Pending",
+                CreatedAt = sepaySession.CreatedAt,
+                ExpiresAt = sepaySession.ExpiresAt,
+                QrImageUrl = qrUrl
+            });
+
+            return sepaySession;
+        }
+
         public async Task ConfirmPaymentSessionAsync(Guid sessionId)
         {
             var sessions = await _paymentSessionRepository.GetAsync(
@@ -309,12 +355,20 @@ namespace ShoppingFood.Application.Services
                             Title = "Đơn hàng mới",
                             Message = $"Bạn có đơn hàng mới #{order.Id.ToString().Substring(0, 8)} (Đã thanh toán Online).",
                             NotificationType = NotificationType.System,
+                            TargetId = order.Id,
                             IsRead = false,
                             CreateAt = DateTime.UtcNow
                         };
                         _notificationRepository.Add(notification);
                     }
                 }
+            }
+            else if (session.UserAccountId.HasValue)
+            {
+                // This is a Wallet Top-up session because OrderId is null
+                var wallet = await GetOrCreateWalletAsync(WalletOwnerType.Customer, session.UserAccountId.Value);
+                await RecordTransactionAsync(wallet, FinancialTransactionType.TopUp, session.Amount,
+                    $"Nạp tiền từ thanh toán SePay - Mã {resolvedInvoice}");
             }
 
             return true;

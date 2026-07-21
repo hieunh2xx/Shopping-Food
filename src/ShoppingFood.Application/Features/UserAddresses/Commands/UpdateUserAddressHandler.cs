@@ -63,6 +63,11 @@ namespace ShoppingFood.Application.Features.UserAddresses.Commands
             address.ContactPhone = request.ContactPhone;
             address.AddressLine = request.AddressLine;
             address.IsDefault = request.IsDefault;
+            
+            if (request.Latitude.HasValue)
+                address.Latitude = request.Latitude.Value;
+            if (request.Longitude.HasValue)
+                address.Longitude = request.Longitude.Value;
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -72,7 +77,9 @@ namespace ShoppingFood.Application.Features.UserAddresses.Commands
                 ContactName = address.ContactName,
                 ContactPhone = address.ContactPhone,
                 AddressLine = address.AddressLine,
-                IsDefault = address.IsDefault
+                IsDefault = address.IsDefault,
+                Latitude = address.Latitude,
+                Longitude = address.Longitude
             };
 
             return ApiResponse.Success(dto, "Cập nhật địa chỉ thành công.");

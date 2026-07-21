@@ -1,18 +1,21 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { User, LogOut, ChefHat, Search, ClipboardList, MapPin, ChevronDown } from 'lucide-react';
+import { User, LogOut, ChefHat, Search, MapPin, ChevronDown } from 'lucide-react';
 import { useAuth, useUserLocation } from '../../hooks';
-import { CartDrawer } from './CartDrawer';
+import { ShoppingDrawer } from './ShoppingDrawer';
 import { NotificationBell } from './NotificationBell';
-import { OrderTrackingDrawer } from './OrderTrackingDrawer';
 import { ROUTES } from '../../routes/routeConfig';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export function Header() {
   const { user, isAuthenticated, logout } = useAuth();
   const { address, fullAddress, isLoading: isLocationLoading } = useUserLocation();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
-  const [isGuestTrackingOpen, setIsGuestTrackingOpen] = useState(false);
+
+  useEffect(() => {
+    // Keep empty or remove entirely as track=true is handled in ShoppingDrawer
+  }, [location.search]);
 
   const handleLogout = () => {
     logout();
@@ -88,18 +91,8 @@ export function Header() {
               <nav className="flex items-center">
                 {isAuthenticated ? (
                   <>
-                    {/* Order Tracking */}
-                    <button
-                      onClick={() => setIsGuestTrackingOpen(true)}
-                      className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-gray-100/50 transition-colors text-sm font-medium text-gray-700"
-                      title="Tra cứu đơn hàng"
-                    >
-                      <ClipboardList className="w-5 h-5 text-gray-600" />
-                      {/* <span className="hidden xl:block">Tra cứu đơn</span> */}
-                    </button>
-
-                    {/* Cart */}
-                    <CartDrawer />
+                    {/* Shopping (Cart & Orders) */}
+                    <ShoppingDrawer />
 
                     {/* Notifications */}
                     <NotificationBell />
@@ -188,15 +181,7 @@ export function Header() {
                   </>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setIsGuestTrackingOpen(true)}
-                      className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-gray-100/50 transition-colors text-sm font-medium text-gray-700"
-                      title="Tra cứu đơn hàng"
-                    >
-                      <ClipboardList className="w-5 h-5 text-gray-600" />
-                      <span className="hidden xl:block">Tra cứu đơn</span>
-                    </button>
-                    <CartDrawer />
+                    <ShoppingDrawer />
                     <Link
                       to={ROUTES.LOGIN}
                       className="px-4 py-2 rounded-xl text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100/50 transition-colors"
@@ -217,11 +202,6 @@ export function Header() {
         </div>
       </header>
 
-      {/* Order Tracking Drawer */}
-      <OrderTrackingDrawer
-        isOpen={isGuestTrackingOpen}
-        onClose={() => setIsGuestTrackingOpen(false)}
-      />
     </>
   );
 }

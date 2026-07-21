@@ -12,6 +12,7 @@ namespace ShoppingFood.Application.Interfaces
             decimal totalAmount, decimal shippingFee, decimal shipperIncome, decimal commissionRate, bool isSelfDelivery = false);
         Task<Wallet> GetOrCreateWalletAsync(WalletOwnerType ownerType, Guid ownerId);
         Task RecordTransactionAsync(Wallet wallet, FinancialTransactionType type, decimal amount, string description, Guid? referenceId = null, string? referenceType = null);
+        Task<PaymentSession?> CreateTopUpSessionAsync(Guid userId, decimal amount);
         Task<string?> ProcessCheckoutPaymentAsync(Order order, Guid? userId, string? cardLastFour = null, string? cardBrand = null, EWalletProvider? provider = null);
         Task SettleOrderOnDeliveryAsync(Order order, ShipperProfile shipper);
         Task SettleSelfDeliveryOrderAsync(Order order);

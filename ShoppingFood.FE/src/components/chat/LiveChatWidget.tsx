@@ -43,6 +43,13 @@ export function LiveChatWidget() {
     }
   }, [user, token, isOpen, view, loadHistory]);
 
+  // Listen for custom event to open chat from anywhere
+  useEffect(() => {
+    const handleOpenChat = () => setIsOpen(true);
+    window.addEventListener('openLiveChat', handleOpenChat);
+    return () => window.removeEventListener('openLiveChat', handleOpenChat);
+  }, []);
+
   const handleReceiveMessage = useCallback((message: IChatMessage) => {
     if (message.sessionId === sessionIdRef.current) {
       setMessages(prev => {
@@ -187,6 +194,7 @@ export function LiveChatWidget() {
 
   const topicLabels: Record<ChatTopic, string> = {
     OrderIssue: 'Vấn đề đơn hàng',
+    OrderCancellation: 'Hủy đơn hàng',
     SystemIssue: 'Lỗi hệ thống',
     General: 'Thông tin chung',
   };

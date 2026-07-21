@@ -1,9 +1,8 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { ROUTES } from '../../routes/routeConfig';
-import { User, ShoppingBag, Store, Heart, MapPin, LogOut, Ticket, Award, ClipboardList, Wallet } from 'lucide-react';
+import { User, Store, Heart, MapPin, LogOut, Ticket, Award, ClipboardList, Wallet } from 'lucide-react';
 import { useAuth } from '../../hooks';
-import { Header } from './Header';
-import { Footer } from './Footer';
+
 
 export function UserLayout() {
   const { user, logout } = useAuth();
@@ -23,9 +22,9 @@ export function UserLayout() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-      <div className="flex flex-col lg:flex-row gap-8">
-        <div className="w-full lg:w-64 flex-shrink-0">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sticky top-24">
+      <div className="flex flex-col lg:flex-row gap-8 relative items-start">
+        <div className="w-full lg:w-64 flex-shrink-0 sticky top-24 z-10">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 max-h-[calc(100vh-8rem)] overflow-y-auto custom-scrollbar">
             <h2 className="text-lg font-bold text-gray-900 mb-4 px-2">Tài khoản của tôi</h2>
             <nav className="flex flex-col space-y-1">
               <NavLink

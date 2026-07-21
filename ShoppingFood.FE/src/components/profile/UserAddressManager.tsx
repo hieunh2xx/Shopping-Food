@@ -1,7 +1,7 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { userAddressService } from '../../services/UserAddressService';
 import type { IUserAddressDto, IAddUserAddress } from '../../interfaces';
-import { Button, Input } from '../common';
+import { Button, Input, Modal } from '../common';
 import { MapPin, Check, Trash2, Edit2, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -10,11 +10,14 @@ export function UserAddressManager() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Form State
   const [contactName, setContactName] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [addressLine, setAddressLine] = useState('');
+  const [latitude, setLatitude] = useState<number | undefined>(undefined);
+  const [longitude, setLongitude] = useState<number | undefined>(undefined);
   const [isDefault, setIsDefault] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
@@ -40,6 +43,8 @@ export function UserAddressManager() {
     setContactName('');
     setContactPhone('');
     setAddressLine('');
+    setLatitude(undefined);
+    setLongitude(undefined);
     setIsDefault(false);
     setEditingId(null);
     setFormErrors({});
@@ -50,10 +55,49 @@ export function UserAddressManager() {
     setContactName(addr.contactName);
     setContactPhone(addr.contactPhone);
     setAddressLine(addr.addressLine);
+    setLatitude(addr.latitude);
+    setLongitude(addr.longitude);
     setIsDefault(addr.isDefault);
     setEditingId(addr.id);
     setFormErrors({});
     setIsFormOpen(true);
+  };
+
+  const handleGetLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLatitude(position.coords.latitude);
+          setLongitude(position.coords.longitude);
+          fetchAddressFromCoordinates(position.coords.latitude, position.coords.longitude);
+          toast.success('Đã lấy vị trí hiện tại');
+        },
+        () => {
+          toast.error('Không thể lấy vị trí. Vui lòng kiểm tra quyền truy cập vị trí.');
+        }
+      );
+    } else {
+      toast.error('Trình duyệt của bạn không hỗ trợ định vị.');
+    }
+  };
+
+  const fetchAddressFromCoordinates = async (lat: number, lng: number) => {
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=vi`);
+      const data = await response.json();
+      if (data && data.display_name) {
+        const parts = data.display_name.split(',').map((p: string) => p.trim());
+        const filteredParts = parts.filter((p: string) => {
+          const lower = p.toLowerCase();
+          if (lower === 'việt nam' || lower === 'vietnam') return false;
+          if (/^\d+$/.test(p)) return false;
+          return true;
+        });
+        setAddressLine(filteredParts.join(', '));
+      }
+    } catch (error) {
+      console.error("Lỗi khi chuyển đổi tọa độ thành địa chỉ", error);
+    }
   };
 
   const validateForm = () => {
@@ -70,12 +114,12 @@ export function UserAddressManager() {
     if (!validateForm()) return;
 
     setIsLoading(true);
-    const data: IAddUserAddress = { contactName, contactPhone, addressLine, isDefault };
+    const data: IAddUserAddress = { contactName, contactPhone, addressLine, isDefault, latitude, longitude };
 
     try {
       let res;
       if (editingId) {
-        res = await userAddressService.updateAddress(editingId, data);
+        res = await userAddressService.update(editingId, data);
       } else {
         res = await userAddressService.addAddress(data);
       }
@@ -94,11 +138,15 @@ export function UserAddressManager() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Bạn có chắc muốn xóa địa chỉ này?')) return;
+  const handleDelete = (id: string) => {
+    setDeletingId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingId) return;
     setIsLoading(true);
     try {
-      const res = await userAddressService.deleteAddress(id);
+      const res = await userAddressService.delete(deletingId);
       if (!res.error) {
         toast.success('Đã xóa địa chỉ');
         fetchAddresses();
@@ -109,13 +157,14 @@ export function UserAddressManager() {
       toast.error('Lỗi hệ thống');
     } finally {
       setIsLoading(false);
+      setDeletingId(null);
     }
   };
 
   const handleSetDefault = async (id: string) => {
     setIsLoading(true);
     try {
-      const res = await userAddressService.setDefaultAddress(id);
+      const res = await userAddressService.setDefault(id);
       if (!res.error) {
         toast.success('Đã đặt làm địa chỉ mặc định');
         fetchAddresses();
@@ -163,13 +212,26 @@ export function UserAddressManager() {
                 placeholder="Nhập số điện thoại"
               />
             </div>
-            <Input
-              label="Địa chỉ cụ thể (Số nhà, ngõ, đường, phường/xã, quận/huyện...)"
-              value={addressLine}
-              onChange={(e) => setAddressLine(e.target.value)}
-              error={formErrors.addressLine}
-              placeholder="VD: 123 Đường ABC, Phường XYZ..."
-            />
+            <div className="flex gap-2 items-end">
+              <div className="flex-1">
+                <Input
+                  label="Địa chỉ cụ thể (Số nhà, ngõ, đường, phường/xã, quận/huyện...)"
+                  value={addressLine}
+                  onChange={(e) => {
+                    setAddressLine(e.target.value);
+                    // If user manually types address, we ideally want to re-geocode, but for simplicity we keep lat/lng or nullify them if it's vastly different. 
+                    // Usually we might want to clear lat/lng so it falls back to Geocoding in checkout, or we can leave them.
+                    setLatitude(undefined);
+                    setLongitude(undefined);
+                  }}
+                  error={formErrors.addressLine}
+                  placeholder="VD: 123 Đường ABC, Phường XYZ..."
+                />
+              </div>
+              <Button type="button" variant="outline" onClick={handleGetLocation} className="mb-[2px]" title="Lấy vị trí hiện tại">
+                <MapPin className="w-5 h-5" />
+              </Button>
+            </div>
             <div className="flex items-center gap-2 mt-2">
               <input
                 type="checkbox"
@@ -250,6 +312,32 @@ export function UserAddressManager() {
           </div>
         ))}
       </div>
+
+      <Modal
+        isOpen={!!deletingId}
+        onClose={() => !isLoading && setDeletingId(null)}
+        title="Xác nhận xóa"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600">Bạn có chắc chắn muốn xóa địa chỉ này không? Hành động này không thể hoàn tác.</p>
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              variant="secondary"
+              onClick={() => setDeletingId(null)}
+              disabled={isLoading}
+            >
+              Hủy
+            </Button>
+            <Button
+              variant="danger"
+              onClick={confirmDelete}
+              isLoading={isLoading}
+            >
+              Xóa địa chỉ
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -1,10 +1,44 @@
 import { ChefHat } from 'lucide-react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '../../routes/routeConfig';
 import { useAuth } from '../../hooks';
+import { Modal, Loading } from '../common';
+import { supportService } from '../../services/SupportService';
 
 export function Footer() {
   const { isAuthenticated, user } = useAuth();
+  const [legalModalState, setLegalModalState] = useState({
+    isOpen: false,
+    title: '',
+    content: '',
+    isLoading: false
+  });
+
+  const handleOpenLegalModal = async (e: React.MouseEvent, type: 'terms' | 'privacy') => {
+    e.preventDefault();
+    setLegalModalState({
+      isOpen: true,
+      title: type === 'terms' ? 'Điều khoản sử dụng' : 'Chính sách bảo mật',
+      content: '',
+      isLoading: true,
+    });
+
+    try {
+      const response = await supportService.getLegalSettings();
+      if (!response.error && response.data) {
+        setLegalModalState(prev => ({
+          ...prev,
+          content: type === 'terms' ? (response.data.termsOfUseCustomer || 'Chưa có nội dung') : (response.data.privacyPolicy || 'Chưa có nội dung'),
+          isLoading: false
+        }));
+      } else {
+        setLegalModalState(prev => ({ ...prev, content: 'Không thể tải nội dung.', isLoading: false }));
+      }
+    } catch (error) {
+      setLegalModalState(prev => ({ ...prev, content: 'Lỗi kết nối. Vui lòng thử lại sau.', isLoading: false }));
+    }
+  };
 
   const getPartnerRoute = () => {
     if (isAuthenticated && user?.role === 'Customer') {
@@ -86,14 +120,14 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link to={ROUTES.TERMS_OF_USE} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                <button onClick={(e) => handleOpenLegalModal(e, 'terms')} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
                   Điều khoản sử dụng
-                </Link>
+                </button>
               </li>
               <li>
-                <Link to={ROUTES.PRIVACY_POLICY} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                <button onClick={(e) => handleOpenLegalModal(e, 'privacy')} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
                   Chính sách bảo mật
-                </Link>
+                </button>
               </li>
             </ul>
           </div>
@@ -105,6 +139,26 @@ export function Footer() {
           </p>
         </div>
       </div>
+
+      <Modal
+        isOpen={legalModalState.isOpen}
+        onClose={() => setLegalModalState(prev => ({ ...prev, isOpen: false }))}
+        title={legalModalState.title}
+        size="lg"
+      >
+        <div className="max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+          {legalModalState.isLoading ? (
+            <div className="flex justify-center py-12">
+              <Loading size="md" />
+            </div>
+          ) : (
+            <div 
+              className="prose prose-sm prose-orange max-w-none text-gray-600"
+              dangerouslySetInnerHTML={{ __html: legalModalState.content }}
+            />
+          )}
+        </div>
+      </Modal>
     </footer>
   );
 }

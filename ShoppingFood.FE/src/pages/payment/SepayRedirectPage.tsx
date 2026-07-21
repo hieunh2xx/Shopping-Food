@@ -9,11 +9,12 @@ export function SepayRedirectPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const sessionId = searchParams.get('sessionId') ?? '';
-  const [open, setOpen] = useState(!!sessionId);
+  const returnUrl = searchParams.get('returnUrl');
+  const [open] = useState(!!sessionId);
 
-  const handlePaid = useCallback((invoiceNumber: string) => {
-    navigate(`${ROUTES.PAYMENT_SUCCESS}?invoice=${invoiceNumber}&sessionId=${sessionId}`);
-  }, [navigate, sessionId]);
+  const handlePaid = useCallback(() => {
+    // Không tự động điều hướng nữa, để Modal hiển thị trạng thái Thành công cho người dùng
+  }, []);
 
   useEffect(() => {
     if (!sessionId) {
@@ -27,7 +28,7 @@ export function SepayRedirectPage() {
       <SepayQrPaymentModal
         isOpen={open}
         sessionId={sessionId}
-        onClose={() => navigate(ROUTES.ORDERS)}
+        onClose={() => navigate(returnUrl ?? ROUTES.ORDERS)}
         onPaid={handlePaid}
       />
       {!open && <p>Đang chuyển hướng...</p>}

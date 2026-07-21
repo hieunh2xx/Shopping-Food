@@ -5,6 +5,8 @@ import { paymentService, type IWalletDto, type ITransactionDto } from '../../ser
 import { formatCurrency, formatTransactionDescription } from '../../utils/formatters';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../hooks';
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../routes/routeConfig';
 
 const QUICK_AMOUNTS = [50000, 100000, 200000, 500000, 1000000];
 
@@ -33,13 +35,14 @@ function getTransactionBadge(type: string) {
 
 export function CustomerWalletPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [wallet, setWallet] = useState<IWalletDto | null>(null);
   const [transactions, setTransactions] = useState<ITransactionDto[]>([]);
   const [topUpAmount, setTopUpAmount] = useState('100000');
   const [loading, setLoading] = useState(true);
   const [topUpLoading, setTopUpLoading] = useState(false);
-  const [showMore, setShowMore] = useState(false);
   const [take, setTake] = useState(10);
+
 
   const loadData = async () => {
     setLoading(true);
@@ -66,13 +69,14 @@ export function CustomerWalletPage() {
     setTopUpLoading(true);
     try {
       const res = await paymentService.topUpWallet(amount);
-      if (!res.error) {
-        toast.success('Nạp tiền thành công');
-        loadData();
-        setTopUpAmount('100000');
+      if (!res.error && res.data) {
+        toast.success('Đang chuyển hướng sang trang thanh toán...');
+        navigate(`${ROUTES.PAYMENT_SEPAY}?sessionId=${res.data.sessionId}&returnUrl=${encodeURIComponent(`${ROUTES.PROFILE}?tab=wallet`)}`);
       } else {
         toast.error(res.message || 'Lỗi nạp tiền');
       }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi nạp tiền');
     } finally {
       setTopUpLoading(false);
     }
@@ -80,7 +84,6 @@ export function CustomerWalletPage() {
 
   const handleLoadMore = () => {
     setTake(prev => prev + 10);
-    setShowMore(true);
   };
 
   if (loading && !wallet) return (

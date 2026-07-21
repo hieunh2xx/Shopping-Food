@@ -15,7 +15,10 @@ import {
   Info,
   ShieldAlert,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Upload,
+  Image as ImageIcon,
+  Edit
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
@@ -47,6 +50,17 @@ function LocationMarker({ position, setPosition }: { position: [number, number] 
   );
 }
 
+const getErrorMessage = (err: any, defaultMsg: string) => {
+  const data = err.response?.data;
+  if (data?.errors && typeof data.errors === 'object') {
+    const firstKey = Object.keys(data.errors)[0];
+    if (firstKey && Array.isArray(data.errors[firstKey]) && data.errors[firstKey].length > 0) {
+      return data.errors[firstKey][0];
+    }
+  }
+  return data?.message || data?.title || defaultMsg;
+};
+
 export function SellerSettingsPage() {
   const { user } = useAuth();
   const [profile, setProfile] = useState<IUserDto | null>(null);
@@ -75,6 +89,8 @@ export function SellerSettingsPage() {
   const [freeDeliveryRadiusKm, setFreeDeliveryRadiusKm] = useState<number>(0);
   const [freeShippingMinimumOrder, setFreeShippingMinimumOrder] = useState<number>(0);
   const [shippingFee, setShippingFee] = useState<number>(15000);
+
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -134,8 +150,8 @@ export function SellerSettingsPage() {
 
   const handleUpdateBasicInfo = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!basicInfo.restaurantName || !basicInfo.address || !basicInfo.phone) {
-      toast.error('Vui lòng nhập đầy đủ thông tin bắt buộc');
+    if (!basicInfo.restaurantName || !basicInfo.address || !basicInfo.phone || !basicInfo.logoUrl) {
+      toast.error('Vui lòng nhập đầy đủ thông tin bắt buộc và tải lên ảnh đại diện cửa hàng');
       return;
     }
 
@@ -156,8 +172,8 @@ export function SellerSettingsPage() {
       } else {
         toast.error(res.message || 'Lỗi khi cập nhật', { id: toastId });
       }
-    } catch {
-      toast.error('Cập nhật thông tin cửa hàng thất bại do lỗi kết nối mạng.', { id: toastId });
+    } catch (err: any) {
+      toast.error(getErrorMessage(err, 'Cập nhật thông tin cửa hàng thất bại do lỗi kết nối mạng.'), { id: toastId });
     } finally {
       setIsSaving(false);
     }
@@ -191,6 +207,32 @@ export function SellerSettingsPage() {
     }
   };
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Vui lòng chọn file hình ảnh hợp lệ');
+      return;
+    }
+
+    setIsUploadingLogo(true);
+    const toastId = toast.loading('Đang tải ảnh lên...');
+    try {
+      const res = await authService.uploadImage(file);
+      if (!res.error && res.data?.imageUrl) {
+        setBasicInfo(prev => ({ ...prev, logoUrl: res.data.imageUrl }));
+        toast.success('Tải ảnh lên thành công', { id: toastId });
+      } else {
+        toast.error(res.message || 'Lỗi khi tải ảnh lên', { id: toastId });
+      }
+    } catch {
+      toast.error('Tải ảnh lên thất bại. Vui lòng thử lại.', { id: toastId });
+    } finally {
+      setIsUploadingLogo(false);
+    }
+  };
+
   const handleUpdateHours = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
@@ -207,8 +249,8 @@ export function SellerSettingsPage() {
       } else {
         toast.error(res.message || 'Lỗi khi cập nhật', { id: toastId });
       }
-    } catch {
-      toast.error('Cập nhật giờ hoạt động thất bại do lỗi kết nối mạng.', { id: toastId });
+    } catch (err: any) {
+      toast.error(getErrorMessage(err, 'Cập nhật giờ hoạt động thất bại do lỗi kết nối mạng.'), { id: toastId });
     } finally {
       setIsSaving(false);
     }
@@ -226,8 +268,8 @@ export function SellerSettingsPage() {
       } else {
         toast.error(res.message || 'Lỗi khi cập nhật', { id: toastId });
       }
-    } catch {
-      toast.error('Cập nhật trạng thái thất bại do lỗi kết nối mạng.', { id: toastId });
+    } catch (err: any) {
+      toast.error(getErrorMessage(err, 'Cập nhật trạng thái thất bại do lỗi kết nối mạng.'), { id: toastId });
     } finally {
       setIsSaving(false);
     }
@@ -259,8 +301,8 @@ export function SellerSettingsPage() {
       } else {
         toast.error(res.message || 'Lỗi khi cập nhật', { id: toastId });
       }
-    } catch {
-      toast.error('Cập nhật cấu hình giao hàng thất bại do lỗi kết nối mạng.', { id: toastId });
+    } catch (err: any) {
+      toast.error(getErrorMessage(err, 'Cập nhật cấu hình giao hàng thất bại do lỗi kết nối mạng.'), { id: toastId });
     } finally {
       setIsSaving(false);
     }
@@ -297,6 +339,56 @@ export function SellerSettingsPage() {
               Thông tin cửa hàng
             </h3>
             <form onSubmit={handleUpdateBasicInfo} className="space-y-4">
+              {/* Logo Upload Section */}
+              <div className="flex flex-col items-center sm:items-start sm:flex-row gap-6 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                <div className="relative w-28 h-28 flex-shrink-0 rounded-2xl border-2 border-dashed border-gray-300 hover:border-orange-500 hover:bg-orange-50 transition-colors flex flex-col items-center justify-center overflow-hidden bg-white group">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                    title="Chọn ảnh từ máy"
+                  />
+                  
+                  {isUploadingLogo ? (
+                    <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin z-10"></div>
+                  ) : basicInfo.logoUrl ? (
+                    <>
+                      <img src={basicInfo.logoUrl} alt="Store Logo" className="absolute inset-0 w-full h-full object-cover z-10 pointer-events-none" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-opacity z-10 text-white pointer-events-none">
+                        <Edit className="w-5 h-5 mb-1" />
+                        <span className="text-[10px] font-medium">Đổi ảnh</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-gray-400 pointer-events-none z-10 group-hover:text-orange-500">
+                      <ImageIcon className="w-8 h-8 mb-2" strokeWidth={1.5} />
+                      <span className="text-[10px] font-medium">Tải logo lên</span>
+                    </div>
+                  )}
+                </div>
+                <div className="text-center sm:text-left flex-1">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-1">Ảnh đại diện cửa hàng <span className="text-red-500">*</span></h4>
+                  <p className="text-xs text-gray-500 mb-3">Hình ảnh rõ nét, kích thước vuông (1:1), tối đa 2MB. Ảnh sẽ hiển thị trên trang chủ và danh sách quán ăn.</p>
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    size="sm" 
+                    className="relative overflow-hidden group"
+                  >
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                      title="Chọn ảnh từ máy"
+                    />
+                    <Upload className="w-4 h-4 mr-2" />
+                    <span>{basicInfo.logoUrl ? 'Thay đổi ảnh' : 'Chọn ảnh'}</span>
+                  </Button>
+                </div>
+              </div>
+
               <Input
                 label="Tên nhà hàng/quán ăn *"
                 value={basicInfo.restaurantName}
@@ -390,7 +482,7 @@ export function SellerSettingsPage() {
                     onClick={() => setIsChangeContactOpen(true)}
                     className="text-xs text-orange-600 hover:text-orange-700 font-medium hover:underline"
                   >
-                    {user?.email && user.isEmailActive ? 'Thay đổi' : 'Xác thực / Thêm email'}
+                    {user?.isEmailActive ? 'Thay đổi' : 'Xác thực / Thay đổi'}
                   </button>
                 </div>
                 <div className="flex items-center justify-between bg-gray-50 p-3 rounded-xl border border-gray-100 mt-1">
@@ -596,7 +688,8 @@ export function SellerSettingsPage() {
       <ChangeContactModal 
         isOpen={isChangeContactOpen} 
         onClose={() => setIsChangeContactOpen(false)} 
-        onSuccess={() => window.location.reload()} 
+        onSuccess={() => window.location.reload()}
+        initialEmail={user?.email}
       />
     </div>
   );

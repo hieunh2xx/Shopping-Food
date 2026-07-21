@@ -282,7 +282,7 @@ export function ProfilePage() {
                 <div className="flex items-center justify-between">
                   <label className="block text-sm font-medium text-gray-700">Email</label>
                   <button type="button" onClick={() => setIsChangeContactOpen(true)} className="text-sm text-red-600 hover:text-red-700 font-medium">
-                    {profile.email ? 'Thay đổi' : 'Thêm email'}
+                    {profile.isEmailActive ? 'Thay đổi' : 'Xác thực / Thay đổi'}
                   </button>
                 </div>
                 <div className="relative">
@@ -498,10 +498,11 @@ export function ProfilePage() {
         onSuccess={fetchProfile}
       />
 
-      <ChangeContactModal
-        isOpen={isChangeContactOpen}
-        onClose={() => setIsChangeContactOpen(false)}
-        onSuccess={fetchProfile}
+      <ChangeContactModal 
+        isOpen={isChangeContactOpen} 
+        onClose={() => setIsChangeContactOpen(false)} 
+        onSuccess={() => window.location.reload()}
+        initialEmail={user?.email}
       />
 
       {/* Lock Account Modal */}

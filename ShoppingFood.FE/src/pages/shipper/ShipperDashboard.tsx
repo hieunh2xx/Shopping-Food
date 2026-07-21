@@ -49,22 +49,12 @@ export function ShipperDashboard() {
   // State cho Popup đề xuất 60s
   const [proposalPopupOffer, setProposalPopupOffer] = useState<IProposedDeliveryOfferDto | null>(null);
 
-  interface ActiveDelivery {
-    orderId: string;
-    restaurantName: string;
-    restaurantAddress: string;
-    deliveryAddress: string;
-    distanceInKm: number;
-    totalIncome: number;
-    totalAmount: number;
-    contactName: string;
-    contactPhone: string;
-    note?: string;
-    step: 'accepted' | 'arrived' | 'picked_up';
-    googleMapNavigationUrl?: string;
-  }
-
-  const [activeDeliveries, setActiveDeliveries] = useState<ActiveDelivery[]>(() => {
+  const [activeDeliveries, setActiveDeliveries] = useState<(IProposedDeliveryOfferDto & { 
+    step?: 'accepted' | 'arrived' | 'picked_up', 
+    googleMapNavigationUrl?: string,
+    customerLatitude?: number,
+    customerLongitude?: number 
+  })[]>(() => {
     const saved = localStorage.getItem('shipper_active_deliveries');
     if (saved) {
       try {
@@ -90,6 +80,25 @@ export function ShipperDashboard() {
   const formatCurrency = (amount: number | undefined | null) => {
     const validAmount = (typeof amount === 'number' && !isNaN(amount)) ? amount : 0;
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(validAmount);
+  };
+
+  const getDynamicMapLink = (delivery: any) => {
+    // If heading to restaurant (accepted / arrived)
+    if (delivery.step === 'accepted' || delivery.step === 'arrived') {
+      if (delivery.restaurantLatitude && delivery.restaurantLongitude) {
+        return `https://www.google.com/maps/dir/?api=1&origin=${coords.lat},${coords.lng}&destination=${delivery.restaurantLatitude},${delivery.restaurantLongitude}&travelmode=driving`;
+      }
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(delivery.restaurantAddress)}`;
+    }
+    // If heading to customer (picked_up)
+    if (delivery.step === 'picked_up') {
+      if (delivery.customerLatitude && delivery.customerLongitude) {
+        return `https://www.google.com/maps/dir/?api=1&origin=${coords.lat},${coords.lng}&destination=${delivery.customerLatitude},${delivery.customerLongitude}&travelmode=driving`;
+      }
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(delivery.deliveryAddress)}`;
+    }
+    // Fallback
+    return delivery.googleMapNavigationUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(delivery.deliveryAddress)}`;
   };
 
   // Fetch available offers
@@ -130,10 +139,23 @@ export function ShipperDashboard() {
           if (deliveries.length > 0) {
             const promises = deliveries.map(async (d: any) => {
               try {
-                await shipperService.getDeliveryRoute(d.orderId);
-                return { valid: true, id: d.orderId };
-              } catch {
-                return { valid: false, id: d.orderId };
+                const routeRes = await shipperService.getDeliveryRoute(d.orderId);
+                return { 
+                  valid: true, 
+                  id: d.orderId, 
+                  googleMapNavigationUrl: routeRes.data?.googleMapNavigationUrl,
+                  restaurantLatitude: routeRes.data?.restaurantLatitude,
+                  restaurantLongitude: routeRes.data?.restaurantLongitude,
+                  customerLatitude: routeRes.data?.customerLatitude,
+                  customerLongitude: routeRes.data?.customerLongitude
+                };
+              } catch (err: any) {
+                const status = err.response?.status;
+                if (status === 403 || status === 404) {
+                  return { valid: false, id: d.orderId, googleMapNavigationUrl: undefined };
+                }
+                // Keep it if it's 400 (e.g., missing GPS) or 500
+                return { valid: true, id: d.orderId, googleMapNavigationUrl: undefined };
               }
             });
             const results = await Promise.all(promises);
@@ -142,6 +164,21 @@ export function ShipperDashboard() {
               setActiveDeliveries(prev => prev.filter(d => !invalidIds.includes(d.orderId)));
               toast.error("Một số đơn hàng đã hoàn thành hoặc bị thu hồi và được gỡ khỏi danh sách.");
             }
+            // Update activeDeliveries with googleMapNavigationUrl and coordinates
+            setActiveDeliveries(prev => prev.map(d => {
+              const res = results.find(r => r.id === d.orderId);
+              if (res) {
+                return { 
+                  ...d, 
+                  googleMapNavigationUrl: res.googleMapNavigationUrl || d.googleMapNavigationUrl,
+                  restaurantLatitude: res.restaurantLatitude || d.restaurantLatitude,
+                  restaurantLongitude: res.restaurantLongitude || d.restaurantLongitude,
+                  customerLatitude: res.customerLatitude || d.customerLatitude,
+                  customerLongitude: res.customerLongitude || d.customerLongitude
+                };
+              }
+              return d;
+            }));
           }
         } catch (e) {
           // ignore parsing error
@@ -206,15 +243,7 @@ export function ShipperDashboard() {
             if (res.data) {
               // Tự động gán vào danh sách active deliveries
               setActiveDeliveries(prev => [...prev, {
-                orderId: res.data.orderId,
-                restaurantName: res.data.restaurantName,
-                restaurantAddress: res.data.restaurantAddress,
-                deliveryAddress: res.data.deliveryAddress,
-                distanceInKm: res.data.distanceInKm,
-                totalIncome: res.data.totalIncome,
-                totalAmount: res.data.totalAmount,
-                contactName: res.data.contactName,
-                contactPhone: res.data.contactPhone,
+                ...res.data,
                 step: 'accepted'
               }]);
               toast.success('Bạn vừa được điều phối viên gán trực tiếp một đơn hàng mới!');
@@ -256,15 +285,7 @@ export function ShipperDashboard() {
         longitude: coords.lng
       });
       setActiveDeliveries(prev => [...prev, {
-        orderId: proposalPopupOffer.orderId,
-        restaurantName: proposalPopupOffer.restaurantName,
-        restaurantAddress: proposalPopupOffer.restaurantAddress,
-        deliveryAddress: proposalPopupOffer.deliveryAddress,
-        distanceInKm: proposalPopupOffer.distanceInKm,
-        totalIncome: proposalPopupOffer.totalIncome,
-        totalAmount: proposalPopupOffer.totalAmount,
-        contactName: proposalPopupOffer.contactName,
-        contactPhone: proposalPopupOffer.contactPhone,
+        ...proposalPopupOffer,
         step: 'accepted'
       }]);
       setProposalPopupOffer(null);
@@ -279,14 +300,14 @@ export function ShipperDashboard() {
 
   const handleRejectProposal = async (orderId: string) => {
     try {
-      await shipperService.rejectOffer({ orderId, reason: 'Shipper từ chối' });
+      await shipperService.rejectOffer({ orderId, isExpired: false });
     } catch (e) { } // ignore
     setProposalPopupOffer(null);
   };
 
   const handleTimeoutProposal = async (orderId: string) => {
     try {
-      await shipperService.rejectOffer({ orderId, reason: 'Quá thời gian phản hồi' });
+      await shipperService.rejectOffer({ orderId, isExpired: true });
     } catch (e) { } // ignore
     setProposalPopupOffer(null);
     toast.error('Đã hết thời gian phản hồi đề xuất.');
@@ -413,7 +434,7 @@ export function ShipperDashboard() {
       }
     } catch (err: any) {
       const status = err.response?.status;
-      if (status === 403 || status === 404 || status === 400) {
+      if (status === 403 || status === 404) {
         setActiveDeliveries(prev => prev.filter(d => d.orderId !== orderId));
         toast.error('Đơn hàng không còn hợp lệ hoặc đã bị thu hồi.');
       } else {
@@ -440,7 +461,7 @@ export function ShipperDashboard() {
       }
     } catch (err: any) {
       const status = err.response?.status;
-      if (status === 403 || status === 404 || status === 400) {
+      if (status === 403 || status === 404) {
         setActiveDeliveries(prev => prev.filter(d => d.orderId !== pendingPickupOrderId));
         toast.error('Đơn hàng không còn hợp lệ hoặc đã bị thu hồi.');
       } else {
@@ -469,24 +490,30 @@ export function ShipperDashboard() {
 
       const offer = availableOffers.find(o => o.orderId === orderId);
       if (offer) {
+        let routeData: any = undefined;
+        try {
+          const routeRes = await shipperService.getDeliveryRoute(orderId);
+          routeData = routeRes.data;
+        } catch {
+          // ignore error if unable to fetch route
+        }
+
         setActiveDeliveries(prev => [...prev, {
-          orderId: offer.orderId,
-          restaurantName: offer.restaurantName,
-          restaurantAddress: offer.restaurantAddress,
-          deliveryAddress: offer.deliveryAddress,
-          distanceInKm: offer.distanceInKm,
-          totalIncome: offer.totalIncome,
-          totalAmount: offer.totalAmount,
-          contactName: offer.contactName,
-          contactPhone: offer.contactPhone,
-          note: offer.note,
-          step: 'accepted'
+          ...offer,
+          step: 'accepted',
+          googleMapNavigationUrl: routeData?.googleMapNavigationUrl,
+          restaurantLatitude: routeData?.restaurantLatitude || offer.restaurantLatitude,
+          restaurantLongitude: routeData?.restaurantLongitude || offer.restaurantLongitude,
+          customerLatitude: routeData?.customerLatitude,
+          customerLongitude: routeData?.customerLongitude
         }]);
         setAvailableOffers(prev => prev.filter(o => o.orderId !== orderId));
       }
       toast.success('Đã chấp nhận đơn hàng!');
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Không thể nhận đơn hàng. Vui lòng thử lại.');
+      setAvailableOffers(prev => prev.filter(o => o.orderId !== orderId));
+      fetchAvailableOffers();
     } finally {
       setActionLoading(null);
     }
@@ -532,10 +559,11 @@ export function ShipperDashboard() {
 
     setActionLoading(activeDelivery.orderId);
     try {
-      await shipperService.updateStatus({
+      await shipperService.confirmFailed({
         orderId: activeDelivery.orderId,
-        status: 'Cancelled',
-        rejectReason: reason
+        reason: reason,
+        latitude: 0,
+        longitude: 0
       });
       setActiveDeliveries(prev => prev.filter(d => d.orderId !== orderId));
       toast.error('Đã báo cáo giao hàng thất bại.');
@@ -717,18 +745,16 @@ export function ShipperDashboard() {
                         )}
                         <p><strong>Khoảng cách:</strong> {activeDelivery.distanceInKm.toFixed(1)} km</p>
                         <p><strong>Tổng tiền thu hộ (COD):</strong> <span className="font-bold text-orange-600">{formatCurrency(activeDelivery.totalAmount)}</span></p>
-                        {activeDelivery.googleMapNavigationUrl && (
-                          <div className="pt-2">
-                            <a
-                              href={activeDelivery.googleMapNavigationUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 text-xs font-bold text-orange-500 hover:text-orange-600 transition-colors bg-orange-50 px-3.5 py-2 rounded-xl border border-orange-100 hover:bg-orange-100/50"
-                            >
-                              <Navigation className="w-3.5 h-3.5" /> Xem bản đồ dẫn đường (Google Maps)
-                            </a>
-                          </div>
-                        )}
+                        <div className="pt-2">
+                          <a
+                            href={getDynamicMapLink(activeDelivery)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-xs font-bold text-orange-500 hover:text-orange-600 transition-colors bg-orange-50 px-3.5 py-2 rounded-xl border border-orange-100 hover:bg-orange-100/50"
+                          >
+                            <Navigation className="w-3.5 h-3.5" /> {activeDelivery.step === 'picked_up' ? 'Bản đồ đến Khách hàng' : 'Bản đồ đến Cửa hàng'}
+                          </a>
+                        </div>
                       </div>
 
                       {/* Action buttons based on steps */}

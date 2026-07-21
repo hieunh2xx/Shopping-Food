@@ -6,3 +6,4 @@ export { Loading } from './Loading';
 export { Pagination } from './Pagination';
 export { Card } from './Card';
 export { PromptModal } from './PromptModal';
+export { ConfirmModal } from './ConfirmModal';

@@ -10,8 +10,8 @@ export function TermsOfUsePage() {
     const fetchContent = async () => {
       try {
         const response = await supportService.getLegalSettings();
-        if (!response.error && response.data && response.data.termsOfUse) {
-          setContent(response.data.termsOfUse);
+        if (!response.error && response.data && response.data.termsOfUseCustomer) {
+          setContent(response.data.termsOfUseCustomer);
         } else {
           // Fallback if empty
           setContent('<h2>Điều khoản sử dụng</h2><p>Hệ thống đang cập nhật nội dung. Vui lòng quay lại sau.</p>');

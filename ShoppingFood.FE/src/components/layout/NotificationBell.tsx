@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
-import { Bell, Check, Loader2, Info, ShieldCheck, Heart } from 'lucide-react';
+import { Bell, Check, Loader2, Info, ShieldCheck, Heart, ChevronRight } from 'lucide-react';
 import { notificationService } from '../../services';
 import { notificationRealtimeService } from '../../services/NotificationRealtimeService';
 import { useAuth } from '../../hooks';
 import type { INotificationDto } from '../../interfaces';
 import { Modal } from '../common';
 import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../routes/routeConfig';
 
 export function NotificationBell() {
   const { user, token } = useAuth();
@@ -15,6 +17,7 @@ export function NotificationBell() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedNotification, setSelectedNotification] = useState<INotificationDto | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -146,6 +149,118 @@ export function NotificationBell() {
     }
   };
 
+  const getNotificationUrl = (n: INotificationDto): string | null => {
+    const role = user?.role;
+    switch (n.notificationType) {
+      case 'Order':
+        if (role === 'Customer') return null; // handled via custom event
+        if (role === 'Seller') return ROUTES.SELLER_ORDERS;
+        if (role === 'Shipper') return ROUTES.SHIPPER_DASHBOARD;
+        if (role === 'Admin') {
+          const lower = n.title?.toLowerCase() || '';
+          if (lower.includes('khiếu nại') || lower.includes('sự cố')) return ROUTES.ADMIN_INCIDENTS;
+          return ROUTES.ADMIN_DASHBOARD;
+        }
+        if (role === 'Coordinator') {
+          const lower = n.title?.toLowerCase() || '';
+          if (lower.includes('khiếu nại') || lower.includes('sự cố')) return ROUTES.COORDINATOR_INCIDENTS;
+          return ROUTES.COORDINATOR_DASHBOARD;
+        }
+        return null;
+      case 'Delivery':
+        if (role === 'Customer') return null; // handled via custom event
+        if (role === 'Shipper') return ROUTES.SHIPPER_DASHBOARD;
+        if (role === 'Admin') {
+          const lower = n.title?.toLowerCase() || '';
+          if (lower.includes('khiếu nại') || lower.includes('sự cố')) return ROUTES.ADMIN_INCIDENTS;
+          return ROUTES.ADMIN_DASHBOARD;
+        }
+        if (role === 'Coordinator') {
+          const lower = n.title?.toLowerCase() || '';
+          if (lower.includes('khiếu nại') || lower.includes('sự cố')) return ROUTES.COORDINATOR_INCIDENTS;
+          return ROUTES.COORDINATOR_DASHBOARD;
+        }
+        return null;
+      case 'Review':
+        if (role === 'Seller') {
+          const lower = n.title?.toLowerCase() || '';
+          if (lower.includes('flash sale')) return ROUTES.SELLER_FLASH_SALES;
+          return ROUTES.SELLER_REVIEWS;
+        }
+        if (role === 'Customer' && n.targetId) return `/products/${n.targetId}`;
+        if (role === 'Admin') {
+          const lower = n.title?.toLowerCase() || '';
+          if (lower.includes('flash sale')) return ROUTES.ADMIN_FLASH_SALES;
+          return ROUTES.ADMIN_REVIEW_REPORTS;
+        }
+        return null;
+      case 'Loyalty':
+        if (role === 'Customer') return ROUTES.CUSTOMER_WALLET;
+        return null;
+      case 'System':
+        if (role === 'Shipper') {
+          const lower = n.title?.toLowerCase() || '';
+          if (lower.includes('uy tín')) return ROUTES.SHIPPER_PROFILE + '?tab=reputation';
+          return null;
+        }
+        if (role === 'Seller') {
+          const lower = n.title?.toLowerCase() || '';
+          if (lower.includes('đơn hàng')) return ROUTES.SELLER_ORDERS;
+          return null;
+        }
+        if (role === 'Admin') {
+          const lower = n.title?.toLowerCase() || '';
+          if (lower.includes('đăng ký') || lower.includes('yêu cầu') || lower.includes('ứng tuyển')) {
+            return ROUTES.ADMIN_APPLICATIONS;
+          }
+          if (lower.includes('sản phẩm')) {
+            return ROUTES.ADMIN_PRODUCTS;
+          }
+          if (lower.includes('đánh giá')) {
+            return ROUTES.ADMIN_REVIEW_REPORTS;
+          }
+          if (lower.includes('sự cố') || lower.includes('khiếu nại')) {
+            return ROUTES.ADMIN_INCIDENTS;
+          }
+          return null; // fallback to modal for other system notifications
+        }
+        return null;
+      default:
+        return null;
+    }
+  };
+
+  const isCustomerOrderNav = (n: INotificationDto, role?: string) => {
+    if (role !== 'Customer') return false;
+    if (n.notificationType === 'Order' || n.notificationType === 'Delivery') return true;
+    if (n.notificationType === 'System' && (n.title?.toLowerCase() || '').includes('đơn hàng')) return true;
+    return false;
+  };
+
+  const handleNotificationClick = (n: INotificationDto) => {
+    if (!n.isRead) handleMarkAsRead(n.id);
+    setSelectedNotification(n); // Always show modal first
+  };
+
+  const handleNavigateFromModal = () => {
+    if (!selectedNotification) return;
+    const url = getNotificationUrl(selectedNotification);
+    const role = user?.role;
+    
+    if (isCustomerOrderNav(selectedNotification, role)) {
+      setIsOpen(false);
+      setSelectedNotification(null);
+      window.dispatchEvent(new CustomEvent('openOrdersTabWithDetail', { detail: selectedNotification.targetId }));
+      return;
+    }
+
+    if (url) {
+      setIsOpen(false);
+      setSelectedNotification(null);
+      navigate(url);
+    }
+  };
+
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Bell Button */}
@@ -193,10 +308,7 @@ export function NotificationBell() {
               notifications.map((n) => (
                 <div 
                   key={n.id} 
-                  onClick={() => {
-                    if (!n.isRead) handleMarkAsRead(n.id);
-                    setSelectedNotification(n);
-                  }}
+                  onClick={() => handleNotificationClick(n)}
                   className={`p-4 flex gap-3 cursor-pointer transition-colors ${
                     n.isRead ? 'hover:bg-gray-50/50' : 'bg-orange-50/30 hover:bg-orange-50/50'
                   }`}
@@ -219,10 +331,15 @@ export function NotificationBell() {
                     </p>
                   </div>
 
-                  {/* Unread Status Dot */}
-                  {!n.isRead && (
-                    <div className="w-2 h-2 rounded-full bg-orange-500 mt-1.5 flex-shrink-0" />
-                  )}
+                  {/* Unread Status Dot or Nav Arrow */}
+                  <div className="flex flex-col justify-center items-end gap-1 flex-shrink-0">
+                    {!n.isRead && (
+                      <div className="w-2 h-2 rounded-full bg-orange-500" />
+                    )}
+                    {getNotificationUrl(n) || isCustomerOrderNav(n, user?.role) ? (
+                      <ChevronRight className="w-4 h-4 text-gray-300" />
+                    ) : null}
+                  </div>
                 </div>
               ))
             )}
@@ -254,13 +371,21 @@ export function NotificationBell() {
               {selectedNotification.message}
             </div>
 
-            <div className="pt-4 flex justify-end">
+            <div className="pt-4 flex justify-end gap-3">
               <button
                 onClick={() => setSelectedNotification(null)}
-                className="px-6 py-2.5 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-all active:scale-95"
+                className="px-6 py-2.5 bg-gray-100 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-200 transition-all active:scale-95"
               >
                 Đóng
               </button>
+              {(getNotificationUrl(selectedNotification) || isCustomerOrderNav(selectedNotification, user?.role)) && (
+                <button
+                  onClick={handleNavigateFromModal}
+                  className="px-6 py-2.5 bg-orange-500 text-white text-sm font-semibold rounded-xl hover:bg-orange-600 transition-all active:scale-95 flex items-center gap-2"
+                >
+                  Đi đến trang <ChevronRight className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
         )}

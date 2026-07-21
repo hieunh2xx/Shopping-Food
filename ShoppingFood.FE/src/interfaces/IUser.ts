@@ -119,6 +119,8 @@ export interface IUserAddressDto {
   contactPhone: string;
   addressLine: string;
   isDefault: boolean;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface IAddUserAddress {
@@ -126,4 +128,6 @@ export interface IAddUserAddress {
   contactPhone: string;
   addressLine: string;
   isDefault: boolean;
+  latitude?: number;
+  longitude?: number;
 }

@@ -1,7 +1,7 @@
 export { MainLayout } from './MainLayout';
 export { Header } from './Header';
 export { Footer } from './Footer';
-export { CartDrawer } from './CartDrawer';
+export { ShoppingDrawer } from './ShoppingDrawer';
 export { AdminLayout } from './admin/AdminLayout';
 export { SellerLayout } from './seller/SellerLayout';
 export { UserLayout } from './UserLayout';

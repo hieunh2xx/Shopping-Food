@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { X, Package, MapPin, Phone, CreditCard, Clock, QrCode, XCircle, MessageCircle, RefreshCw, AlertTriangle, Star } from 'lucide-react';
-import { Modal, Button, Input } from '../common';
+import { Package, MapPin, CreditCard, Clock, QrCode, XCircle, MessageCircle, RefreshCw, AlertTriangle, Star } from 'lucide-react';
+import { Modal, Button, Input, ConfirmModal } from '../common';
 import { orderService } from '../../services/OrderService';
 import { supportService } from '../../services/SupportService';
 import { shipperService } from '../../services/ShipperService';
@@ -10,7 +10,7 @@ import { notificationRealtimeService } from '../../services/NotificationRealtime
 import type { INotificationDto } from '../../interfaces';
 import { OrderSellerChatModal } from '../chat/OrderSellerChatModal';
 import { SepayQrPaymentModal } from '../payment/SepayQrPaymentModal';
-import { useAuth } from '../../hooks';
+import { useAuth, useCart } from '../../hooks';
 import toast from 'react-hot-toast';
 
 interface OrderDetailModalProps {
@@ -21,6 +21,7 @@ interface OrderDetailModalProps {
 
 export function CustomerOrderDetailModal({ isOpen, onClose, orderId }: OrderDetailModalProps) {
   const { isAuthenticated } = useAuth();
+  const { refreshCart } = useCart();
   const [loading, setLoading] = useState(false);
   const [orderData, setOrderData] = useState<any>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -29,6 +30,7 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId }: OrderDeta
   const [orderComplaintModal, setOrderComplaintModal] = useState({ isOpen: false, orderId: '', reason: '', description: '', evidenceImageUrl: '' });
   const [shipperComplaintModal, setShipperComplaintModal] = useState({ isOpen: false, orderId: '', reason: '', description: '', evidenceImageUrl: '' });
   const [shipperReviewModal, setShipperReviewModal] = useState({ isOpen: false, orderId: '', rating: 5, comment: '' });
+  const [cancelConfirmModal, setCancelConfirmModal] = useState(false);
   const [paymentModal, setPaymentModal] = useState({ isOpen: false, sessionId: '' });
   const [sellerChat, setSellerChat] = useState<{
     isOpen: boolean;
@@ -76,24 +78,28 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId }: OrderDeta
     }
   };
 
-  const handleCancelOrder = async () => {
-    if (!window.confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) return;
+  const confirmCancelOrder = async () => {
     try {
       await orderService.cancelOrder({ orderId });
       toast.success('Hủy đơn hàng thành công');
+      setCancelConfirmModal(false);
       loadOrderDetails();
     } catch (error: any) {
-      toast.error(error.message || 'Lỗi khi hủy đơn hàng');
+      const msg = error.response?.data?.message || error.message || 'Lỗi khi hủy đơn hàng';
+      toast.error(msg);
     }
   };
 
   const handleReorder = async () => {
     try {
       await orderService.reorder({ orderId });
+      await refreshCart();
+      window.dispatchEvent(new CustomEvent('openCartTab'));
       toast.success('Đã thêm lại các món vào giỏ hàng');
       onClose();
     } catch (error: any) {
-      toast.error(error.message || 'Lỗi khi đặt lại đơn hàng');
+      const msg = error.response?.data?.message || error.message || 'Lỗi khi đặt lại đơn hàng';
+      toast.error(msg);
     }
   };
 
@@ -122,7 +128,8 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId }: OrderDeta
         toast.error(res.message || 'Lỗi tải ảnh', { id: toastId });
       }
     } catch (err: any) {
-      toast.error(err.message || 'Lỗi tải ảnh', { id: toastId });
+      const msg = err.response?.data?.message || err.message || 'Lỗi tải ảnh';
+      toast.error(msg, { id: toastId });
     } finally {
       setIsUploading(false);
     }
@@ -279,7 +286,7 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId }: OrderDeta
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={handleCancelOrder}
+                    onClick={() => setCancelConfirmModal(true)}
                     className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
                   >
                     <XCircle className="w-4 h-4 mr-1.5" /> Hủy đơn
@@ -498,6 +505,16 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId }: OrderDeta
           sessionStatus={orderData?.orderChatSessionStatus}
         />
       )}
+
+      <ConfirmModal
+        isOpen={cancelConfirmModal}
+        onClose={() => setCancelConfirmModal(false)}
+        onConfirm={confirmCancelOrder}
+        title="Hủy đơn hàng"
+        description="Bạn có chắc chắn muốn hủy đơn hàng này không?"
+        confirmVariant="danger"
+        confirmLabel="Hủy đơn"
+      />
     </>
   );
 }

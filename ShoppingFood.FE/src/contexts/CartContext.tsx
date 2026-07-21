@@ -39,66 +39,61 @@ export function CartProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
   }, [items]);
 
+  const fetchCart = useCallback(async () => {
+    try {
+      const guestUserId = getGuestUserId();
+      const res = await cartService.getCart(guestUserId);
+      if (!res.error && res.data) {
+        let apiItems: any[] = [];
+        if (Array.isArray(res.data)) {
+          apiItems = res.data;
+        } else if (res.data.items && Array.isArray(res.data.items)) {
+          apiItems = res.data.items;
+        }
+
+        const mappedItems: ICartItem[] = apiItems.map((apiItem: any) => {
+          if (apiItem.product && apiItem.product.id) return apiItem as ICartItem;
+          
+          return {
+            quantity: apiItem.quantity,
+            isProductDeleted: apiItem.isProductDeleted,
+            product: {
+              id: apiItem.productId,
+              itemName: apiItem.productName || 'Sản phẩm',
+              price: apiItem.priceAtAdded || 0,
+              primaryImageUrl: apiItem.productImageUrl,
+              restaurantId: apiItem.restaurantId || '',
+              restaurantName: apiItem.restaurantName || '',
+              description: null,
+              categoryId: '',
+              categoryName: '',
+              stockStatus: 'InStock',
+              images: [],
+              toppings: [],
+              sizes: [],
+              createdAt: new Date().toISOString(),
+              isHidden: false,
+              averageRating: 0,
+              reviewCount: 0,
+              isFreeship: false,
+              availableFrom: null,
+              availableTo: null,
+              isAvailableNow: true
+            } as IProductDto
+          };
+        });
+
+        setItems(mappedItems);
+      }
+    } catch (error) {
+      console.error('Failed to fetch cart', error);
+    }
+  }, [getGuestUserId]);
+
   // Fetch cart from backend on mount or auth change
   useEffect(() => {
-    const fetchCart = async () => {
-      try {
-        const guestUserId = getGuestUserId();
-        const res = await cartService.getCart(guestUserId);
-        if (!res.error && res.data) {
-          // Assuming backend returns an array of cart items mapping to ICartItem
-          // If backend data structure is different, it needs mapping here.
-          // For now, if the backend returns nothing but we have local items, we might need to sync them up,
-          // but let's just use backend as source of truth if it has data.
-          let apiItems: any[] = [];
-          if (Array.isArray(res.data)) {
-            apiItems = res.data;
-          } else if (res.data.items && Array.isArray(res.data.items)) {
-            apiItems = res.data.items;
-          }
-
-          const mappedItems: ICartItem[] = apiItems.map((apiItem: any) => {
-            // Check if it's already an ICartItem (from optimistic localstorage sync matching backend shape)
-            if (apiItem.product && apiItem.product.id) return apiItem as ICartItem;
-            
-            return {
-              quantity: apiItem.quantity,
-              isProductDeleted: apiItem.isProductDeleted,
-              product: {
-                id: apiItem.productId,
-                itemName: apiItem.productName || 'Sản phẩm',
-                price: apiItem.priceAtAdded || 0,
-                primaryImageUrl: apiItem.productImageUrl,
-                // Default mock properties for IProductDto to satisfy UI
-                restaurantId: apiItem.restaurantId || '',
-                restaurantName: apiItem.restaurantName || '',
-                description: null,
-                categoryId: '',
-                categoryName: '',
-                stockStatus: 'InStock',
-                images: [],
-                toppings: [],
-                sizes: [],
-                createdAt: new Date().toISOString(),
-                isHidden: false,
-                averageRating: 0,
-                reviewCount: 0,
-                isFreeship: false,
-                availableFrom: null,
-                availableTo: null,
-                isAvailableNow: true
-              } as IProductDto
-            };
-          });
-
-          setItems(mappedItems);
-        }
-      } catch (error) {
-        console.error('Failed to fetch cart', error);
-      }
-    };
     fetchCart();
-  }, [isAuthenticated, getGuestUserId]);
+  }, [fetchCart, isAuthenticated, getGuestUserId]);
 
   const totalItems = items.reduce((sum, item) => sum + (item?.quantity || 0), 0);
   const totalPrice = items.reduce((sum, item) => {
@@ -243,6 +238,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     removeItem,
     updateQuantity,
     clearCart,
+    refreshCart: fetchCart,
   };
 
   return (

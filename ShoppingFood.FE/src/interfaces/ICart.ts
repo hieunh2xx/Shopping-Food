@@ -29,6 +29,7 @@ export interface ICartContext extends ICartState {
   removeItem: (productId: string, selectedSize?: string, selectedToppings?: string[]) => void;
   updateQuantity: (productId: string, quantity: number, selectedSize?: string, selectedToppings?: string[]) => void;
   clearCart: () => void;
+  refreshCart: () => Promise<void>;
 }
 
 export interface IAddToCartRequest {

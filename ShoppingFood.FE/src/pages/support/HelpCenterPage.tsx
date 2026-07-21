@@ -67,13 +67,13 @@ export function HelpCenterPage() {
             </div>
           </Link>
 
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex gap-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => window.location.href = 'tel:1900xxxx'}>
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex gap-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => window.dispatchEvent(new Event('openLiveChat'))}>
             <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
               <Phone className="w-6 h-6 text-blue-600" />
             </div>
             <div>
               <h3 className="font-semibold text-gray-900">Liên hệ CSKH</h3>
-              <p className="text-sm text-gray-500 mt-1">Gọi tổng đài hỗ trợ</p>
+              <p className="text-sm text-gray-500 mt-1">Chat trực tuyến với hỗ trợ</p>
             </div>
           </div>
         </div>

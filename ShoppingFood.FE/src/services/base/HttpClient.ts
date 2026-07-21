@@ -72,7 +72,7 @@ class HttpClient {
       if (lower.includes('invalid credential') || lower.includes('invalid password') || lower.includes('wrong password')) return 'Thông tin đăng nhập không chính xác';
       if (lower.includes('not found') || lower.includes('does not exist')) return 'Không tìm thấy dữ liệu';
       if (lower.includes('locked')) return 'Tài khoản đã bị khóa';
-      if (lower.includes('unauthorized') || lower.includes('forbidden') || lower.includes('access denied')) return 'Không có quyền truy cập';
+      if (lower.includes('unauthorized') || lower.includes('forbidden') || lower.includes('access denied') || lower.includes('permission')) return 'Tài khoản của bạn không có quyền truy cập hoặc thực hiện thao tác này';
       if (lower.includes('token expired') || lower.includes('token is invalid')) return 'Phiên đăng nhập đã hết hạn';
 
       // Validation & General
@@ -84,6 +84,8 @@ class HttpClient {
       if (lower.includes('do not match')) return 'Dữ liệu không khớp';
       if (lower.includes('already in use') || lower.includes('taken')) return 'Đã được sử dụng';
       if (lower.includes('format') || lower.includes('must contain') || lower.includes('digits')) return 'Định dạng không hợp lệ';
+      if (lower.includes('valid image') || lower.includes('image file')) return 'Chỉ chấp nhận file ảnh hợp lệ (.jpg, .jpeg, .png, .webp)';
+      if (lower.includes('between')) return 'Giá trị không nằm trong khoảng cho phép';
 
       // Complaint & Appeal
       if (lower.includes('only customers')) return 'Chỉ khách hàng mới có quyền gửi khiếu nại.';
@@ -94,6 +96,11 @@ class HttpClient {
       if (lower.includes('complaint not found')) return 'Không tìm thấy sự cố/khiếu nại này.';
       if (lower.includes('already been processed')) return 'Sự cố/khiếu nại này đã được xử lý trước đó.';
       if (lower.includes('save failed')) return 'Lỗi hệ thống: Không thể lưu quyết định xử lý.';
+
+      // Axios generic errors
+      if (lower.includes('request failed with status code 403')) return 'Tài khoản của bạn không có quyền thực hiện thao tác này';
+      if (lower.includes('request failed with status code 401')) return 'Vui lòng đăng nhập lại';
+      if (lower.includes('network error')) return 'Lỗi kết nối mạng, vui lòng kiểm tra lại';
 
       return msg; // Return original if not translated to avoid empty strings
     };

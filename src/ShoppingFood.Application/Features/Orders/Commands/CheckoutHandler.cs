@@ -187,6 +187,9 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     await transaction.RollbackAsync(cancellationToken);
                     return ApiResponse.Failure(400, paymentError);
                 }
+                var restaurant = cart.Items.FirstOrDefault()?.Product?.Restaurant;
+                var ownerUserId = restaurant?.Owner?.UserAccountId;
+
                 _orderRepository.Update(order);
 
                 ClearCartItems(cart.Items);
@@ -194,25 +197,21 @@ namespace ShoppingFood.Application.Features.Orders.Commands
 
                 await transaction.CommitAsync(cancellationToken);
 
-                if (order.PaymentMethod == PaymentMethod.COD)
+                if (order.PaymentMethod == PaymentMethod.COD && ownerUserId.HasValue)
                 {
-                    var restaurant = cart.Items.FirstOrDefault()?.Product?.Restaurant;
-                    if (restaurant != null)
+                    var notification = new Notification
                     {
-                        var notification = new Notification
-                        {
-                            Id = Guid.NewGuid(),
-                            UserId = restaurant.Owner.UserAccountId,
-                            Title = "Đơn hàng mới",
-                            Message = $"Bạn có đơn hàng mới #{order.Id.ToString().Substring(0, 8)} (Thanh toán khi nhận hàng).",
-                            NotificationType = NotificationType.System,
-                            TargetId = order.Id,
-                            IsRead = false,
-                            CreateAt = DateTime.UtcNow
-                        };
-                        _notificationRepository.Add(notification);
-                        await _unitOfWork.SaveChangesAsync();
-                    }
+                        Id = Guid.NewGuid(),
+                        UserId = ownerUserId.Value,
+                        Title = "Đơn hàng mới",
+                        Message = $"Bạn có đơn hàng mới #{order.Id.ToString().Substring(0, 8)} (Thanh toán khi nhận hàng).",
+                        NotificationType = NotificationType.System,
+                        TargetId = order.Id,
+                        IsRead = false,
+                        CreateAt = DateTime.UtcNow
+                    };
+                    _notificationRepository.Add(notification);
+                    await _unitOfWork.SaveChangesAsync();
                 }
 
                 var responseData = new
@@ -331,7 +330,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             {
                 carts = await _cartRepository.GetAsync(
                     predicate: c => c.UserAccountId == userId.Value,
-                    include: q => q.Include(c => c.Items).ThenInclude(i => i.Product),
+                    include: q => q.Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Restaurant).ThenInclude(r => r.Owner),
                     disableTracking: false
                     );
             }
@@ -339,7 +338,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             {
                 carts = await _cartRepository.GetAsync(
                     predicate: c => c.GuestUserId == guestUserId.Value,
-                    include: q => q.Include(c => c.Items).ThenInclude(i => i.Product),
+                    include: q => q.Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Restaurant).ThenInclude(r => r.Owner),
                     disableTracking: false
                     );
             }

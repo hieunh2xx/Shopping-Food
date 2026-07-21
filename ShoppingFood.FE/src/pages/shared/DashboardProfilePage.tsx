@@ -210,10 +210,11 @@ export function DashboardProfilePage() {
         onSuccess={fetchProfile}
       />
 
-      <ChangeContactModal
-        isOpen={isChangeContactOpen}
-        onClose={() => setIsChangeContactOpen(false)}
-        onSuccess={fetchProfile}
+      <ChangeContactModal 
+        isOpen={isChangeContactOpen} 
+        onClose={() => setIsChangeContactOpen(false)} 
+        onSuccess={() => window.location.reload()}
+        initialEmail={user?.email}
       />
     </div>
   );

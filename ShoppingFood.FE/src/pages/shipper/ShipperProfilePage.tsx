@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { 
   User, 
@@ -50,10 +51,19 @@ function LocationMarker({ position, setPosition }: { position: [number, number] 
 
 export function ShipperProfilePage() {
   const { user } = useAuth();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState("Info");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isChangeContactOpen, setIsChangeContactOpen] = useState(false);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'reputation') {
+      setActiveTab('Reputation');
+    }
+  }, [location.search]);
   
   // Schedule and area from API
   const [scheduleData, setScheduleData] = useState<IShipperScheduleAndAreaDto | null>(null);
@@ -94,7 +104,7 @@ export function ShipperProfilePage() {
           setEditLocation([position.coords.latitude, position.coords.longitude]);
           toast.success("Đã lấy vị trí hiện tại!", { id: 'geo' });
         },
-        (error) => {
+        () => {
           toast.error("Không thể lấy vị trí. Vui lòng bật GPS và cấp quyền.", { id: 'geo' });
         }
       );
@@ -263,7 +273,7 @@ export function ShipperProfilePage() {
                     onClick={() => setIsChangeContactOpen(true)}
                     className="text-xs text-orange-600 hover:text-orange-700 font-medium hover:underline"
                   >
-                    {user?.email && user.isEmailActive ? 'Thay đổi' : 'Xác thực / Thêm email'}
+                    {user?.isEmailActive ? 'Thay đổi' : 'Xác thực / Thay đổi'}
                   </button>
                 </div>
                 <div className="flex items-center justify-between bg-gray-50 p-3 rounded-xl border border-gray-100">
@@ -490,7 +500,8 @@ export function ShipperProfilePage() {
       <ChangeContactModal 
         isOpen={isChangeContactOpen} 
         onClose={() => setIsChangeContactOpen(false)} 
-        onSuccess={() => window.location.reload()} 
+        onSuccess={() => window.location.reload()}
+        initialEmail={user?.email}
       />
     </div>
   );

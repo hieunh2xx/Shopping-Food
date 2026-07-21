@@ -18,9 +18,11 @@ export function ProductsPage() {
   const [activeCategory, setActiveCategory] = useState<string>(initialCategory);
   const [searchQuery, setSearchQuery] = useState<ISearchProductQuery>({
     globalCategoryId: initialCategory === 'all' ? undefined : initialCategory,
+    filter: searchParams.get('search') || undefined,
     skip: 0,
     take: 20,
   });
+  const [keyword, setKeyword] = useState(searchParams.get('search') || '');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [tempFilters, setTempFilters] = useState({
     sortBy: '',
@@ -35,6 +37,18 @@ export function ProductsPage() {
   useEffect(() => {
     fetchGlobalCategories();
   }, []);
+
+  useEffect(() => {
+    const search = searchParams.get('search');
+    if (search !== null) {
+      setKeyword(search);
+      setSearchQuery(prev => ({
+        ...prev,
+        filter: search,
+        skip: 0
+      }));
+    }
+  }, [searchParams]);
 
   const fetchGlobalCategories = async () => {
     try {
@@ -53,10 +67,9 @@ export function ProductsPage() {
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
     setSearchQuery((prev) => ({
       ...prev,
-      filter: formData.get('keyword') as string,
+      filter: keyword,
       skip: 0,
     }));
   };
@@ -147,6 +160,8 @@ export function ProductsPage() {
               <input
                 type="text"
                 name="keyword"
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
                 placeholder="Bạn muốn ăn gì hôm nay?"
                 className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 focus:bg-white transition-all"
               />

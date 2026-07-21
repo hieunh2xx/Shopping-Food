@@ -49,7 +49,7 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid }: Sepa
 
   const paidNotifiedRef = useRef(false);
 
-  const markPaid = useCallback((invoiceNumber: string) => {
+  const markPaid = useCallback(() => {
     setQrData(prev => prev ? {
       ...prev,
       isPaid: true,
@@ -61,7 +61,7 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid }: Sepa
   const notifyPaid = useCallback((invoiceNumber: string) => {
     if (paidNotifiedRef.current) return;
     paidNotifiedRef.current = true;
-    markPaid(invoiceNumber);
+    markPaid();
     toast.success('SePay đã xác nhận thanh toán qua webhook!');
     onPaid(invoiceNumber);
   }, [onPaid, markPaid]);
@@ -262,10 +262,43 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid }: Sepa
           {qrData.isExpired ? (
             <p className="text-center text-red-600 font-medium py-6">Mã QR đã hết hạn. Vui lòng tạo đơn mới.</p>
           ) : qrData.isPaid ? (
-            <div className="text-center py-8 space-y-3">
-              <CheckCircle className="w-14 h-14 text-green-500 mx-auto" />
-              <p className="text-2xl font-bold text-green-600">Thanh toán thành công</p>
-              <p className="text-gray-600 text-sm">SePay đã xác nhận chuyển khoản. Đơn hàng sẽ được xử lý sớm nhất.</p>
+            <div className="flex flex-col items-center justify-center text-center py-8">
+              <CheckCircle className="w-16 h-16 text-green-500 mb-4" />
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Thanh toán thành công</h3>
+              <p className="text-sm text-green-700 bg-green-50 px-3 py-1 rounded-full mb-6">Đã xác nhận thanh toán</p>
+              
+              <div className="w-full max-w-xs text-sm text-gray-700 bg-gray-50 rounded-xl px-4 py-4 space-y-2 text-left border border-gray-100 shadow-sm">
+                {qrData.itemsSubtotal != null && (
+                  <div className="flex justify-between">
+                    <span>Tạm tính món</span>
+                    <span className="font-medium">{formatCurrency(qrData.itemsSubtotal)}</span>
+                  </div>
+                )}
+                {qrData.shippingFee != null && qrData.shippingFee > 0 && (
+                  <div className="flex justify-between">
+                    <span>Phí giao hàng</span>
+                    <span className="font-medium">{formatCurrency(qrData.shippingFee)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between font-bold text-gray-900 pt-2 border-t border-gray-200 mt-2">
+                  <span>Tổng tiền</span>
+                  <span className="text-orange-600 text-base">{formatCurrency(qrData.amount)}</span>
+                </div>
+              </div>
+              
+              {qrData.invoiceNumber && (
+                <p className="text-xs text-gray-400 mt-4 font-mono">Mã HĐ: {qrData.invoiceNumber}</p>
+              )}
+
+              <div className="mt-8">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-10 py-2.5 bg-orange-600 text-white rounded-xl font-semibold hover:bg-orange-700 shadow-sm transition-colors"
+                >
+                  Xong
+                </button>
+              </div>
             </div>
           ) : (
             <>

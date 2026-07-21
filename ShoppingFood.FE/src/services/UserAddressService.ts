@@ -1,6 +1,6 @@
 import { httpClient } from './base/HttpClient';
 import type { IApiResponse, IUserAddressDto, IAddUserAddress } from '../interfaces';
-import { API_ENDPOINTS } from '../config/endpoints';
+
 
 class UserAddressService {
   private endpoint = '/UserAddress';
@@ -22,7 +22,7 @@ class UserAddressService {
   }
 
   async setDefault(id: string): Promise<IApiResponse<any>> {
-    return httpClient.put<IApiResponse<any>>(API_ENDPOINTS.USER_ADDRESS.SET_DEFAULT(id), {});
+    return httpClient.put<IApiResponse<any>>(`${this.endpoint}/${id}/SetDefault`, {});
   }
 }
 

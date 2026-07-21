@@ -34,7 +34,9 @@ namespace ShoppingFood.Application.Features.UserAddresses.Queries
                     ContactName = a.ContactName,
                     ContactPhone = a.ContactPhone,
                     AddressLine = a.AddressLine,
-                    IsDefault = a.IsDefault
+                    IsDefault = a.IsDefault,
+                    Latitude = a.Latitude,
+                    Longitude = a.Longitude
                 })
                 .ToListAsync(cancellationToken);
 

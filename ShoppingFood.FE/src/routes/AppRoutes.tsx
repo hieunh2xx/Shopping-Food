@@ -61,8 +61,6 @@ import {
   RestaurantsPage,
   PromotionsPage,
   HelpCenterPage,
-  TermsOfUsePage,
-  PrivacyPolicyPage,
   AdminFlashSalePage,
   AdminNotificationsPage,
   SellerFlashSalesPage,
@@ -118,8 +116,6 @@ export function AppRoutes() {
         } />
         <Route path={ROUTES.HELP_CENTER} element={<HelpCenterPage />} />
         <Route path={ROUTES.REPORT_INCIDENT} element={<PrivateRoute><UserReportIncidentPage /></PrivateRoute>} />
-        <Route path={ROUTES.TERMS_OF_USE} element={<TermsOfUsePage />} />
-        <Route path={ROUTES.PRIVACY_POLICY} element={<PrivacyPolicyPage />} />
         
         {/* Protected Client Routes inside UserLayout */}
         <Route element={<UserLayout />}>
