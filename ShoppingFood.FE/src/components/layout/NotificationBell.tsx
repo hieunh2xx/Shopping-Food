@@ -50,8 +50,7 @@ export function NotificationBell() {
     fetchNotifications();
 
     if (!user?.id || !token) {
-      const interval = setInterval(fetchNotifications, 30000);
-      return () => clearInterval(interval);
+      return;
     }
 
     const onRealtime = (n: INotificationDto) => {

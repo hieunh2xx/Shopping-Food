@@ -170,20 +170,27 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid }: Sepa
 
   useEffect(() => {
     if (!isOpen || !sessionId || !qrData || qrData.isPaid || qrData.isExpired) return;
-    const poll = setInterval(async () => {
-      const res = await paymentService.getPaymentSessionStatus({ sessionId });
-      if (!res.error && res.data) {
-        applySessionStatus({
-          isPaid: res.data.isPaid,
-          isExpired: res.data.isExpired,
-          displayStatus: res.data.displayStatus ?? res.data.status,
-          statusLabel: res.data.statusLabel,
-          invoiceNumber: res.data.invoiceNumber,
-          remainingSeconds: res.data.remainingSeconds,
-        });
+    
+    const handleNotification = async (e: Event) => {
+      const customEvent = e as CustomEvent<any>;
+      const n = customEvent.detail;
+      if (n && (n.targetId === sessionId || n.notificationType === 'Payment')) {
+        const res = await paymentService.getPaymentSessionStatus({ sessionId });
+        if (!res.error && res.data) {
+          applySessionStatus({
+            isPaid: res.data.isPaid,
+            isExpired: res.data.isExpired,
+            displayStatus: res.data.displayStatus ?? res.data.status,
+            statusLabel: res.data.statusLabel,
+            invoiceNumber: res.data.invoiceNumber,
+            remainingSeconds: res.data.remainingSeconds,
+          });
+        }
       }
-    }, 1000);
-    return () => clearInterval(poll);
+    };
+
+    window.addEventListener('ON_REALTIME_NOTIFICATION', handleNotification);
+    return () => window.removeEventListener('ON_REALTIME_NOTIFICATION', handleNotification);
   }, [isOpen, sessionId, qrData, applySessionStatus]);
 
   useEffect(() => {

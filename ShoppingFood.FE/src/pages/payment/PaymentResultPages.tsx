@@ -35,10 +35,9 @@ export function PaymentSuccessPage() {
   };
 
   useEffect(() => {
-    let attempts = 0;
-    const maxAttempts = 40;
+    let stopped = false;
 
-    const poll = async () => {
+    const checkStatus = async () => {
       const res = await paymentService.getPaymentSessionStatus({
         sessionId: sessionId || undefined,
         invoiceNumber: invoice || undefined,
@@ -46,37 +45,50 @@ export function PaymentSuccessPage() {
 
       if (!res.error && res.data) {
         setStatus(res.data);
-
         if (res.data.isPaid) {
           setPageState('success');
           return true;
         }
-
         if (res.data.isExpired || res.data.displayStatus === 'expired' || res.data.status === 'expired') {
           setPageState('timeout');
           return true;
         }
       }
-
-      attempts += 1;
-      if (attempts >= maxAttempts) {
-        setPageState('timeout');
-        return true;
-      }
       return false;
     };
 
-    let stopped = false;
-    const run = async () => {
-      if (await poll()) return;
-      const interval = setInterval(async () => {
-        if (stopped) return;
-        if (await poll()) clearInterval(interval);
-      }, 1000);
+    const runInit = async () => {
+      await checkStatus();
+    };
+    runInit();
+
+    const fallbackTimeout = setTimeout(() => {
+      if (!stopped) setPageState('timeout');
+    }, 30000); // 30s timeout fallback
+
+    const handleNotification = async (e: Event) => {
+      const customEvent = e as CustomEvent<any>;
+      const n = customEvent.detail;
+      if (
+        n &&
+        (n.notificationType === 'Payment' ||
+          (sessionId && n.targetId === sessionId) ||
+          (invoice && n.message?.includes(invoice)))
+      ) {
+        const isFinished = await checkStatus();
+        if (isFinished) {
+          clearTimeout(fallbackTimeout);
+        }
+      }
     };
 
-    run();
-    return () => { stopped = true; };
+    window.addEventListener('ON_REALTIME_NOTIFICATION', handleNotification);
+
+    return () => {
+      stopped = true;
+      clearTimeout(fallbackTimeout);
+      window.removeEventListener('ON_REALTIME_NOTIFICATION', handleNotification);
+    };
   }, [invoice, sessionId]);
 
   if (pageState === 'confirming') {

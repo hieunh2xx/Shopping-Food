@@ -1,16 +1,10 @@
 import { useState, useEffect } from 'react';
 import { 
-  ShoppingBag, 
   User, 
   MapPin, 
   AlertTriangle, 
   Clock, 
-  CheckCircle, 
-  XCircle, 
   Truck, 
-  ExternalLink,
-  ChevronLeft,
-  ChevronRight,
   ShieldAlert
 } from 'lucide-react';
 import { Button, Input, Modal } from '../../components/common';
@@ -24,7 +18,6 @@ export default function DispatchBoardPage() {
   
   // Pagination
   const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0); // Client side total calculation
   const take = 10;
 
   // Selected Order for Action Modals
@@ -60,15 +53,8 @@ export default function DispatchBoardPage() {
       fetchOrders();
     };
     window.addEventListener('ON_REALTIME_NOTIFICATION', handleNotification);
-    
-    // Tự động làm mới danh sách mỗi 15 giây (Polling)
-    const interval = setInterval(() => {
-      fetchOrders();
-    }, 15000);
-
     return () => {
       window.removeEventListener('ON_REALTIME_NOTIFICATION', handleNotification);
-      clearInterval(interval);
     };
   }, [activeTab, page]);
 
@@ -117,7 +103,6 @@ export default function DispatchBoardPage() {
           filteredData = res.data.filter((o: any) => o.rejectReason && o.rejectReason.startsWith('[Delivery Failed]'));
         }
         setOrders(filteredData);
-        setTotal(filteredData.length); // Fallback mock total
       }
     } catch {
       toast.error('Tải danh sách đơn hàng điều phối thất bại do lỗi kết nối mạng.');
@@ -518,7 +503,7 @@ export default function DispatchBoardPage() {
                   <div className="flex gap-2">
                     {proposalSentStatus[shipper.shipperId] ? (
                       <Button
-                        size="xs"
+                        size="sm"
                         variant="outline"
                         disabled
                         className="bg-gray-50 text-gray-400"
@@ -527,7 +512,7 @@ export default function DispatchBoardPage() {
                       </Button>
                     ) : (
                       <Button
-                        size="xs"
+                        size="sm"
                         variant="secondary"
                         onClick={() => handleSendProposal(shipper.shipperId)}
                       >
@@ -535,7 +520,7 @@ export default function DispatchBoardPage() {
                       </Button>
                     )}
                     <Button
-                      size="xs"
+                      size="sm"
                       onClick={() => handleForceAssign(shipper.shipperId)}
                       className="bg-orange-500 hover:bg-orange-600 text-white font-medium"
                     >

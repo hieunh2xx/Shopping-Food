@@ -201,16 +201,7 @@ export function ShipperDashboard() {
     loadData();
   }, [fetchAvailableOffers, fetchIncomeReport]);
 
-  // Polling for new offers when online
-  useEffect(() => {
-    if (!isOnline) return;
 
-    const interval = setInterval(() => {
-      fetchAvailableOffers();
-    }, 8000); // Check for new offers every 8 seconds
-
-    return () => clearInterval(interval);
-  }, [isOnline, fetchAvailableOffers]);
 
   // Lắng nghe sự kiện thông báo hệ thống real-time để hiển thị popup hoặc nhận đơn Force Assign
   useEffect(() => {
@@ -222,6 +213,7 @@ export function ShipperDashboard() {
         if (match && match[1]) {
           const orderId = match[1];
           try {
+            fetchAvailableOffers(); // Sync list as well
             const res = await shipperService.getProposedOffer(orderId, coords.lat, coords.lng);
             if (res.data) {
               setProposalPopupOffer(res.data);
