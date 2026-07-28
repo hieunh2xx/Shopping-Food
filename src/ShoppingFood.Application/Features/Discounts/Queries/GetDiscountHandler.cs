@@ -44,21 +44,35 @@ namespace ShoppingFood.Application.Features.Discounts.Queries
                     d.UsedCount < d.Quantity;
             }
 
-            if(request.RestaurantId.HasValue && request.CartAmount.HasValue)
+            if (request.RestaurantId.HasValue)
             {
                 var restId = request.RestaurantId.Value;
-                var amount = request.CartAmount.Value;
-                var excludedDiscountIds = await GetExcludedDiscountIdsAsync(request.CurrentUserId);
+                
+                if (request.CartAmount.HasValue)
+                {
+                    var amount = request.CartAmount.Value;
+                    var excludedDiscountIds = await GetExcludedDiscountIdsAsync(request.CurrentUserId);
 
-                predicate = d =>
-                    (request.IncludeAll || (
-                        d.Status == DiscountStatus.Active &&
-                        d.StartDate <= now && now <= d.EndDate &&
-                        d.UsedCount < d.Quantity &&
-                        amount >= d.MinOrderAmount &&
-                        !excludedDiscountIds.Contains(d.Id)
-                    )) &&
-                    (d.RestaurantId == restId || d.RestaurantId == null);
+                    predicate = d =>
+                        (request.IncludeAll || (
+                            d.Status == DiscountStatus.Active &&
+                            d.StartDate <= now && now <= d.EndDate &&
+                            d.UsedCount < d.Quantity &&
+                            amount >= d.MinOrderAmount &&
+                            !excludedDiscountIds.Contains(d.Id)
+                        )) &&
+                        (d.RestaurantId == restId || (!request.IncludeAll && d.RestaurantId == null));
+                }
+                else
+                {
+                    predicate = d =>
+                        (request.IncludeAll || (
+                            d.Status == DiscountStatus.Active &&
+                            d.StartDate <= now && now <= d.EndDate &&
+                            d.UsedCount < d.Quantity
+                        )) &&
+                        (d.RestaurantId == restId || (!request.IncludeAll && d.RestaurantId == null));
+                }
             }
 
             var discounts = await _discountRepository.GetAsync(

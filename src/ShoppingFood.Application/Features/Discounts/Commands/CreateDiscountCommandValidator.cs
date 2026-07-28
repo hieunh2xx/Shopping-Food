@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Domain.Enums;
 using ShoppingFood.Repository.Interfaces;
@@ -35,7 +35,9 @@ namespace ShoppingFood.Application.Features.Discounts.Commands
                 .MaximumLength(200).WithMessage("{PropertyName} must not exceed 200 characters.");
 
             RuleFor(x => x.Value)
-                .GreaterThan(0).WithMessage("{PropertyName} must be greater than 0.");
+                .GreaterThan(0).When(x => x.Type != DiscountType.FreeShipping).WithMessage("{PropertyName} must be greater than 0.")
+                .LessThanOrEqualTo(100).When(x => x.Type == DiscountType.Percentage).WithMessage("{PropertyName} must not exceed 100% for Percentage discount.")
+                .LessThanOrEqualTo(x => x.MinOrderAmount).When(x => x.Type == DiscountType.FixedAmount).WithMessage("{PropertyName} must not exceed the minimum order amount.");
 
             RuleFor(x => x.MinOrderAmount)
                 .GreaterThanOrEqualTo(0).WithMessage("{PropertyName} must be greater than or equal to 0.");

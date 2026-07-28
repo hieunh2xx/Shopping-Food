@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,7 +16,7 @@ namespace ShoppingFood.Application.Features.Discounts.Commands
             RuleFor(x => x.Title).NotEmpty().WithMessage("{PropertyName} is required.")
                 .MaximumLength(200).WithMessage("{PropertyName} must not exceed 200 characters.");
 
-            RuleFor(x => x.Value).GreaterThan(0).WithMessage("{PropertyName} must be greater than 0.");
+            RuleFor(x => x.Value).GreaterThanOrEqualTo(0).WithMessage("{PropertyName} must be greater than or equal to 0.");
 
             RuleFor(x => x.MinOrderAmount).GreaterThanOrEqualTo(0).WithMessage("{PropertyName} must be greater than or equal to 0.");
 

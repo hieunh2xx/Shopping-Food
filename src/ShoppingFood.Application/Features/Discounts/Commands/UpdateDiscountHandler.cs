@@ -68,6 +68,11 @@ namespace ShoppingFood.Application.Features.Discounts.Commands
                     return ApiResponse.Failure(403, "Access denied. You can only update discounts belonging to your restaurant.");
             }
 
+            if (discount.Type == DiscountType.Percentage && request.Value > 100)
+                return ApiResponse.Failure(400, "Value must not exceed 100% for Percentage discount.");
+
+            if (discount.Type == DiscountType.FixedAmount && request.Value > request.MinOrderAmount)
+                return ApiResponse.Failure(400, "Value must not exceed the minimum order amount.");
 
             discount.Title = request.Title;
             discount.Description = request.Description;
