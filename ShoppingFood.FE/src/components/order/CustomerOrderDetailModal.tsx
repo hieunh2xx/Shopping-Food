@@ -232,6 +232,9 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId }: OrderDeta
               <div className="bg-gray-50 p-4 rounded-xl space-y-2">
                 <h4 className="font-bold text-gray-800 flex items-center gap-2 mb-3"><CreditCard className="w-4 h-4 text-emerald-500" /> Thanh toán</h4>
                 <p className="text-sm"><strong>Phương thức:</strong> {getPaymentMethodLabel(orderData.paymentMethod)}</p>
+                {orderData.discountCode && (
+                  <p className="text-sm"><strong>Mã giảm giá:</strong> <span className="text-orange-600 font-bold">{orderData.discountCode}</span></p>
+                )}
                 <p className="text-sm"><strong>Tổng tiền:</strong> <span className="text-orange-600 font-bold">{formatCurrency(orderData.totalAmount)}</span></p>
               </div>
             </div>
@@ -244,13 +247,13 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId }: OrderDeta
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-lg bg-gray-200 overflow-hidden shrink-0">
                         {item.productImage ? (
-                          <img src={item.productImage} alt={item.productName} className="w-full h-full object-cover" />
+                          <img src={item.productImage} alt={item.itemName} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-gray-400"><Package className="w-6 h-6" /></div>
                         )}
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900">{item.productName}</p>
+                        <p className="font-medium text-gray-900">{item.itemName}</p>
                         <p className="text-xs text-gray-500">{item.quantity} x {formatCurrency(item.unitPrice)}</p>
                         
                         {(item.size || item.topping) && (

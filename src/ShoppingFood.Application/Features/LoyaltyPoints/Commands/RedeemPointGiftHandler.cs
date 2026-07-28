@@ -88,6 +88,10 @@ namespace ShoppingFood.Application.Features.LoyaltyPoints.Commands
 
             var customerDiscountId = SaveDiscountToWaller(request.CurrentUserId.Value, discount.Id, now);
 
+            discount.UsedCount++;
+            discount.UpdatedAt = now;
+            _discountRepository.Update(discount);
+
             SendRedeemNotification(request.CurrentUserId.Value, config.PointRequired, discount, now);
 
             await _unitOfWork.SaveChangesAsync();

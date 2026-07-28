@@ -36,12 +36,25 @@ namespace ShoppingFood.Application.Features.Discounts.Queries
             var now = DateTime.UtcNow;
             Expression<Func<Discount, bool>> predicate = d => true;
             
+            var excludedDiscountIds = await GetExcludedDiscountIdsAsync(request.CurrentUserId);
+
+            var filter = request.Filter?.ToLower();
+            bool hasFilter = !string.IsNullOrEmpty(filter);
+
             if (!request.IncludeAll)
             {
-                predicate = d =>
+                predicate = d => (!hasFilter || d.Code.ToLower().Contains(filter!) || d.Title.ToLower().Contains(filter!)) && 
+                (request.IsSavedOnly || (
+                    !d.IsDeleted &&
                     d.Status == DiscountStatus.Active &&
                     d.StartDate <= now && now <= d.EndDate &&
-                    d.UsedCount < d.Quantity;
+                    d.UsedCount < d.Quantity &&
+                    !excludedDiscountIds.Contains(d.Id)
+                ));
+            }
+            else 
+            {
+                predicate = d => (!d.IsDeleted || request.IsSavedOnly) && (!hasFilter || d.Code.ToLower().Contains(filter!) || d.Title.ToLower().Contains(filter!));
             }
 
             if (request.RestaurantId.HasValue)
@@ -51,26 +64,28 @@ namespace ShoppingFood.Application.Features.Discounts.Queries
                 if (request.CartAmount.HasValue)
                 {
                     var amount = request.CartAmount.Value;
-                    var excludedDiscountIds = await GetExcludedDiscountIdsAsync(request.CurrentUserId);
 
                     predicate = d =>
-                        (request.IncludeAll || (
+                        (!hasFilter || d.Code.ToLower().Contains(filter!) || d.Title.ToLower().Contains(filter!)) &&
+                        (request.IsSavedOnly || (!d.IsDeleted && (request.IncludeAll || (
                             d.Status == DiscountStatus.Active &&
                             d.StartDate <= now && now <= d.EndDate &&
                             d.UsedCount < d.Quantity &&
                             amount >= d.MinOrderAmount &&
                             !excludedDiscountIds.Contains(d.Id)
-                        )) &&
+                        )))) &&
                         (d.RestaurantId == restId || (!request.IncludeAll && d.RestaurantId == null));
                 }
                 else
                 {
                     predicate = d =>
-                        (request.IncludeAll || (
+                        (!hasFilter || d.Code.ToLower().Contains(filter!) || d.Title.ToLower().Contains(filter!)) &&
+                        (request.IsSavedOnly || (!d.IsDeleted && (request.IncludeAll || (
                             d.Status == DiscountStatus.Active &&
                             d.StartDate <= now && now <= d.EndDate &&
-                            d.UsedCount < d.Quantity
-                        )) &&
+                            d.UsedCount < d.Quantity &&
+                            !excludedDiscountIds.Contains(d.Id)
+                        )))) &&
                         (d.RestaurantId == restId || (!request.IncludeAll && d.RestaurantId == null));
                 }
             }
@@ -83,9 +98,34 @@ namespace ShoppingFood.Application.Features.Discounts.Queries
                 disableTracking: true
                 );
 
-            var total = await _discountRepository.GetCountAsync(predicate);
+            IReadOnlyList<CustomerDiscount> savedCustomerDiscounts = Array.Empty<CustomerDiscount>();
+            if (request.CurrentUserId.HasValue)
+            {
+                savedCustomerDiscounts = await _customerDiscountRepository.GetAsync(
+                    predicate: cd => cd.UserAccountId == request.CurrentUserId.Value,
+                    include: q => q.Include(cd => cd.Discount),
+                    disableTracking: true
+                );
+            }
+            var savedDiscountIds = savedCustomerDiscounts.Select(cd => cd.DiscountId).ToList();
 
-            var dto = _mapper.Map<IReadOnlyList<DiscountDto>>(discounts);
+            if (request.IsSavedOnly && request.CurrentUserId.HasValue)
+            {
+                discounts = discounts.Where(d => savedDiscountIds.Contains(d.Id)).ToList();
+            }
+
+            var total = discounts.Count();
+
+            var dto = _mapper.Map<List<DiscountDto>>(discounts);
+            foreach (var d in dto)
+            {
+                d.IsSaved = savedDiscountIds.Contains(d.Id);
+                var cd = savedCustomerDiscounts.FirstOrDefault(x => x.DiscountId == d.Id);
+                if (cd != null && cd.UsageCount >= d.MaxUsagePerUser)
+                {
+                    d.IsUsedUp = true;
+                }
+            }
             return ApiResponse.Success(dto, "Discounts retrieved successfully.");
         }
 

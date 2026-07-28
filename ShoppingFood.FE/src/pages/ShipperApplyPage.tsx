@@ -277,7 +277,13 @@ export function ShipperApplyPage() {
         navigate(ROUTES.HOME);
       }
     } catch (err: any) {
-      toast.error(err.message || err.response?.data?.message || 'Có lỗi xảy ra khi đăng ký');
+      let errorMsg = err.response?.data?.message || err.message || 'Có lỗi xảy ra khi đăng ký';
+      if (errorMsg === 'Only customer can apply to become a shipper.') {
+        errorMsg = 'Chỉ khách hàng mới có thể đăng ký làm tài xế.';
+      } else if (errorMsg === 'You already have a pending shipper application.') {
+        errorMsg = 'Bạn đang có một yêu cầu đăng ký tài xế chờ duyệt.';
+      }
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }

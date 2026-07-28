@@ -4,7 +4,7 @@ using System;
 
 namespace ShoppingFood.Application.Features.Products.Commands
 {
-    public class DeleteProductCommand : IRequest<ApiResponse>
+    public class DeleteProductCommand : BaseCommand, IRequest<ApiResponse>
     {
         public Guid Id { get; set; }
 

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/AuthService';
 import { toast } from 'react-hot-toast';
 import { ROUTES } from '../routes/routeConfig';
-import { Store, MapPin, Phone, FileText, Image as ImageIcon } from 'lucide-react';
+import { Store, MapPin, Phone, FileText, UploadCloud, CheckCircle2 } from 'lucide-react';
 
 export function SellerApplyPage() {
   const navigate = useNavigate();
@@ -75,7 +75,13 @@ export function SellerApplyPage() {
         navigate(ROUTES.PROFILE);
       }
     } catch (err: any) {
-      toast.error(err.message || err.response?.data?.message || 'Có lỗi xảy ra khi đăng ký');
+      let errorMsg = err.response?.data?.message || err.message || 'Có lỗi xảy ra khi đăng ký';
+      if (errorMsg === 'You are already a seller or mall.') {
+        errorMsg = 'Bạn đã là Người Bán hoặc Mall.';
+      } else if (errorMsg === 'You already have a pending seller application.') {
+        errorMsg = 'Bạn đang có một yêu cầu đăng ký người bán chờ duyệt.';
+      }
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -146,34 +152,64 @@ export function SellerApplyPage() {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Giấy phép kinh doanh (Hình ảnh/PDF)</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FileText className="h-5 w-5 text-gray-400" />
+            <label className="relative flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-xl cursor-pointer bg-gray-50 hover:bg-orange-50 hover:border-orange-300 transition-colors group">
+              <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                <UploadCloud className="w-8 h-8 mb-2 text-gray-400 group-hover:text-orange-500 transition-colors" />
+                <p className="mb-1 text-sm text-gray-500"><span className="font-semibold text-orange-600">Bấm để tải lên</span> hoặc kéo thả file</p>
+                <p className="text-xs text-gray-400">PDF, JPG, PNG (Tối đa 5MB)</p>
               </div>
               <input
                 type="file"
                 accept="image/*,.pdf,.doc,.docx"
                 required
                 onChange={e => setBusinessLicenseFile(e.target.files?.[0] || null)}
-                className="pl-10 block w-full rounded-xl border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 bg-gray-50 border p-2 text-sm file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+                className="hidden"
               />
-            </div>
+            </label>
+            {businessLicenseFile && (
+              <div className="mt-3 bg-green-50 border border-green-200 rounded-lg p-3 flex items-center justify-between shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-md bg-white border border-green-200 flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-green-800 truncate max-w-[180px] sm:max-w-[350px]" title={businessLicenseFile.name}>{businessLicenseFile.name}</span>
+                    <span className="text-xs text-green-600">Đã chọn thành công</span>
+                  </div>
+                </div>
+                <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
+              </div>
+            )}
           </div>
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Logo / Ảnh đại diện cửa hàng</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <ImageIcon className="h-5 w-5 text-gray-400" />
+            <label className="relative flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-xl cursor-pointer bg-gray-50 hover:bg-orange-50 hover:border-orange-300 transition-colors group">
+              <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                <UploadCloud className="w-8 h-8 mb-2 text-gray-400 group-hover:text-orange-500 transition-colors" />
+                <p className="mb-1 text-sm text-gray-500"><span className="font-semibold text-orange-600">Bấm để tải ảnh</span> hoặc kéo thả</p>
+                <p className="text-xs text-gray-400">JPG, PNG, WEBP (Tối đa 5MB)</p>
               </div>
               <input
                 type="file"
                 accept="image/*"
                 required
                 onChange={e => setShopImageFile(e.target.files?.[0] || null)}
-                className="pl-10 block w-full rounded-xl border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 bg-gray-50 border p-2 text-sm file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+                className="hidden"
               />
-            </div>
+            </label>
+            {shopImageFile && (
+              <div className="mt-3 bg-green-50 border border-green-200 rounded-lg p-3 flex items-center justify-between shadow-sm">
+                <div className="flex items-center gap-3">
+                  <img src={URL.createObjectURL(shopImageFile)} alt="Preview" className="w-10 h-10 rounded-md object-cover border border-green-200 bg-white" />
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-green-800 truncate max-w-[180px] sm:max-w-[350px]" title={shopImageFile.name}>{shopImageFile.name}</span>
+                    <span className="text-xs text-green-600">Đã chọn ảnh thành công</span>
+                  </div>
+                </div>
+                <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
+              </div>
+            )}
           </div>
 
           <button

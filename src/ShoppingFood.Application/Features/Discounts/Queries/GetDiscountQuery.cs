@@ -13,5 +13,6 @@ namespace ShoppingFood.Application.Features.Discounts.Queries
         public Guid? RestaurantId { get; set; }
         public decimal? CartAmount { get; set; }
         public bool IncludeAll { get; set; } = false;
+        public bool IsSavedOnly { get; set; } = false;
     }
 }

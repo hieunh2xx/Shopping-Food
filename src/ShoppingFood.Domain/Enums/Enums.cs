@@ -120,6 +120,7 @@ namespace ShoppingFood.Domain.Enums
     }
 
     public enum EWalletProvider
+  
     {
         Momo,
         ZaloPay,

@@ -54,7 +54,7 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                 var orders = await _orderRepository.GetAsync(
                     predicate: o => (request.OrderId.HasValue && o.Id == request.OrderId.Value)
                                  || (!string.IsNullOrEmpty(request.OrderCode) && o.Id.ToString().StartsWith(request.OrderCode.ToLower())),
-                    include: q => q.Include(o => o.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Restaurant),
+                    include: q => q.Include(o => o.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Restaurant).Include(o => o.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Images).Include(o => o.AppliedDiscount),
                     disableTracking: true
                 );
 
@@ -182,11 +182,15 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                 OrderChatSessionStatus = chatSession?.Status.ToString(),
                 PaymentStatus = paymentSession?.Status.ToString() ?? "",
                 PaymentSessionId = paymentSession?.Id,
+                DiscountCode = order.AppliedDiscount?.Code,
                 Items = order.Items.Select(i => new OrderItemDto
                 {
                     Id = i.Id,
                     ProductId = i.ProductId ?? Guid.Empty,
                     ItemName = i.ItemName,
+                    ProductImage = i.Product != null && i.Product.Images != null 
+                        ? (i.Product.Images.FirstOrDefault(img => img.IsPrimary)?.ImageUrl ?? i.Product.Images.FirstOrDefault()?.ImageUrl)
+                        : null,
                     Quantity = i.Quantity,
                     UnitPrice = i.UnitPrice,
                     TotalPrice = i.TotalPrice

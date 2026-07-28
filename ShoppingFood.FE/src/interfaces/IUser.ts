@@ -28,6 +28,7 @@ export interface ISellerInfoDto {
   averageRating: number;
   reviewCount: number;
   logoUrl?: string;
+  deliveryType?: string;
 }
 
 /**

@@ -52,7 +52,8 @@ namespace ShoppingFood.Application.Features.Users.Queries
                         Address = restaurant.Address,
                         AverageRating = restaurant.AverageRating,
                         ReviewCount = restaurant.ReviewCount,
-                        LogoUrl = restaurant.LogoUrl
+                        LogoUrl = restaurant.LogoUrl,
+                        DeliveryType = restaurant.DeliveryType.ToString()
                     };
                 }
             }

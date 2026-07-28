@@ -295,13 +295,13 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                         UpdatedAt = now
                     };
                     _customerDiscountRepository.Add(newCd);
+
+                    discount.UsedCount++;
+                    discount.UpdatedAt = now;
+                    _discountRepository.Update(discount);
                 }
             }
             decimal discountAmount = CalculateTotalAmount(discount, itemsTotal);
-
-            discount.UsedCount++;
-            discount.UpdatedAt = now;
-            _discountRepository.Update(discount);
 
             return (discountAmount, discount.Id, null);
         }

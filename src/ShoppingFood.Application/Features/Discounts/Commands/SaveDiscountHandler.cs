@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
@@ -53,7 +53,7 @@ namespace ShoppingFood.Application.Features.Discounts.Commands
 
                 var discounts = await _discountRepository.GetAsync(
                     predicate: d => d.Id == request.DiscountId,
-                    disableTracking: true
+                    disableTracking: false
                     );
                 var discount = discounts.FirstOrDefault();
                 if (discount == null)
@@ -86,6 +86,10 @@ namespace ShoppingFood.Application.Features.Discounts.Commands
                     UpdatedAt = DateTime.UtcNow
                 };
                 _customerDiscountRepository.Add(customerDiscount);
+
+                discount.UsedCount++;
+                discount.UpdatedAt = DateTime.UtcNow;
+                _discountRepository.Update(discount);
                 
                 await _unitOfWork.SaveChangesAsync();
                 return ApiResponse.Success(new { customerDiscount.Id, discount.Code }, "Discount code saved to wallet successfully.");

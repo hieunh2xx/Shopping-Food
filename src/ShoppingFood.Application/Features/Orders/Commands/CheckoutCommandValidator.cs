@@ -35,6 +35,10 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             RuleFor(x => x.DeliveryLongitude)
                 .InclusiveBetween(-180.0, 180.0).When(x => x.DeliveryLongitude.HasValue)
                 .WithMessage("Longitude must be between -180 and 180.");
+
+            RuleFor(x => x.DiscountCode)
+                .Empty().When(x => !x.CurrentUserId.HasValue)
+                .WithMessage("You must be logged in to apply a discount code.");
         }
     }
 }

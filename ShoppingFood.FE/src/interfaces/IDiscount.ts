@@ -34,6 +34,8 @@ export interface IDiscountDto {
   usedCount: number;
   maxUsagePerUser: number;
   status: string;
+  isSaved?: boolean;
+  isUsedUp?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -44,6 +46,7 @@ export interface IGetDiscountsParams{
   filter?: string;
   skip?: number;
   take?: number;
+  isSavedOnly?: boolean;
 }
 
 export interface IUpdateDiscountRequest {

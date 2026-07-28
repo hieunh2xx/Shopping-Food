@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -25,6 +25,8 @@ namespace ShoppingFood.Dto.Discount
         public int UsedCount { get; set; }
         public int MaxUsagePerUser { get; set; }
         public string Status { get; set; } = string.Empty;
+        public bool IsSaved { get; set; }
+        public bool IsUsedUp { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }

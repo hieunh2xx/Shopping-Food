@@ -48,6 +48,7 @@ export function SellerOrdersPage() {
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
 
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
+  const [deliveryType, setDeliveryType] = useState<string>('PlatformDelivery');
   const [orderChatMap, setOrderChatMap] = useState<Record<string, string>>({});
   const [sellerChat, setSellerChat] = useState<{ isOpen: boolean; orderId: string; sessionId?: string }>({
     isOpen: false,
@@ -96,6 +97,9 @@ export function SellerOrdersPage() {
     authService.getProfile().then(res => {
       if (!res.error && res.data?.sellerInfo?.restaurantId) {
         setRestaurantId(res.data.sellerInfo.restaurantId);
+        if (res.data.sellerInfo.deliveryType) {
+          setDeliveryType(res.data.sellerInfo.deliveryType);
+        }
       }
     });
     chatService.getSellerOrderChats().then(res => {
@@ -415,13 +419,13 @@ export function SellerOrdersPage() {
                     {order.status === 'Preparing' && (
                       <Button
                         size="sm"
-                        className="bg-purple-600 hover:bg-purple-700 text-white"
+                        className={deliveryType === 'SelfDelivery' ? "bg-green-600 hover:bg-green-700 text-white" : "bg-purple-600 hover:bg-purple-700 text-white"}
                         onClick={(e) => {
                           e.stopPropagation();
                           handleWaitingForShipper(order.id);
                         }}
                       >
-                        <Truck className="w-4 h-4 mr-1" /> Chờ Shipper lấy
+                        <Truck className="w-4 h-4 mr-1" /> {deliveryType === 'SelfDelivery' ? 'Bắt đầu đi giao' : 'Chờ Shipper lấy'}
                       </Button>
                     )}
 
@@ -509,7 +513,7 @@ export function SellerOrdersPage() {
               </div>
 
               {/* Delivery Code for Shipper Verification */}
-              {['Confirmed', 'Preparing', 'WaitingForShipper', 'Shipping', 'Delivered'].includes(selectedOrder.status) && (
+              {deliveryType !== 'SelfDelivery' && ['Confirmed', 'Preparing', 'WaitingForShipper', 'Shipping', 'Delivered'].includes(selectedOrder.status) && (
                 <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex flex-col items-center justify-center text-center">
                   <span className="text-xs text-orange-600 font-semibold mb-1 uppercase tracking-wider">Mã xác nhận Shipper</span>
                   <span className="text-3xl font-black text-orange-600 tracking-widest">{selectedOrder.id.slice(-6).toUpperCase()}</span>
@@ -596,14 +600,14 @@ export function SellerOrdersPage() {
                     <Utensils className="w-4 h-4 mr-2 inline" /> Bắt đầu chuẩn bị
                   </Button>
                 )}
-                {selectedOrder.status === 'Preparing' && (
-                  <Button
-                    className="w-full bg-purple-600 hover:bg-purple-700 text-white"
-                    onClick={() => handleWaitingForShipper(selectedOrder.id)}
-                  >
-                    <Truck className="w-4 h-4 mr-2 inline" /> Chờ Shipper đến lấy
-                  </Button>
-                )}
+                  {selectedOrder.status === 'Preparing' && (
+                    <Button
+                      className={deliveryType === 'SelfDelivery' ? "w-full bg-green-600 hover:bg-green-700 text-white" : "w-full bg-purple-600 hover:bg-purple-700 text-white"}
+                      onClick={() => handleWaitingForShipper(selectedOrder.id)}
+                    >
+                      <Truck className="w-4 h-4 mr-2 inline" /> {deliveryType === 'SelfDelivery' ? 'Bắt đầu đi giao' : 'Chờ Shipper lấy'}
+                    </Button>
+                  )}
                 {selectedOrder.status === 'Shipping' && !selectedOrder.shipperId && (
                   <Button
                     className="w-full bg-green-600 hover:bg-green-700 text-white"

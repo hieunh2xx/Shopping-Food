@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Tag, Search, Plus, Trash2, Edit2, ShieldAlert, Lock } from 'lucide-react';
-import { Button, Input, Modal, Pagination } from '../../components/common';
+import { Tag, Search, Plus, Trash2, Edit2, Lock } from 'lucide-react';
+import { Button, Input, Modal, Pagination, ConfirmModal } from '../../components/common';
 import toast from 'react-hot-toast';
 import { discountService } from '../../services/DiscountService';
 import type { IDiscountDto, ICreateDiscountRequest, IUpdateDiscountRequest } from '../../interfaces';
@@ -18,6 +18,12 @@ export function AdminDiscountsPage() {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDiscount, setEditingDiscount] = useState<IDiscountDto | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{isOpen: boolean, title: string, desc: string, action: () => void}>({
+    isOpen: false,
+    title: '',
+    desc: '',
+    action: () => {}
+  });
 
   // Form State
   const [formData, setFormData] = useState<ICreateDiscountRequest>({
@@ -53,9 +59,7 @@ export function AdminDiscountsPage() {
       // Only get global discounts (restaurantId is null)
       const res = await discountService.getDiscounts({ skip, take, filter: searchTerm, includeAll: true } as any);
       if (!res.error && res.data) {
-        // Lọc hiển thị mã toàn hệ thống (không có restaurantId)
-        const globalDiscounts = res.data.filter(d => !d.restaurantId);
-        setDiscounts(globalDiscounts);
+        setDiscounts(res.data);
         setTotal(res.total || 0);
       }
     } catch {
@@ -103,6 +107,30 @@ export function AdminDiscountsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const handleApiError = (res: any, defaultMsg: string) => {
+        if (res.message === 'Validation failed.' && Array.isArray(res.data)) {
+          res.data.forEach((err: any) => {
+            let errMsg = err.error;
+            if (errMsg.includes('is required')) errMsg = `${err.property} không được để trống.`;
+            else if (errMsg.includes('already exists')) errMsg = `${err.property} đã tồn tại.`;
+            else if (errMsg.includes('cannot be in the past')) errMsg = `${err.property} không được ở trong quá khứ.`;
+            else if (errMsg.includes('must not exceed')) errMsg = `${err.property} vượt quá giới hạn cho phép.`;
+            else if (errMsg.includes('greater than')) errMsg = `${err.property} không hợp lệ.`;
+            toast.error(errMsg);
+          });
+          return;
+        }
+        let msg = res.message || defaultMsg;
+        if (msg.includes('Value must not exceed 100%')) {
+          msg = 'Giá trị giảm không được vượt quá 100%.';
+        } else if (msg.includes('Value must not exceed the minimum order amount')) {
+          msg = 'Giá trị giảm không được vượt quá đơn hàng tối thiểu.';
+        } else if (msg.includes('Code already exists')) {
+          msg = 'Mã giảm giá này đã tồn tại.';
+        }
+        toast.error(msg);
+      };
+
       if (editingDiscount) {
         const updateData: IUpdateDiscountRequest = {
           title: formData.title,
@@ -122,7 +150,7 @@ export function AdminDiscountsPage() {
           setIsModalOpen(false);
           fetchDiscounts();
         } else {
-          toast.error(res.message || 'Lỗi cập nhật');
+          handleApiError(res, 'Lỗi cập nhật');
         }
       } else {
         const createData: ICreateDiscountRequest = {
@@ -139,7 +167,7 @@ export function AdminDiscountsPage() {
           setIsModalOpen(false);
           fetchDiscounts();
         } else {
-          toast.error(res.message || 'Lỗi tạo mã');
+          handleApiError(res, 'Lỗi tạo mã');
         }
       }
     } catch (err) {
@@ -147,34 +175,46 @@ export function AdminDiscountsPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa mã giảm giá này?')) return;
-    try {
-      const res = await discountService.deleteDiscount(id);
-      if (!res.error) {
-        toast.success('Đã xóa mã giảm giá');
-        fetchDiscounts();
-      } else {
-        toast.error(res.message || 'Lỗi xóa mã');
+  const handleDelete = (id: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Xóa mã giảm giá',
+      desc: 'Bạn có chắc chắn muốn xóa mã giảm giá này?',
+      action: async () => {
+        try {
+          const res = await discountService.deleteDiscount(id);
+          if (!res.error) {
+            toast.success('Đã xóa mã giảm giá');
+            fetchDiscounts();
+          } else {
+            toast.error(res.message || 'Lỗi xóa mã');
+          }
+        } catch {
+          toast.error('Lỗi khi xóa mã');
+        }
       }
-    } catch {
-      toast.error('Lỗi khi xóa mã');
-    }
+    });
   };
 
-  const handleLock = async (id: string) => {
-    if (!confirm('Bạn có chắc chắn muốn khóa khẩn cấp mã giảm giá này? (Ngưng áp dụng lập tức)')) return;
-    try {
-      const res = await discountService.lockDiscount(id);
-      if (!res.error) {
-        toast.success('Đã khóa mã giảm giá');
-        fetchDiscounts();
-      } else {
-        toast.error(res.message || 'Lỗi khóa mã');
+  const handleLock = (id: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Khóa khẩn cấp',
+      desc: 'Bạn có chắc chắn muốn khóa khẩn cấp mã giảm giá này? (Ngưng áp dụng lập tức)',
+      action: async () => {
+        try {
+          const res = await discountService.lockDiscount(id);
+          if (!res.error) {
+            toast.success('Đã khóa mã giảm giá');
+            fetchDiscounts();
+          } else {
+            toast.error(res.message || 'Lỗi khóa mã');
+          }
+        } catch {
+          toast.error('Lỗi khi khóa mã');
+        }
       }
-    } catch {
-      toast.error('Lỗi khi khóa mã');
-    }
+    });
   };
 
   return (
@@ -208,8 +248,10 @@ export function AdminDiscountsPage() {
               <tr className="bg-gray-50 border-b border-gray-200 text-sm text-gray-500">
                 <th className="py-4 px-6 font-medium">Mã KM</th>
                 <th className="py-4 px-6 font-medium">Chi tiết</th>
+                <th className="py-4 px-6 font-medium text-center">Phạm vi</th>
                 <th className="py-4 px-6 font-medium">Thời hạn</th>
                 <th className="py-4 px-6 font-medium text-center">Đã dùng / Tổng</th>
+                <th className="py-4 px-6 font-medium text-center">Trạng thái</th>
                 <th className="py-4 px-6 font-medium text-right">Thao tác</th>
               </tr>
             </thead>
@@ -229,6 +271,15 @@ export function AdminDiscountsPage() {
                       {discount.minOrderAmount > 0 && ` (Đơn tối thiểu ${discount.minOrderAmount.toLocaleString()}đ)`}
                     </div>
                   </td>
+                  <td className="py-4 px-6 text-center">
+                    {discount.restaurantId ? (
+                      <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700 truncate max-w-[150px] inline-block" title={discount.restaurantName}>
+                        Cửa hàng: {discount.restaurantName}
+                      </span>
+                    ) : (
+                      <span className="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-700">Hệ thống</span>
+                    )}
+                  </td>
                   <td className="py-4 px-6 text-sm text-gray-600">
                     <div>Từ: {new Date(discount.startDate).toLocaleDateString()}</div>
                     <div>Đến: {new Date(discount.endDate).toLocaleDateString()}</div>
@@ -236,14 +287,32 @@ export function AdminDiscountsPage() {
                   <td className="py-4 px-6 text-center text-sm font-medium text-gray-900">
                     {discount.usedCount} / {discount.quantity}
                   </td>
+                  <td className="py-4 px-6 text-center">
+                    {(() => {
+                      const isExpired = new Date(discount.endDate) < new Date();
+                      const isOutOfStock = discount.usedCount >= discount.quantity;
+                      if (discount.status === 'Inactive' || discount.status === 'Cancelled') {
+                        return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700">Đã khóa</span>;
+                      }
+                      if (isExpired) {
+                        return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">Hết hạn</span>;
+                      }
+                      if (isOutOfStock) {
+                        return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-700">Hết lượt</span>;
+                      }
+                      return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">Đang hoạt động</span>;
+                    })()}
+                  </td>
                   <td className="py-4 px-6 text-right">
                     <div className="flex justify-end gap-2">
                       <Button variant="outline" size="sm" onClick={() => handleOpenModal(discount)}>
                         <Edit2 className="w-4 h-4" />
                       </Button>
-                      <Button variant="outline" size="sm" className="text-orange-600 border-orange-200 hover:bg-orange-50" onClick={() => handleLock(discount.id)} title="Khóa khẩn cấp">
-                        <Lock className="w-4 h-4" />
-                      </Button>
+                      {discount.status !== 'Inactive' && discount.status !== 'Cancelled' && (
+                        <Button variant="outline" size="sm" className="text-orange-600 border-orange-200 hover:bg-orange-50" onClick={() => handleLock(discount.id)} title="Khóa khẩn cấp">
+                          <Lock className="w-4 h-4" />
+                        </Button>
+                      )}
                       <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => handleDelete(discount.id)}>
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -253,7 +322,7 @@ export function AdminDiscountsPage() {
               ))}
               {discounts.length === 0 && !isLoading && (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-gray-500">Không có mã giảm giá nào</td>
+                  <td colSpan={6} className="py-8 text-center text-gray-500">Không có mã giảm giá nào</td>
                 </tr>
               )}
             </tbody>
@@ -274,8 +343,8 @@ export function AdminDiscountsPage() {
       </div>
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingDiscount ? 'Cập nhật mã giảm giá' : 'Tạo mã giảm giá mới'} size="lg">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Mã (Code) *</label>
               <Input required value={formData.code} disabled={!!editingDiscount} onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })} placeholder="VD: TET2024" />
@@ -300,7 +369,7 @@ export function AdminDiscountsPage() {
             {formData.type !== 'FreeShipping' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Giá trị giảm *</label>
-                <Input type="number" required min="0" max={formData.type === 'Percentage' ? 100 : undefined} value={formData.value} onChange={(e) => setFormData({ ...formData, value: e.target.value === '' ? ('' as any) : Number(e.target.value) })} />
+                <Input type="number" required min="0" max={formData.type === 'Percentage' ? 100 : (formData.type === 'FixedAmount' ? formData.minOrderAmount : undefined)} value={formData.value} onChange={(e) => setFormData({ ...formData, value: e.target.value === '' ? ('' as any) : Number(e.target.value) })} />
               </div>
             )}
             
@@ -326,14 +395,16 @@ export function AdminDiscountsPage() {
               <Input type="number" required min="1" value={formData.maxUsagePerUser} onChange={(e) => setFormData({ ...formData, maxUsagePerUser: e.target.value === '' ? ('' as any) : Number(e.target.value) })} />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Ngày bắt đầu *</label>
-              <Input type="datetime-local" required value={formData.startDate} onChange={(e) => setFormData({ ...formData, startDate: e.target.value })} />
-            </div>
+            <div className="col-span-2 grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Ngày bắt đầu *</label>
+                <Input type="datetime-local" required value={formData.startDate} onChange={(e) => setFormData({ ...formData, startDate: e.target.value })} />
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Ngày kết thúc *</label>
-              <Input type="datetime-local" required value={formData.endDate} onChange={(e) => setFormData({ ...formData, endDate: e.target.value })} />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Ngày kết thúc *</label>
+                <Input type="datetime-local" required value={formData.endDate} onChange={(e) => setFormData({ ...formData, endDate: e.target.value })} />
+              </div>
             </div>
           </div>
           
@@ -343,6 +414,19 @@ export function AdminDiscountsPage() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={() => {
+          confirmModal.action();
+          setConfirmModal(prev => ({ ...prev, isOpen: false }));
+        }}
+        title={confirmModal.title}
+        description={confirmModal.desc}
+        confirmLabel="Đồng ý"
+        cancelLabel="Hủy"
+      />
     </div>
   );
 }

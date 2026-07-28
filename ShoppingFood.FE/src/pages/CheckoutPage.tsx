@@ -120,7 +120,7 @@ export function CheckoutPage() {
     if (restaurantId) {
       discountService.getDiscounts({ restaurantId, take: 50 }).then(res => {
         if (!res.error && res.data) {
-          setAvailableDiscounts(res.data.filter(d => d.status === 'Active' && d.minOrderAmount <= checkoutTotal));
+          setAvailableDiscounts(res.data.filter(d => d.status === 'Active'));
         }
       });
     }
@@ -810,20 +810,49 @@ export function CheckoutPage() {
             {availableDiscounts.length === 0 ? (
               <p className="text-sm text-gray-500 text-center py-4">Chưa có mã giảm giá phù hợp cho đơn hàng này.</p>
             ) : (
-              availableDiscounts.map(discount => (
-                <div key={discount.id} onClick={() => { setSelectedDiscount(discount); setFormData({...formData, discountCode: discount.code}); setIsDiscountModalOpen(false); }} className="flex items-center justify-between p-3 border border-gray-200 rounded-xl cursor-pointer hover:border-orange-500 hover:bg-orange-50 transition-colors">
+              availableDiscounts.map(discount => {
+                const isEligible = checkoutTotal >= discount.minOrderAmount;
+                return (
+                <div key={discount.id} onClick={() => { 
+                  if (!isEligible) return;
+                  setSelectedDiscount(discount); setFormData({...formData, discountCode: discount.code}); setIsDiscountModalOpen(false); 
+                }} className={`flex items-center justify-between p-3 border rounded-xl transition-colors ${isEligible ? 'border-gray-200 cursor-pointer hover:border-orange-500 hover:bg-orange-50' : 'border-gray-100 bg-gray-50 opacity-60 cursor-not-allowed'}`}>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
                       <Tag className="w-5 h-5 text-orange-500" />
                     </div>
-                    <div>
-                      <div className="font-bold text-gray-900">{discount.code}</div>
-                      <div className="text-xs text-gray-500">{discount.title}</div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="font-bold text-gray-900">{discount.code}</span>
+                        {discount.restaurantId ? (
+                          <span className="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px] font-bold border border-blue-100 truncate max-w-[100px]" title={discount.restaurantName}>
+                            {discount.restaurantName}
+                          </span>
+                        ) : (
+                          <span className="px-1.5 py-0.5 bg-purple-50 text-purple-600 rounded text-[10px] font-bold border border-purple-100">
+                            Hệ thống
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-800 font-medium mb-1 line-clamp-1">{discount.title}</div>
+                      <div className="text-[11px] text-gray-500">
+                        Giảm {discount.type === 'Percentage' ? `${discount.value}%` : `${discount.value.toLocaleString()}đ`}
+                        {discount.maxDiscountAmount ? ` (Tối đa ${discount.maxDiscountAmount.toLocaleString()}đ)` : ''}
+                      </div>
+                      <div className="text-[11px] text-gray-500">
+                        Đơn tối thiểu {discount.minOrderAmount.toLocaleString()}đ
+                      </div>
                     </div>
                   </div>
-                  <div className="text-orange-600 text-sm font-semibold">Chọn</div>
+                  {isEligible ? (
+                    <div className="text-orange-600 text-sm font-semibold shrink-0">Chọn</div>
+                  ) : (
+                    <div className="text-red-500 text-[10px] font-semibold text-right shrink-0">
+                      Mua thêm<br/>{(discount.minOrderAmount - checkoutTotal).toLocaleString()}đ
+                    </div>
+                  )}
                 </div>
-              ))
+              )})
             )}
           </div>
         </div>

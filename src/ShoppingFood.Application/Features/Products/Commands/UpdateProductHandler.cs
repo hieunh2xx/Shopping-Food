@@ -12,23 +12,30 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ShoppingFood.Dto.Product;
+using ShoppingFood.Domain.Enums;
 
 namespace ShoppingFood.Application.Features.Products.Commands
 {
     public class UpdateProductHandler : IRequestHandler<UpdateProductCommand, ApiResponse>
     {
         private readonly IProductRepository _productRepository;
+        private readonly IUserRepository _userRepository;
+        private readonly IRestaurantProfileRepository _restaurantProfileRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly ShoppingFoodContext _dbContext;
 
         public UpdateProductHandler(
             IProductRepository productRepository, 
+            IUserRepository userRepository,
+            IRestaurantProfileRepository restaurantProfileRepository,
             IUnitOfWork unitOfWork, 
             IMapper mapper,
             ShoppingFoodContext dbContext)
         {
             _productRepository = productRepository;
+            _userRepository = userRepository;
+            _restaurantProfileRepository = restaurantProfileRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _dbContext = dbContext;
@@ -41,6 +48,21 @@ namespace ShoppingFood.Application.Features.Products.Commands
 
                 if (product == null) 
                     return ApiResponse.Failure(404, "This dish cannot be found.");
+
+                if (!request.CurrentUserId.HasValue)
+                    return ApiResponse.Failure(401, "Unauthorized.");
+
+                var user = await _userRepository.GetAsync(u => u.Id == request.CurrentUserId.Value, include: q => q.Include(u => u.Profile));
+                var userProfile = user.FirstOrDefault()?.Profile;
+                if (userProfile == null)
+                    return ApiResponse.Failure(401, "Unauthorized.");
+
+                if (userProfile.Role != UserRole.Admin)
+                {
+                    var restaurants = await _restaurantProfileRepository.GetAsync(r => r.Id == product.RestaurantId && r.OwnerId == userProfile.Id);
+                    if (!restaurants.Any())
+                        return ApiResponse.Failure(403, "Access denied. You do not own this dish.");
+                }
 
                 product.ItemName = request.ItemName;
                 product.Description = request.Description;

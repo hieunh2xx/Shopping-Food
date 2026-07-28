@@ -31,6 +31,7 @@ namespace ShoppingFood.Dto.Order
         public string? OrderChatSessionStatus { get; set; }
         public string PaymentStatus { get; set; } = string.Empty;
         public Guid? PaymentSessionId { get; set; }
+        public string? DiscountCode { get; set; }
         public List<OrderItemDto> Items { get; set; } = new List<OrderItemDto>();
     }
 }

@@ -464,7 +464,7 @@ export function ProfilePage() {
             <Ticket className="w-6 h-6 text-orange-500" />
             Ví Voucher của tôi
           </h3>
-          <CustomerVouchers />
+          <CustomerVouchers isWalletMode={true} />
         </div>
       )}
 

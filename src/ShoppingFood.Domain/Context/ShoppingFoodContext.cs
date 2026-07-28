@@ -690,8 +690,6 @@ namespace ShoppingFood.Domain.Context
                     .WithMany()
                     .HasForeignKey(d => d.RestaurantId)
                     .OnDelete(DeleteBehavior.Restrict);
-
-                entity.HasQueryFilter(d => !d.IsDeleted);
             });
 
             modelBuilder.Entity<CustomerDiscount>(entity =>
@@ -709,8 +707,6 @@ namespace ShoppingFood.Domain.Context
                     .WithMany()
                     .HasForeignKey(d => d.DiscountId)
                     .OnDelete(DeleteBehavior.Cascade);
-
-                entity.HasQueryFilter(cd => !cd.Discount.IsDeleted);
             });
 
             modelBuilder.Entity<LoyaltyPoint>(entity =>

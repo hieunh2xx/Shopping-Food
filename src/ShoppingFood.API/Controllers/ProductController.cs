@@ -17,6 +17,7 @@ namespace ShoppingFood.API.Controllers
         [HttpPost]
         public async Task<ActionResult<ApiResponse>> Create([FromBody] AddProductCommand command)
         {
+            if (userDto != null) command.CurrentUserId = userDto.Id;
             var response = await _mediator.Send(command);
             return Ok(response);
         }
@@ -24,7 +25,8 @@ namespace ShoppingFood.API.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult<ApiResponse>> Update(Guid id, [FromBody] UpdateProductCommand command)
         {
-            
+            command.Id = id;
+            if (userDto != null) command.CurrentUserId = userDto.Id;
             var response = await _mediator.Send(command);
             return Ok(response);
         }
@@ -32,18 +34,24 @@ namespace ShoppingFood.API.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult<ApiResponse>> Delete(Guid id)
         {
-            var response = await _mediator.Send(new DeleteProductCommand(id));
+            var command = new DeleteProductCommand(id);
+            if (userDto != null) command.CurrentUserId = userDto.Id;
+            var response = await _mediator.Send(command);
             return Ok(response);
         }
         [HttpPatch("StockStatus/{id}")]
         public async Task<ActionResult<ApiResponse>> UpdateStockStatus(Guid id, [FromBody] UpdateProductStockCommand command)
         {
+            command.Id = id;
+            if (userDto != null) command.CurrentUserId = userDto.Id;
             var response = await _mediator.Send(command);
             return Ok(response);
         }
         [HttpPatch("Visibility/{id}")]
         public async Task<ActionResult<ApiResponse>> UpdateVisibility(Guid id, [FromBody] ToggleProductVisibilityCommand command)
         {
+            command.Id = id;
+            if (userDto != null) command.CurrentUserId = userDto.Id;
             var response = await _mediator.Send(command);
             return Ok(response);
         }

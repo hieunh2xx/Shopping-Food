@@ -7,6 +7,7 @@ using ShoppingFood.Domain.Models;
 using ShoppingFood.Domain.Enums;
 using ShoppingFood.Dto.Product;
 using ShoppingFood.Repository.Interfaces;
+using ShoppingFood.Domain.Context;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,24 +23,42 @@ namespace ShoppingFood.Application.Features.Products.Commands
         private readonly INotificationRepository _notificationRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IRestaurantProfileRepository _restaurantProfileRepository;
 
         public AddProductHandler(
             IProductRepository productRepository, 
             IUserRepository userRepository,
             INotificationRepository notificationRepository,
             IUnitOfWork unitOfWork, 
-            IMapper mapper)
+            IMapper mapper,
+            IRestaurantProfileRepository restaurantProfileRepository)
         {
             _productRepository = productRepository;
             _userRepository = userRepository;
             _notificationRepository = notificationRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _restaurantProfileRepository = restaurantProfileRepository;
         }
         public async Task<ApiResponse> Handle(AddProductCommand request, CancellationToken cancellationToken)
         {
             try
             {
+                if (!request.CurrentUserId.HasValue)
+                    return ApiResponse.Failure(401, "Unauthorized.");
+
+                var user = await _userRepository.GetAsync(u => u.Id == request.CurrentUserId.Value, include: q => q.Include(u => u.Profile));
+                var userProfile = user.FirstOrDefault()?.Profile;
+                if (userProfile == null)
+                    return ApiResponse.Failure(401, "Unauthorized.");
+
+                if (userProfile.Role != UserRole.Admin)
+                {
+                    var restaurants = await _restaurantProfileRepository.GetAsync(r => r.OwnerId == userProfile.Id && r.Id == request.RestaurantId);
+                    if (!restaurants.Any())
+                        return ApiResponse.Failure(403, "Access denied. You do not own this restaurant.");
+                }
+
                 var product = _mapper.Map<Product>(request);
                 InitializeProduct(product); 
 

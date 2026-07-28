@@ -31,5 +31,6 @@ namespace ShoppingFood.Dto.User
         public double AverageRating { get; set; }
         public int ReviewCount { get; set; }
         public string? LogoUrl { get; set; }
+        public string DeliveryType { get; set; } = string.Empty;
     }
 }
