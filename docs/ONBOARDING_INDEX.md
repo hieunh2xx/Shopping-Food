@@ -1,65 +1,34 @@
-# Shopping Food — Tài liệu Onboarding
+# Shopping Food — Onboarding
 
-> **Developer mới bắt đầu tại đây.**
+## Học một Feature = mở 1 file Workflow
 
-Hệ thống tài liệu chia 3 lớp:
+Mỗi workflow đã **gộp UI Trace + luồng backend**:
 
-| Lớp | Thư mục | Mục đích |
-|-----|---------|----------|
-| **Requirements (FR)** | [requirements/](./requirements/README.md) | *Phải làm gì* — FR-ID, rule, acceptance |
-| **Alerts** | [requirements/ALERTS_INDEX.md](./requirements/ALERTS_INDEX.md) | *Cảnh báo / toast / confirm* từng Feature |
-| **Workflows** | [workflows/README.md](./workflows/README.md) | *Chạy thế nào* — bước + code + call chain |
+1. **Phần A** — Nút ở đâu → chạy file nào → data → hiển thị  
+2. **Phần B** — Workflow nghiệp vụ / API / bảo mật / checklist  
 
----
+**Mục lục:** [workflows/README.md](./workflows/README.md)
 
-## Đọc ngay — Tiền & chia tiền
+### Gợi ý đọc trước
 
-| # | Tài liệu |
-|---|----------|
-| 1 | [requirements/Revenue_Split_Requirements.md](./requirements/Revenue_Split_Requirements.md) — **Sàn/Seller/Shipper kiếm tiền thế nào** |
-| 2 | [requirements/Payment_Requirements.md](./requirements/Payment_Requirements.md) |
-| 3 | [requirements/alerts/Payment_Alerts.md](./requirements/alerts/Payment_Alerts.md) · [Revenue_Split_Alerts](./requirements/alerts/Revenue_Split_Alerts.md) |
-| 4 | Workflows: [Payment_Checkout](./workflows/Payment_Checkout_Workflow.md) → [SePay](./workflows/Payment_Sepay_Workflow.md) → [Wallet](./workflows/Payment_Wallet_Withdraw_Workflow.md) |
+| Thứ tự | File |
+|--------|------|
+| 1 | [workflows/Login_Workflow.md](./workflows/Login_Workflow.md) |
+| 2 | [workflows/Cart_Workflow.md](./workflows/Cart_Workflow.md) |
+| 3 | [workflows/Checkout_Order_Workflow.md](./workflows/Checkout_Order_Workflow.md) |
+| 4 | [workflows/Payment_Checkout_Workflow.md](./workflows/Payment_Checkout_Workflow.md) + [Payment_Sepay](./workflows/Payment_Sepay_Workflow.md) |
+| 5 | [workflows/Revenue_Split_Requirements.md](./workflows/Revenue_Split_Requirements.md) |
+| 6 | [workflows/Shipper_Delivery_Workflow.md](./workflows/Shipper_Delivery_Workflow.md) |
 
----
+### Lớp bổ sung (khi cần)
 
-## Bản đồ nhanh
+| Lớp | Link |
+|-----|------|
+| Requirements (FR-ID) | [requirements/README.md](./requirements/README.md) |
+| Cảnh báo / toast ID | [requirements/ALERTS_INDEX.md](./requirements/ALERTS_INDEX.md) |
+| Tracking use case | [TRACKING_USE_CASES_APIS.md](./TRACKING_USE_CASES_APIS.md) |
 
-```mermaid
-flowchart LR
-    FE[React FE] --> API[ASP.NET API]
-    API --> DB[(SQL Server)]
-    API --> SePay[SePay]
-```
-
-**Roles:** Guest · Customer · Seller · Mall · Shipper · Coordinator · Admin
-
----
-
-## Toàn bộ Requirements
-
-Xem mục lục: **[requirements/README.md](./requirements/README.md)**  
-Xem cảnh báo: **[requirements/ALERTS_INDEX.md](./requirements/ALERTS_INDEX.md)**  
-Xem workflow: **[workflows/README.md](./workflows/README.md)**
-
----
-
-## Checklist 1 ngày
-
-- [ ] Đọc Revenue Split + Payment Requirements + Payment Alerts  
-- [ ] Login + ForgotPassword workflow  
-- [ ] Cart → Checkout (COD) end-to-end  
-- [ ] Hiểu settle khi giao hàng (ai được bao nhiêu)  
-- [ ] Biết tìm toast theo `AL-*-NN` trong `requirements/alerts/`
-
----
-
-## Khác
-
-| File | Mô tả |
-|------|--------|
-| [TRACKING_USE_CASES_APIS.md](./TRACKING_USE_CASES_APIS.md) | Use case / Screen Run |
-| [TRACKING_USE_CASES_APIS.csv](./TRACKING_USE_CASES_APIS.csv) | Tracking CSV |
+> `docs/ui-traces/` chỉ còn trang chuyển hướng → workflows.
 
 ```bash
 cd src/ShoppingFood.API && dotnet run   # :5091
