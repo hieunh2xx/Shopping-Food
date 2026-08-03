@@ -1,6 +1,6 @@
 # Tài liệu Quy trình: Ví, Nạp tiền, Rút tiền & Công nợ COD
 
-Tài liệu mô tả chi tiết luồng **ví đa chủ sở hữu**, **nạp tiền (Top-up)**, **rút tiền (Withdraw)**, và **công nợ COD shipper** trong hệ thống **Shopping Food**.
+Tài liệu mô tả chi tiết luồng **ví đa chủ sở hữu**, **nạp tiền (Top-up)**, **rút tiền (Withdraw)**, và **công nợ COD shipper** — gồm **Phần A (UI Trace)** và **Phần B (nghiệp vụ/backend)**.
 
 > **Requirements:** [Payment_Requirements.md](./Payment_Requirements.md)  
 > Top-up dùng SePay: [Payment_Sepay_Workflow.md](./Payment_Sepay_Workflow.md)  
@@ -8,13 +8,146 @@ Tài liệu mô tả chi tiết luồng **ví đa chủ sở hữu**, **nạp ti
 
 ---
 
-## 1. Luồng Tổng Quan (Workflow)
+## Phần A — UI Interaction Trace (Nút bấm → Code → Data → Hiển thị)
 
-1. **Xem ví:** User gọi `GET /api/Payment/wallet` (Customer / Seller / Shipper / theo OwnerType).
-2. **Customer nạp tiền:** Nhập số tiền ≥ **10.000₫** → `POST /api/Payment/wallet/top-up` → tạo `PaymentSession` SePay (không gắn Order) → QR → webhook → credit `TopUp`.
-3. **Seller/Shipper rút tiền:** Số tiền ≥ **50.000₫** (config) → `POST /api/Payment/withdraw` → **debit ví ngay** + tạo `WithdrawalRequest` Pending.
-4. **Admin duyệt rút:** `POST /api/Payment/withdrawals/approve` → Approved **hoặc** Rejected (+ Refund hoàn ví).
-5. **Shipper nợ COD:** Tăng khi settle giao COD; nộp nợ `POST /api/Payment/shipper/repay-debt`; Admin set hạn mức `PUT .../debt-limit`.
+Mỗi thao tác: **nút ở đâu** · **bấm chạy file/hàm nào** · **API/BE** · **data trả về** · **hiển thị thế nào**.
+
+---
+
+### UT-WAL-01 — CustomerWalletPage — Nạp tiền (Top-up)
+
+#### 1. Giao diện
+
+| Mục | Giá trị |
+|-----|---------|
+| **Route / Tab** | Profile ví hoặc `/payment/wallet` — `pages/payment/CustomerWalletPage.tsx` |
+| **Input** | Số tiền nạp (`topUpAmount`) |
+| **Nút** | Nạp tiền → `onClick={handleTopUp}` |
+
+#### 2. FE
+
+```text
+handleTopUp
+  → validate amount >= 10000
+  → paymentService.topUpWallet(amount)
+  → POST /api/Payment/wallet/top-up
+```
+
+#### 3. BE
+
+`TopUpWalletHandler` → `CreateTopUpSessionAsync` → `PaymentSession` Sepay, `OrderId = null`, expiry 10 phút.
+
+#### 4–5. Data & hiển thị
+
+| Validate &lt; 10k | `toast.error('Số tiền nạp tối thiểu 10.000đ')` |
+| OK | `toast.success('Đang chuyển hướng sang trang thanh toán...')` → `navigate(/payment/sepay?sessionId=…&returnUrl=…wallet)` |
+| Fail | `toast.error(res.message \|\| 'Lỗi nạp tiền')` |
+
+Sau đó UI QR: [Payment_Sepay_Workflow.md](./Payment_Sepay_Workflow.md) UT-SEP-*.
+
+---
+
+### UT-WAL-02 — PartnerWalletPages — Rút tiền (Seller / Shipper)
+
+#### 1. Giao diện
+
+| Mục | Giá trị |
+|-----|---------|
+| **Page** | `pages/payment/PartnerWalletPages.tsx` (Seller wallet + Shipper wallet) |
+| **Form** | amount, bankName, bankAccountNumber, bankAccountHolder |
+| **Nút** | Rút tiền → `handleWithdraw` |
+
+#### 2–3
+
+```text
+handleWithdraw
+  → validate đầy đủ + amount >= 50000 (Seller path)
+  → paymentService.requestWithdrawal({ amount, bank* })
+  → POST /api/Payment/withdraw
+  → RequestWithdrawalHandler: Debit ví ngay + WithdrawalRequest Pending
+```
+
+#### 5. Hiển thị
+
+| Thiếu form | `toast.error('Vui lòng điền đầy đủ thông tin')` |
+| Min 50k | `toast.error('Số tiền rút tối thiểu 50.000đ')` (Seller) |
+| OK | `toast.success('Yêu cầu rút tiền đã được gửi')` / `'đã gửi'` + `loadData()` (số dư giảm) |
+| Fail / 403 Customer | toast.error message API |
+
+---
+
+### UT-WAL-03 — PartnerWalletPages — Shipper nộp công nợ COD
+
+#### 1. Giao diện
+
+| Mục | Giá trị |
+|-----|---------|
+| **Section** | Shipper wallet — input `repayAmount` |
+| **Nút** | **Nộp tiền** → `handleRepay` |
+
+#### 2–3
+
+```text
+handleRepay
+  → paymentService.repayShipperDebt(amount)
+  → POST /api/Payment/shipper/repay-debt
+```
+
+#### 5. Hiển thị
+
+| Invalid | `toast.error('Nhập số tiền hợp lệ')` |
+| OK | `toast.success('Đã nộp {amount} công nợ COD')` + reload |
+| Fail | `toast.error('Lỗi nộp tiền')` |
+
+---
+
+### UT-WAL-04 — AdminFinancePage — Duyệt / từ chối rút tiền
+
+#### 1. Giao diện
+
+| Mục | Giá trị |
+|-----|---------|
+| **Page** | `pages/admin/AdminFinancePage.tsx` |
+| **Section** | “Yêu cầu rút tiền chờ duyệt” |
+| **Nút** | Duyệt → `handleApprove(id, true)`; Từ chối → `handleApprove(id, false)` |
+
+#### 2–3
+
+```text
+paymentService.approveWithdrawal(id, approve)
+  → POST /api/Payment/withdrawals/approve
+  → Approve: Status Approved
+  → Reject: Rejected + Refund txn hoàn ví
+```
+
+#### 5. Hiển thị
+
+| Approve | `toast.success('Đã duyệt')` + reload list |
+| Reject | `toast.success('Đã từ chối')` + reload |
+| Fail | `toast.error(res.message \|\| 'Lỗi')` |
+
+---
+
+### Bảng tóm tắt Phần A
+
+| ID | Thao tác | FE | API |
+|----|----------|-----|-----|
+| UT-WAL-01 | Top-up | CustomerWalletPage | POST `/wallet/top-up` |
+| UT-WAL-02 | Withdraw | PartnerWalletPages | POST `/withdraw` |
+| UT-WAL-03 | Repay COD debt | PartnerWalletPages (Shipper) | POST `/shipper/repay-debt` |
+| UT-WAL-04 | Approve withdraw | AdminFinancePage | POST `/withdrawals/approve` |
+
+---
+
+## Phần B — Workflow nghiệp vụ & Backend
+
+### 1. Luồng Tổng Quan (Workflow)
+
+1. **Xem ví:** `GET /api/Payment/wallet` (Customer / Seller / Shipper / theo OwnerType).
+2. **Customer nạp tiền:** ≥ **10.000₫** → `POST /wallet/top-up` → `PaymentSession` SePay → QR → webhook → credit `TopUp`.
+3. **Seller/Shipper rút tiền:** ≥ **50.000₫** → `POST /withdraw` → **debit ví ngay** + `WithdrawalRequest` Pending.
+4. **Admin duyệt rút:** `POST /withdrawals/approve` → Approved **hoặc** Rejected (+ Refund).
+5. **Shipper nợ COD:** Tăng khi settle giao COD; nộp `POST /shipper/repay-debt`; Admin `PUT .../debt-limit`.
 6. **Báo cáo:** transactions / history / withdrawals / Admin dashboard & reconciliation.
 
 ```mermaid
@@ -43,9 +176,7 @@ sequenceDiagram
 
 ---
 
-## Bước 1: Xem ví & lịch sử giao dịch
-
-**Thông tin APIs** (`PaymentController` — prefix `api/Payment`):
+### Bước 1: Xem ví & lịch sử giao dịch
 
 | Method | Route | Actor | Mục đích |
 |--------|-------|-------|----------|
@@ -56,170 +187,79 @@ sequenceDiagram
 | GET | `/dashboard` | Admin | Tổng quan tài chính |
 | GET | `/reconciliation` | Admin | Đối soát |
 
-**FE:**
-- Customer: `ShoppingFood.FE/src/pages/payment/CustomerWalletPage.tsx`
-- Seller/Shipper: `PartnerWalletPages.tsx`
-- History: `PaymentHistoryPage.tsx`
-- Admin: `AdminPaymentDashboardPage.tsx`, finance pages
+**FE:** `CustomerWalletPage.tsx`, `PartnerWalletPages.tsx`, `PaymentHistoryPage.tsx`, `AdminFinancePage.tsx` / dashboard.
 
-**Model ví:** `WALLET` — khóa logic `(OwnerType, OwnerId)` với `OwnerType ∈ { Customer, Seller, Shipper, Platform }`  
-**Không FK** tới User — polymorphic.
+**Model ví:** `WALLET` — khóa `(OwnerType, OwnerId)` với `OwnerType ∈ { Customer, Seller, Shipper, Platform }` — polymorphic, không FK User.
 
 ---
 
-## Bước 2: Nạp tiền (Top-up) — Customer
+### Bước 2: Nạp tiền (Top-up) — Customer
 
-**Thông tin:**
-- **URL:** `/api/Payment/wallet/top-up`
-- **HTTP Method:** POST
-- **Auth:** Customer (JWT)
-- **Request:** `{ "amount": 50000 }` (ví dụ)
+- **URL:** `POST /api/Payment/wallet/top-up`
+- **Request:** `{ "amount": 50000 }`
+- **Handler:** `TopUpWalletHandler` — `Amount < 10_000` → Failure
+- **Session:** OrderId null, Sepay, ExpiresAt +10 phút
+- **Confirm:** nhánh TopUp trong `ConfirmPaymentSessionByInvoiceAsync`
 
-### 2.1. Frontend
-
-**File:** `CustomerWalletPage.tsx`
-
-- Validate min **10.000₫** → toast `Số tiền nạp tối thiểu 10.000đ`
-- Gọi API thành công → toast chuyển hướng → `/payment/sepay?sessionId=…`
-
-### 2.2. Backend
-
-**Handler:** `TopUpWalletHandler` (trong `PaymentCommandHandlers.cs`)  
-**Rule:** `Amount < 10_000` → Failure  
-**Tạo session:** `PaymentSettlementService.CreateTopUpSessionAsync`
-
-| Field session | Giá trị |
-|---------------|---------|
-| OrderId | `null` (phân biệt với checkout) |
-| Amount | số nạp |
-| PaymentMethod | Sepay |
-| ExpiresAt | now + **10 phút** |
-| Status | Pending |
-
-**Confirm sau webhook:** nhánh top-up trong `ConfirmPaymentSessionByInvoiceAsync` → `RecordTransactionAsync(..., TopUp, +amount)` vào ví Customer.
-
-> Top-up **phụ thuộc SePay enabled**. Nếu SePay tắt → không nạp được qua QR.
+> Top-up **phụ thuộc SePay enabled**.
 
 ---
 
-## Bước 3: Rút tiền (Withdraw) — Seller / Shipper
+### Bước 3: Rút tiền (Withdraw) — Seller / Shipper
 
-**Thông tin:**
-- **URL:** `/api/Payment/withdraw`
-- **HTTP Method:** POST
+- **URL:** `POST /api/Payment/withdraw`
 - **Auth:** Seller hoặc Shipper (**Customer → 403**)
-
-### 3.1. Rules
 
 | Rule | Giá trị |
 |------|---------|
-| Ai được rút | Seller (ví quán), Shipper |
-| Min amount | `PlatformFinanceConfig.MinWithdrawalAmount` (default **50.000₫**) |
-| Khi request | **Debit ví ngay** + `WithdrawalRequest.Status = Pending` |
+| Min amount | `MinWithdrawalAmount` default **50.000₫** |
+| Khi request | **Debit ngay** + Pending |
 | Large threshold | **5.000.000₫** (policy/reporting) |
 
-### 3.2. Frontend
-
-**File:** `PartnerWalletPages.tsx`  
-- Toast validate min 50k  
-- Success: `Yêu cầu rút tiền đã được gửi`
-
-### 3.3. Handler
-
-**File:** `RequestWithdrawalHandler` trong `PaymentCommandHandlers.cs`  
-Tạo `WITHDRAWAL_REQUEST` + `FINANCIAL_TRANSACTION` type `Withdrawal` (số âm).
+**Handler:** `RequestWithdrawalHandler`.
 
 ---
 
-## Bước 4: Admin duyệt rút tiền
+### Bước 4: Admin duyệt rút tiền
 
-**Thông tin:**
-- **URL:** `/api/Payment/withdrawals/approve`
-- **HTTP Method:** POST
-- **Auth:** Admin
-
-| Quyết định | Hành vi |
-|------------|---------|
-| Approve | `WithdrawalStatus → Approved` / Completed (theo handler) |
-| Reject | Status Rejected + **Refund** txn hoàn lại số đã debit |
-
-**FE Admin:** trang finance / withdrawals approve UI.
+- **URL:** `POST /api/Payment/withdrawals/approve`
+- Approve → Approved; Reject → Rejected + **Refund** txn.
 
 ---
 
-## Bước 5: Công nợ COD Shipper
+### Bước 5: Công nợ COD Shipper
 
-### 5.1. Nợ tăng khi nào?
-
-Khi **settle đơn COD** giao platform delivery thành công (`SettleOrderOnDeliveryAsync`):
-
-- Tăng `ShipperProfile.CodCollectedAmount`
-- Shipper giữ tiền mặt thu hộ → phải nộp về sàn
-
-### 5.2. Nộp nợ
-
-**URL:** `POST /api/Payment/shipper/repay-debt`  
-**Auth:** Shipper  
-**FE:** Partner wallet — toast `Đã nộp … công nợ COD`
-
-### 5.3. Hạn mức nợ
-
-**URL:** `PUT /api/Payment/shipper/debt-limit`  
-**Auth:** Admin  
-**Default:** `DefaultShipperDebtLimit` = **5.000.000₫** trên `PLATFORM_FINANCE_CONFIG`
+**Nợ tăng:** `SettleOrderOnDeliveryAsync` (COD platform delivery) → `CodCollectedAmount += …`  
+**Nộp nợ:** `POST /api/Payment/shipper/repay-debt`  
+**Hạn mức:** `PUT /api/Payment/shipper/debt-limit` — default **5.000.000₫**
 
 ---
 
-## Bước 6: E-Invoice (phụ)
+### Bước 6: E-Invoice (phụ)
 
-**URL:** `POST /api/Payment/invoice`  
-Tạo `E_INVOICE_REQUEST` gắn Order (Customer xin hóa đơn).
+`POST /api/Payment/invoice` → `E_INVOICE_REQUEST` gắn Order.
 
 ---
 
-## Sơ đồ file đi qua (Call chain)
-
-### Top-up
+### Sơ đồ file đi qua
 
 ```text
-CustomerWalletPage.tsx
-  → PaymentService.topUpWallet(amount)
-  → PaymentController POST /wallet/top-up
-  → TopUpWalletHandler
-  → CreateTopUpSessionAsync
-  → [SePay QR workflow]
-  → ConfirmPaymentSessionByInvoiceAsync (TopUp branch)
-  → WALLET + FINANCIAL_TRANSACTION
-```
-
-### Withdraw
-
-```text
-PartnerWalletPages.tsx
-  → PaymentService.withdraw(...)
-  → PaymentController POST /withdraw
-  → RequestWithdrawalHandler
-  → Debit WALLET + INSERT WITHDRAWAL_REQUEST
-       ↓
-Admin FE
-  → POST /withdrawals/approve
-  → Approve/Reject (+ Refund nếu reject)
+CustomerWalletPage → topUpWallet → TopUpWalletHandler → SePay QR → TopUp credit
+PartnerWalletPages → withdraw → RequestWithdrawalHandler → Debit + Pending
+AdminFinancePage → approveWithdrawal → Approve/Reject (+ Refund)
+Shipper → repayShipperDebt → giảm CodCollectedAmount
 ```
 
 | Vai trò | Đường dẫn |
 |---------|-----------|
-| Controller | `src/ShoppingFood.API/Controllers/PaymentController.cs` |
-| Handlers | `src/ShoppingFood.Application/Features/Payments/Commands/PaymentCommandHandlers.cs` |
-| Settlement | `src/ShoppingFood.Application/Services/PaymentSettlementService.cs` |
-| Config | `Domain/Models/PlatformFinanceConfig.cs` |
-| Entities | `Wallet.cs`, `FinancialTransaction.cs`, `WithdrawalRequest.cs`, `EInvoiceRequest.cs` |
-| FE Customer | `ShoppingFood.FE/src/pages/payment/CustomerWalletPage.tsx` |
-| FE Partner | `ShoppingFood.FE/src/pages/payment/PartnerWalletPages.tsx` |
-| FE Service | `ShoppingFood.FE/src/services/PaymentService.ts` |
+| Controller | `PaymentController.cs` |
+| Handlers | `PaymentCommandHandlers.cs` |
+| Settlement | `PaymentSettlementService.cs` |
+| FE | `CustomerWalletPage`, `PartnerWalletPages`, `AdminFinancePage` |
 
 ---
 
-## Các thông báo (Toast / Message)
+### Các thông báo (Toast / Message)
 
 | Message | Nơi | Trigger |
 |---------|-----|---------|
@@ -227,45 +267,45 @@ Admin FE
 | Đang chuyển hướng sang trang thanh toán… | CustomerWalletPage | Top-up OK |
 | Yêu cầu rút tiền đã được gửi | PartnerWalletPages | Withdraw OK |
 | Số tiền rút tối thiểu 50.000đ | PartnerWalletPages | Validation FE |
-| Đã nộp … công nợ COD | PartnerWalletPages | Repay debt OK |
-| 403 / không có quyền rút | API | Customer gọi withdraw |
+| Đã nộp … công nợ COD | PartnerWalletPages | Repay OK |
+| Đã duyệt / Đã từ chối | AdminFinancePage | Approve API |
+| 403 | API | Customer gọi withdraw |
 
 ---
 
-## Các cơ chế bảo mật / nghiệp vụ quan trọng
+### Các cơ chế bảo mật / nghiệp vụ quan trọng
 
-1. **Phân quyền rút:** chỉ Seller/Shipper; Customer bị chặn.
-2. **Debit ngay khi request rút** — Reject **bắt buộc** Refund để không mất tiền user.
-3. **Top-up min 10k / Withdraw min 50k** — FE + BE nên đồng nhất.
-4. **Top-up phụ thuộc SePay secrets** — xem Sepay workflow.
-5. **COD debt limit** — Admin cấu hình; tránh shipper nợ vượt ngưỡng.
-6. **Mọi biến động ví** phải có `FINANCIAL_TRANSACTION` (audit).
-7. RBAC Admin cho approve / debt-limit / dashboard / reconciliation.
+1. Chỉ Seller/Shipper rút; Customer chặn.
+2. Debit ngay khi request — Reject **bắt buộc** Refund.
+3. Top-up min 10k / Withdraw min 50k — FE + BE.
+4. Top-up phụ thuộc SePay secrets.
+5. COD debt limit Admin.
+6. Mọi biến động ví có `FINANCIAL_TRANSACTION`.
+7. RBAC Admin cho approve / debt-limit / dashboard.
 
 ---
 
-## Checklist tự test
+### Checklist tự test
 
 - [ ] GET wallet đúng số dư theo role
-- [ ] Top-up &lt; 10.000 → lỗi
-- [ ] Top-up ≥ 10.000 → QR → sau webhook balance tăng đúng
-- [ ] Customer gọi withdraw → 403
-- [ ] Seller withdraw → balance giảm ngay, request Pending
-- [ ] Admin reject → balance hoàn lại
-- [ ] Admin approve → request Approved
-- [ ] Sau giao COD → CodCollectedAmount tăng
-- [ ] Repay-debt → giảm đúng số nộp
+- [ ] Top-up &lt; 10.000 → lỗi; ≥ 10k → QR → balance tăng
+- [ ] Customer withdraw → 403
+- [ ] Seller withdraw → balance giảm, Pending
+- [ ] Admin reject → hoàn ví; approve → Approved
+- [ ] Sau giao COD → CodCollectedAmount tăng; repay giảm đúng
 - [ ] Admin đổi debt-limit có hiệu lực
 
 ---
 
-## Tóm tắt
+### Tóm tắt
 
-| Luồng | Ai | Cổng / Cơ chế | Min |
-|-------|-----|---------------|-----|
-| Top-up | Customer | SePay QR session | 10.000₫ |
-| Pay order bằng ví | Customer | Debit ngay lúc checkout | = TotalAmount |
-| Withdraw | Seller/Shipper | Debit + Admin duyệt | 50.000₫ |
-| COD debt | Shipper | Settle delivery + repay | Limit 5.000.000₫ mặc định |
+| Luồng | Ai | Cổng | Min |
+|-------|-----|------|-----|
+| Top-up | Customer | SePay QR | 10.000₫ |
+| Pay order bằng ví | Customer | Debit checkout | = TotalAmount |
+| Withdraw | Seller/Shipper | Debit + Admin | 50.000₫ |
+| COD debt | Shipper | Settle + repay | Limit 5M mặc định |
+
+UI Trace **UT-WAL-01…04** ở Phần A.
 
 > Liên kết: [Payment_Requirements.md](./Payment_Requirements.md) · [Payment_Sepay_Workflow.md](./Payment_Sepay_Workflow.md) · [README](./README.md)

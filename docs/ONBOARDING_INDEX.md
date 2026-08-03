@@ -1,36 +1,31 @@
 # Shopping Food — Onboarding
 
-## Học một Feature = mở 1 file Workflow
+## Một Feature = một Workflow (đã gộp UI + backend)
 
-Mỗi workflow đã **gộp UI Trace + luồng backend**:
+**Mục lục đủ luồng chính (25 mục checklist):**  
+→ **[workflows/README.md](./workflows/README.md)**
 
-1. **Phần A** — Nút ở đâu → chạy file nào → data → hiển thị  
-2. **Phần B** — Workflow nghiệp vụ / API / bảo mật / checklist  
+### Hành trình tối thiểu
 
-**Mục lục:** [workflows/README.md](./workflows/README.md)
+| # | Đọc |
+|---|-----|
+| 1 | [Login_Workflow](./workflows/Login_Workflow.md) |
+| 2 | [Browse_Discovery](./workflows/Browse_Discovery_Workflow.md) |
+| 3 | [Cart](./workflows/Cart_Workflow.md) → [Checkout_Order](./workflows/Checkout_Order_Workflow.md) |
+| 4 | [Payment_Checkout](./workflows/Payment_Checkout_Workflow.md) + [Sepay](./workflows/Payment_Sepay_Workflow.md) |
+| 5 | [Revenue_Split](./workflows/Revenue_Split_Requirements.md) |
+| 6 | [Shipper_Delivery](./workflows/Shipper_Delivery_Workflow.md) + [Coordinator_Dispatch](./workflows/Coordinator_Dispatch_Workflow.md) |
+| 7 | [Admin_Main](./workflows/Admin_Main_Workflow.md) |
 
-### Gợi ý đọc trước
-
-| Thứ tự | File |
-|--------|------|
-| 1 | [workflows/Login_Workflow.md](./workflows/Login_Workflow.md) |
-| 2 | [workflows/Cart_Workflow.md](./workflows/Cart_Workflow.md) |
-| 3 | [workflows/Checkout_Order_Workflow.md](./workflows/Checkout_Order_Workflow.md) |
-| 4 | [workflows/Payment_Checkout_Workflow.md](./workflows/Payment_Checkout_Workflow.md) + [Payment_Sepay](./workflows/Payment_Sepay_Workflow.md) |
-| 5 | [workflows/Revenue_Split_Requirements.md](./workflows/Revenue_Split_Requirements.md) |
-| 6 | [workflows/Shipper_Delivery_Workflow.md](./workflows/Shipper_Delivery_Workflow.md) |
-
-### Lớp bổ sung (khi cần)
+### Bổ sung
 
 | Lớp | Link |
 |-----|------|
-| Requirements (FR-ID) | [requirements/README.md](./requirements/README.md) |
-| Cảnh báo / toast ID | [requirements/ALERTS_INDEX.md](./requirements/ALERTS_INDEX.md) |
-| Tracking use case | [TRACKING_USE_CASES_APIS.md](./TRACKING_USE_CASES_APIS.md) |
-
-> `docs/ui-traces/` chỉ còn trang chuyển hướng → workflows.
+| Requirements FR | [requirements/README.md](./requirements/README.md) |
+| Alerts / toast | [requirements/ALERTS_INDEX.md](./requirements/ALERTS_INDEX.md) |
+| Tracking UC | [TRACKING_USE_CASES_APIS.md](./TRACKING_USE_CASES_APIS.md) |
 
 ```bash
-cd src/ShoppingFood.API && dotnet run   # :5091
-cd ShoppingFood.FE && npm run dev       # :5173
+cd src/ShoppingFood.API && dotnet run
+cd ShoppingFood.FE && npm run dev
 ```

@@ -2,6 +2,8 @@
 
 Tài liệu mô tả **Chat REST + SignalR ChatHub** và **Notification REST + NotificationHub + EF Interceptor + NotificationBell**.
 
+> Chi tiết Notification (UT-NOT-* đầy đủ): [Notification_Realtime_Workflow.md](./Notification_Realtime_Workflow.md)
+
 ---
 
 
