@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Gift, Plus, Trash2, Edit2 } from 'lucide-react';
 import { Button, Input, Modal, Pagination } from '../../components/common';
 import toast from 'react-hot-toast';
@@ -119,16 +119,16 @@ export function SellerPromotionsPage() {
           setIsModalOpen(false);
           fetchPromotions();
         } else {
-          toast.error(res.message || 'Lỗi cập nhật');
+          toast.error(res.message);
         }
       } else {
         const res = await promotionService.createPromotion(formData);
         if (!res.error) {
-          toast.success('Đã tạo khuyến mãi mới');
+          toast.success('Tạo chương trình khuyến mãi Mua 1 Tặng 1 thành công!');
           setIsModalOpen(false);
           fetchPromotions();
         } else {
-          toast.error(res.message || 'Lỗi tạo mới');
+          toast.error(res.message);
         }
       }
     } catch {
@@ -144,7 +144,7 @@ export function SellerPromotionsPage() {
         toast.success('Đã xóa khuyến mãi');
         fetchPromotions();
       } else {
-        toast.error(res.message || 'Lỗi xóa');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Xóa khuyến mãi thất bại do lỗi kết nối mạng.');

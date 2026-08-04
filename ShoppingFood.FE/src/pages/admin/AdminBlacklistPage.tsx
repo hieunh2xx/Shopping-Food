@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+﻿import { useState, useEffect, useCallback } from 'react';
 import { Plus, Trash2, ShieldBan } from 'lucide-react';
 import { Button, Input, Modal, Loading } from '../../components/common';
 import { adminService } from '../../services';
@@ -33,7 +33,7 @@ export function AdminBlacklistPage() {
       if (!res.error) {
         setKeywords(res.data);
       } else {
-        toast.error(res.message || 'Lỗi khi tải danh sách từ khóa');
+        toast.error(res.message);
       }
     } catch (error: any) {
       toast.error('Lỗi khi tải danh sách từ khóa');
@@ -62,7 +62,7 @@ export function AdminBlacklistPage() {
         setNewKeyword('');
         fetchKeywords();
       } else {
-        toast.error(res.message || 'Lỗi khi thêm từ khóa');
+        toast.error(res.message);
       }
     } catch (error: any) {
       toast.error('Lỗi khi thêm từ khóa');
@@ -78,7 +78,7 @@ export function AdminBlacklistPage() {
 
       const res = await adminService.toggleBlacklistKeyword(id);
       if (res.error) {
-        toast.error(res.message || 'Lỗi khi cập nhật trạng thái');
+        toast.error(res.message);
         fetchKeywords(); // Revert on failure
       }
     } catch (error: any) {
@@ -98,7 +98,7 @@ export function AdminBlacklistPage() {
         setDeletingKeyword(null);
         fetchKeywords();
       } else {
-        toast.error(res.message || 'Lỗi khi xóa từ khóa');
+        toast.error(res.message);
       }
     } catch (error: any) {
       toast.error('Lỗi khi xóa từ khóa');

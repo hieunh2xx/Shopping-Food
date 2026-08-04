@@ -93,7 +93,7 @@ export function CustomerApplications() {
         setFormData((prev: any) => ({ ...prev, [fieldName]: res.data.imageUrl }));
         toast.success('Tải ảnh lên thành công!');
       } else {
-        toast.error(res.message || 'Lỗi khi tải ảnh lên');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Lỗi kết nối khi tải ảnh');
@@ -128,23 +128,10 @@ export function CustomerApplications() {
         setIsUpdateModalOpen(false);
         fetchApplications();
       } else {
-        toast.error(res.message || 'Lỗi khi cập nhật đơn');
+        toast.error(res.message);
       }
     } catch (err: any) {
-      console.error('Update Error:', err);
-      const errRes = err.response?.data;
-      if (errRes && typeof errRes === 'object') {
-        if (errRes.errors) {
-          const firstError = Object.values(errRes.errors).flat()[0] as string;
-          toast.error(firstError || 'Lỗi dữ liệu.');
-        } else if (errRes.message) {
-          toast.error(errRes.message);
-        } else {
-          toast.error('Lỗi máy chủ: ' + JSON.stringify(errRes).substring(0, 50));
-        }
-      } else {
-        toast.error('Lỗi kết nối: ' + (err.message || String(err)));
-      }
+      toast.error(err.response?.data?.message);
     } finally {
       setIsUpdating(false);
     }

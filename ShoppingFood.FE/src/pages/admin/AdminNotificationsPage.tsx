@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { Send, Users, Zap } from 'lucide-react';
 import { adminService } from '../../services/AdminService';
@@ -72,7 +72,7 @@ export function AdminNotificationsPage() {
         toast.success('Gửi thông báo thành công');
         setFormData({ ...formData, customMessage: '', targetUserIds: '' }); // Clear text inputs
       } else {
-        toast.error(res.message || 'Lỗi khi gửi thông báo');
+        toast.error(res.message);
       }
     } catch (error) {
       toast.error('Lỗi hệ thống khi gửi thông báo');

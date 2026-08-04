@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useAdmin } from '../../hooks';
 import { Store, ShieldAlert, ShieldCheck, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button, Input } from '../../components/common';
@@ -67,7 +67,7 @@ export function AdminRestaurantsPage() {
         toast.success(`Đã ${action.toLowerCase()} nhà hàng`);
         fetchRestaurants();
       } else {
-        toast.error(res.message || 'Lỗi khi cập nhật trạng thái');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Lỗi kết nối máy chủ');
@@ -85,7 +85,7 @@ export function AdminRestaurantsPage() {
         toast.success('Đã cập nhật nhãn tín nhiệm');
         fetchRestaurants();
       } else {
-        toast.error(res.message || 'Lỗi khi cập nhật nhãn');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Lỗi kết nối máy chủ');

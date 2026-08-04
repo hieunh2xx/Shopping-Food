@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+﻿import { useEffect, useState, useCallback, useRef } from 'react';
 import { Loader2, Clock, Copy, AlertCircle, CheckCircle } from 'lucide-react';
 import { Modal } from '../common/Modal';
 import { paymentService } from '../../services/PaymentService';
@@ -137,7 +137,7 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid }: Sepa
       return;
     }
 
-    setError(res.message || 'Không thể tạo mã QR thanh toán.');
+    setError(res.message);
     setLoading(false);
   }, [sessionId, notifyPaid]);
 
@@ -226,7 +226,7 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid }: Sepa
       return;
     }
 
-    toast.error(res.data?.message || res.message || 'Chưa thấy giao dịch khớp trên SePay');
+    toast.error(res.data?.message || res.message);
   };
 
   const formatTime = (s: number) => {

@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+﻿import { useState, type FormEvent } from 'react';
 import { X, Mail, CheckCircle2 } from 'lucide-react';
 import { Button, Input } from '../common';
 import { authService } from '../../services/AuthService';
@@ -44,10 +44,10 @@ export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProp
         toast.success(response.message || 'Mã OTP đã được gửi đến email của bạn');
         setStep(2);
       } else {
-        toast.error(response.message || 'Có lỗi xảy ra');
+        toast.error(response.message);
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || error.message || 'Có lỗi xảy ra');
+      toast.error(error.response?.data?.message);
     } finally {
       setIsLoading(false);
     }
@@ -72,11 +72,11 @@ export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProp
         toast.success(response.message || 'Mã OTP hợp lệ');
         setStep(3); // Proceed to enter new password
       } else {
-        toast.error(response.message || 'Mã OTP không hợp lệ');
+        toast.error(response.message);
         setErrors({ otpCode: response.message || 'Mã OTP không hợp lệ' });
       }
     } catch (error: any) {
-      const msg = error.response?.data?.message || error.message || 'Có lỗi xảy ra';
+      const msg = error.response?.data?.message;
       toast.error(msg);
       setErrors({ otpCode: msg });
     } finally {
@@ -105,11 +105,11 @@ export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProp
         toast.success(response.message || 'Đặt lại mật khẩu thành công!');
         handleClose();
       } else {
-        toast.error(response.message || 'Có lỗi xảy ra');
+        toast.error(response.message);
         setErrors({ newPassword: response.message || 'Có lỗi xảy ra' });
       }
     } catch (error: any) {
-      const msg = error.response?.data?.message || error.message || 'Có lỗi xảy ra';
+      const msg = error.response?.data?.message;
       toast.error(msg);
       setErrors({ newPassword: msg });
     } finally {

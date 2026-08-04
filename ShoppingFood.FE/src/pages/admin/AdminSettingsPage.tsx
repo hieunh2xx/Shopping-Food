@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+﻿import { useState, useEffect, useCallback } from 'react';
 import { Plus, Edit, Trash2, Eye, EyeOff, Layers, ArrowUpDown } from 'lucide-react';
 import { Button, Input, Modal, Loading } from '../../components/common';
 import { adminService, authService } from '../../services';
@@ -42,7 +42,7 @@ export function AdminSettingsPage() {
         setImageUrl(res.data.imageUrl);
         toast.success('Tải ảnh lên thành công');
       } else {
-        toast.error(res.message || 'Lỗi khi tải ảnh lên');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Lỗi kết nối khi tải ảnh');
@@ -60,7 +60,7 @@ export function AdminSettingsPage() {
       if (!res.error && res.data) {
         setCategories(res.data.sort((a: any, b: any) => a.sortOrder - b.sortOrder));
       } else {
-        toast.error(res.message || 'Lỗi khi tải danh mục toàn sàn');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Đã xảy ra lỗi khi tải danh mục');
@@ -103,7 +103,7 @@ export function AdminSettingsPage() {
         toast.success(`Đã ${cat.isHidden ? 'hiện' : 'ẩn'} danh mục: ${cat.name}`);
         loadCategories();
       } else {
-        toast.error(res.message || 'Không thể cập nhật trạng thái hiển thị');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Lỗi khi cập nhật trạng thái');
@@ -132,7 +132,7 @@ export function AdminSettingsPage() {
           setIsOpen(false);
           loadCategories();
         } else {
-          toast.error(res.message || 'Lỗi khi cập nhật danh mục');
+          toast.error(res.message);
         }
       } else {
         const res = await adminService.createGlobalMenuCategory({
@@ -147,7 +147,7 @@ export function AdminSettingsPage() {
           setIsOpen(false);
           loadCategories();
         } else {
-          toast.error(res.message || 'Lỗi khi thêm danh mục');
+          toast.error(res.message);
         }
       }
     } catch {
@@ -168,10 +168,10 @@ export function AdminSettingsPage() {
         setDeletingCategory(null);
         loadCategories();
       } else {
-        toast.error(res.message || 'Lỗi khi xóa danh mục');
+        toast.error(res.message);
       }
-    } catch {
-      toast.error('Có lỗi xảy ra');
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message);
     } finally {
       setIsDeleting(false);
     }

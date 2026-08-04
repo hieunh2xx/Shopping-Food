@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Star, MessageSquare, AlertTriangle, Search, CheckCircle2 } from 'lucide-react';
 import { Button, Loading, Modal } from '../../components/common';
 import { productService } from '../../services';
@@ -31,7 +31,7 @@ export function SellerReviewsPage() {
         setReviews(res.data);
         setTotal(res.total || 0);
       } else {
-        toast.error(res.message || 'Lỗi khi tải danh sách đánh giá');
+        toast.error(res.message);
       }
     } catch (error) {
       toast.error('Có lỗi xảy ra khi tải đánh giá');
@@ -76,10 +76,10 @@ export function SellerReviewsPage() {
         setReplyModal({ isOpen: false, reviewId: '', content: '' });
         fetchReviews(); // reload to show updated reply
       } else {
-        toast.error(res.message || 'Lỗi khi gửi phản hồi');
+        toast.error(res.message);
       }
     } catch (error: any) {
-      toast.error(error.message || 'Lỗi khi gửi phản hồi');
+      toast.error(error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -98,10 +98,10 @@ export function SellerReviewsPage() {
         toast.success('Báo cáo đánh giá thành công. Quản trị viên sẽ xem xét.');
         setReportModal({ isOpen: false, reviewId: '', reason: '' });
       } else {
-        toast.error(res.message || 'Lỗi khi gửi báo cáo');
+        toast.error(res.message);
       }
     } catch (error: any) {
-      toast.error(error.message || 'Lỗi khi gửi báo cáo');
+      toast.error(error.message);
     } finally {
       setIsSubmitting(false);
     }

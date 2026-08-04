@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { ShieldAlert, AlertTriangle, Plus, Edit } from 'lucide-react';
 import { Button, Loading } from '../../components/common';
 import { supportService, orderService, authService } from '../../services';
@@ -34,7 +34,7 @@ export function UserReportIncidentPage() {
         setEvidenceUrl(res.data.imageUrl);
         toast.success('Tải ảnh lên thành công');
       } else {
-        toast.error(res.message || 'Lỗi khi tải ảnh lên');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Tải ảnh lên thất bại do lỗi kết nối mạng.');
@@ -90,7 +90,7 @@ export function UserReportIncidentPage() {
         toast.success('Gửi khiếu nại thành công! Chúng tôi sẽ xem xét trong 24h.');
         navigate(-1);
       } else {
-        toast.error(res.message || 'Gửi khiếu nại thất bại, vui lòng kiểm tra lại');
+        toast.error(res.message);
       }
     } catch (error: any) {
       const rawMessage = error?.response?.data?.message || 'Lỗi kết nối đến máy chủ, không thể gửi khiếu nại.';

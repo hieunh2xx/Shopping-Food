@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+﻿import { useState, useEffect, useRef, useCallback } from 'react';
 import { MessageCircle, X, Send, ChevronLeft, Plus, Clock, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../hooks';
 import { chatService } from '../../services';
@@ -148,7 +148,7 @@ export function LiveChatWidget() {
       setIsConnecting(true);
       const res = await chatService.createSession({ topic });
       if (res.error || !res.data) {
-        toast.error(res.message || 'Không tạo được phiên chat');
+        toast.error(res.message);
         return;
       }
       setSession(res.data);

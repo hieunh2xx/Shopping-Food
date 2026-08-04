@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Tag, CheckCircle2, Ticket } from 'lucide-react';
 import { discountService } from '../../services/DiscountService';
 import type { IDiscountDto } from '../../interfaces';
@@ -40,7 +40,7 @@ export function CustomerVouchers({ isWalletMode = false }: { isWalletMode?: bool
         toast.success('Đã lưu mã giảm giá vào ví!');
         setVouchers(prev => prev.map(v => v.id === discountId ? { ...v, isSaved: true } : v));
       } else {
-        toast.error(res.message || 'Bạn đã lưu mã này rồi hoặc có lỗi xảy ra');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Lưu mã giảm giá thất bại do lỗi kết nối mạng.');

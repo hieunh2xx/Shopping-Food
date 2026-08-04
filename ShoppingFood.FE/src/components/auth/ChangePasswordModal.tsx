@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+﻿import { useState, type FormEvent } from 'react';
 import { X } from 'lucide-react';
 import { Button, Input } from '../common';
 import { authService } from '../../services/AuthService';
@@ -20,11 +20,15 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    if (!oldPassword) newErrors.oldPassword = 'Vui lòng nhập mật khẩu hiện tại';
-    if (!newPassword) newErrors.newPassword = 'Vui lòng nhập mật khẩu mới';
-    else if (newPassword.length < 6) newErrors.newPassword = 'Mật khẩu phải từ 6 ký tự';
+    if (!oldPassword) newErrors.oldPassword = 'Trường mật khẩu không được để trống';
+    else if (oldPassword.length < 8) newErrors.oldPassword = 'Mật khẩu cũ cần tối thiểu 8 kí tự';
+
+    if (!newPassword) newErrors.newPassword = 'Trường mật khẩu không được để trống';
+    else if (newPassword.length < 8) newErrors.newPassword = 'Mật khẩu mới cần tối thiểu 8 ký tự';
+    else if (newPassword === oldPassword) newErrors.newPassword = 'Mật khẩu mới không được giống mật khẩu cũ';
     
-    if (newPassword !== confirmPassword) newErrors.confirmPassword = 'Mật khẩu xác nhận không khớp';
+    if (!confirmPassword) newErrors.confirmPassword = 'Vui lòng nhập lại mật khẩu';
+    else if (newPassword !== confirmPassword) newErrors.confirmPassword = 'Mật khẩu được nhập lại không khớp';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -41,10 +45,10 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
         toast.success(response.message || 'Thay đổi mật khẩu thành công!');
         handleClose();
       } else {
-        toast.error(response.message || 'Có lỗi xảy ra');
+        toast.error(response.message);
       }
-    } catch (error) {
-      toast.error('Có lỗi xảy ra');
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message);
     } finally {
       setIsLoading(false);
     }

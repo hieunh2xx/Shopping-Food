@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Heart, MapPin, Clock, Star, Phone, ShieldCheck } from 'lucide-react';
 import { restaurantService } from '../services/RestaurantService';
@@ -86,7 +86,7 @@ export function RestaurantDetailPage() {
         setRestaurant(prev => prev ? { ...prev, isFavorite: !prev.isFavorite } : null);
         toast.success(restaurant.isFavorite ? 'Đã bỏ lưu quán' : 'Đã lưu quán vào danh sách yêu thích');
       } else {
-        toast.error(res.message || 'Lỗi khi thao tác');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Thêm vào danh sách yêu thích thất bại do lỗi kết nối mạng.');

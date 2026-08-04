@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { authService } from '../services/AuthService';
 import { restaurantService } from '../services/RestaurantService';
 import type { IUserDto, IFavoriteRestaurantDto } from '../interfaces';
@@ -77,7 +77,7 @@ export function ProfilePage() {
       if (!res.error && res.data) {
         setProfile(res.data);
       } else {
-        toast.error(res.message || 'Lỗi khi tải thông tin cá nhân');
+        toast.error(res.message);
       }
       if (!favRes.error && favRes.data) {
         setPreviewFavorites(favRes.data);
@@ -119,7 +119,7 @@ export function ProfilePage() {
         }
         toast.success('Cập nhật ảnh đại diện thành công!', { id: toastId });
       } else {
-        toast.error(res.message || 'Lỗi khi tải ảnh lên', { id: toastId });
+        toast.error(res.message , { id: toastId });
       }
     } catch {
       toast.error('Tải ảnh đại diện thất bại do lỗi kết nối mạng.', { id: toastId });
@@ -137,11 +137,11 @@ export function ProfilePage() {
     try {
       const res = await authService.lockAccount();
       if (!res.error) {
-        toast.success(res.message || 'Tài khoản đã bị khóa.');
+        toast.success(res.message);
         await logout();
         navigate(ROUTES.LOGIN);
       } else {
-        toast.error(res.message || 'Lỗi hệ thống');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Khóa tài khoản thất bại do lỗi hệ thống.');
@@ -156,11 +156,11 @@ export function ProfilePage() {
     try {
       const res = await authService.requestDeletion();
       if (!res.error) {
-        toast.success(res.message || 'Đã gửi yêu cầu xóa tài khoản.');
+        toast.success(res.message);
         await logout();
         navigate(ROUTES.LOGIN);
       } else {
-        toast.error(res.message || 'Lỗi hệ thống');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Gửi yêu cầu xóa tài khoản thất bại do lỗi hệ thống.');
@@ -186,7 +186,7 @@ export function ProfilePage() {
         toast.success(response.message || 'Cập nhật thông tin thành công!');
         fetchProfile();
       } else {
-        toast.error(response.message || 'Có lỗi xảy ra');
+        toast.error(response.message);
       }
     } catch {
       toast.error('Lưu thông tin cá nhân thất bại do lỗi kết nối mạng.');

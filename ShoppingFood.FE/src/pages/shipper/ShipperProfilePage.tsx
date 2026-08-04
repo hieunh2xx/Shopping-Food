@@ -150,7 +150,7 @@ export function ShipperProfilePage() {
         operatingRadiusKm: editRadius,
         workingSchedule: editSchedule
       });
-      toast.success('Cập nhật lịch làm việc và khu vực thành công!');
+      toast.success('Lịch làm việc và khu vực hoạt động đã được đăng ký thành công.');
       fetchScheduleAndArea();
     } catch {
       toast.error('Cập nhật trạng thái hoạt động thất bại do lỗi kết nối mạng.');

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { ShieldAlert, CheckCircle, Search, User, Truck, HelpCircle, FileText, AlertTriangle, XCircle, FileWarning, Plus } from 'lucide-react';
 import { Button, Loading, Modal, Pagination } from '../../components/common';
 import { coordinatorService } from '../../services/CoordinatorService';
@@ -45,7 +45,7 @@ export function CoordinatorIncidentsPage() {
       if (!res.error && res.data) {
         setIncidents(res.data);
       } else {
-        toast.error(res.message || 'Lỗi khi tải danh sách sự cố');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Tải danh sách sự cố thất bại do lỗi kết nối mạng.');
@@ -122,10 +122,10 @@ export function CoordinatorIncidentsPage() {
         setResolutionModal(prev => ({ ...prev, isOpen: false }));
         fetchIncidents();
       } else {
-        toast.error(res.message || 'Lỗi xử lý sự cố');
+        toast.error(res.message);
       }
     } catch (err: any) {
-      const rawMessage = err?.response?.data?.message || (err instanceof Error ? err.message : 'Xử lý sự cố thất bại do lỗi kết nối mạng.');
+      const rawMessage = err?.response?.data?.message || ((err as any)?.response?.data?.message);
       toast.error(rawMessage);
     } finally {
       setIsSubmitting(false);

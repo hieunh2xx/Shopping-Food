@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+﻿import { useState, useEffect, useMemo } from 'react';
 import { Database, Check, ShieldCheck, Search, Users, Loader2 } from 'lucide-react';
 import { Button, Input } from '../../components/common';
 import { adminService } from '../../services/AdminService';
@@ -78,7 +78,7 @@ export function AdminPermissionsPage() {
       if (!res.error) {
         toast.success(`Đã lưu cấu hình phân quyền cho ${selectedRole.name}`);
       } else {
-        toast.error(res.message || 'Lỗi lưu cấu hình');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Có lỗi xảy ra khi lưu cấu hình');

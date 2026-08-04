@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+﻿import { useState, useCallback } from 'react';
 import { productService, menuCategoryService } from '../services';
 import type { IMenuCategoryDto, IAddMenuCategoryRequest, IUpdateMenuCategoryRequest } from '../interfaces';
 import toast from 'react-hot-toast';
@@ -22,7 +22,7 @@ export function useCategories() {
         setError(response.message);
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Lỗi tải danh mục');
+      setError((err as any)?.response?.data?.message);
     } finally {
       setIsLoading(false);
     }
@@ -40,7 +40,7 @@ export function useCategories() {
         return null;
       }
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Lỗi thêm danh mục');
+      toast.error((err as any)?.response?.data?.message);
       return null;
     } finally {
       setIsLoading(false);
@@ -59,7 +59,7 @@ export function useCategories() {
         return null;
       }
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Lỗi cập nhật danh mục');
+      toast.error((err as any)?.response?.data?.message);
       return null;
     } finally {
       setIsLoading(false);

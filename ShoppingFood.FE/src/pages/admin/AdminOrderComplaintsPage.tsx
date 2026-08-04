@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Shield, Search, Filter, AlertTriangle, CheckCircle, XCircle, ArrowRight, DollarSign } from 'lucide-react';
 import { coordinatorService } from '../../services/CoordinatorService';
 import { toast } from 'react-hot-toast';
@@ -28,7 +28,7 @@ export const AdminOrderComplaintsPage = () => {
       if (!res.error) {
         setComplaints(res.data);
       } else {
-        toast.error(res.message || 'Lỗi khi tải danh sách khiếu nại');
+        toast.error(res.message);
       }
     } catch (error: any) {
       console.error(error);
@@ -69,7 +69,7 @@ export const AdminOrderComplaintsPage = () => {
         setSelectedComplaint(null);
         fetchComplaints();
       } else {
-        toast.error(res.message || 'Xử lý khiếu nại thất bại');
+        toast.error(res.message);
       }
     } catch (error: any) {
       console.error(error);

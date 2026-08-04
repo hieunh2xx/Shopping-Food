@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Star, MessageSquare, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Button, Modal } from '../common';
 import { useAuth } from '../../hooks';
@@ -51,10 +51,10 @@ export function ProductReviews({ productId, restaurantId }: { productId: string;
         setRating(5);
         fetchReviews(); // reload
       } else {
-        toast.error(res.message || 'Lỗi khi gửi đánh giá');
+        toast.error(res.message);
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Gửi đánh giá thất bại do lỗi mạng.');
+      toast.error((error as any)?.response?.data?.message);
     }
   };
 
@@ -69,10 +69,10 @@ export function ProductReviews({ productId, restaurantId }: { productId: string;
         setReplyContent('');
         fetchReviews();
       } else {
-        toast.error(res.message || 'Lỗi khi gửi phản hồi');
+        toast.error(res.message);
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Gửi phản hồi thất bại do lỗi mạng.');
+      toast.error((error as any)?.response?.data?.message);
     }
   };
 
@@ -89,10 +89,10 @@ export function ProductReviews({ productId, restaurantId }: { productId: string;
         toast.success('Đã gửi báo cáo vi phạm thành công');
         setReportModal({ isOpen: false, reviewId: '', reason: '' });
       } else {
-        toast.error(res.message || 'Lỗi khi báo cáo bình luận');
+        toast.error(res.message);
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Báo cáo bình luận thất bại do lỗi mạng.');
+      toast.error((error as any)?.response?.data?.message);
     } finally {
       setIsReporting(false);
     }

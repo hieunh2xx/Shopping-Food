@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Button, Loading, Input } from '../../components/common';
 import { ShieldAlert, Save, Clock } from 'lucide-react';
 import { adminService } from '../../services';
@@ -52,10 +52,10 @@ export function AdminSystemConfigPage() {
       };
       const res = await adminService.updateMaintenanceSettings(payload);
       if (!res.error) {
-        toast.success(res.message || 'Cập nhật cài đặt bảo trì thành công');
+        toast.success(res.message);
         fetchSettings();
       } else {
-        toast.error(res.message || 'Có lỗi xảy ra');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Lỗi kết nối khi cập nhật cài đặt');

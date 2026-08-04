@@ -1,4 +1,4 @@
-import { useState, useEffect, type FormEvent } from 'react';
+﻿import { useState, useEffect, type FormEvent } from 'react';
 import { userAddressService } from '../../services/UserAddressService';
 import type { IUserAddressDto, IAddUserAddress } from '../../interfaces';
 import { Button, Input, Modal } from '../common';
@@ -129,10 +129,10 @@ export function UserAddressManager() {
         resetForm();
         fetchAddresses();
       } else {
-        toast.error(res.message || 'Có lỗi xảy ra');
+        toast.error(res.message);
       }
-    } catch (error) {
-      toast.error('Có lỗi xảy ra');
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message);
     } finally {
       setIsLoading(false);
     }
@@ -151,7 +151,7 @@ export function UserAddressManager() {
         toast.success('Đã xóa địa chỉ');
         fetchAddresses();
       } else {
-        toast.error(res.message || 'Lỗi khi xóa');
+        toast.error(res.message);
       }
     } catch (error) {
       toast.error('Lỗi hệ thống');
@@ -169,7 +169,7 @@ export function UserAddressManager() {
         toast.success('Đã đặt làm địa chỉ mặc định');
         fetchAddresses();
       } else {
-        toast.error(res.message || 'Có lỗi xảy ra');
+        toast.error(res.message);
       }
     } catch (error) {
       toast.error('Lỗi hệ thống');

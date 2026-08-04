@@ -71,6 +71,25 @@ namespace ShoppingFood.Application.Features.Products.Commands
                 if (userProfile == null)
                     return ApiResponse.Failure(404, "User profile not found");
 
+                var deliveredOrdersCount = await _dbContext.Orders
+                    .CountAsync(o => o.UserAccountId == request.CurrentUserId.Value 
+                                && o.Status == ShoppingFood.Domain.Enums.OrderStatus.Delivered 
+                                && o.Items.Any(i => i.ProductId == request.ProductId), cancellationToken);
+
+                if (deliveredOrdersCount == 0)
+                {
+                    return ApiResponse.Failure(403, "Bạn chưa mua sản phẩm này, vui lòng mua để có thể bình luận.");
+                }
+
+                var existingReviewsCount = await _dbContext.ProductReviews
+                    .CountAsync(r => r.ProductId == request.ProductId 
+                                && r.UserProfileId == userProfile.Id, cancellationToken);
+
+                if (existingReviewsCount >= deliveredOrdersCount)
+                {
+                    return ApiResponse.Failure(403, "Bạn đã hết lượt đánh giá. Hãy mua thêm sản phẩm này để có thể đánh giá tiếp nhé.");
+                }
+
                 var filteredComment = request.Comment;
                 if (!string.IsNullOrWhiteSpace(filteredComment))
                 {

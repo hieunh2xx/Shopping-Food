@@ -47,7 +47,9 @@ export function NotificationBell() {
   };
 
   useEffect(() => {
-    fetchNotifications();
+    if (user?.id && token) {
+      fetchNotifications();
+    }
 
     if (!user?.id || !token) {
       return;

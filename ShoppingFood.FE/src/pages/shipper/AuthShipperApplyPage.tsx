@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Bike, UploadCloud } from 'lucide-react';
 import { Button, Input } from '../../components/common';
 import { authService } from '../../services/AuthService';
@@ -118,13 +118,13 @@ export function AuthShipperApplyPage() {
       });
 
       if (res.error) {
-        toast.error(res.message || 'Có lỗi xảy ra');
+        toast.error(res.message);
       } else {
-        toast.success('Gửi yêu cầu đăng ký tài xế thành công! Vui lòng chờ phê duyệt.');
+        toast.success('Hồ sơ đăng ký Shipper của bạn đã được gửi thành công và đang chờ Admin duyệt. Chúng tôi sẽ thông báo cho bạn khi có kết quả.');
         navigate(ROUTES.PROFILE);
       }
     } catch (err: any) {
-      toast.error(err.message || 'Có lỗi xảy ra khi gửi yêu cầu');
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }

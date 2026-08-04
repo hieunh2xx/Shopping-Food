@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { Plus, Edit2, Trash2, Zap, Clock, PlayCircle, CheckCircle2, XCircle, Package } from 'lucide-react';
+import { Plus, Edit2, Trash2, Zap, CheckCircle2, XCircle, Package } from 'lucide-react';
 import { flashSaleService } from '../../services/FlashSaleService';
 import type { IFlashSale, ICreateFlashSaleRequest, IFlashSaleProduct } from '../../interfaces';
 import { Button, Input, Modal, PromptModal } from '../../components/common';
@@ -81,16 +81,16 @@ export function AdminFlashSalePage() {
           setIsModalOpen(false);
           fetchFlashSales();
         } else {
-          toast.error(res.message || 'Lỗi khi cập nhật Flash Sale');
+          toast.error(res.message);
         }
       } else {
         const res = await flashSaleService.createFlashSale(formData);
         if (!res.error) {
-          toast.success('Tạo chương trình Flash Sale thành công!');
+          toast.success('Tạo sự kiện Flash Sale thành công!');
           setIsModalOpen(false);
           fetchFlashSales();
         } else {
-          toast.error(res.message || 'Lỗi khi tạo Flash Sale');
+          toast.error(res.message);
         }
       }
     } catch (error) {
@@ -107,7 +107,7 @@ export function AdminFlashSalePage() {
         toast.success('Đã xóa thành công');
         fetchFlashSales();
       } else {
-        toast.error(res.message || 'Lỗi khi xóa Flash Sale');
+        toast.error(res.message);
       }
     } catch (error) {
       toast.error('Lỗi hệ thống khi xóa');
@@ -147,7 +147,7 @@ export function AdminFlashSalePage() {
           }
         }
       } else {
-        toast.error(res.message || 'Lỗi khi duyệt sản phẩm');
+        toast.error(res.message);
       }
     } catch (error) {
       toast.error('Lỗi hệ thống');

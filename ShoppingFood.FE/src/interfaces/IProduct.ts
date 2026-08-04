@@ -11,6 +11,7 @@ export interface IProductDto {
   flashSalePrice?: number | null;
   categoryId: string;
   categoryName: string;
+  globalCategoryId?: string;
   stockStatus: string;
   primaryImageUrl: string | null;
   images: string[];
@@ -60,6 +61,7 @@ export interface IAddProductRequest {
   description?: string;
   price: number;
   categoryId: string;
+  globalCategoryId?: string;
   stockStatus?: string;
   imageUrls?: string[];
   toppingIds?: string[];
@@ -75,6 +77,7 @@ export interface IUpdateProductRequest {
   description?: string;
   price?: number;
   categoryId?: string;
+  globalCategoryId?: string;
   imageUrls?: string[];
   toppingIds?: string[];
   sizes?: IProductSizeDto[];

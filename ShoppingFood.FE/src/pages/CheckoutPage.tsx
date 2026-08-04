@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+﻿import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Store, MapPin, Phone, User, Mail, ShieldCheck, ArrowLeft, Loader2, X } from 'lucide-react';
 import { useCart, useAuth } from '../hooks';
@@ -249,7 +249,7 @@ export function CheckoutPage() {
         toast.success('Mã OTP đã được gửi đến email của bạn');
         setStep(2);
       } catch (error: any) {
-        toast.error(error.response?.data?.message || 'Lỗi khi gửi mã OTP');
+        toast.error(error.response?.data?.message);
       } finally {
         setIsSubmitting(false);
       }
@@ -268,7 +268,7 @@ export function CheckoutPage() {
         cartAmount: checkoutTotal
       });
       if (!res.error && res.data) {
-        toast.success('Áp dụng mã giảm giá thành công');
+        toast.success('Áp dụng mã giảm giá thành công!');
         setSelectedDiscount({
           id: res.data.discountId,
           code: res.data.code,
@@ -277,7 +277,7 @@ export function CheckoutPage() {
         } as IDiscountDto);
         setIsDiscountModalOpen(false);
       } else {
-        toast.error(res.message || 'Mã giảm giá không hợp lệ');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Có lỗi xảy ra khi áp mã');
@@ -410,7 +410,7 @@ export function CheckoutPage() {
         navigate(`${ROUTES.HOME}?track=true&orderId=${orderId}`);
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Lỗi khi đặt hàng');
+      toast.error(error.response?.data?.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -803,7 +803,7 @@ export function CheckoutPage() {
       <Modal isOpen={isDiscountModalOpen} onClose={() => setIsDiscountModalOpen(false)} title="Mã giảm giá">
         <div className="space-y-4">
           <div className="flex gap-2">
-            <Input placeholder="Nhập mã giảm giá..." value={formData.discountCode} onChange={(e) => { handleInputChange(e); setSelectedDiscount(null); }} className="flex-1" />
+            <Input name="discountCode" placeholder="Nhập mã giảm giá..." value={formData.discountCode} onChange={(e) => { handleInputChange(e); setSelectedDiscount(null); }} className="flex-1" />
             <Button onClick={handleApplyCode}>Áp dụng</Button>
           </div>
           <div className="mt-4 max-h-[300px] overflow-y-auto space-y-2">

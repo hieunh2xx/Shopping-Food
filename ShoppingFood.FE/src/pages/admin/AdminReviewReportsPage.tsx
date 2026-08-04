@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { adminService } from '../../services/AdminService';
 import { Button, Loading, Modal } from '../../components/common';
 import { AlertTriangle, CheckCircle, Trash2, Eye } from 'lucide-react';
@@ -22,10 +22,10 @@ export function AdminReviewReportsPage() {
       if (!res.error && res.data) {
         setReports(res.data.items || res.data); // Assuming paginated response or flat array
       } else {
-        toast.error(res.message || 'Lỗi khi tải danh sách báo cáo');
+        toast.error(res.message);
       }
-    } catch (error) {
-      toast.error('Có lỗi xảy ra');
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message);
     } finally {
       setIsLoading(false);
     }
@@ -40,7 +40,7 @@ export function AdminReviewReportsPage() {
       setModerateModal({ isOpen: false, reportId: '', reviewContent: '', reason: '' });
       fetchReports();
     } catch (error: any) {
-      toast.error(error.message || 'Lỗi khi xử lý báo cáo');
+      toast.error(error.message);
     } finally {
       setIsSubmitting(false);
     }

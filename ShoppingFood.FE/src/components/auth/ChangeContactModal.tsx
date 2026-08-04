@@ -1,4 +1,4 @@
-import { useState, useEffect, type FormEvent } from 'react';
+﻿import { useState, useEffect, type FormEvent } from 'react';
 import { X, Mail, KeyRound } from 'lucide-react';
 import { Button } from '../common';
 import { authService } from '../../services/AuthService';
@@ -44,10 +44,10 @@ export function ChangeContactModal({ isOpen, onClose, onSuccess, initialEmail }:
         toast.success('Mã OTP đã được gửi đến email của bạn');
         setStep(2);
       } else {
-        setError(res.message || 'Lỗi khi gửi OTP');
+        setError(res.message);
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Có lỗi xảy ra');
+      setError(err.response?.data?.message);
     } finally {
       setIsLoading(false);
     }
@@ -69,10 +69,10 @@ export function ChangeContactModal({ isOpen, onClose, onSuccess, initialEmail }:
         onSuccess();
         onClose();
       } else {
-        setError(res.message || 'Mã OTP không đúng hoặc đã hết hạn');
+        setError(res.message);
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Có lỗi xảy ra');
+      setError(err.response?.data?.message);
     } finally {
       setIsLoading(false);
     }

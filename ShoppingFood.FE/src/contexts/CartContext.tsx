@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+﻿import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import type { ICartContext, ICartItem, IProductDto } from '../interfaces';
 import toast from 'react-hot-toast';
 import { cartService } from '../services/CartService';
@@ -163,7 +163,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         // Might need other fields if API supports them (size, toppings)
       });
     } catch (error: any) {
-      toast.error(error.message || 'Lỗi khi thêm vào giỏ hàng trên server');
+      toast.error(error.message);
       // Ideally rollback on failure
     }
   }, [getGuestUserId]);

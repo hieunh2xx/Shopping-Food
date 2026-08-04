@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+﻿import { useState, useEffect, useCallback } from 'react';
 import { Plus, Edit, Trash2, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button, Input, Modal, Loading } from '../../components/common';
 import { faqService } from '../../services';
@@ -88,7 +88,7 @@ export function AdminFaqPage() {
           setIsOpen(false);
           fetchFaqs();
         } else {
-          toast.error(res.message || 'Lỗi cập nhật FAQ');
+          toast.error(res.message);
         }
       } else {
         const payload: ICreateFaqRequest = {
@@ -102,7 +102,7 @@ export function AdminFaqPage() {
           setIsOpen(false);
           fetchFaqs();
         } else {
-          toast.error(res.message || 'Lỗi thêm FAQ');
+          toast.error(res.message);
         }
       }
     } catch {
@@ -122,7 +122,7 @@ export function AdminFaqPage() {
         setIsDeleteOpen(false);
         fetchFaqs();
       } else {
-        toast.error(res.message || 'Lỗi khi xóa FAQ');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Lỗi kết nối mạng');

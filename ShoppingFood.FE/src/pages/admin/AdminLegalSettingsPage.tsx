@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Button, Loading } from '../../components/common';
 import { Save, FileText, ShieldCheck } from 'lucide-react';
 import { adminService } from '../../services/AdminService';
@@ -46,7 +46,7 @@ export function AdminLegalSettingsPage() {
       if (!response.error) {
         toast.success('Cập nhật chính sách thành công!');
       } else {
-        toast.error(response.message || 'Cập nhật thất bại');
+        toast.error(response.message);
       }
     } catch (error) {
       toast.error('Có lỗi xảy ra khi lưu thay đổi');

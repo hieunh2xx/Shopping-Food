@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { Users, DollarSign, ShoppingCart, TrendingUp, TrendingDown, Map as MapIcon, UserPlus, Truck, Store, Download } from 'lucide-react';
 import { Card } from '../components/common';
 import { adminService } from '../services/AdminService';
@@ -34,7 +34,7 @@ export function AdminDashboardPage() {
       if (!res.error) {
         setStats(res.data);
       } else {
-        toast.error(res.message || 'Lỗi khi tải thống kê');
+        toast.error(res.message);
       }
     } catch (err: any) {
       toast.error('Có lỗi xảy ra khi tải dữ liệu thống kê');

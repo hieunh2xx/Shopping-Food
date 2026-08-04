@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+﻿import { useState, useEffect, useCallback } from 'react';
 import { Store, Bike, UtensilsCrossed, CheckCircle, XCircle, FileText, Image as ImageIcon } from 'lucide-react';
 import { Button, Modal, Loading, Pagination } from '../../components/common';
 import { adminService, productService } from '../../services';
@@ -138,7 +138,7 @@ export function AdminApprovalsPage() {
         setActionModal(prev => ({ ...prev, isOpen: false }));
         fetchData();
       } else {
-        toast.error(res.message || 'Thao tác thất bại');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Có lỗi xảy ra trong quá trình phê duyệt');

@@ -1,4 +1,4 @@
-import { useState, useEffect, type FormEvent } from 'react';
+﻿import { useState, useEffect, type FormEvent } from 'react';
 import { X } from 'lucide-react';
 import { Button, Input } from '../common';
 import { authService } from '../../services/AuthService';
@@ -55,10 +55,10 @@ export function UpdateProfileModal({ isOpen, onClose, profile, onSuccess }: Upda
         onSuccess();
         onClose();
       } else {
-        toast.error(response.message || 'Có lỗi xảy ra');
+        toast.error(response.message);
       }
-    } catch (error) {
-      toast.error('Có lỗi xảy ra');
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message);
     } finally {
       setIsLoading(false);
     }

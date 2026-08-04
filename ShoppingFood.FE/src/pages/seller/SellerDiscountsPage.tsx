@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Tag, Search, Plus, Trash2, Edit2, BarChart3 } from 'lucide-react';
 import { Button, Input, Modal, Pagination, ConfirmModal } from '../../components/common';
 import toast from 'react-hot-toast';
@@ -153,7 +153,7 @@ export function SellerDiscountsPage() {
         };
         const res = await discountService.updateDiscount(editingDiscount.id, updateData);
         if (!res.error) {
-          toast.success('Đã cập nhật mã giảm giá');
+          toast.success('Cập nhật giới hạn sử dụng mã giảm giá thành công!');
           setIsModalOpen(false);
           fetchDiscounts();
         } else {
@@ -171,7 +171,7 @@ export function SellerDiscountsPage() {
         };
         const res = await discountService.createDiscount(createData);
         if (!res.error) {
-          toast.success('Đã tạo mã giảm giá mới');
+          toast.success('Tạo mã giảm giá thành công!');
           setIsModalOpen(false);
           fetchDiscounts();
         } else {
@@ -192,10 +192,10 @@ export function SellerDiscountsPage() {
         try {
           const res = await discountService.deleteDiscount(id);
           if (!res.error) {
-            toast.success('Đã xóa mã giảm giá');
+            toast.success('Mã giảm giá đã được vô hiệu hóa thành công!');
             fetchDiscounts();
           } else {
-            toast.error(res.message || 'Lỗi xóa mã');
+            toast.error(res.message);
           }
         } catch {
           toast.error('Lỗi khi xóa mã');
@@ -211,7 +211,7 @@ export function SellerDiscountsPage() {
         setStats(res.data);
         setIsStatsModalOpen(true);
       } else {
-        toast.error(res.message || 'Lỗi tải thống kê');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Tải thống kê mã giảm giá thất bại do lỗi kết nối mạng.');

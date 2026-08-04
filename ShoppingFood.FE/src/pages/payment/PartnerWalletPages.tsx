@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { Banknote, ArrowDownCircle, History, TrendingUp, TrendingDown, RefreshCw, ChevronDown, Building2, Sparkles, Wallet, ShieldAlert, CircleDollarSign } from 'lucide-react';
 import { Card, Button, Input } from '../../components/common';
 import { paymentService, type IWalletDto, type ITransactionDto } from '../../services/PaymentService';
@@ -123,7 +123,7 @@ export function SellerWalletPage() {
       }
       if (!tRes.error && tRes.data) setTransactions(tRes.data);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || err.message || 'Lỗi tải dữ liệu');
+      toast.error(err.response?.data?.message);
     } finally {
       setLoading(false);
     }
@@ -154,10 +154,10 @@ export function SellerWalletPage() {
         setWithdrawForm(prev => ({ ...prev, amount: '' }));
         loadData();
       } else {
-        toast.error(res.message || 'Lỗi rút tiền');
+        toast.error(res.message);
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.message || err.message || 'Lỗi rút tiền');
+      toast.error(err.response?.data?.message);
     } finally {
       setWithdrawLoading(false);
     }
@@ -314,7 +314,7 @@ export function ShipperWalletPage() {
       }
       if (!tRes.error && tRes.data) setTransactions(tRes.data);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || err.message || 'Lỗi tải dữ liệu');
+      toast.error(err.response?.data?.message);
     } finally {
       setLoading(false);
     }
@@ -332,9 +332,9 @@ export function ShipperWalletPage() {
         toast.success(`Đã nộp ${formatCurrency(res.data?.repaid || amount)} công nợ COD`);
         setRepayAmount('');
         loadData();
-      } else toast.error(res.message || 'Lỗi nộp tiền');
+      } else toast.error(res.message);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || err.message || 'Lỗi nộp tiền');
+      toast.error(err.response?.data?.message);
     } finally {
       setRepayLoading(false);
     }
@@ -358,9 +358,9 @@ export function ShipperWalletPage() {
         toast.success('Yêu cầu rút tiền đã gửi');
         setWithdrawForm(prev => ({ ...prev, amount: '' }));
         loadData();
-      } else toast.error(res.message || 'Lỗi');
+      } else toast.error(res.message);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || err.message || 'Lỗi');
+      toast.error(err.response?.data?.message);
     } finally {
       setWithdrawLoading(false);
     }

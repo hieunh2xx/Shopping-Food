@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Plus, Edit, FileText } from 'lucide-react';
 import { Button, Input, Loading, Modal } from '../../../components/common';
 import { adminService, authService } from '../../../services';
@@ -49,7 +49,7 @@ export function CreateTicketModal({ isOpen, onClose, onSuccess }: CreateTicketMo
         setEvidenceUrl(res.data.imageUrl);
         toast.success('Tải ảnh lên thành công');
       } else {
-        toast.error(res.message || 'Lỗi khi tải ảnh lên');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Tải ảnh lên thất bại do lỗi kết nối mạng.');
@@ -86,7 +86,7 @@ export function CreateTicketModal({ isOpen, onClose, onSuccess }: CreateTicketMo
         onSuccess();
         handleClose();
       } else {
-        toast.error(res.message || 'Lỗi khi tạo phiếu hỗ trợ');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Tạo phiếu hỗ trợ thất bại do lỗi mạng.');

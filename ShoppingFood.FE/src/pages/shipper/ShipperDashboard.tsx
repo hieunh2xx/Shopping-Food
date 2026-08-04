@@ -246,7 +246,7 @@ export function ShipperDashboard() {
             }
           } catch (err: any) {
             console.error('Lỗi khi lấy thông tin force assign:', err);
-            toast.error(`Lỗi API GetProposedOffer: ${err?.message || 'Không rõ'}`);
+            toast.error(err.response?.data?.message);
           }
         } else {
           toast.error(`Không thể trích xuất orderId từ message: ${n.message}`);
@@ -284,7 +284,7 @@ export function ShipperDashboard() {
       toast.success('Nhận đơn thành công!');
       fetchAvailableOffers();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Không thể nhận đơn. Có thể đơn đã bị hủy hoặc người khác đã nhận.');
+      toast.error(err.response?.data?.message);
       setProposalPopupOffer(null);
       fetchAvailableOffers();
     }
@@ -302,7 +302,7 @@ export function ShipperDashboard() {
       await shipperService.rejectOffer({ orderId, isExpired: true });
     } catch (e) { } // ignore
     setProposalPopupOffer(null);
-    toast.error('Đã hết thời gian phản hồi đề xuất.');
+    toast.error('Hết thời gian phản hồi. Đề xuất đơn hàng đã được chuyển cho Shipper khác.');
   };
 
   // Update live GPS location to backend periodically when online
@@ -385,20 +385,20 @@ export function ShipperDashboard() {
       const res = await shipperService.toggleOnline({ isOnline: newStatus });
 
       if (res && res.error) {
-        toast.error(res.message || 'Không thể thay đổi trạng thái.');
+        toast.error(res.message);
         return;
       }
 
       setIsOnline(newStatus);
 
       localStorage.setItem('shipper_is_online', newStatus ? 'true' : 'false');
-      toast.success(newStatus ? 'Bạn đã BẬT trạng thái trực tuyến!' : 'Bạn đã TẮT trạng thái trực tuyến!');
+      toast.success(newStatus ? 'Trạng thái đã chuyển sang đang hoạt động.' : 'Trạng thái đã chuyển sang ngừng hoạt động. Bạn sẽ không nhận được đề xuất đơn hàng mới.');
       if (newStatus) {
         // Refresh offers when going online
         fetchAvailableOffers();
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Không thể thay đổi trạng thái. Vui lòng thử lại.');
+      toast.error(err.response?.data?.message);
     } finally {
       setTogglingOnline(false);
     }
@@ -430,7 +430,7 @@ export function ShipperDashboard() {
         setActiveDeliveries(prev => prev.filter(d => d.orderId !== orderId));
         toast.error('Đơn hàng không còn hợp lệ hoặc đã bị thu hồi.');
       } else {
-        toast.error(err.response?.data?.message || 'Lỗi khi cập nhật trạng thái đơn hàng');
+        toast.error(err.response?.data?.message);
       }
     } finally {
       setActionLoading(null);
@@ -457,7 +457,7 @@ export function ShipperDashboard() {
         setActiveDeliveries(prev => prev.filter(d => d.orderId !== pendingPickupOrderId));
         toast.error('Đơn hàng không còn hợp lệ hoặc đã bị thu hồi.');
       } else {
-        toast.error(err.response?.data?.message || 'Lỗi khi xác nhận lấy đồ ăn');
+        toast.error(err.response?.data?.message);
       }
     } finally {
       setActionLoading(null);
@@ -501,9 +501,9 @@ export function ShipperDashboard() {
         }]);
         setAvailableOffers(prev => prev.filter(o => o.orderId !== orderId));
       }
-      toast.success('Đã chấp nhận đơn hàng!');
+      toast.success('Đã chấp nhận đơn hàng. Vui lòng di chuyển đến cửa hàng để nhận món.');
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Không thể nhận đơn hàng. Vui lòng thử lại.');
+      toast.error(err.response?.data?.message);
       setAvailableOffers(prev => prev.filter(o => o.orderId !== orderId));
       fetchAvailableOffers();
     } finally {

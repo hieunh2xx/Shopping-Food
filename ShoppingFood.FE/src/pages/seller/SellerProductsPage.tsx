@@ -48,7 +48,7 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
         setImageUrls(prev => [...prev, res.data.imageUrl]);
         toast.success('Tải ảnh lên thành công!', { id: toastId });
       } else {
-        toast.error(res.message || 'Không thể tải ảnh lên', { id: toastId });
+        toast.error(res.message , { id: toastId });
       }
     } catch {
       toast.error('Tải ảnh lên thất bại do lỗi kết nối mạng.', { id: toastId });
@@ -176,11 +176,11 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
               availableTo: availableTo || undefined
             });
           }
-          toast.success('Cập nhật sản phẩm thành công!');
+          toast.success('Cập nhật thông tin món ăn thành công!');
           onSaved();
           onClose();
         } else {
-          toast.error(res.message || 'Lỗi cập nhật sản phẩm');
+          toast.error(res.message);
         }
       } else {
         const payload: IAddProductRequest = {
@@ -192,10 +192,11 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
           globalCategoryId: globalCategoryId || undefined,
           imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
           sizes: sizes.filter(s => s.sizeName.trim()).map(s => ({
+            id: s.id || '',
             sizeName: s.sizeName,
             extraPrice: s.extraPrice,
             isDefault: s.isDefault
-          })),
+          })) as IProductSizeDto[],
           toppingIds: selectedToppings,
         };
         const res = await productService.create(payload);
@@ -207,15 +208,15 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
               availableTo: availableTo || undefined
             });
           }
-          toast.success('Thêm sản phẩm thành công!');
+          toast.success('Thêm món ăn mới thành công!');
           onSaved();
           onClose();
         } else {
-          toast.error(res.message || 'Lỗi thêm sản phẩm');
+          toast.error(res.message);
         }
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Lưu sản phẩm thất bại do lỗi kết nối mạng.');
+      toast.error((err as any)?.response?.data?.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -476,7 +477,7 @@ function StockBadge({ status }: { status: string }) {
 export function SellerProductsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [take, setTake] = useState(10);
-  const { products, total, isLoading, fetchProducts, toggleStatus, deleteProduct } = useProducts();
+  const { products, total, isLoading, fetchProducts, deleteProduct } = useProducts();
   const [categories, setCategories] = useState<IMenuCategoryDto[]>([]);
 
   const [restaurantId, setRestaurantId] = useState<string>('');
@@ -536,7 +537,7 @@ export function SellerProductsPage() {
 
   // Lắng nghe sự kiện notification real-time để tự động tải lại trạng thái
   useEffect(() => {
-    const handleNotification = (e: CustomEvent) => {
+    const handleNotification = () => {
       // Nếu có thông báo (VD: phê duyệt sản phẩm), tải lại danh sách
       // Có thể check kỹ hơn e.detail.title/message nếu cần, ở đây ta gọi loadProducts để luôn cập nhật nhất
       loadProducts();
@@ -600,10 +601,10 @@ export function SellerProductsPage() {
     try {
       const res = await productService.toggleVisibility({ id: product.id, isHidden: !product.isHidden });
       if (!res.error) {
-        toast.success(product.isHidden ? 'Đã hiện sản phẩm' : 'Đã ẩn sản phẩm');
+        toast.success('Cập nhật trạng thái hiển thị của món ăn thành công!');
         loadProducts();
       } else {
-        toast.error(res.message || 'Lỗi thay đổi trạng thái');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Cập nhật trạng thái hiển thị thất bại do lỗi kết nối mạng.');
@@ -618,10 +619,10 @@ export function SellerProductsPage() {
     try {
       const res = await productService.updateStockStatus({ id: product.id, stockStatus: newStatus });
       if (!res.error) {
-        toast.success(newStatus === 'InStock' ? 'Đã mở bán lại' : 'Đã đánh dấu hết hàng');
+        toast.success('Cập nhật trạng thái sẵn có của món ăn thành công!');
         loadProducts();
       } else {
-        toast.error(res.message || 'Lỗi cập nhật trạng thái kho');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Cập nhật trạng thái kho thất bại do lỗi kết nối mạng.');

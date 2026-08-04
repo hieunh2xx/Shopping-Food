@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { Camera, BadgeCheck, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuthContext } from '../../contexts/AuthContext';
@@ -26,10 +26,10 @@ export function DashboardProfilePage() {
       if (!res.error && res.data) {
         setProfile(res.data);
       } else {
-        toast.error(res.message || 'Lỗi khi tải thông tin cá nhân');
+        toast.error(res.message);
       }
-    } catch (error) {
-      toast.error('Có lỗi xảy ra');
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message);
     } finally {
       setIsLoading(false);
     }
@@ -65,7 +65,7 @@ export function DashboardProfilePage() {
         }
         toast.success('Cập nhật ảnh đại diện thành công!', { id: toastId });
       } else {
-        toast.error(res.message || 'Lỗi khi tải ảnh lên', { id: toastId });
+        toast.error(res.message , { id: toastId });
       }
     } catch (error) {
       toast.error('Có lỗi xảy ra khi tải ảnh', { id: toastId });

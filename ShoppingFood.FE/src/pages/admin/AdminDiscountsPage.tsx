@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Tag, Search, Plus, Trash2, Edit2, Lock } from 'lucide-react';
 import { Button, Input, Modal, Pagination, ConfirmModal } from '../../components/common';
 import toast from 'react-hot-toast';
@@ -170,8 +170,8 @@ export function AdminDiscountsPage() {
           handleApiError(res, 'Lỗi tạo mã');
         }
       }
-    } catch (err) {
-      toast.error('Có lỗi xảy ra');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message);
     }
   };
 
@@ -187,7 +187,7 @@ export function AdminDiscountsPage() {
             toast.success('Đã xóa mã giảm giá');
             fetchDiscounts();
           } else {
-            toast.error(res.message || 'Lỗi xóa mã');
+            toast.error(res.message);
           }
         } catch {
           toast.error('Lỗi khi xóa mã');
@@ -208,7 +208,7 @@ export function AdminDiscountsPage() {
             toast.success('Đã khóa mã giảm giá');
             fetchDiscounts();
           } else {
-            toast.error(res.message || 'Lỗi khóa mã');
+            toast.error(res.message);
           }
         } catch {
           toast.error('Lỗi khi khóa mã');

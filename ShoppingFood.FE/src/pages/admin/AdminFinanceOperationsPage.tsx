@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Button, Loading, Input, Card } from '../../components/common';
 import { Save, Settings, Truck, Clock, Store, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { adminService } from '../../services';
@@ -133,7 +133,7 @@ export function AdminFinanceOperationsPage() {
         toast.success('Lưu cấu hình thành công');
         fetchPlatformConfig();
       } else {
-        toast.error(res.message || 'Lỗi lưu cấu hình');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Lỗi kết nối khi lưu cấu hình');
@@ -153,9 +153,9 @@ export function AdminFinanceOperationsPage() {
       };
       const res = await adminService.updateDeliverySettings(payload);
       if (!res.error) {
-        toast.success(res.message || 'Cập nhật cấu hình giao hàng thành công');
+        toast.success(res.message);
       } else {
-        toast.error(res.message || 'Có lỗi xảy ra');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Lỗi kết nối khi cập nhật cấu hình giao hàng');
@@ -171,7 +171,7 @@ export function AdminFinanceOperationsPage() {
         toast.success('Cập nhật chiết khấu nhà hàng thành công');
         fetchRestaurants();
       } else {
-        toast.error(res.message || 'Lỗi cập nhật');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Lỗi kết nối');

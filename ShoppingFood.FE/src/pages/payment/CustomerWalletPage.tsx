@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { Wallet, ArrowUpCircle, History, TrendingUp, TrendingDown, RefreshCw, ChevronDown, Sparkles } from 'lucide-react';
 import { Card, Button, Input } from '../../components/common';
 import { paymentService, type IWalletDto, type ITransactionDto } from '../../services/PaymentService';
@@ -73,10 +73,10 @@ export function CustomerWalletPage() {
         toast.success('Đang chuyển hướng sang trang thanh toán...');
         navigate(`${ROUTES.PAYMENT_SEPAY}?sessionId=${res.data.sessionId}&returnUrl=${encodeURIComponent(`${ROUTES.PROFILE}?tab=wallet`)}`);
       } else {
-        toast.error(res.message || 'Lỗi nạp tiền');
+        toast.error(res.message);
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi nạp tiền');
+      toast.error(error.response?.data?.message);
     } finally {
       setTopUpLoading(false);
     }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Modal, Button } from '../../../components/common';
 import { shipperService } from '../../../services/ShipperService';
 import { authService } from '../../../services/AuthService';
@@ -63,10 +63,10 @@ export const SuccessDeliveryModal: React.FC<SuccessDeliveryModalProps> = ({
         onClose();
         setProofImageFile(null);
       } else {
-        toast.error(res.message || 'Không thể xác nhận giao hàng.');
+        toast.error(res.message);
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Lỗi xử lý. Vui lòng thử lại.');
+      toast.error(err.response?.data?.message);
     } finally {
       setIsSubmitting(false);
     }

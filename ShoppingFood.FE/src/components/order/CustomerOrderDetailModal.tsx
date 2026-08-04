@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Package, MapPin, CreditCard, Clock, QrCode, XCircle, MessageCircle, RefreshCw, AlertTriangle, Star } from 'lucide-react';
 import { Modal, Button, Input, ConfirmModal } from '../common';
 import { orderService } from '../../services/OrderService';
@@ -17,9 +18,11 @@ interface OrderDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   orderId: string;
+  onNavigateAction?: () => void;
 }
 
-export function CustomerOrderDetailModal({ isOpen, onClose, orderId }: OrderDetailModalProps) {
+export function CustomerOrderDetailModal({ isOpen, onClose, orderId, onNavigateAction }: OrderDetailModalProps) {
+  const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { refreshCart } = useCart();
   const [loading, setLoading] = useState(false);
@@ -67,11 +70,11 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId }: OrderDeta
       if (!res.error && res.data) {
         setOrderData(res.data);
       } else {
-        toast.error(res.message || 'Lỗi tải chi tiết đơn hàng');
+        toast.error(res.message);
         onClose();
       }
-    } catch (err) {
-      toast.error('Có lỗi xảy ra');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message);
       onClose();
     } finally {
       setLoading(false);
@@ -85,7 +88,7 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId }: OrderDeta
       setCancelConfirmModal(false);
       loadOrderDetails();
     } catch (error: any) {
-      const msg = error.response?.data?.message || error.message || 'Lỗi khi hủy đơn hàng';
+      const msg = error.response?.data?.message;
       toast.error(msg);
     }
   };
@@ -98,7 +101,7 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId }: OrderDeta
       toast.success('Đã thêm lại các món vào giỏ hàng');
       onClose();
     } catch (error: any) {
-      const msg = error.response?.data?.message || error.message || 'Lỗi khi đặt lại đơn hàng';
+      const msg = error.response?.data?.message;
       toast.error(msg);
     }
   };
@@ -125,26 +128,14 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId }: OrderDeta
           setShipperComplaintModal(prev => ({ ...prev, evidenceImageUrl: res.data!.imageUrl }));
         }
       } else {
-        toast.error(res.message || 'Lỗi tải ảnh', { id: toastId });
+        toast.error(res.message , { id: toastId });
       }
     } catch (err: any) {
-      const msg = err.response?.data?.message || err.message || 'Lỗi tải ảnh';
+      const msg = err.response?.data?.message;
       toast.error(msg, { id: toastId });
     } finally {
       setIsUploading(false);
     }
-  };
-
-  const translateError = (msg: string) => {
-    if (!msg) return 'Lỗi kết nối đến máy chủ, không thể gửi khiếu nại.';
-    if (msg.includes('Unauthorized')) return 'Không có quyền truy cập.';
-    if (msg.includes('Only customers')) return 'Chỉ khách hàng mới có quyền gửi khiếu nại.';
-    if (msg.includes('Order not found')) return 'Không tìm thấy đơn hàng.';
-    if (msg.includes('your own orders')) return 'Bạn chỉ có thể khiếu nại đơn hàng của chính mình.';
-    if (msg.includes('delivered order')) return 'Bạn chỉ có thể gửi khiếu nại cho đơn hàng đã giao thành công.';
-    if (msg.includes('within 24 hours')) return 'Thời gian gửi khiếu nại phải trong vòng 24 giờ sau khi nhận hàng. Đơn hàng này đã quá hạn.';
-    if (msg.includes('already been submitted')) return 'Đơn hàng này đã được gửi khiếu nại trước đó.';
-    return msg;
   };
 
   const handleSubmitOrderComplaint = async () => {
@@ -162,8 +153,7 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId }: OrderDeta
       toast.success('Gửi khiếu nại đơn hàng thành công');
       setOrderComplaintModal({ isOpen: false, orderId: '', reason: '', description: '', evidenceImageUrl: '' });
     } catch (error: any) {
-      const rawMessage = error?.response?.data?.message;
-      toast.error(translateError(rawMessage));
+      toast.error(error?.response?.data?.message);
     }
   };
 
@@ -265,8 +255,23 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId }: OrderDeta
                         )}
                       </div>
                     </div>
-                    <div className="font-bold text-gray-800">
-                      {formatCurrency(item.quantity * item.unitPrice)}
+                    <div className="flex flex-col items-end gap-2">
+                      <div className="font-bold text-gray-800">
+                        {formatCurrency(item.quantity * item.unitPrice)}
+                      </div>
+                      {orderData.status === 'Delivered' && (
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/products/${item.productId}`);
+                            onClose();
+                            if (onNavigateAction) onNavigateAction();
+                          }}
+                          className="text-xs px-3 py-1.5 bg-orange-100 text-orange-600 rounded-lg hover:bg-orange-200 transition-colors font-medium flex items-center gap-1"
+                        >
+                          <Star className="w-3.5 h-3.5" /> Đánh giá
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}

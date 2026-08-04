@@ -78,11 +78,7 @@ export function ShoppingDrawer() {
 
     setIsOpen(false);
     const checkoutUrl = `${ROUTES.CHECKOUT}?restaurantId=${selectedProvider}`;
-    if (isAuthenticated) {
-      navigate(checkoutUrl);
-    } else {
-      navigate(ROUTES.LOGIN, { state: { returnUrl: checkoutUrl } });
-    }
+    navigate(checkoutUrl);
   };
 
   // ---------------------------------------------------------
@@ -572,6 +568,7 @@ export function ShoppingDrawer() {
           setDetailModal({ isOpen: false, orderId: '' });
           if (activeTab === 'orders') fetchOrders(); // refresh after modal close
         }}
+        onNavigateAction={() => setIsOpen(false)}
         orderId={detailModal.orderId}
       />
 

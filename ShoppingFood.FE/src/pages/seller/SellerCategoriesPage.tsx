@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+﻿import { useState, useEffect, useCallback } from 'react';
 import { Plus, Edit, Trash2, FolderOpen, ArrowUpDown } from 'lucide-react';
 import { Button, Input, Modal, Loading, Pagination } from '../../components/common';
 import { menuCategoryService } from '../../services';
@@ -38,7 +38,7 @@ export function SellerCategoriesPage() {
       if (!res.error && res.data) {
         setCategories(res.data.sort((a, b) => a.sortOrder - b.sortOrder));
       } else {
-        toast.error(res.message || 'Lỗi khi tải danh mục');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Tải danh mục thất bại do lỗi kết nối mạng. Vui lòng kiểm tra lại.');
@@ -107,7 +107,7 @@ export function SellerCategoriesPage() {
           setIsOpen(false);
           loadCategories(restaurantId);
         } else {
-          toast.error(res.message || 'Lỗi khi cập nhật danh mục');
+          toast.error(res.message);
         }
       } else {
         const res = await menuCategoryService.create({
@@ -122,7 +122,7 @@ export function SellerCategoriesPage() {
           setIsOpen(false);
           loadCategories(restaurantId);
         } else {
-          toast.error(res.message || 'Lỗi khi thêm danh mục');
+          toast.error(res.message);
         }
       }
     } catch {
@@ -143,7 +143,7 @@ export function SellerCategoriesPage() {
         setDeletingCategory(null);
         loadCategories(restaurantId);
       } else {
-        toast.error(res.message || 'Lỗi khi xóa danh mục');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Xóa danh mục thất bại do lỗi kết nối mạng.');

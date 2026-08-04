@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { orderService } from '../../services/OrderService';
 import { authService } from '../../services/AuthService';
 import { chatService } from '../../services/ChatService';
@@ -133,7 +133,7 @@ export function SellerOrdersPage() {
         setOrders(res.data);
         setTotal(res.total || 0);
       } else {
-        toast.error(res.message || 'Lỗi khi tải danh sách đơn hàng');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Tải danh sách đơn hàng thất bại do lỗi kết nối mạng.');
@@ -153,7 +153,7 @@ export function SellerOrdersPage() {
           setSelectedOrder((prev: any) => ({ ...prev, status: 'Confirmed' }));
         }
       } else {
-        toast.error(res.message || 'Lỗi khi nhận đơn', { id: toastId });
+        toast.error(res.message , { id: toastId });
       }
     } catch {
       toast.error('Xác nhận đơn hàng thất bại do lỗi kết nối mạng.', { id: toastId });
@@ -171,7 +171,7 @@ export function SellerOrdersPage() {
           setSelectedOrder((prev: any) => ({ ...prev, status: 'Preparing' }));
         }
       } else {
-        toast.error(res.message || 'Lỗi thao tác', { id: toastId });
+        toast.error(res.message , { id: toastId });
       }
     } catch {
       toast.error('Xác nhận hoàn thành chuẩn bị thất bại do lỗi kết nối mạng.', { id: toastId });
@@ -189,7 +189,7 @@ export function SellerOrdersPage() {
           setSelectedOrder((prev: any) => ({ ...prev, status: 'WaitingForShipper' }));
         }
       } else {
-        toast.error(res.message || 'Lỗi thao tác', { id: toastId });
+        toast.error(res.message , { id: toastId });
       }
     } catch {
       toast.error('Bàn giao đơn hàng thất bại do lỗi kết nối mạng.', { id: toastId });
@@ -214,7 +214,7 @@ export function SellerOrdersPage() {
         setSelectedOrder(null);
         fetchOrders();
       } else {
-        toast.error(res.message || 'Lỗi khi từ chối đơn', { id: toastId });
+        toast.error(res.message , { id: toastId });
       }
     } catch {
       toast.error('Từ chối đơn hàng thất bại do lỗi kết nối mạng.', { id: toastId });
@@ -242,7 +242,7 @@ export function SellerOrdersPage() {
           setSelectedOrder(null);
         }
       } else {
-        toast.error(res.message || 'Lỗi khi hủy đơn', { id: toastId });
+        toast.error(res.message , { id: toastId });
       }
     } catch {
       toast.error('Hủy đơn hàng thất bại do lỗi kết nối mạng.', { id: toastId });
@@ -260,7 +260,7 @@ export function SellerOrdersPage() {
           setSelectedOrder((prev: any) => ({ ...prev, status: 'Delivered' }));
         }
       } else {
-        toast.error(res.message || 'Lỗi khi xác nhận giao hàng', { id: toastId });
+        toast.error(res.message , { id: toastId });
       }
     } catch {
       toast.error('Xác nhận giao hàng thất bại do lỗi kết nối mạng.', { id: toastId });

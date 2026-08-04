@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Search, Shield, Ban, CheckCircle2, Award, ChevronLeft, ChevronRight, Loader2, Star, AlertCircle } from 'lucide-react';
 import { Input, Button, Pagination } from '../../components/common';
 import { Modal } from '../../components/common/Modal';
@@ -98,11 +98,11 @@ export function AdminUsersPage() {
       if (!res.error && res.data) {
         setHistoryItems(res.data);
       } else {
-        toast.error(res.message || 'Không thể tải lịch sử khiếu nại');
+        toast.error(res.message);
         setHistoryItems([]);
       }
-    } catch {
-      toast.error('Có lỗi xảy ra');
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message);
       setHistoryItems([]);
     } finally {
       setIsHistoryLoading(false);
@@ -119,7 +119,7 @@ export function AdminUsersPage() {
         setIsTierModalOpen(false);
         fetchUsers();
       } else {
-        toast.error(res.message || 'Lỗi cập nhật hạng');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Thao tác thất bại do lỗi kết nối mạng.');
@@ -144,7 +144,7 @@ export function AdminUsersPage() {
         setNewStaff({ fullName: '', userName: '', password: '', email: '', phone: '', role: 5 });
         fetchUsers();
       } else {
-        toast.error(res.message || 'Lỗi tạo tài khoản');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Tạo tài khoản thất bại do lỗi kết nối mạng.');
@@ -157,10 +157,10 @@ export function AdminUsersPage() {
     try {
       const res = await adminService.toggleUserStatus(userId);
       if (!res.error) {
-        toast.success(res.message || 'Cập nhật trạng thái thành công');
+        toast.success(res.message);
         fetchUsers();
       } else {
-        toast.error(res.message || 'Lỗi cập nhật trạng thái');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Cập nhật trạng thái thất bại do lỗi kết nối mạng.');

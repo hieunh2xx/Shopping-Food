@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, ChevronRight, ChevronLeft, ChefHat, CheckCircle2, UploadCloud } from 'lucide-react';
 import { Button, Input, Modal, Loading } from '../components/common';
@@ -271,13 +271,13 @@ export function ShipperApplyPage() {
       });
 
       if (res.error) {
-        toast.error(res.message || 'Có lỗi xảy ra');
+        toast.error(res.message);
       } else {
         toast.success('Đăng ký tài xế thành công! Vui lòng chờ phê duyệt.');
         navigate(ROUTES.HOME);
       }
     } catch (err: any) {
-      let errorMsg = err.response?.data?.message || err.message || 'Có lỗi xảy ra khi đăng ký';
+      let errorMsg = err.response?.data?.message;
       if (errorMsg === 'Only customer can apply to become a shipper.') {
         errorMsg = 'Chỉ khách hàng mới có thể đăng ký làm tài xế.';
       } else if (errorMsg === 'You already have a pending shipper application.') {

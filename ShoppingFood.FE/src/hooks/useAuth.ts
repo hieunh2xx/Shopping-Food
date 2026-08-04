@@ -1,9 +1,17 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useAuthContext } from '../contexts/AuthContext';
 import { authService } from '../services';
 import type { ILoginRequest, IRegisterRequest, IRegisterSellerRequest, IUserDto } from '../interfaces';
 import toast from 'react-hot-toast';
 import { StorageUtil } from '../utils/storage';
+
+const extractErrorMessage = (err: any, fallback: string): string => {
+  let message = err?.response?.data?.message || err?.response?.data?.title;
+  if (!message) {
+    message = (err?.message && !err.message.includes('status code')) ? err.message : fallback;
+  }
+  return message;
+};
 
 /**
  * useAuth hook — encapsulates all auth-related logic
@@ -59,7 +67,7 @@ export function useAuth() {
         return { success: true, requireOtp: false, role: loginData.role };
       } else {
         setError(response.message);
-        toast.error(response.message || 'Đăng nhập thất bại');
+        toast.error(response.message);
         return { success: false, message: response.message };
       }
     } catch (err: any) {
@@ -87,11 +95,11 @@ export function useAuth() {
         return { success: true, role: loginData.role };
       } else {
         setError(response.message);
-        toast.error(response.message || 'Đăng nhập Google thất bại');
+        toast.error(response.message);
         return { success: false };
       }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Đăng nhập Google thất bại';
+    } catch (err: any) {
+      const message = extractErrorMessage(err, 'Đăng nhập Google thất bại');
       setError(message);
       toast.error(message);
       return { success: false };
@@ -112,11 +120,11 @@ export function useAuth() {
         return { success: true, role: loginData.role };
       } else {
         setError(response.message);
-        toast.error(response.message || 'Đăng nhập Microsoft thất bại');
+        toast.error(response.message);
         return { success: false };
       }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Lỗi kết nối server';
+    } catch (err: any) {
+      const message = extractErrorMessage(err, 'Lỗi kết nối server');
       setError(message);
       toast.error(message);
       return { success: false };
@@ -137,11 +145,11 @@ export function useAuth() {
         return { success: true, role: loginData.role };
       } else {
         setError(response.message);
-        toast.error(response.message || 'Đăng nhập thất bại');
+        toast.error(response.message);
         return { success: false };
       }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Lỗi kết nối server';
+    } catch (err: any) {
+      const message = extractErrorMessage(err, 'Lỗi kết nối server');
       setError(message);
       toast.error(message);
       return { success: false };
@@ -160,7 +168,7 @@ export function useAuth() {
         return { success: true };
       } else {
         setError(response.message);
-        toast.error(response.message || 'Đăng ký thất bại');
+        toast.error(response.message);
         return { success: false, errors: (response as any).errors };
       }
     } catch (err: any) {
@@ -187,7 +195,7 @@ export function useAuth() {
         return { success: true };
       } else {
         setError(response.message);
-        toast.error(response.message || 'Đăng ký thất bại');
+        toast.error(response.message);
         return { success: false, errors: (response as any).errors };
       }
     } catch (err: any) {
@@ -214,11 +222,11 @@ export function useAuth() {
         return true;
       } else {
         setError(response.message);
-        toast.error(response.message || 'Có lỗi xảy ra');
+        toast.error(response.message);
         return false;
       }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Lỗi không xác định';
+    } catch (err: any) {
+      const message = extractErrorMessage(err, 'Lỗi không xác định');
       setError(message);
       toast.error(message);
       return false;
@@ -247,11 +255,11 @@ export function useAuth() {
         return true;
       } else {
         setError(response.message);
-        toast.error(response.message || 'Gửi OTP thất bại');
+        toast.error(response.message);
         return false;
       }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Gửi OTP thất bại';
+    } catch (err: any) {
+      const message = extractErrorMessage(err, 'Gửi OTP thất bại');
       setError(message);
       toast.error(message);
       return false;
@@ -272,11 +280,11 @@ export function useAuth() {
         return { success: true, role: loginData.role };
       } else {
         setError(response.message);
-        toast.error(response.message || 'Xác thực OTP thất bại');
+        toast.error(response.message);
         return { success: false };
       }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Xác thực OTP thất bại';
+    } catch (err: any) {
+      const message = extractErrorMessage(err, 'Xác thực OTP thất bại');
       setError(message);
       toast.error(message);
       return { success: false };
@@ -297,11 +305,11 @@ export function useAuth() {
         return { success: true, role: loginData.role };
       } else {
         setError(response.message);
-        toast.error(response.message || 'Xác thực OTP mở khóa thất bại');
+        toast.error(response.message);
         return { success: false };
       }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Xác thực OTP mở khóa thất bại';
+    } catch (err: any) {
+      const message = extractErrorMessage(err, 'Xác thực OTP mở khóa thất bại');
       setError(message);
       toast.error(message);
       return { success: false };
@@ -320,11 +328,11 @@ export function useAuth() {
         return true;
       } else {
         setError(response.message);
-        toast.error(response.message || 'Gửi OTP thất bại');
+        toast.error(response.message);
         return false;
       }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Gửi OTP thất bại';
+    } catch (err: any) {
+      const message = extractErrorMessage(err, 'Gửi OTP thất bại');
       setError(message);
       toast.error(message);
       return false;

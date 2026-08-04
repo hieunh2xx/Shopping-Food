@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Search, ShieldAlert, CheckCircle2, AlertOctagon, UserMinus, ShieldCheck, Ban } from 'lucide-react';
 import { Button, Input, Modal } from '../../components/common';
 import { coordinatorService } from '../../services';
@@ -83,7 +83,7 @@ export default function MonitorShippersPage() {
         setIsSuspendOpen(false);
         fetchShippers();
       } else {
-        toast.error(res.message || 'Lỗi tạm khóa shipper');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Tạm khóa tài xế thất bại do lỗi kết nối mạng.');
@@ -104,7 +104,7 @@ export default function MonitorShippersPage() {
         toast.success(isLocked ? `Đã khóa tài khoản tài xế ${shipper.fullName}` : `Đã mở khóa tài khoản tài xế ${shipper.fullName}`);
         fetchShippers();
       } else {
-        toast.error(res.message || 'Lỗi cập nhật trạng thái');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Cập nhật trạng thái thất bại do lỗi kết nối mạng.');

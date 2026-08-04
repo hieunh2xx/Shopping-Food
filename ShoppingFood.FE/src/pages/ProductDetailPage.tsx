@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Star, Truck, Clock, ShoppingCart, ShieldAlert, Check } from 'lucide-react';
 import { useProducts, useCart } from '../hooks';
@@ -101,7 +101,7 @@ export function ProductDetailPage() {
         setIsReportOpen(false);
         setReportDetail('');
       } else {
-        toast.error(res.message || 'Lỗi khi gửi báo cáo');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Đã xảy ra lỗi khi gửi báo cáo');

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { Zap, Plus, Search } from 'lucide-react';
 import { flashSaleService } from '../../services/FlashSaleService';
@@ -111,10 +111,10 @@ export function SellerFlashSalesPage() {
       });
 
       if (!res.error) {
-        toast.success('Đăng ký sản phẩm thành công!');
+        toast.success('Đăng ký tham gia Flash Sale thành công! Yêu cầu của bạn đang chờ Admin duyệt.');
         setIsModalOpen(false);
       } else {
-        toast.error(res.message || 'Lỗi khi đăng ký sản phẩm');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Đăng ký Flash Sale thất bại do lỗi kết nối mạng.');

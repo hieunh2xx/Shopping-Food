@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Button } from '../../../components/common';
 import { coordinatorService } from '../../../services/coordinatorService';
 import { toast } from 'react-hot-toast';
@@ -38,7 +38,7 @@ export const AdjustReputationModal: React.FC<AdjustReputationModalProps> = ({ sh
         onSuccess();
         onClose();
       } else {
-        toast.error(res.message || 'Lỗi khi thay đổi điểm');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Thay đổi điểm thất bại do lỗi kết nối mạng.');

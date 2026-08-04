@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Gift, Award, Plus, Trash2, Edit2, Play } from 'lucide-react';
 import { Button, Input, Modal } from '../../components/common';
 import toast from 'react-hot-toast';
@@ -103,7 +103,7 @@ export function AdminLoyaltyConfigPage() {
           setIsGiftModalOpen(false);
           fetchGifts();
         } else {
-          toast.error(res.message || 'Lỗi cập nhật');
+          toast.error(res.message);
         }
       } else {
         const res = await pointGiftConfigService.createConfig({
@@ -116,11 +116,11 @@ export function AdminLoyaltyConfigPage() {
           setIsGiftModalOpen(false);
           fetchGifts();
         } else {
-          toast.error(res.message || 'Lỗi tạo mới');
+          toast.error(res.message);
         }
       }
-    } catch {
-      toast.error('Có lỗi xảy ra');
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message);
     }
   };
 
@@ -144,9 +144,9 @@ export function AdminLoyaltyConfigPage() {
     try {
       const res = await loyaltyPointService.evaluateTiers();
       if (!res.error) toast.success(`Hoàn tất đánh giá. Cập nhật ${res.data} tài khoản.`);
-      else toast.error(res.message || 'Lỗi khi chạy đánh giá');
-    } catch {
-      toast.error('Có lỗi xảy ra');
+      else toast.error(res.message);
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message);
     } finally {
       setIsEvaluating(false);
     }
@@ -168,10 +168,10 @@ export function AdminLoyaltyConfigPage() {
         setIsTierModalOpen(false);
         fetchTiers();
       } else {
-        toast.error(res.message || 'Lỗi cập nhật');
+        toast.error(res.message);
       }
-    } catch {
-      toast.error('Có lỗi xảy ra');
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message);
     }
   };
 

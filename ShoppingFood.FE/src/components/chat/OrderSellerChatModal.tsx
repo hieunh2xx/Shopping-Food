@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+﻿import { useState, useEffect, useRef, useCallback } from 'react';
 import { Send, Loader2 } from 'lucide-react';
 import { Modal } from '../common/Modal';
 import { useAuth } from '../../hooks';
@@ -59,7 +59,7 @@ export function OrderSellerChatModal({
         if (!sid && !isSeller) {
           const res = await chatService.createOrderSession(orderId);
           if (res.error || !res.data) {
-            toast.error(res.message || 'Không mở được chat với người bán');
+            toast.error(res.message);
             return;
           }
           sid = res.data.id;

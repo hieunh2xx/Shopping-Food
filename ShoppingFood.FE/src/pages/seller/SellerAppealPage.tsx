@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { ShieldAlert, Send } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { httpClient } from '../../services/base/HttpClient';
@@ -27,10 +27,10 @@ export default function SellerAppealPage() {
         toast.success('Đã gửi khiếu nại thành công! Vui lòng chờ Admin xử lý.');
         setReason('');
       } else {
-        toast.error(res.message || 'Gửi khiếu nại thất bại');
+        toast.error(res.message);
       }
     } catch (err: any) {
-      const rawMessage = err?.response?.data?.message || 'Lỗi kết nối đến máy chủ, không thể gửi khiếu nại.';
+      const rawMessage = err?.response?.data?.message;
       toast.error(rawMessage);
     } finally {
       setIsSubmitting(false);

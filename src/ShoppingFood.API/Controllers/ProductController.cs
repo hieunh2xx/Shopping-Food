@@ -154,6 +154,8 @@ namespace ShoppingFood.API.Controllers
         [HttpPost("review")]
         public async Task<ActionResult<ApiResponse>> ReviewProduct([FromBody] CreateProductReviewCommand command)
         {
+            if (userDto != null)
+                command.CurrentUserId = userDto.Id;
             var response = await _mediator.Send(command);
             return Ok(response);
         }

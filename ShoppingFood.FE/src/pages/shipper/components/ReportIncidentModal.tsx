@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Button, Input } from '../../../components/common';
+import { Modal, Button } from '../../../components/common';
 import { shipperService } from '../../../services/ShipperService';
 import toast from 'react-hot-toast';
 
@@ -37,14 +37,14 @@ export const ReportIncidentModal: React.FC<ReportIncidentModalProps> = ({
       });
 
       if (!res.error) {
-        toast.success('Gửi báo cáo sự cố thành công. Coordinator sẽ xem xét sớm nhất có thể.');
+        toast.success('Báo cáo sự cố đã được gửi. Đơn hàng đang được chuyển sang Trạng thái chờ Admin xử lý.');
         onClose();
         setContent('');
       } else {
-        toast.error(res.message || 'Lỗi gửi báo cáo');
+        toast.error(res.message);
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Lỗi gửi báo cáo. Vui lòng thử lại.');
+      toast.error(err.response?.data?.message);
     } finally {
       setIsSubmitting(false);
     }

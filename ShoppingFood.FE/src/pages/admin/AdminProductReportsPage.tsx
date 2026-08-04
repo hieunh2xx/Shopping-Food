@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { adminService, productService } from '../../services';
 import { Button, Loading, Modal } from '../../components/common';
 import { AlertTriangle, CheckCircle, ShieldAlert, XCircle, Eye } from 'lucide-react';
@@ -26,10 +26,10 @@ export function AdminProductReportsPage() {
       if (!res.error && res.data) {
         setReports(res.data);
       } else {
-        toast.error(res.message || 'Lỗi khi tải danh sách báo cáo');
+        toast.error(res.message);
       }
-    } catch (error) {
-      toast.error('Có lỗi xảy ra');
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message);
     } finally {
       setIsLoading(false);
     }
@@ -69,7 +69,7 @@ export function AdminProductReportsPage() {
       setAdminNote('');
       fetchReports();
     } catch (error: any) {
-      toast.error(error.message || 'Lỗi khi xử lý báo cáo');
+      toast.error(error.message);
     } finally {
       setIsSubmitting(false);
     }

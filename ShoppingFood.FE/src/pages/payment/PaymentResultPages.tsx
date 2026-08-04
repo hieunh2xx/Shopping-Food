@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { CheckCircle, Loader2, AlertCircle, Clock, RefreshCw } from 'lucide-react';
 import { paymentService } from '../../services/PaymentService';
@@ -31,7 +31,7 @@ export function PaymentSuccessPage() {
       return;
     }
 
-    toast.error(res.data?.message || res.message || 'Chưa thấy giao dịch khớp');
+    toast.error(res.data?.message || res.message);
   };
 
   useEffect(() => {

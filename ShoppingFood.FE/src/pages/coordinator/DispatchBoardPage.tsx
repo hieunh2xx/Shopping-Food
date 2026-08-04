@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { 
   User, 
   MapPin, 
@@ -143,7 +143,7 @@ export default function DispatchBoardPage() {
         setProposalSentStatus(prev => ({ ...prev, [shipperId]: true }));
         setActiveProposalTimer(prev => ({ ...prev, [shipperId]: 60 }));
       } else {
-        toast.error(res.message || 'Lỗi gửi đề xuất');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Gửi đề xuất thất bại do lỗi kết nối mạng.');
@@ -164,7 +164,7 @@ export default function DispatchBoardPage() {
         setIsSuggestedOpen(false);
         fetchOrders();
       } else {
-        toast.error(res.message || 'Lỗi gán đơn');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Gán đơn thất bại do lỗi kết nối mạng.');
@@ -177,10 +177,10 @@ export default function DispatchBoardPage() {
     try {
       const res = await coordinatorService.broadcastOrder(order.id);
       if (!res.error) {
-        toast.success(res.message || 'Đã gửi thông báo đến các tài xế thành công!');
+        toast.success(res.message);
         fetchOrders();
       } else {
-        toast.error(res.message || 'Lỗi gửi thông báo');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Lỗi kết nối mạng khi gửi thông báo.');
@@ -213,7 +213,7 @@ export default function DispatchBoardPage() {
         setIsReleaseOpen(false);
         fetchOrders();
       } else {
-        toast.error(res.message || 'Lỗi xử lý thu hồi đơn');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Giải phóng đơn thất bại do lỗi kết nối mạng.');
@@ -249,7 +249,7 @@ export default function DispatchBoardPage() {
         setIsIncidentOpen(false);
         fetchOrders();
       } else {
-        toast.error(res.message || 'Lỗi giải quyết sự cố');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Xử lý sự cố thất bại do lỗi kết nối mạng.');

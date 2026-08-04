@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+﻿import { useState, useCallback } from 'react';
 import { productService } from '../services';
 import type { IProductDto, ISearchProductQuery, IAddProductRequest, IUpdateProductRequest } from '../interfaces';
 import toast from 'react-hot-toast';
@@ -26,7 +26,7 @@ export function useProducts() {
         setError(response.message);
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Lỗi tải sản phẩm');
+      setError((err as any)?.response?.data?.message);
     } finally {
       setIsLoading(false);
     }
@@ -43,7 +43,7 @@ export function useProducts() {
         setError(response.message);
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Lỗi tải chi tiết sản phẩm');
+      setError((err as any)?.response?.data?.message);
     } finally {
       setIsLoading(false);
     }
@@ -61,7 +61,7 @@ export function useProducts() {
         setError(response.message);
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Lỗi tìm kiếm');
+      setError((err as any)?.response?.data?.message);
     } finally {
       setIsLoading(false);
     }
@@ -87,7 +87,7 @@ export function useProducts() {
     try {
       const response = await productService.create(data);
       if (!response.error) {
-        toast.success('Thêm sản phẩm thành công!');
+        toast.success('Thêm món ăn mới thành công!');
         return response.data;
       } else {
         setError(response.message);
@@ -95,7 +95,7 @@ export function useProducts() {
         return null;
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Lỗi thêm sản phẩm';
+      const message = (err as any)?.response?.data?.message;
       setError(message);
       toast.error(message);
       return null;
@@ -110,7 +110,7 @@ export function useProducts() {
     try {
       const response = await productService.update(id, data);
       if (!response.error) {
-        toast.success('Cập nhật sản phẩm thành công!');
+        toast.success('Cập nhật thông tin món ăn thành công!');
         return response.data;
       } else {
         setError(response.message);
@@ -118,7 +118,7 @@ export function useProducts() {
         return null;
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Lỗi cập nhật sản phẩm';
+      const message = (err as any)?.response?.data?.message;
       setError(message);
       toast.error(message);
       return null;
@@ -133,14 +133,14 @@ export function useProducts() {
       const response = await productService.remove(id);
       if (!response.error) {
         setProducts((prev) => prev.filter((p) => p.id !== id));
-        toast.success('Xóa sản phẩm thành công!');
+        toast.success('Xóa món ăn khỏi thực đơn thành công!');
         return true;
       } else {
         toast.error(response.message);
         return false;
       }
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Lỗi xóa sản phẩm');
+      toast.error((err as any)?.response?.data?.message);
       return false;
     } finally {
       setIsLoading(false);

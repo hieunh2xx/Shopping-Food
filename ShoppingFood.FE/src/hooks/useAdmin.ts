@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+﻿import { useState, useCallback } from 'react';
 import { adminService } from '../services';
 import type { IApproveApplicationRequest, IApproveProductRequest } from '../interfaces';
 import toast from 'react-hot-toast';
@@ -24,7 +24,7 @@ export function useAdmin() {
         return false;
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Lỗi xử lý duyệt hồ sơ';
+      const message = (err as any)?.response?.data?.message;
       setError(message);
       toast.error(message);
       return false;
@@ -47,7 +47,7 @@ export function useAdmin() {
         return false;
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Lỗi xử lý duyệt sản phẩm';
+      const message = (err as any)?.response?.data?.message;
       setError(message);
       toast.error(message);
       return false;

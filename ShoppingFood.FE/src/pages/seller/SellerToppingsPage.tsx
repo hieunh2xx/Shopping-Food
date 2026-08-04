@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+﻿import { useState, useEffect, useCallback } from 'react';
 import { Plus, Edit, Trash2, ListPlus, ToggleLeft, ToggleRight, Loader2 } from 'lucide-react';
 import { Button, Input, Modal, Loading, Pagination } from '../../components/common';
 import { toppingService } from '../../services';
@@ -40,7 +40,7 @@ export function SellerToppingsPage() {
         setImageUrl(res.data.imageUrl);
         toast.success('Tải ảnh lên thành công!', { id: toastId });
       } else {
-        toast.error(res.message || 'Không thể tải ảnh lên', { id: toastId });
+        toast.error(res.message , { id: toastId });
       }
     } catch {
       toast.error('Tải ảnh lên thất bại do lỗi kết nối mạng.', { id: toastId });
@@ -61,7 +61,7 @@ export function SellerToppingsPage() {
       if (!res.error && res.data) {
         setToppings(res.data);
       } else {
-        toast.error(res.message || 'Lỗi khi tải danh sách toppings');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Tải danh sách topping thất bại do lỗi kết nối mạng.');
@@ -124,7 +124,7 @@ export function SellerToppingsPage() {
         toast.success(`Đã chuyển trạng thái: ${!top.isAvailable ? 'Còn hàng' : 'Hết hàng'}`);
         loadToppings(restaurantId);
       } else {
-        toast.error(res.message || 'Không thể cập nhật trạng thái');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Cập nhật trạng thái topping thất bại do lỗi kết nối mạng.');
@@ -155,11 +155,11 @@ export function SellerToppingsPage() {
         });
 
         if (!res.error) {
-          toast.success('Cập nhật topping thành công!');
+          toast.success('Cập nhật các tùy chọn của món ăn thành công!');
           setIsOpen(false);
           loadToppings(restaurantId);
         } else {
-          toast.error(res.message || 'Lỗi khi cập nhật topping');
+          toast.error(res.message);
         }
       } else {
         const res = await toppingService.create({
@@ -171,11 +171,11 @@ export function SellerToppingsPage() {
         });
 
         if (!res.error) {
-          toast.success('Thêm topping thành công!');
+          toast.success('Thêm các tùy chọn cho món ăn thành công!');
           setIsOpen(false);
           loadToppings(restaurantId);
         } else {
-          toast.error(res.message || 'Lỗi khi thêm topping');
+          toast.error(res.message);
         }
       }
     } catch {
@@ -191,12 +191,12 @@ export function SellerToppingsPage() {
     try {
       const res = await toppingService.delete(deletingTopping.id);
       if (!res.error) {
-        toast.success('Xóa topping thành công!');
+        toast.success('Xóa tùy chọn của món ăn thành công!');
         setIsDeleteOpen(false);
         setDeletingTopping(null);
         loadToppings(restaurantId);
       } else {
-        toast.error(res.message || 'Lỗi khi xóa topping');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Xóa topping thất bại do lỗi kết nối mạng.');

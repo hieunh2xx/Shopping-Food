@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { authService } from '../../services/AuthService';
 import { restaurantService } from '../../services/RestaurantService';
 import type { IUserDto } from '../../interfaces';
@@ -50,16 +50,7 @@ function LocationMarker({ position, setPosition }: { position: [number, number] 
   );
 }
 
-const getErrorMessage = (err: any, defaultMsg: string) => {
-  const data = err.response?.data;
-  if (data?.errors && typeof data.errors === 'object') {
-    const firstKey = Object.keys(data.errors)[0];
-    if (firstKey && Array.isArray(data.errors[firstKey]) && data.errors[firstKey].length > 0) {
-      return data.errors[firstKey][0];
-    }
-  }
-  return data?.message || data?.title || defaultMsg;
-};
+
 
 export function SellerSettingsPage() {
   const { user } = useAuth();
@@ -139,7 +130,7 @@ export function SellerSettingsPage() {
           }
         }
       } else {
-        toast.error(res.message || 'Lỗi khi tải thông tin cá nhân');
+        toast.error(res.message);
       }
     } catch {
       toast.error('Không thể lấy thông tin cấu hình cửa hàng. Vui lòng kiểm tra kết nối mạng.');
@@ -170,10 +161,10 @@ export function SellerSettingsPage() {
         toast.success('Đã cập nhật thông tin thành công!', { id: toastId });
         fetchProfile();
       } else {
-        toast.error(res.message || 'Lỗi khi cập nhật', { id: toastId });
+        toast.error(res.message , { id: toastId });
       }
     } catch (err: any) {
-      toast.error(getErrorMessage(err, 'Cập nhật thông tin cửa hàng thất bại do lỗi kết nối mạng.'), { id: toastId });
+      toast.error(err.response?.data?.message, { id: toastId });
     } finally {
       setIsSaving(false);
     }
@@ -224,7 +215,7 @@ export function SellerSettingsPage() {
         setBasicInfo(prev => ({ ...prev, logoUrl: res.data.imageUrl }));
         toast.success('Tải ảnh lên thành công', { id: toastId });
       } else {
-        toast.error(res.message || 'Lỗi khi tải ảnh lên', { id: toastId });
+        toast.error(res.message , { id: toastId });
       }
     } catch {
       toast.error('Tải ảnh lên thất bại. Vui lòng thử lại.', { id: toastId });
@@ -247,10 +238,10 @@ export function SellerSettingsPage() {
         toast.success('Đã cập nhật giờ hoạt động thành công!', { id: toastId });
         fetchProfile();
       } else {
-        toast.error(res.message || 'Lỗi khi cập nhật', { id: toastId });
+        toast.error(res.message , { id: toastId });
       }
     } catch (err: any) {
-      toast.error(getErrorMessage(err, 'Cập nhật giờ hoạt động thất bại do lỗi kết nối mạng.'), { id: toastId });
+      toast.error(err.response?.data?.message, { id: toastId });
     } finally {
       setIsSaving(false);
     }
@@ -266,10 +257,10 @@ export function SellerSettingsPage() {
         setStatus(newStatus);
         fetchProfile();
       } else {
-        toast.error(res.message || 'Lỗi khi cập nhật', { id: toastId });
+        toast.error(res.message , { id: toastId });
       }
     } catch (err: any) {
-      toast.error(getErrorMessage(err, 'Cập nhật trạng thái thất bại do lỗi kết nối mạng.'), { id: toastId });
+      toast.error(err.response?.data?.message, { id: toastId });
     } finally {
       setIsSaving(false);
     }
@@ -299,10 +290,10 @@ export function SellerSettingsPage() {
         toast.success('Đã cập nhật cấu hình giao hàng thành công!', { id: toastId });
         fetchProfile();
       } else {
-        toast.error(res.message || 'Lỗi khi cập nhật', { id: toastId });
+        toast.error(res.message , { id: toastId });
       }
     } catch (err: any) {
-      toast.error(getErrorMessage(err, 'Cập nhật cấu hình giao hàng thất bại do lỗi kết nối mạng.'), { id: toastId });
+      toast.error(err.response?.data?.message, { id: toastId });
     } finally {
       setIsSaving(false);
     }

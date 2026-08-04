@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { restaurantService } from '../services/RestaurantService';
 import { orderService } from '../services/OrderService';
 import { Link } from 'react-router-dom';
@@ -50,7 +50,7 @@ export function SellerDashboardPage() {
       if (!statsRes.error && statsRes.data) {
         setStats(statsRes.data);
       } else {
-        toast.error(statsRes.message || 'Lỗi khi tải thống kê');
+        toast.error(statsRes.message);
       }
 
       // 2. Get recent orders (take 5)

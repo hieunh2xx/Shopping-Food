@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { DollarSign, TrendingUp, CheckCircle, XCircle, BarChart3 } from 'lucide-react';
 import { Card, Button } from '../../components/common';
 import { paymentService } from '../../services/PaymentService';
@@ -31,7 +31,7 @@ export function AdminFinancePage() {
     if (!res.error) {
       toast.success(approve ? 'Đã duyệt' : 'Đã từ chối');
       loadData();
-    } else toast.error(res.message || 'Lỗi');
+    } else toast.error(res.message);
   };
 
   if (loading) return <div className="p-8 text-center">Đang tải...</div>;

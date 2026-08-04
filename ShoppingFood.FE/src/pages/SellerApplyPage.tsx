@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/AuthService';
 import { toast } from 'react-hot-toast';
@@ -69,13 +69,13 @@ export function SellerApplyPage() {
       });
 
       if (res.error) {
-        toast.error(res.message || 'Có lỗi xảy ra');
+        toast.error(res.message);
       } else {
         toast.success('Đăng ký thành công! Vui lòng chờ phê duyệt.');
         navigate(ROUTES.PROFILE);
       }
     } catch (err: any) {
-      let errorMsg = err.response?.data?.message || err.message || 'Có lỗi xảy ra khi đăng ký';
+      let errorMsg = err.response?.data?.message;
       if (errorMsg === 'You are already a seller or mall.') {
         errorMsg = 'Bạn đã là Người Bán hoặc Mall.';
       } else if (errorMsg === 'You already have a pending seller application.') {
