@@ -1,0 +1,195 @@
+# Shopping Food — Package Diagrams
+
+Tài liệu mô tả cấu trúc package của toàn hệ thống, backend (.NET 8) và frontend (React).
+
+---
+
+## 1. Toàn dự án (System)
+
+```mermaid
+packageDiagram
+    package "Shopping Food" {
+        package "ShoppingFood.FE\n(React 19 + Vite)" {
+            [Pages / Routes]
+            [Services (API client)]
+            [Components / Contexts]
+        }
+
+        package "Backend (.NET 8)" {
+            [ShoppingFood.API]
+            [ShoppingFood.Application]
+            [ShoppingFood.Repository]
+            [ShoppingFood.Domain]
+            [ShoppingFood.Dto]
+            [ShoppingFood.Core]
+            [ShoppingFood.Tests]
+        }
+
+        package "External" {
+            [SQL Server]
+            [SePay]
+            [SMTP / Stringee / SignalR]
+        }
+    }
+
+    [Pages / Routes] --> [Services (API client)]
+    [Services (API client)] --> [ShoppingFood.API] : HTTPS / JWT
+    [ShoppingFood.API] --> [ShoppingFood.Application]
+    [ShoppingFood.Application] --> [ShoppingFood.Repository]
+    [ShoppingFood.Repository] --> [SQL Server]
+    [ShoppingFood.API] --> [SePay]
+    [ShoppingFood.API] --> [SMTP / Stringee / SignalR]
+    [ShoppingFood.Tests] --> [ShoppingFood.Application]
+    [ShoppingFood.Tests] --> [ShoppingFood.Repository]
+```
+
+---
+
+## 2. Backend (Clean Architecture packages)
+
+```mermaid
+packageDiagram
+    package "ShoppingFood.API" {
+        [Controllers]
+        [Program / DI]
+        [Auth Filter / SignalR]
+        [TestDataSeeder]
+    }
+
+    package "ShoppingFood.Application" {
+        [Features CQRS\nUsers Orders Products\nAdmin Carts Payments\nDiscounts FlashSales…]
+        [Services\nEmail Settlement Chat…]
+        [Validators]
+    }
+
+    package "ShoppingFood.Repository" {
+        [Repositories]
+        [UnitOfWork]
+    }
+
+    package "ShoppingFood.Domain" {
+        [Entities / Models]
+        [Enums]
+        [DbContext / Migrations]
+    }
+
+    package "ShoppingFood.Dto" {
+        [Request / Response DTOs]
+    }
+
+    package "ShoppingFood.Core" {
+        [ApiResponse]
+        [Interfaces / Base]
+    }
+
+    package "ShoppingFood.Tests" {
+        [Handler Unit Tests]
+        [TestDbFixture]
+    }
+
+    [Controllers] --> [Features CQRS\nUsers Orders Products\nAdmin Carts Payments\nDiscounts FlashSales…] : MediatR
+    [Program / DI] --> [Repositories]
+    [Features CQRS\nUsers Orders Products\nAdmin Carts Payments\nDiscounts FlashSales…] --> [Repositories]
+    [Features CQRS\nUsers Orders Products\nAdmin Carts Payments\nDiscounts FlashSales…] --> [Request / Response DTOs]
+    [Features CQRS\nUsers Orders Products\nAdmin Carts Payments\nDiscounts FlashSales…] --> [ApiResponse]
+    [Repositories] --> [Entities / Models]
+    [Repositories] --> [DbContext / Migrations]
+    [Entities / Models] --> [ApiResponse]
+    [Request / Response DTOs] --> [ApiResponse]
+    [Handler Unit Tests] --> [Features CQRS\nUsers Orders Products\nAdmin Carts Payments\nDiscounts FlashSales…]
+    [Handler Unit Tests] --> [Repositories]
+```
+
+### Project references
+
+| Project | Depends on |
+|---------|------------|
+| `ShoppingFood.API` | Application, Repository |
+| `ShoppingFood.Application` | Domain, Dto, Core, Repository |
+| `ShoppingFood.Repository` | Domain, Dto, Core |
+| `ShoppingFood.Domain` | Core |
+| `ShoppingFood.Dto` | Core |
+| `ShoppingFood.Tests` | Application, Repository |
+
+**Dependency direction (không đảo ngược):**  
+`API → Application → Repository → Domain`  
+`Dto` / `Core` dùng chung; `Tests` phụ thuộc Application + Repository.
+
+### Application Features
+
+`Admin`, `Carts`, `Chat`, `Coordinator`, `Discounts`, `Faqs`, `FlashSales`, `LoyaltyPoints`, `Notifications`, `Orders`, `Payments`, `Products`, `Promotions`, `Restaurants`, `Shippers`, `Support`, `System`, `UserAddresses`, `Users`
+
+---
+
+## 3. Frontend (`ShoppingFood.FE`)
+
+```mermaid
+packageDiagram
+    package "ShoppingFood.FE" {
+        package "Presentation" {
+            [pages\nadmin seller shipper\ncoordinator shared…]
+            [components]
+            [routes]
+        }
+
+        package "State & UX" {
+            [contexts]
+            [hooks]
+        }
+
+        package "Data Access" {
+            [services\nAuth Order Cart Product\nPayment Admin…]
+            [services/base\nAxios + JWT]
+        }
+
+        package "Shared" {
+            [interfaces]
+            [config]
+            [utils]
+        }
+
+        package "Quality" {
+            [__tests__]
+            [e2e / Playwright]
+        }
+    }
+
+    package "Backend API" {
+        [ShoppingFood.API]
+    }
+
+    [pages\nadmin seller shipper\ncoordinator shared…] --> [components]
+    [pages\nadmin seller shipper\ncoordinator shared…] --> [routes]
+    [pages\nadmin seller shipper\ncoordinator shared…] --> [contexts]
+    [pages\nadmin seller shipper\ncoordinator shared…] --> [hooks]
+    [pages\nadmin seller shipper\ncoordinator shared…] --> [services\nAuth Order Cart Product\nPayment Admin…]
+    [hooks] --> [services\nAuth Order Cart Product\nPayment Admin…]
+    [services\nAuth Order Cart Product\nPayment Admin…] --> [services/base\nAxios + JWT]
+    [services\nAuth Order Cart Product\nPayment Admin…] --> [interfaces]
+    [services/base\nAxios + JWT] --> [ShoppingFood.API]
+    [e2e / Playwright] --> [pages\nadmin seller shipper\ncoordinator shared…]
+```
+
+### `src/` layout
+
+| Folder | Responsibility |
+|--------|----------------|
+| `pages/` | Màn hình theo role: `admin`, `seller`, `shipper`, `coordinator`, `shared`, `payment`, `support` |
+| `components/` | UI tái sử dụng |
+| `routes/` | React Router |
+| `contexts/` | Auth / app state |
+| `hooks/` | Custom hooks |
+| `services/` | API clients (Auth, Order, Cart, Product, Payment, Admin, …) |
+| `services/base/` | Axios instance + JWT |
+| `interfaces/` | TypeScript contracts |
+| `config/` | Env / app config |
+| `utils/` | Helpers |
+| `__tests__/` | Unit tests FE |
+| `e2e/` | Playwright walkthrough / evidence |
+
+---
+
+## Cách xem diagram
+
+- Preview Mermaid trong VS Code / Cursor (Markdown preview), hoặc
+- Dán block vào [mermaid.live](https://mermaid.live)
