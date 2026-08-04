@@ -2,102 +2,113 @@
 
 Tài liệu mô tả cấu trúc package của toàn hệ thống, backend (.NET 8) và frontend (React).
 
+> Diagram dùng cú pháp Mermaid đơn giản, tương thích Cursor / VS Code / GitHub / mermaid.live.
+
 ---
 
 ## 1. Toàn dự án (System)
 
 ```mermaid
-packageDiagram
-    package "Shopping Food" {
-        package "ShoppingFood.FE\n(React 19 + Vite)" {
-            [Pages / Routes]
-            [Services (API client)]
-            [Components / Contexts]
-        }
+flowchart TB
+    subgraph FE [ShoppingFood FE - React Vite]
+        FE_Pages[Pages Routes]
+        FE_Services[Services API client]
+        FE_Components[Components Contexts]
+    end
 
-        package "Backend (.NET 8)" {
-            [ShoppingFood.API]
-            [ShoppingFood.Application]
-            [ShoppingFood.Repository]
-            [ShoppingFood.Domain]
-            [ShoppingFood.Dto]
-            [ShoppingFood.Core]
-            [ShoppingFood.Tests]
-        }
+    subgraph BE [Backend NET 8]
+        BE_API[ShoppingFood.API]
+        BE_App[ShoppingFood.Application]
+        BE_Repo[ShoppingFood.Repository]
+        BE_Domain[ShoppingFood.Domain]
+        BE_Dto[ShoppingFood.Dto]
+        BE_Core[ShoppingFood.Core]
+        BE_Tests[ShoppingFood.Tests]
+    end
 
-        package "External" {
-            [SQL Server]
-            [SePay]
-            [SMTP / Stringee / SignalR]
-        }
-    }
+    subgraph EXT [External]
+        EXT_SQL[SQL Server]
+        EXT_Sepay[SePay]
+        EXT_Other[SMTP Stringee SignalR]
+    end
 
-    [Pages / Routes] --> [Services (API client)]
-    [Services (API client)] --> [ShoppingFood.API] : HTTPS / JWT
-    [ShoppingFood.API] --> [ShoppingFood.Application]
-    [ShoppingFood.Application] --> [ShoppingFood.Repository]
-    [ShoppingFood.Repository] --> [SQL Server]
-    [ShoppingFood.API] --> [SePay]
-    [ShoppingFood.API] --> [SMTP / Stringee / SignalR]
-    [ShoppingFood.Tests] --> [ShoppingFood.Application]
-    [ShoppingFood.Tests] --> [ShoppingFood.Repository]
+    FE_Pages --> FE_Services
+    FE_Pages --> FE_Components
+    FE_Services --> BE_API
+    BE_API --> BE_App
+    BE_App --> BE_Repo
+    BE_Repo --> EXT_SQL
+    BE_API --> EXT_Sepay
+    BE_API --> EXT_Other
+    BE_App --> BE_Dto
+    BE_App --> BE_Core
+    BE_Repo --> BE_Domain
+    BE_Domain --> BE_Core
+    BE_Dto --> BE_Core
+    BE_Tests --> BE_App
+    BE_Tests --> BE_Repo
 ```
 
 ---
 
-## 2. Backend (Clean Architecture packages)
+## 2. Backend (Clean Architecture)
 
 ```mermaid
-packageDiagram
-    package "ShoppingFood.API" {
-        [Controllers]
-        [Program / DI]
-        [Auth Filter / SignalR]
-        [TestDataSeeder]
-    }
+flowchart TB
+    subgraph PKG_API [ShoppingFood.API]
+        API_Ctrl[Controllers]
+        API_Program[Program DI]
+        API_Auth[Auth Filter SignalR]
+        API_Seed[TestDataSeeder]
+    end
 
-    package "ShoppingFood.Application" {
-        [Features CQRS\nUsers Orders Products\nAdmin Carts Payments\nDiscounts FlashSales…]
-        [Services\nEmail Settlement Chat…]
-        [Validators]
-    }
+    subgraph PKG_APP [ShoppingFood.Application]
+        APP_Features[Features CQRS]
+        APP_Services[Services Email Settlement Chat]
+        APP_Validators[Validators]
+    end
 
-    package "ShoppingFood.Repository" {
-        [Repositories]
-        [UnitOfWork]
-    }
+    subgraph PKG_REPO [ShoppingFood.Repository]
+        REPO_Repos[Repositories]
+        REPO_UoW[UnitOfWork]
+    end
 
-    package "ShoppingFood.Domain" {
-        [Entities / Models]
-        [Enums]
-        [DbContext / Migrations]
-    }
+    subgraph PKG_DOMAIN [ShoppingFood.Domain]
+        DOM_Entities[Entities Models]
+        DOM_Enums[Enums]
+        DOM_Db[DbContext Migrations]
+    end
 
-    package "ShoppingFood.Dto" {
-        [Request / Response DTOs]
-    }
+    subgraph PKG_DTO [ShoppingFood.Dto]
+        DTO_Items[Request Response DTOs]
+    end
 
-    package "ShoppingFood.Core" {
-        [ApiResponse]
-        [Interfaces / Base]
-    }
+    subgraph PKG_CORE [ShoppingFood.Core]
+        CORE_Api[ApiResponse]
+        CORE_Base[Interfaces Base]
+    end
 
-    package "ShoppingFood.Tests" {
-        [Handler Unit Tests]
-        [TestDbFixture]
-    }
+    subgraph PKG_TESTS [ShoppingFood.Tests]
+        TEST_Unit[Handler Unit Tests]
+        TEST_Fixture[TestDbFixture]
+    end
 
-    [Controllers] --> [Features CQRS\nUsers Orders Products\nAdmin Carts Payments\nDiscounts FlashSales…] : MediatR
-    [Program / DI] --> [Repositories]
-    [Features CQRS\nUsers Orders Products\nAdmin Carts Payments\nDiscounts FlashSales…] --> [Repositories]
-    [Features CQRS\nUsers Orders Products\nAdmin Carts Payments\nDiscounts FlashSales…] --> [Request / Response DTOs]
-    [Features CQRS\nUsers Orders Products\nAdmin Carts Payments\nDiscounts FlashSales…] --> [ApiResponse]
-    [Repositories] --> [Entities / Models]
-    [Repositories] --> [DbContext / Migrations]
-    [Entities / Models] --> [ApiResponse]
-    [Request / Response DTOs] --> [ApiResponse]
-    [Handler Unit Tests] --> [Features CQRS\nUsers Orders Products\nAdmin Carts Payments\nDiscounts FlashSales…]
-    [Handler Unit Tests] --> [Repositories]
+    API_Ctrl --> APP_Features
+    API_Program --> REPO_Repos
+    APP_Features --> REPO_Repos
+    APP_Features --> DTO_Items
+    APP_Features --> CORE_Api
+    APP_Features --> APP_Services
+    APP_Features --> APP_Validators
+    REPO_Repos --> DOM_Entities
+    REPO_Repos --> DOM_Db
+    REPO_Repos --> REPO_UoW
+    DOM_Entities --> DOM_Enums
+    DOM_Entities --> CORE_Base
+    DTO_Items --> CORE_Api
+    TEST_Unit --> APP_Features
+    TEST_Unit --> REPO_Repos
+    TEST_Unit --> TEST_Fixture
 ```
 
 ### Project references
@@ -121,53 +132,52 @@ packageDiagram
 
 ---
 
-## 3. Frontend (`ShoppingFood.FE`)
+## 3. Frontend (ShoppingFood.FE)
 
 ```mermaid
-packageDiagram
-    package "ShoppingFood.FE" {
-        package "Presentation" {
-            [pages\nadmin seller shipper\ncoordinator shared…]
-            [components]
-            [routes]
-        }
+flowchart TB
+    subgraph FE_PRES [Presentation]
+        FE_Pages[pages admin seller shipper coordinator]
+        FE_Components[components]
+        FE_Routes[routes]
+    end
 
-        package "State & UX" {
-            [contexts]
-            [hooks]
-        }
+    subgraph FE_STATE [State and UX]
+        FE_Contexts[contexts]
+        FE_Hooks[hooks]
+    end
 
-        package "Data Access" {
-            [services\nAuth Order Cart Product\nPayment Admin…]
-            [services/base\nAxios + JWT]
-        }
+    subgraph FE_DATA [Data Access]
+        FE_Services[services Auth Order Cart Product Payment]
+        FE_Base[services base Axios JWT]
+    end
 
-        package "Shared" {
-            [interfaces]
-            [config]
-            [utils]
-        }
+    subgraph FE_SHARED [Shared]
+        FE_Interfaces[interfaces]
+        FE_Config[config]
+        FE_Utils[utils]
+    end
 
-        package "Quality" {
-            [__tests__]
-            [e2e / Playwright]
-        }
-    }
+    subgraph FE_QA [Quality]
+        FE_UnitTests[unit tests]
+        FE_E2E[e2e Playwright]
+    end
 
-    package "Backend API" {
-        [ShoppingFood.API]
-    }
+    FE_Backend[ShoppingFood.API]
 
-    [pages\nadmin seller shipper\ncoordinator shared…] --> [components]
-    [pages\nadmin seller shipper\ncoordinator shared…] --> [routes]
-    [pages\nadmin seller shipper\ncoordinator shared…] --> [contexts]
-    [pages\nadmin seller shipper\ncoordinator shared…] --> [hooks]
-    [pages\nadmin seller shipper\ncoordinator shared…] --> [services\nAuth Order Cart Product\nPayment Admin…]
-    [hooks] --> [services\nAuth Order Cart Product\nPayment Admin…]
-    [services\nAuth Order Cart Product\nPayment Admin…] --> [services/base\nAxios + JWT]
-    [services\nAuth Order Cart Product\nPayment Admin…] --> [interfaces]
-    [services/base\nAxios + JWT] --> [ShoppingFood.API]
-    [e2e / Playwright] --> [pages\nadmin seller shipper\ncoordinator shared…]
+    FE_Pages --> FE_Components
+    FE_Pages --> FE_Routes
+    FE_Pages --> FE_Contexts
+    FE_Pages --> FE_Hooks
+    FE_Pages --> FE_Services
+    FE_Hooks --> FE_Services
+    FE_Services --> FE_Base
+    FE_Services --> FE_Interfaces
+    FE_Base --> FE_Backend
+    FE_E2E --> FE_Pages
+    FE_UnitTests --> FE_Services
+    FE_Pages --> FE_Config
+    FE_Pages --> FE_Utils
 ```
 
 ### `src/` layout
@@ -191,5 +201,6 @@ packageDiagram
 
 ## Cách xem diagram
 
-- Preview Mermaid trong VS Code / Cursor (Markdown preview), hoặc
-- Dán block vào [mermaid.live](https://mermaid.live)
+1. Mở file này trong Cursor → **Markdown Preview** (`Ctrl+Shift+V`)
+2. Hoặc copy từng block `mermaid` vào [https://mermaid.live](https://mermaid.live) → **Export PNG/SVG**
+3. Nếu preview vẫn trắng: cài extension **Markdown Preview Mermaid Support**
