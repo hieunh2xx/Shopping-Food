@@ -204,8 +204,8 @@ namespace ShoppingFood.Application.Features.Admin.Commands
                 string body = action switch
                 {
                     "Approve" => isMall 
-                        ? $"<p>Xin chúc mừng,</p><p>Yêu cầu nâng cấp lên ShoppingFood Mall cho cửa hàng <strong>{application.BusinessName}</strong> đã được phê duyệt thành công.</p><p>Cửa hàng của bạn giờ đây đã có huy hiệu Mall và sẽ được ưu tiên hiển thị.</p>" 
-                        : $"<p>Xin chúc mừng,</p><p>Yêu cầu đăng ký đối tác bán hàng cho cửa hàng <strong>{application.BusinessName}</strong> đã được phê duyệt thành công.</p><p>Hồ sơ cửa hàng của bạn đã được khởi tạo và bạn có thể bắt đầu đăng bán sản phẩm.</p>",
+                        ? $"<p>Xin chúc mừng,</p><p>Yêu cầu nâng cấp lên ShoppingFood Mall cho cửa hàng <strong>{application.BusinessName}</strong> đã được phê duyệt thành công.</p><p>Cửa hàng của bạn giờ đây đã có huy hiệu Mall và sẽ được ưu tiên hiển thị.</p><p><strong>Lưu ý:</strong> Vui lòng đăng xuất và đăng nhập lại tài khoản để hệ thống cập nhật quyền truy cập mới nhất của bạn.</p>" 
+                        : $"<p>Xin chúc mừng,</p><p>Yêu cầu đăng ký đối tác bán hàng cho cửa hàng <strong>{application.BusinessName}</strong> đã được phê duyệt thành công.</p><p>Hồ sơ cửa hàng của bạn đã được khởi tạo và bạn có thể bắt đầu đăng bán sản phẩm.</p><p><strong>Lưu ý quan trọng:</strong> Vui lòng đăng xuất và đăng nhập lại tài khoản để hệ thống cập nhật quyền, giúp bạn có thể chuyển sang trang Seller Dashboard.</p>",
                     "Reject" => isMall 
                         ? $"<p>Xin chào,</p><p>Yêu cầu nâng cấp lên ShoppingFood Mall cho cửa hàng <strong>{application.BusinessName}</strong> đã bị từ chối phê duyệt.</p><p><strong>Lý do từ chối:</strong> {application.RejectionReason}</p>" 
                         : $"<p>Xin chào,</p><p>Yêu cầu đăng ký đối tác bán hàng cho cửa hàng <strong>{application.BusinessName}</strong> đã bị từ chối phê duyệt.</p><p><strong>Lý do từ chối:</strong> {application.RejectionReason}</p>",
@@ -236,7 +236,7 @@ namespace ShoppingFood.Application.Features.Admin.Commands
 
                 string message = action switch
                 {
-                    "Approve" => isMall ? $"Yêu cầu nâng cấp lên Mall của cửa hàng '{application.BusinessName}' đã được duyệt." : $"Đơn đăng ký đối tác cửa hàng '{application.BusinessName}' của bạn đã được phê duyệt.",
+                    "Approve" => isMall ? $"Yêu cầu nâng cấp lên Mall của cửa hàng '{application.BusinessName}' đã được duyệt. Vui lòng đăng xuất và đăng nhập lại để hệ thống cập nhật quyền mới." : $"Đơn đăng ký đối tác cửa hàng '{application.BusinessName}' của bạn đã được duyệt. Vui lòng đăng xuất và đăng nhập lại để truy cập Seller Dashboard.",
                     "Reject" => isMall ? $"Yêu cầu nâng cấp lên Mall của cửa hàng '{application.BusinessName}' đã bị từ chối. Lý do: {application.RejectionReason}." : $"Đơn đăng ký đối tác cửa hàng '{application.BusinessName}' của bạn đã bị từ chối. Lý do: {application.RejectionReason}.",
                     "NeedsInfo" => isMall ? $"Yêu cầu nâng cấp lên Mall của cửa hàng '{application.BusinessName}' cần bổ sung thông tin. Yêu cầu: {application.RejectionReason}." : $"Đơn đăng ký đối tác cửa hàng '{application.BusinessName}' của bạn cần bổ sung thông tin. Yêu cầu: {application.RejectionReason}.",
                     _ => ""

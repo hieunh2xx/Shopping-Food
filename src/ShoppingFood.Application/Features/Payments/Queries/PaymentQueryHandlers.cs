@@ -57,7 +57,7 @@ namespace ShoppingFood.Application.Features.Payments.Queries
             var customerWallet = await _paymentService.GetOrCreateWalletAsync(WalletOwnerType.Customer, request.CurrentUserId.Value);
             walletIds.Add(customerWallet.Id);
 
-            if (user.Profile.Role == UserRole.Seller)
+            if (user.Profile.Role == UserRole.Seller || user.Profile.Role == UserRole.Mall)
             {
                 var restaurants = await _restaurantRepository.GetAsync(predicate: r => r.OwnerId == user.Profile.Id);
                 foreach (var r in restaurants)

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -21,5 +21,6 @@ namespace ShoppingFood.Dto.Restaurant
         public double? MaxDeliveryRadius { get; set; }
         public decimal ShippingFee { get; set; }
         public double DistanceKm { get; set; }
+        public bool IsMall { get; set; }
     }
 }

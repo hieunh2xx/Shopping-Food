@@ -1,5 +1,5 @@
-﻿import { useState, useEffect } from 'react';
-import { Search, Shield, Ban, CheckCircle2, Award, ChevronLeft, ChevronRight, Loader2, Star, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Shield, Ban, CheckCircle2, Award, Loader2, Star, AlertCircle } from 'lucide-react';
 import { Input, Button, Pagination } from '../../components/common';
 import { Modal } from '../../components/common/Modal';
 import { userService } from '../../services/UserService';
@@ -167,7 +167,6 @@ export function AdminUsersPage() {
     } finally { }
   };
 
-  const totalPages = Math.ceil(total / take);
 
   return (
     <div className="p-6">
@@ -246,12 +245,14 @@ export function AdminUsersPage() {
                       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${
                           user.role === 'Admin' ? 'bg-purple-100 text-purple-700' :
                           user.role === 'Seller' ? 'bg-blue-100 text-blue-700' :
+                          user.role === 'Mall' ? 'bg-orange-100 text-orange-700 font-bold' :
                           user.role === 'Shipper' ? 'bg-teal-100 text-teal-700' :
                           user.role === 'Coordinator' ? 'bg-amber-100 text-amber-700' :
                           'bg-gray-100 text-gray-700'
                         }`}>
                         {user.role === 'Admin' && <Shield className="w-3 h-3" />}
                         {user.role === 'Seller' ? 'Đối tác' : 
+                         user.role === 'Mall' ? 'Mall' :
                          user.role === 'Customer' ? 'Khách hàng' : 
                          user.role === 'Shipper' ? 'Tài xế' : 
                          user.role === 'Coordinator' ? 'Điều phối viên' : 

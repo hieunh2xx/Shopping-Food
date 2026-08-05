@@ -59,6 +59,7 @@ export function FavoriteRestaurants() {
             reviewCount: 0,
             distanceKm: 0,
             shippingFee: 0,
+            isMall: rest.isMall,
           }} 
         />
       ))}

@@ -25,6 +25,7 @@ namespace ShoppingFood.Application.Features.Users.Commands
             }
 
             var profile = await _dbContext.UserProfiles
+                .Include(p => p.UserAccount)
                 .FirstOrDefaultAsync(p => p.UserAccountId == request.CurrentUserId, cancellationToken);
 
             if (profile == null)
@@ -52,9 +53,26 @@ namespace ShoppingFood.Application.Features.Users.Commands
                 profile.DateOfBirth = request.DateOfBirth;
             }
 
+            if (!string.IsNullOrEmpty(request.Phone) && profile.UserAccount != null)
+            {
+                profile.UserAccount.Phone = request.Phone;
+            }
+
             profile.UpdatedAt = DateTime.UtcNow;
 
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            try
+            {
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateException ex)
+            {
+                if (ex.InnerException != null && (ex.InnerException.Message.Contains("IX_User_Phone", StringComparison.OrdinalIgnoreCase) || ex.InnerException.Message.Contains("UNIQUE constraint failed")))
+                {
+                    return ApiResponse.Failure(400, "This phone number is already used by another account.");
+                }
+                
+                return ApiResponse.Failure(400, $"Data update error: {ex.InnerException?.Message ?? ex.Message}");
+            }
 
             return ApiResponse.Success(null, "Profile updated successfully");
         }

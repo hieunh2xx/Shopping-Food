@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Dto.Restaurant;
@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace ShoppingFood.Application.Features.Restaurants.Queries
 {
@@ -41,6 +42,7 @@ namespace ShoppingFood.Application.Features.Restaurants.Queries
                 r.Latitude.HasValue && r.Longitude.HasValue &&
                 r.Latitude.Value >= latMin && r.Latitude.Value <= latMax &&
                 r.Longitude.Value >= lonMin && r.Longitude.Value <= lonMax,
+                include: q => q.Include(r => r.Owner),
                 disableTracking: true
                 );
 

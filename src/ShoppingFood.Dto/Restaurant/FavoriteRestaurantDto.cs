@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,5 +13,6 @@ namespace ShoppingFood.Dto.Restaurant
         public string? LogoUrl { get; set; }
         public string Address { get; set; } = string.Empty;
         public DateTime FavoritedAt { get; set; }
+        public bool IsMall { get; set; }
     }
 }

@@ -155,7 +155,7 @@ export function NotificationBell() {
     switch (n.notificationType) {
       case 'Order':
         if (role === 'Customer') return null; // handled via custom event
-        if (role === 'Seller') return ROUTES.SELLER_ORDERS;
+        if (role === 'Seller' || role === 'Mall') return ROUTES.SELLER_ORDERS;
         if (role === 'Shipper') return ROUTES.SHIPPER_DASHBOARD;
         if (role === 'Admin') {
           const lower = n.title?.toLowerCase() || '';
@@ -183,7 +183,7 @@ export function NotificationBell() {
         }
         return null;
       case 'Review':
-        if (role === 'Seller') {
+        if (role === 'Seller' || role === 'Mall') {
           const lower = n.title?.toLowerCase() || '';
           if (lower.includes('flash sale')) return ROUTES.SELLER_FLASH_SALES;
           return ROUTES.SELLER_REVIEWS;
@@ -204,7 +204,7 @@ export function NotificationBell() {
           if (lower.includes('uy tín')) return ROUTES.SHIPPER_PROFILE + '?tab=reputation';
           return null;
         }
-        if (role === 'Seller') {
+        if (role === 'Seller' || role === 'Mall') {
           const lower = n.title?.toLowerCase() || '';
           if (lower.includes('đơn hàng')) return ROUTES.SELLER_ORDERS;
           return null;

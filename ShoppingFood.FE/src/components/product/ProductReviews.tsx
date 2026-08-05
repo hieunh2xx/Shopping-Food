@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Star, MessageSquare, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Button, Modal } from '../common';
 import { useAuth } from '../../hooks';
@@ -228,7 +228,7 @@ export function ProductReviews({ productId, restaurantId }: { productId: string;
 
                   {/* Actions */}
                   <div className="mt-3 flex items-center gap-4">
-                    {isAuthenticated && user?.role === 'Seller' && user?.sellerInfo?.restaurantId === restaurantId && !review.sellerReply && (
+                    {isAuthenticated && (user?.role === 'Seller' || user?.role === 'Mall') && user?.sellerInfo?.restaurantId === restaurantId && !review.sellerReply && (
                       <button
                         onClick={() => setReplyingTo(replyingTo === review.id ? null : review.id)}
                         className="text-xs font-medium text-gray-500 hover:text-orange-600 flex items-center gap-1 transition-colors"

@@ -44,6 +44,7 @@ namespace ShoppingFood.Application.Features.Restaurants.Queries
         {
             var restaurants = await _restaurantProfileRepository.GetAsync(
                 predicate: r => r.Id == request.Id,
+                include: q => q.Include(r => r.Owner),
                 disableTracking: true
                 );
 

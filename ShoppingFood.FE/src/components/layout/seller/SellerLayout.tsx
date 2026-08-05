@@ -45,9 +45,12 @@ export function SellerLayout() {
     { name: 'Flash Sale', path: ROUTES.SELLER_FLASH_SALES, icon: Zap },
     { name: 'Ví & Rút tiền', path: ROUTES.SELLER_WALLET, icon: Ticket },
     { name: 'Hộp thư', path: '/seller/chat', icon: MessageSquare, badge: hasUnreadChat },
-    { name: 'Đơn lên Mall', path: '/seller/mall-application', icon: FileText },
     { name: 'Thông tin cửa hàng', path: '/seller/settings', icon: Settings },
   ];
+
+  if (user?.role !== 'Mall') {
+    navItems.splice(navItems.length - 1, 0, { name: 'Đơn lên Mall', path: '/seller/mall-application', icon: FileText });
+  }
 
   if (user?.sellerInfo?.status === 'Suspended') {
     navItems.push({ name: 'Gửi khiếu nại', path: ROUTES.SELLER_APPEAL, icon: ShieldAlert });

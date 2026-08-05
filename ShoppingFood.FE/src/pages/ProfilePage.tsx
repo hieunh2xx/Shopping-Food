@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { authService } from '../services/AuthService';
 import { restaurantService } from '../services/RestaurantService';
 import type { IUserDto, IFavoriteRestaurantDto } from '../interfaces';
@@ -38,6 +38,7 @@ export function ProfilePage() {
 
   const [formData, setFormData] = useState({
     fullName: '',
+    phone: '',
     gender: '',
     dateOfBirth: ''
   });
@@ -47,8 +48,9 @@ export function ProfilePage() {
     if (profile) {
       setFormData({
         fullName: profile.fullName || '',
+        phone: profile.phone || '',
         gender: profile.gender || '',
-        dateOfBirth: profile.dateOfBirth ? profile.dateOfBirth.split('T')[0] : ''
+        dateOfBirth: profile.dateOfBirth ? profile.dateOfBirth.split('T')[0].split('-').reverse().join('/') : ''
       });
     }
   }, [profile]);
@@ -178,8 +180,13 @@ export function ProfilePage() {
     try {
       const response = await authService.updateProfile({
         fullName: formData.fullName,
+        phone: formData.phone || undefined,
         gender: formData.gender || undefined,
-        dateOfBirth: formData.dateOfBirth ? new Date(formData.dateOfBirth).toISOString() : undefined
+        dateOfBirth: (formData.dateOfBirth && formData.dateOfBirth.length === 10) ? (() => {
+          const p = formData.dateOfBirth.split('/');
+          const d = new Date(`${p[2]}-${p[1]}-${p[0]}`);
+          return !isNaN(d.getTime()) ? d.toISOString() : undefined;
+        })() : undefined
       });
 
       if (!response.error) {
@@ -307,9 +314,9 @@ export function ProfilePage() {
 
               <Input
                 label="Số điện thoại"
-                value={profile.phone || 'Chưa cập nhật'}
-                disabled
-                className="bg-gray-50/50"
+                value={formData.phone}
+                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                className="bg-white"
               />
 
               <div className="space-y-1">
@@ -334,9 +341,19 @@ export function ProfilePage() {
               <div className="space-y-1">
                 <label className="block text-sm font-medium text-gray-700">Ngày sinh</label>
                 <input
-                  type="date"
+                  type="text"
+                  placeholder="DD/MM/YYYY"
                   value={formData.dateOfBirth}
-                  onChange={(e) => setFormData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
+                  onChange={(e) => {
+                    let val = e.target.value.replace(/\D/g, '');
+                    if (val.length > 8) val = val.slice(0, 8);
+                    if (val.length >= 5) {
+                      val = `${val.slice(0, 2)}/${val.slice(2, 4)}/${val.slice(4)}`;
+                    } else if (val.length >= 3) {
+                      val = `${val.slice(0, 2)}/${val.slice(2)}`;
+                    }
+                    setFormData(prev => ({ ...prev, dateOfBirth: val }));
+                  }}
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-white text-gray-900 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
                 />
               </div>

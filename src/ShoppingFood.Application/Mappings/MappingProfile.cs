@@ -129,6 +129,7 @@ namespace ShoppingFood.Application.Mappings
                 .ForMember(dest => dest.OpeningTime, opt => opt.MapFrom(src => src.OpeningTime.HasValue ? src.OpeningTime.Value.ToString(@"hh\:mm") : null))
                 .ForMember(dest => dest.ClosingTime, opt => opt.MapFrom(src => src.ClosingTime.HasValue ? src.ClosingTime.Value.ToString(@"hh\:mm") : null))
                 .ForMember(dest => dest.DeliveryType, opt => opt.MapFrom(src => src.DeliveryType.ToString()))
+                .ForMember(dest => dest.IsMall, opt => opt.MapFrom(src => src.Owner != null && src.Owner.Role == Domain.Enums.UserRole.Mall))
                 .ForMember(dest => dest.Products, opt => opt.Ignore());
 
             //FavoriteRestaurant mappings
@@ -137,7 +138,8 @@ namespace ShoppingFood.Application.Mappings
                 .ForMember(dest => dest.RestaurantName, opt => opt.MapFrom(src => src.RestaurantProfile.RestaurantName))
                 .ForMember(dest => dest.LogoUrl, opt => opt.MapFrom(src => src.RestaurantProfile.LogoUrl))
                 .ForMember(dest => dest.Address, opt => opt.MapFrom(src => src.RestaurantProfile.Address))
-                .ForMember(dest => dest.FavoritedAt, opt => opt.MapFrom(src => src.RestaurantProfile.CreatedAt));
+                .ForMember(dest => dest.FavoritedAt, opt => opt.MapFrom(src => src.RestaurantProfile.CreatedAt))
+                .ForMember(dest => dest.IsMall, opt => opt.MapFrom(src => src.RestaurantProfile.Owner != null && src.RestaurantProfile.Owner.Role == Domain.Enums.UserRole.Mall));
 
             //SellerApplication mappings
             CreateMap<SellerApplication, SellerApplicationStatusDto>()
@@ -272,6 +274,7 @@ namespace ShoppingFood.Application.Mappings
                 .ForMember(dest => dest.MinOrderAmount, opt => opt.MapFrom(src => src.Discount != null ? src.Discount.MinOrderAmount : 0));
 
             CreateMap<RestaurantProfile, NearbyRestaurantDto>()
+                .ForMember(dest => dest.IsMall, opt => opt.MapFrom(src => src.Owner != null && src.Owner.Role == Domain.Enums.UserRole.Mall))
                 .ForMember(dest => dest.OpeningTime,
                     opt => opt.MapFrom(src => src.OpeningTime.HasValue
                         ? src.OpeningTime.Value.ToString(@"hh\:mm")

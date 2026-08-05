@@ -134,7 +134,7 @@ namespace ShoppingFood.Application.Features.Payments.Commands
             WalletOwnerType ownerType;
             Guid ownerId;
 
-            if (user.Profile.Role == UserRole.Seller)
+            if (user.Profile.Role == UserRole.Seller || user.Profile.Role == UserRole.Mall)
             {
                 var restaurants = await _restaurantRepository.GetAsync(
                     predicate: r => r.OwnerId == user.Profile.Id);

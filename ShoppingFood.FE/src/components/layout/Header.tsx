@@ -134,7 +134,7 @@ export function Header() {
                             Kênh điều phối
                           </Link>
                         )}
-                        {user?.role === 'Seller' && (
+                        {(user?.role === 'Seller' || user?.role === 'Mall') && (
                           <Link
                             to={ROUTES.SELLER_DASHBOARD}
                             className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600"

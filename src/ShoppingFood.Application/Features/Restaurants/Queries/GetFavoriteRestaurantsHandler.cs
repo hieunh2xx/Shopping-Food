@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
@@ -43,7 +43,8 @@ namespace ShoppingFood.Application.Features.Restaurants.Queries
 
             var favorites = await _favoriteRestaurantRepository.GetAsync(
                 predicate: f => f.UserProfileId == profileId,
-                include: q => q.Include(f => f.RestaurantProfile),
+                include: q => q.Include(f => f.RestaurantProfile)
+                               .ThenInclude(r => r.Owner),
                 skip: request.Skip,
                 take: request.Take,
                 disableTracking: true

@@ -120,7 +120,7 @@ class AuthService extends BaseService<IUserDto, IRegisterRequest> {
     return httpClient.post<IApiResponse<any>>('/User/ChangePassword', data);
   }
 
-  async updateProfile(data: { fullName?: string; avatarUrl?: string; gender?: string; dateOfBirth?: string }): Promise<IApiResponse<any>> {
+  async updateProfile(data: { fullName?: string; phone?: string; avatarUrl?: string; gender?: string; dateOfBirth?: string }): Promise<IApiResponse<any>> {
     return httpClient.put<IApiResponse<any>>('/User/UpdateProfile', data);
   }
 

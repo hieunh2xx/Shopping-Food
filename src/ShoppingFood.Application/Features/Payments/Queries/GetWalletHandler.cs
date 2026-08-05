@@ -61,6 +61,7 @@ namespace ShoppingFood.Application.Features.Payments.Queries
                         ownerType = WalletOwnerType.Customer;
                         ownerId = request.CurrentUserId.Value;
                         break;
+                    case UserRole.Mall:
                     case UserRole.Seller:
                         var restaurants = await _restaurantRepository.GetAsync(
                             predicate: r => r.OwnerId == user.Profile.Id);

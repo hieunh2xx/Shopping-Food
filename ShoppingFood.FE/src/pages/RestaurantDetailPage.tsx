@@ -1,6 +1,6 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Heart, MapPin, Clock, Star, Phone, ShieldCheck } from 'lucide-react';
+import { Heart, MapPin, Clock, Star, Phone, ShieldCheck, Crown } from 'lucide-react';
 import { restaurantService } from '../services/RestaurantService';
 import { productService } from '../services/ProductService';
 import { menuCategoryService } from '../services/MenuCategoryService';
@@ -146,7 +146,10 @@ export function RestaurantDetailPage() {
                   <h1 className="text-3xl md:text-4xl font-bold flex items-center gap-2">
                     {restaurant.restaurantName}
                     {restaurant.isVerified && (
-                      <ShieldCheck className="w-8 h-8 text-blue-400" title="Quán Ăn Chuẩn" />
+                      <span title="Quán Ăn Chuẩn" className="flex items-center"><ShieldCheck className="w-8 h-8 text-blue-400" /></span>
+                    )}
+                    {restaurant.isMall && (
+                      <span title="Mall" className="flex items-center"><Crown className="w-8 h-8 text-red-500" /></span>
                     )}
                   </h1>
                   {restaurant.status === 'Active' && (
@@ -176,8 +179,8 @@ export function RestaurantDetailPage() {
                   onClick={handleToggleFavorite}
                   disabled={isFavoriting}
                   className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-colors border ${restaurant.isFavorite
-                      ? 'bg-red-50 text-red-500 border-red-200 hover:bg-red-100'
-                      : 'bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border-white/20'
+                    ? 'bg-red-50 text-red-500 border-red-200 hover:bg-red-100'
+                    : 'bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border-white/20'
                     }`}
                 >
                   <Heart className={`w-5 h-5 ${restaurant.isFavorite ? 'fill-current text-red-500' : ''}`} />
@@ -229,8 +232,8 @@ export function RestaurantDetailPage() {
                 <button
                   onClick={() => handleCategoryChange('all')}
                   className={`px-5 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${activeCategory === 'all'
-                      ? 'bg-orange-600 text-white shadow-md shadow-orange-500/20'
-                      : 'bg-white border border-gray-200 text-gray-700 hover:border-orange-400 hover:text-orange-600'
+                    ? 'bg-orange-600 text-white shadow-md shadow-orange-500/20'
+                    : 'bg-white border border-gray-200 text-gray-700 hover:border-orange-400 hover:text-orange-600'
                     }`}
                 >
                   Tất cả món
@@ -240,8 +243,8 @@ export function RestaurantDetailPage() {
                     key={cat.id}
                     onClick={() => handleCategoryChange(cat.id)}
                     className={`px-5 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${activeCategory === cat.id
-                        ? 'bg-orange-600 text-white shadow-md shadow-orange-500/20'
-                        : 'bg-white border border-gray-200 text-gray-700 hover:border-orange-400 hover:text-orange-600'
+                      ? 'bg-orange-600 text-white shadow-md shadow-orange-500/20'
+                      : 'bg-white border border-gray-200 text-gray-700 hover:border-orange-400 hover:text-orange-600'
                       }`}
                   >
                     {cat.title}

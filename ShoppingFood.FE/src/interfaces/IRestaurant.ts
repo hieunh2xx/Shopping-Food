@@ -6,6 +6,7 @@ export interface IFavoriteRestaurantDto {
   logoUrl?: string;
   address: string;
   favoritedAt: string;
+  isMall?: boolean;
 }
 
 export interface IRestaurantProfileDto {
@@ -23,6 +24,7 @@ export interface IRestaurantProfileDto {
   createdAt: string;
   isFavorite?: boolean;
   isVerified?: boolean;
+  isMall?: boolean;
   openingTime?: string;
   closingTime?: string;
   deliveryType?: 'PlatformDelivery' | 'SelfDelivery';
@@ -48,6 +50,7 @@ export interface INearbyRestaurantDto {
   shippingFee: number;
   distanceKm: number;
   isVerified?: boolean;
+  isMall?: boolean;
 }
 
 export interface IUpdateRestaurantBasicInfo {

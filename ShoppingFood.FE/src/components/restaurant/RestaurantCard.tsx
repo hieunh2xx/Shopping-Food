@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Star, Clock, Truck, ShieldCheck } from 'lucide-react';
+import { Star, Clock, Truck, ShieldCheck, Crown } from 'lucide-react';
 import type { INearbyRestaurantDto } from '../../interfaces';
 import { formatCurrency } from '../../utils/formatters';
 
@@ -39,7 +39,10 @@ export function RestaurantCard({ restaurant }: Props) {
         <h3 className="font-bold text-gray-900 text-lg line-clamp-1 mb-1 group-hover:text-orange-600 transition-colors flex items-center gap-1.5">
           {restaurant.restaurantName}
           {restaurant.isVerified && (
-            <ShieldCheck className="w-5 h-5 text-blue-500 flex-shrink-0" title="Quán Ăn Chuẩn" />
+            <span title="Quán Ăn Chuẩn" className="flex items-center"><ShieldCheck className="w-5 h-5 text-blue-500 flex-shrink-0" /></span>
+          )}
+          {restaurant.isMall && (
+            <span title="Quán Ăn Mall" className="flex items-center"><Crown className="w-5 h-5 text-red-500 flex-shrink-0" /></span>
           )}
         </h3>
         <div className="mb-3 text-sm text-gray-500 line-clamp-1">{restaurant.restaurantAddress}</div>

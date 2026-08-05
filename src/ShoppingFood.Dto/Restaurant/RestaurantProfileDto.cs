@@ -30,6 +30,7 @@ namespace ShoppingFood.Dto.Restaurant
         public decimal ShippingFee { get; set; }
         public bool IsFavorite { get; set; }
         public bool IsVerified { get; set; }
+        public bool IsMall { get; set; }
 
         public List<ProductDto> Products { get; set; } = new List<ProductDto>();
     }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, ChefHat, Truck, Shield, Star, History, RotateCcw, MapPin, TrendingUp, Flame, Bike, UtensilsCrossed } from 'lucide-react';
-import { useProducts, useCart, useAuth, useCategories } from '../hooks';
+import { ArrowRight, Shield, Star, History, RotateCcw, MapPin, TrendingUp, Flame, Bike, UtensilsCrossed, Crown } from 'lucide-react';
+import { useProducts, useCart, useAuth } from '../hooks';
 import { FlashSaleSection } from '../components/promotions/FlashSaleSection';
 import { BuyXGetYSection } from '../components/promotions/BuyXGetYSection';
 import { RecommendationSection } from '../components/recommendations/RecommendationSection';
@@ -20,9 +20,8 @@ export function HomePage() {
   const [globalCategories, setGlobalCategories] = useState<any[]>([]);
   const { addItem } = useCart();
   const { isAuthenticated, user } = useAuth();
-  
-  const [activeCategory, setActiveCategory] = useState(0);
-  const [searchTerm, setSearchTerm] = useState('');
+
+
 
   const getPartnerRoute = () => {
     if (isAuthenticated && user?.role === 'Customer') {
@@ -148,7 +147,7 @@ export function HomePage() {
               Hơn 5,000+ nhà hàng · Giao hàng nhanh · Ưu đãi mỗi ngày
             </p>
 
-            <Link 
+            <Link
               to={ROUTES.PRODUCTS}
               className="inline-flex items-center gap-3 px-8 py-4 bg-gray-900 text-white rounded-2xl font-bold text-lg hover:bg-gray-800 transition-all hover:scale-105 shadow-xl shadow-gray-900/20"
             >
@@ -177,9 +176,8 @@ export function HomePage() {
                       <button
                         key={c.id}
                         onClick={() => navigate(`${ROUTES.PRODUCTS}?globalCategoryId=${c.id}`)}
-                        className={`group relative rounded-2xl overflow-hidden shadow-xl cursor-pointer hover:shadow-2xl transition-all ${
-                          i === 0 ? "col-span-2 h-36" : "h-28"
-                        }`}
+                        className={`group relative rounded-2xl overflow-hidden shadow-xl cursor-pointer hover:shadow-2xl transition-all ${i === 0 ? "col-span-2 h-36" : "h-28"
+                          }`}
                       >
                         {c.imageUrl ? (
                           <img src={c.imageUrl} alt={c.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
@@ -213,9 +211,9 @@ export function HomePage() {
 
         {/* Gợi ý cho bạn */}
         {isAuthenticated && (
-          <RecommendationSection 
-            latitude={locationStatus === 'success' ? 10.7769 : undefined} 
-            longitude={locationStatus === 'success' ? 106.7009 : undefined} 
+          <RecommendationSection
+            latitude={locationStatus === 'success' ? 10.7769 : undefined}
+            longitude={locationStatus === 'success' ? 106.7009 : undefined}
           />
         )}
 
@@ -239,7 +237,7 @@ export function HomePage() {
                 <Link to={`/products/${item.id}`} key={item.id} className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all group cursor-pointer h-full flex flex-col">
                   <div className="relative h-36 overflow-hidden bg-gray-100 shrink-0">
                     {item.primaryImageUrl ? (
-                      <img src={item.primaryImageUrl} alt={item.itemName || item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      <img src={item.primaryImageUrl} alt={item.itemName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-3xl">🍲</div>
                     )}
@@ -249,7 +247,7 @@ export function HomePage() {
                   </div>
                   <div className="p-3 flex flex-col flex-1">
                     <p className="text-[11px] text-gray-400 truncate">{item.restaurantName}</p>
-                    <p className="text-sm font-semibold text-gray-800 line-clamp-2 mt-0.5 min-h-[40px] leading-tight">{item.itemName || item.name}</p>
+                    <p className="text-sm font-semibold text-gray-800 line-clamp-2 mt-1 min-h-[40px] leading-tight">{item.itemName}</p>
                     <div className="flex items-center justify-between mt-auto pt-2">
                       <span className="text-orange-500 font-bold text-sm">{formatCurrency(item.price)}</span>
                       <div className="flex items-center gap-1 text-xs text-gray-500">
@@ -276,9 +274,9 @@ export function HomePage() {
           />
 
           {isNearbyLoading ? (
-             <div className="flex justify-center py-10 w-full">
-               <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-             </div>
+            <div className="flex justify-center py-10 w-full">
+              <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+            </div>
           ) : nearbyRestaurants.length > 0 ? (
             <CarouselSlider itemWidth="w-[85%] sm:w-1/2 lg:w-1/4">
               {nearbyRestaurants.map(r => (
@@ -301,7 +299,12 @@ export function HomePage() {
                     </div>
                   </Link>
                   <div className="p-4 flex flex-col flex-1">
-                    <h3 className="font-bold text-gray-800 line-clamp-1">{r.restaurantName}</h3>
+                    <h3 className="font-bold text-gray-800 line-clamp-1 flex items-center gap-1.5">
+                      {r.restaurantName}
+                      {r.isMall && (
+                        <span title="Mall" className="flex items-center"><Crown className="w-5 h-5 text-red-500 flex-shrink-0" /></span>
+                      )}
+                    </h3>
                     <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{r.restaurantAddress}</p>
                     <div className="flex items-center gap-3 mt-3 text-xs text-gray-500 flex-wrap">
                       <span className="flex items-center gap-1"><MapPin className="w-3 h-3 text-orange-400" />{r.distanceKm.toFixed(1)} km</span>
@@ -319,9 +322,9 @@ export function HomePage() {
               ))}
             </CarouselSlider>
           ) : (
-             <div className="w-full text-center py-12 bg-gray-50 rounded-2xl border border-gray-100 text-gray-500">
-               Chưa tìm thấy quán nào trong bán kính 10km quanh bạn.
-             </div>
+            <div className="w-full text-center py-12 bg-gray-50 rounded-2xl border border-gray-100 text-gray-500">
+              Chưa tìm thấy quán nào trong bán kính 10km quanh bạn.
+            </div>
           )}
         </section>
 
@@ -352,7 +355,7 @@ export function HomePage() {
                       <p className="font-bold text-orange-500 mt-auto">{formatCurrency(product.price)}</p>
                     </div>
                   </div>
-                  <button 
+                  <button
                     onClick={() => addItem(product, 1)}
                     className="mt-auto pt-4 w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-orange-50 text-orange-600 font-medium hover:bg-orange-100 transition-colors"
                   >
