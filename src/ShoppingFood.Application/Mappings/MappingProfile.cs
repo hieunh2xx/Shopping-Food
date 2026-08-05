@@ -68,9 +68,7 @@ namespace ShoppingFood.Application.Mappings
                 .ForMember(dest => dest.IsFreeship, opt => opt.MapFrom(src => src.IsFreeship))
                 .ForMember(dest => dest.AvailableFrom, opt => opt.MapFrom(src => src.AvailableFrom.HasValue ? src.AvailableFrom.Value.ToString(@"hh\:mm") : null))
                 .ForMember(dest => dest.AvailableTo, opt => opt.MapFrom(src => src.AvailableTo.HasValue ? src.AvailableTo.Value.ToString(@"hh\:mm") : null))
-                .ForMember(dest => dest.IsAvailableNow, opt => opt.MapFrom(src =>
-                (!src.AvailableFrom.HasValue || !src.AvailableTo.HasValue) ||
-                (DateTime.UtcNow.AddHours(7).TimeOfDay >= src.AvailableFrom.Value && DateTime.UtcNow.AddHours(7).TimeOfDay <= src.AvailableTo.Value)))
+                .ForMember(dest => dest.IsAvailableNow, opt => opt.MapFrom(src => src.IsCurrentlyAvailable(DateTime.UtcNow)))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
 
             CreateMap<Product, ProductRecommendationDto>()
@@ -83,7 +81,7 @@ namespace ShoppingFood.Application.Mappings
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
                 .ForMember(dest => dest.AverageRating, opt => opt.MapFrom(src => src.Reviews != null && src.Reviews.Any() ? src.Reviews.Average(r => r.Rating) : 0.0))
                 .ForMember(dest => dest.ReviewCount, opt => opt.MapFrom(src => src.Reviews != null ? src.Reviews.Count : 0))
-                .ForMember(dest => dest.IsAvailableNow, opt => opt.MapFrom(src => (!src.AvailableFrom.HasValue || !src.AvailableTo.HasValue) || (DateTime.UtcNow.AddHours(7).TimeOfDay >= src.AvailableFrom.Value && DateTime.UtcNow.AddHours(7).TimeOfDay <= src.AvailableTo.Value)))
+                .ForMember(dest => dest.IsAvailableNow, opt => opt.MapFrom(src => src.IsCurrentlyAvailable(DateTime.UtcNow)))
                 .ForMember(dest => dest.AvailableFrom, opt => opt.MapFrom(src => src.AvailableFrom.HasValue ? src.AvailableFrom.Value.ToString(@"hh\:mm") : null))
                 .ForMember(dest => dest.AvailableTo, opt => opt.MapFrom(src => src.AvailableTo.HasValue ? src.AvailableTo.Value.ToString(@"hh\:mm") : null))
                 .ForMember(dest => dest.ReasonTag, opt => opt.Ignore())

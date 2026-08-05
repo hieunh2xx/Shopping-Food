@@ -49,9 +49,17 @@ namespace ShoppingFood.Application.Features.Products.Commands
         private bool HasValidImageExtension(string url)
         {
             if (string.IsNullOrEmpty(url)) return false;
+            
+            if (url.StartsWith("http://", global::System.StringComparison.OrdinalIgnoreCase) || 
+                url.StartsWith("https://", global::System.StringComparison.OrdinalIgnoreCase) ||
+                url.StartsWith("data:image", global::System.StringComparison.OrdinalIgnoreCase)) 
+            {
+                return true;
+            }
+
             var cleanUrl = url.Split('?')[0];
             var ext = Path.GetExtension(cleanUrl).ToLower();
-            return ext is ".jpg" or ".jpeg" or ".png" or ".webp";
+            return ext is ".jpg" or ".jpeg" or ".png" or ".webp" or ".gif";
         }
     }
 }

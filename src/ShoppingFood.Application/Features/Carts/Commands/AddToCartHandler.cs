@@ -63,6 +63,9 @@ namespace ShoppingFood.Application.Features.Carts.Commands
                 if (product == null || product.Status != ProductStatus.Approved || product.IsHidden)
                     return ApiResponse.Failure(404, "Product not found or unavailable.");
 
+                if (!product.IsCurrentlyAvailable(DateTime.UtcNow))
+                    return ApiResponse.Failure(400, "Món ăn này hiện chưa tới giờ mở bán.");
+
                 if (product.StockStatus != StockStatus.InStock)
                     return ApiResponse.Failure(400, "Product is out of stock.");
 

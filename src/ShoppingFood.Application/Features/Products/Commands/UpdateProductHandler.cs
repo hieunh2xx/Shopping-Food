@@ -57,11 +57,13 @@ namespace ShoppingFood.Application.Features.Products.Commands
                 if (userProfile == null)
                     return ApiResponse.Failure(401, "Unauthorized.");
 
-                if (userProfile.Role != UserRole.Admin)
+                var restaurant = (await _restaurantProfileRepository.GetAsync(r => r.Id == product.RestaurantId)).FirstOrDefault();
+                if (restaurant == null)
+                    return ApiResponse.Failure(404, "Restaurant not found.");
+
+                if (userProfile.Role != UserRole.Admin && restaurant.OwnerId != userProfile.Id)
                 {
-                    var restaurants = await _restaurantProfileRepository.GetAsync(r => r.Id == product.RestaurantId && r.OwnerId == userProfile.Id);
-                    if (!restaurants.Any())
-                        return ApiResponse.Failure(403, "Access denied. You do not own this dish.");
+                    return ApiResponse.Failure(403, "Access denied. You do not own this dish.");
                 }
 
                 product.ItemName = request.ItemName;

@@ -31,5 +31,25 @@ namespace ShoppingFood.Domain.Models
         public virtual ICollection<ProductReview> Reviews { get; set; } = new List<ProductReview>();
         public virtual GlobalMenuCategory? GlobalCategory { get; set; }
         
+        public bool IsCurrentlyAvailable(DateTime utcNow)
+        {
+            if (!AvailableFrom.HasValue || !AvailableTo.HasValue) return true;
+            
+            var pS = AvailableFrom.Value.TotalHours;
+            var pE = AvailableTo.Value.TotalHours;
+            if (pE <= pS) pE += 24.0; // Crosses midnight
+            
+            // Convert to Vietnam time
+            var currentHour = utcNow.AddHours(7).TimeOfDay.TotalHours;
+            
+            // If the product interval crosses midnight (e.g. 22 to 02 -> 22 to 26)
+            // and the current hour is less than the start time, it means we are in the "next day" part of the interval
+            if (currentHour < pS && pE > 24.0) 
+            {
+                currentHour += 24.0;
+            }
+            
+            return currentHour >= pS && currentHour <= pE;
+        }
     }
 }

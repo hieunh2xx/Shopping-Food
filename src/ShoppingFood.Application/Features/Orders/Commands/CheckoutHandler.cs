@@ -351,6 +351,10 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             {
                 if (item.Product == null || item.Product.IsHidden || item.Product.Status != ProductStatus.Approved)
                     return ApiResponse.Failure(400, $"The {item.Product?.ItemName} is currently not available for purchase.");
+                
+                if (!item.Product.IsCurrentlyAvailable(DateTime.UtcNow))
+                    return ApiResponse.Failure(400, $"Món ăn {item.Product.ItemName} hiện chưa tới giờ mở bán.");
+
                 if (item.Product.StockStatus != StockStatus.InStock)
                     return ApiResponse.Failure(400, $"The {item.Product.ItemName} is currently out of stock.");
             }

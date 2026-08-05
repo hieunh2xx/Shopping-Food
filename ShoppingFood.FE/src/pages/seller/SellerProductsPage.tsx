@@ -48,7 +48,7 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
         setImageUrls(prev => [...prev, res.data.imageUrl]);
         toast.success('Tải ảnh lên thành công!', { id: toastId });
       } else {
-        toast.error(res.message , { id: toastId });
+        toast.error(res.message, { id: toastId });
       }
     } catch {
       toast.error('Tải ảnh lên thất bại do lỗi kết nối mạng.', { id: toastId });
@@ -169,13 +169,16 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
         };
         const res = await productService.update(product.id, payload);
         if (!res.error) {
-          if (availableFrom || availableTo) {
-            await productService.updateAvailability({
-              id: product.id,
-              availableFrom: availableFrom || undefined,
-              availableTo: availableTo || undefined
-            });
+          const timeRes = await productService.updateAvailability({
+            id: product.id,
+            availableFrom: availableFrom || undefined,
+            availableTo: availableTo || undefined
+          });
+          if (timeRes.error) {
+            toast.error(timeRes.message || 'Lỗi khi cập nhật giờ bán');
+            return; // Stop here if time update failed
           }
+
           toast.success('Cập nhật thông tin món ăn thành công!');
           onSaved();
           onClose();
@@ -201,13 +204,6 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
         };
         const res = await productService.create(payload);
         if (!res.error && res.data) {
-          if (availableFrom || availableTo) {
-            await productService.updateAvailability({
-              id: res.data.id,
-              availableFrom: availableFrom || undefined,
-              availableTo: availableTo || undefined
-            });
-          }
           toast.success('Thêm món ăn mới thành công!');
           onSaved();
           onClose();
@@ -296,7 +292,7 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
                 </button>
               </div>
             ))}
-            
+
             {imageUrls.length < 5 && (
               <label className="w-24 h-24 rounded-2xl border-2 border-dashed border-gray-300 hover:border-orange-500 hover:bg-orange-50/20 cursor-pointer flex flex-col items-center justify-center text-gray-400 hover:text-orange-500 transition-all flex-shrink-0">
                 {isUploading ? (
@@ -399,25 +395,42 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
           )}
         </div>
 
-        {/* Time Availability */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Mở bán từ (Giờ:Phút)</label>
-            <Input
-              type="time"
-              value={availableFrom}
-              onChange={(e) => setAvailableFrom(e.target.value)}
-            />
+
+
+        {isEditing && (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Mở bán từ (Giờ:Phút)</label>
+                <Input
+                  type="time"
+                  value={availableFrom}
+                  onChange={(e) => setAvailableFrom(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Đến lúc (Giờ:Phút)</label>
+                <Input
+                  type="time"
+                  value={availableTo}
+                  onChange={(e) => setAvailableTo(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setAvailableFrom('');
+                  setAvailableTo('');
+                }}
+                className="text-sm text-orange-600 hover:text-orange-700 font-medium"
+              >
+                Dùng giờ mở cửa của quán
+              </button>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Đến lúc (Giờ:Phút)</label>
-            <Input
-              type="time"
-              value={availableTo}
-              onChange={(e) => setAvailableTo(e.target.value)}
-            />
-          </div>
-        </div>
+        )}
 
         {/* Actions */}
         <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
@@ -784,8 +797,8 @@ export function SellerProductsPage() {
                           onClick={() => handleToggleVisibility(product)}
                           disabled={togglingId === product.id}
                           className={`p-2 rounded-lg transition-colors disabled:opacity-50 ${product.isHidden
-                              ? 'text-gray-400 hover:text-orange-600 hover:bg-orange-50'
-                              : 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50'
+                            ? 'text-gray-400 hover:text-orange-600 hover:bg-orange-50'
+                            : 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50'
                             }`}
                           title={product.isHidden ? 'Sản phẩm đang ẩn — nhấn để hiện' : 'Sản phẩm đang hiện — nhấn để ẩn'}
                         >
@@ -823,13 +836,13 @@ export function SellerProductsPage() {
               <span className="text-sm text-gray-500">
                 Hiển thị {Math.min((currentPage - 1) * take + 1, total)} – {Math.min(currentPage * take, total)} trong số {total} món
               </span>
-              <Pagination 
-                currentPage={currentPage} 
-                totalPages={totalPages} 
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
                 onPageChange={setCurrentPage}
                 pageSize={take}
                 pageSizeOptions={[10, 20, 50]}
-                onPageSizeChange={(size) => { setTake(size); setCurrentPage(1); }} 
+                onPageSizeChange={(size) => { setTake(size); setCurrentPage(1); }}
               />
             </div>
           </div>

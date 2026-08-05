@@ -60,8 +60,34 @@ namespace ShoppingFood.Application.Features.Products.Commands
                 if (product.Restaurant == null || product.Restaurant.OwnerId != user.Profile.Id)
                     return ApiResponse.Failure(403, "Forbidden. You do not own this restaurant.");
 
-                product.AvailableFrom = request.AvailableFrom;
-                product.AvailableTo = request.AvailableTo;
+                var restOpen = product.Restaurant.OpeningTime;
+                var restClose = product.Restaurant.ClosingTime;
+                
+                if (restOpen.HasValue && restClose.HasValue)
+                {
+                    double rS = restOpen.Value.TotalHours;
+                    double rE = restClose.Value.TotalHours;
+                    if (rE <= rS) rE += 24.0; // Restaurant crosses midnight
+
+                    double pS = request.AvailableFrom?.TotalHours ?? rS;
+                    double pE = request.AvailableTo?.TotalHours ?? rE;
+
+                    // Shift product start time to the same "day" as restaurant open if it's less
+                    if (pS < rS) pS += 24.0;
+                    
+                    // Ensure product end time comes after product start time
+                    if (pE < pS) pE += 24.0;
+
+                    bool isValid = pS >= rS && pE <= rE;
+
+                    if (!isValid)
+                    {
+                        return ApiResponse.Failure(400, $"Thời gian mở bán ({request.AvailableFrom:hh\\:mm} - {request.AvailableTo:hh\\:mm}) phải nằm trong khoảng mở cửa của nhà hàng ({restOpen.Value:hh\\:mm} - {restClose.Value:hh\\:mm}).");
+                    }
+                }
+
+                product.AvailableFrom = request.AvailableFrom ?? product.Restaurant.OpeningTime;
+                product.AvailableTo = request.AvailableTo ?? product.Restaurant.ClosingTime;
                 product.UpdatedAt = DateTime.UtcNow;
 
                 await _unitOfWork.SaveChangesAsync();

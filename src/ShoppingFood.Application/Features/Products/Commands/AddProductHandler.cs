@@ -52,14 +52,18 @@ namespace ShoppingFood.Application.Features.Products.Commands
                 if (userProfile == null)
                     return ApiResponse.Failure(401, "Unauthorized.");
 
-                if (userProfile.Role != UserRole.Admin)
+                var restaurant = (await _restaurantProfileRepository.GetAsync(r => r.Id == request.RestaurantId)).FirstOrDefault();
+                if (restaurant == null)
+                    return ApiResponse.Failure(404, "Restaurant not found.");
+
+                if (userProfile.Role != UserRole.Admin && restaurant.OwnerId != userProfile.Id)
                 {
-                    var restaurants = await _restaurantProfileRepository.GetAsync(r => r.OwnerId == userProfile.Id && r.Id == request.RestaurantId);
-                    if (!restaurants.Any())
-                        return ApiResponse.Failure(403, "Access denied. You do not own this restaurant.");
+                    return ApiResponse.Failure(403, "Access denied. You do not own this restaurant.");
                 }
 
                 var product = _mapper.Map<Product>(request);
+                product.AvailableFrom = restaurant.OpeningTime;
+                product.AvailableTo = restaurant.ClosingTime;
                 InitializeProduct(product); 
 
                 AddImages(product, request.ImageUrls);
