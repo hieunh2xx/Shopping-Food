@@ -1,5 +1,5 @@
-﻿import React, { useState, useEffect } from 'react';
-import { Shield, Search, Filter, AlertTriangle, CheckCircle, XCircle, ArrowRight, DollarSign } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Shield, XCircle, DollarSign } from 'lucide-react';
 import { coordinatorService } from '../../services/CoordinatorService';
 import { toast } from 'react-hot-toast';
 
@@ -55,7 +55,7 @@ export const AdminOrderComplaintsPage = () => {
     setIsSubmitting(true);
     try {
       const payload = {
-        resolutionType,
+        resolutionType: resolutionType as any,
         notes,
         refundAmount: resolutionType === 'CompensateCustomer' ? (Number(refundAmount) || 0) : 0,
         deductionAmount: ['CompensateCustomer', 'SellerFault', 'ShipperFault'].includes(resolutionType) ? (Number(deductionAmount) || 0) : 0,
@@ -332,7 +332,7 @@ export const AdminOrderComplaintsPage = () => {
                     </div>
                   )}
 
-                  {(resolutionType === 'SellerFault' || resolutionType === 'ShipperFault') && resolutionType !== 'CompensateCustomer' && (
+                  {(resolutionType === 'SellerFault' || resolutionType === 'ShipperFault') && (
                     <div className="p-4 border border-amber-100 bg-amber-50 rounded-xl space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-amber-900 mb-1">Số điểm uy tín / Tiền phạt (nếu có)</label>

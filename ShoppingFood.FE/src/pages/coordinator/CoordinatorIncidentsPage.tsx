@@ -1,15 +1,11 @@
-﻿import { useState, useEffect } from 'react';
-import { ShieldAlert, CheckCircle, Search, User, Truck, HelpCircle, FileText, AlertTriangle, XCircle, FileWarning, Plus } from 'lucide-react';
-import { Button, Loading, Modal, Pagination } from '../../components/common';
+import { useState, useEffect } from 'react';
+import { ShieldAlert, CheckCircle, Search, User, Truck, HelpCircle, FileText, FileWarning, Plus } from 'lucide-react';
+import { Button, Loading, Modal } from '../../components/common';
 import { coordinatorService } from '../../services/CoordinatorService';
 import { CreateTicketModal } from './components/CreateTicketModal';
 import type { IIncidentItemDto } from '../../interfaces';
 import toast from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
-import { ROUTES } from '../../routes/routeConfig';
-
 export function CoordinatorIncidentsPage() {
-  const navigate = useNavigate();
   const [incidents, setIncidents] = useState<IIncidentItemDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [incidentTypeFilter, setIncidentTypeFilter] = useState<string>(''); // empty for all

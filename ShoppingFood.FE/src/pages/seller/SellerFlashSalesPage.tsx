@@ -1,11 +1,11 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { Zap, Plus, Search } from 'lucide-react';
+import { Zap } from 'lucide-react';
 import { flashSaleService } from '../../services/FlashSaleService';
 import type { IFlashSale } from '../../interfaces';
 import { productService } from '../../services/ProductService';
 import { authService } from '../../services/AuthService';
-import { Button, Input, Modal, Pagination } from '../../components/common';
+import { Button, Input, Modal } from '../../components/common';
 import { formatDate } from '../../utils/formatters';
 
 export function SellerFlashSalesPage() {
@@ -60,7 +60,7 @@ export function SellerFlashSalesPage() {
         setFlashSales(fsRes.data);
       }
       if (!pRes.error && pRes.data) {
-        setProducts(pRes.data.items || pRes.data); // in case search returns paginated response
+        setProducts((pRes.data as any).items || pRes.data); // in case search returns paginated response
       }
     } catch {
       toast.error('Tải dữ liệu thất bại do lỗi kết nối mạng.');

@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, ShieldAlert, CheckCircle2, AlertOctagon, UserMinus, ShieldCheck, Ban } from 'lucide-react';
 import { Button, Input, Modal } from '../../components/common';
 import { coordinatorService } from '../../services';
@@ -231,7 +231,7 @@ export default function MonitorShippersPage() {
                           <>
                             {user?.role === 'Admin' && (
                               <Button
-                                size="xs"
+                                size="sm"
                                 variant="outline"
                                 onClick={() => handleToggleAdminLock(shipper, true)}
                                 className="text-red-600 hover:bg-red-50 border-red-200 flex items-center gap-1"
@@ -242,7 +242,7 @@ export default function MonitorShippersPage() {
                               </Button>
                             )}
                             <Button
-                              size="xs"
+                              size="sm"
                               variant="outline"
                               onClick={() => handleOpenSuspendModal(shipper)}
                               className="text-red-600 hover:bg-red-50 border-red-200 flex items-center gap-1"
@@ -254,7 +254,7 @@ export default function MonitorShippersPage() {
                         ) : (
                           user?.role === 'Admin' && shipper.isLocked ? (
                             <Button
-                              size="xs"
+                              size="sm"
                               variant="outline"
                               onClick={() => handleToggleAdminLock(shipper, false)}
                               className="text-green-600 hover:bg-green-50 border-green-200 flex items-center gap-1"
@@ -269,7 +269,7 @@ export default function MonitorShippersPage() {
                         )}
                         
                         <Button
-                          size="xs"
+                          size="sm"
                           variant="outline"
                           onClick={() => handleOpenReputationModal(shipper)}
                           className="text-orange-600 hover:bg-orange-50 border-orange-200 flex items-center gap-1"

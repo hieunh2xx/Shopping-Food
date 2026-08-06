@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Star, MessageSquare, AlertTriangle, Search, CheckCircle2 } from 'lucide-react';
 import { Button, Loading, Modal } from '../../components/common';
 import { productService } from '../../services';
@@ -38,11 +38,6 @@ export function SellerReviewsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleSearch = () => {
-    setCurrentPage(1);
-    fetchReviews();
   };
 
   const filteredReviews = reviews.filter(r => {

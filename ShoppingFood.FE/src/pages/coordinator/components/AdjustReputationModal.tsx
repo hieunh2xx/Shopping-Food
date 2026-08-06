@@ -1,6 +1,6 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '../../../components/common';
-import { coordinatorService } from '../../../services/coordinatorService';
+import { coordinatorService } from '../../../services/CoordinatorService';
 import { toast } from 'react-hot-toast';
 import { X } from 'lucide-react';
 import type { IMonitorShipperDto } from '../../../interfaces';

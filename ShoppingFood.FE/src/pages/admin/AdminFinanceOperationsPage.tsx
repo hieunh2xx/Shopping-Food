@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Button, Loading, Input, Card } from '../../components/common';
 import { Save, Settings, Truck, Clock, Store, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { adminService } from '../../services';
