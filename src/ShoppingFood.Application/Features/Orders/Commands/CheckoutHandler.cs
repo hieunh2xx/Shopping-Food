@@ -525,7 +525,9 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     ItemName = cartItem.Product!.ItemName,
                     Quantity = cartItem.Quantity,
                     UnitPrice = cartItem.PriceAtAdded,
-                    TotalPrice = cartItem.PriceAtAdded * cartItem.Quantity
+                    TotalPrice = cartItem.PriceAtAdded * cartItem.Quantity,
+                    SelectedSize = cartItem.SelectedSize,
+                    SelectedToppings = cartItem.SelectedToppings
                 };
                 order.Items.Add(orderItem);
             }

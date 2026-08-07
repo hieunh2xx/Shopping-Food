@@ -17,6 +17,10 @@ namespace ShoppingFood.Dto.Cart
         public int Quantity { get; set; }
         public decimal PriceAtAdded { get; set; }
         public bool IsProductDeleted { get; set; } = false;
+        public string? SelectedSize { get; set; }
+        public string? SelectedToppings { get; set; }
         public decimal TotalPrice => Quantity * PriceAtAdded;
+        public List<ShoppingFood.Dto.Product.ProductSizeDto> Sizes { get; set; } = new List<ShoppingFood.Dto.Product.ProductSizeDto>();
+        public List<ShoppingFood.Dto.Product.ProductToppingDto> Toppings { get; set; } = new List<ShoppingFood.Dto.Product.ProductToppingDto>();
     }
 }

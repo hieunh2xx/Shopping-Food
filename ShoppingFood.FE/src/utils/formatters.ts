@@ -23,6 +23,21 @@ export function formatDate(dateString: string): string {
 }
 
 /**
+ * Convert UTC date string to local YYYY-MM-DDTHH:mm format for datetime-local inputs
+ */
+export function toLocalDatetimeLocal(dateString: string): string {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return '';
+  const yyyy = date.getFullYear();
+  const MM = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  const hh = String(date.getHours()).padStart(2, '0');
+  const mm = String(date.getMinutes()).padStart(2, '0');
+  return `${yyyy}-${MM}-${dd}T${hh}:${mm}`;
+}
+
+/**
  * Truncate text with ellipsis
  */
 export function truncateText(text: string, maxLength: number): string {
@@ -148,6 +163,7 @@ export function getRoleLabel(role: string): string {
     'Shipper': 'Tài xế',
     'Seller': 'Người bán hàng',
     'Admin': 'Quản trị viên',
+    'Coordinator': 'Điều phối viên',
   };
   return map[role] || role;
 }
@@ -158,5 +174,5 @@ export function getRoleLabel(role: string): string {
 export function formatTransactionDescription(desc: string): string {
   if (!desc) return desc;
   const uuidRegex = /#?([a-fA-F0-9]{8})-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}/g;
-  return desc.replace(uuidRegex, (match, p1) => `#${p1.toUpperCase()}`);
+  return desc.replace(uuidRegex, (_match, p1) => `#${p1.toUpperCase()}`);
 }

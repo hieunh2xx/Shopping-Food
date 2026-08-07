@@ -219,7 +219,7 @@ export function CoordinatorIncidentsPage() {
                       </div>
                     </td>
                     <td className="py-4 px-6">
-                      <span className="font-mono text-xs text-gray-700">{incident.orderId ? incident.orderId.substring(0, 8) + '...' : 'N/A'}</span>
+                      <span className="font-mono text-xs font-semibold text-gray-700">{incident.orderId ? '#' + incident.orderId.substring(0, 8).toUpperCase() : 'N/A'}</span>
                     </td>
                     <td className="py-4 px-6 text-center">
                       {getStatusBadge(incident.status)}
@@ -271,7 +271,7 @@ export function CoordinatorIncidentsPage() {
               <option value="Warning">Cảnh cáo (Gửi thông báo vi phạm)</option>
               <option value="ShipperFault">Lỗi tài xế (Phạt điểm)</option>
               <option value="CustomerFault">Lỗi khách hàng (Khách hủy đơn)</option>
-              <option value="CompensateCustomer">Đền bù khách hàng (Voucher/Hoàn tiền)</option>
+
               <option value="EscalateToAdmin">Chuyển cho Admin xử lý đền bù</option>
               <option value="ForceCancelNoPenalty">Hủy đơn không phạt (Sự cố khách quan)</option>
               <option value="Dismiss">Bỏ qua (Khiếu nại không hợp lệ)</option>

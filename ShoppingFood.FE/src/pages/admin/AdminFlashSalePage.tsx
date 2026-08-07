@@ -4,7 +4,7 @@ import { Plus, Edit2, Trash2, Zap, CheckCircle2, XCircle, Package } from 'lucide
 import { flashSaleService } from '../../services/FlashSaleService';
 import type { IFlashSale, ICreateFlashSaleRequest, IFlashSaleProduct } from '../../interfaces';
 import { Button, Input, Modal, PromptModal } from '../../components/common';
-import { formatDate } from '../../utils/formatters';
+import { formatDate, toLocalDatetimeLocal } from '../../utils/formatters';
 
 export function AdminFlashSalePage() {
   const [flashSales, setFlashSales] = useState<IFlashSale[]>([]);
@@ -14,7 +14,6 @@ export function AdminFlashSalePage() {
     title: '',
     startDate: '',
     endDate: '',
-    description: '',
   });
 
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -51,7 +50,6 @@ export function AdminFlashSalePage() {
       title: '',
       startDate: '',
       endDate: '',
-      description: '',
     });
     setIsModalOpen(true);
   };
@@ -60,9 +58,8 @@ export function AdminFlashSalePage() {
     setEditingId(sale.id);
     setFormData({
       title: sale.title,
-      startDate: sale.startDate.slice(0, 16),
-      endDate: sale.endDate.slice(0, 16),
-      description: sale.description || '',
+      startDate: toLocalDatetimeLocal(sale.startDate),
+      endDate: toLocalDatetimeLocal(sale.endDate),
     });
     setIsModalOpen(true);
   };
@@ -73,9 +70,15 @@ export function AdminFlashSalePage() {
       return;
     }
     
+    const payload = {
+      ...formData,
+      startDate: new Date(formData.startDate).toISOString(),
+      endDate: new Date(formData.endDate).toISOString(),
+    };
+    
     try {
       if (editingId) {
-        const res = await flashSaleService.updateFlashSale(editingId, formData);
+        const res = await flashSaleService.updateFlashSale(editingId, payload);
         if (!res.error) {
           toast.success('Cập nhật chương trình Flash Sale thành công!');
           setIsModalOpen(false);
@@ -84,7 +87,7 @@ export function AdminFlashSalePage() {
           toast.error(res.message);
         }
       } else {
-        const res = await flashSaleService.createFlashSale(formData);
+        const res = await flashSaleService.createFlashSale(payload);
         if (!res.error) {
           toast.success('Tạo sự kiện Flash Sale thành công!');
           setIsModalOpen(false);
@@ -288,16 +291,7 @@ export function AdminFlashSalePage() {
               />
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả chi tiết</label>
-            <textarea
-              className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
-              rows={3}
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Mô tả chương trình..."
-            />
-          </div>
+
           <div className="flex justify-end gap-3 mt-6">
             <Button variant="outline" onClick={() => setIsModalOpen(false)}>
               Hủy

@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { userAddressService } from '../../services/UserAddressService';
 import type { IUserAddressDto, IAddUserAddress } from '../../interfaces';
 import { Button, Input, Modal } from '../common';
@@ -73,7 +73,7 @@ export function UserAddressManager() {
           toast.success('Đã lấy vị trí hiện tại');
         },
         () => {
-          toast.error('Không thể lấy vị trí. Vui lòng kiểm tra quyền truy cập vị trí.');
+          toast.error('Không thể lấy vị trí. Vui lòng bấm vào biểu tượng 🔒 (ổ khóa) trên thanh địa chỉ trình duyệt để cấp quyền vị trí.');
         }
       );
     } else {

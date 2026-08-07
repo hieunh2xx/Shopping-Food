@@ -65,7 +65,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
             if (report == null)
                 return ApiResponse.Failure(404, "Complaint not found.");
 
-            if (report.Status != Domain.Enums.ReportStatus.Pending)
+            if (report.Status != Domain.Enums.ReportStatus.Pending && report.Status != Domain.Enums.ReportStatus.Escalated)
                 return ApiResponse.Failure(400, "This complaint has already been processed.");
 
             if (report.TargetType == Domain.Enums.ReportTargetType.Shipper)

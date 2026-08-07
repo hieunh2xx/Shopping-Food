@@ -105,7 +105,7 @@ export function ShipperProfilePage() {
           toast.success("Đã lấy vị trí hiện tại!", { id: 'geo' });
         },
         () => {
-          toast.error("Không thể lấy vị trí. Vui lòng bật GPS và cấp quyền.", { id: 'geo' });
+          toast.error("Không thể lấy vị trí. Vui lòng bấm vào biểu tượng 🔒 (ổ khóa) trên thanh địa chỉ trình duyệt để cấp quyền vị trí.", { id: 'geo' });
         }
       );
     } else {

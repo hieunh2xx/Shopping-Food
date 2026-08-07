@@ -290,9 +290,10 @@ export function ShipperDashboard() {
     }
   };
 
-  const handleRejectProposal = async (orderId: string) => {
+    const handleRejectProposal = async (orderId: string) => {
     try {
       await shipperService.rejectOffer({ orderId, isExpired: false });
+      toast.success('Đã bỏ qua đề xuất đơn hàng');
     } catch (e) { } // ignore
     setProposalPopupOffer(null);
   };

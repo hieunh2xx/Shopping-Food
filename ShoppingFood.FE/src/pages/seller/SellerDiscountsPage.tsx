@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Tag, Search, Plus, Trash2, Edit2, BarChart3 } from 'lucide-react';
 import { Button, Input, Modal, Pagination, ConfirmModal } from '../../components/common';
 import toast from 'react-hot-toast';
@@ -178,8 +178,8 @@ export function SellerDiscountsPage() {
           handleApiError(res, 'Lỗi tạo mã');
         }
       }
-    } catch {
-      toast.error('Lưu mã giảm giá thất bại do lỗi kết nối mạng.');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || err?.message || 'Lưu mã giảm giá thất bại do lỗi kết nối mạng.');
     }
   };
 

@@ -173,7 +173,9 @@ namespace ShoppingFood.Application.Mappings
                 .ForMember(dest => dest.ProductImageUrl, opt => opt.MapFrom(src => src.Product != null && src.Product.Images != null && src.Product.Images.Any() ? src.Product.Images.First().ImageUrl : null))
                 .ForMember(dest => dest.IsProductDeleted, opt => opt.MapFrom(src => src.Product != null ? src.Product.IsDeleted : true))
                 .ForMember(dest => dest.RestaurantId, opt => opt.MapFrom(src => src.Product != null && src.Product.Restaurant != null ? src.Product.Restaurant.Id : Guid.Empty))
-                .ForMember(dest => dest.RestaurantName, opt => opt.MapFrom(src => src.Product != null && src.Product.Restaurant != null ? src.Product.Restaurant.RestaurantName : string.Empty));
+                .ForMember(dest => dest.RestaurantName, opt => opt.MapFrom(src => src.Product != null && src.Product.Restaurant != null ? src.Product.Restaurant.RestaurantName : string.Empty))
+                .ForMember(dest => dest.Sizes, opt => opt.MapFrom(src => src.Product != null ? src.Product.ProductSizes : new List<ProductSize>()))
+                .ForMember(dest => dest.Toppings, opt => opt.MapFrom(src => src.Product != null ? src.Product.ProductToppings : new List<ProductTopping>()));
 
             //ShipperApplication mappings
             CreateMap<RegisterShipperCommand, User>()

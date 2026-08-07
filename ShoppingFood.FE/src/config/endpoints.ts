@@ -148,7 +148,7 @@ export const API_ENDPOINTS = {
     INCOME_REPORT: '/Shipper/income-report',
     SCHEDULE_AREA: '/Shipper/schedule-area',
     AVAILABLE_OFFERS: '/Shipper/available-offers',
-    REJECT_OFFER: '/Shipper/reject-offers',
+    REJECT_OFFER: '/Shipper/reject-offer',
     DELIVERY_ROUTE: (orderId: string) => `/Shipper/delivery-route/${orderId}`, // GET
     REVIEW: '/Shipper/review', // POST
     REPUTATION_HISTORY: '/Shipper/ReputationHistory', // GET

@@ -146,7 +146,7 @@ export function SellerFlashSalesPage() {
               </div>
               <div className="p-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-2">{sale.title}</h3>
-                <p className="text-sm text-gray-500 mb-4 line-clamp-2">{sale.description || 'Chương trình siêu sale hấp dẫn'}</p>
+                <p className="text-sm text-gray-500 mb-4 line-clamp-2">Chương trình siêu sale hấp dẫn</p>
                 <div className="space-y-2 mb-6">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Bắt đầu:</span>

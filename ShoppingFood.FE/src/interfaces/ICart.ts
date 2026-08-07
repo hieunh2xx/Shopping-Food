@@ -37,6 +37,8 @@ export interface IAddToCartRequest {
   quantity: number;
   guestUserId?: string;
   clearCartIfConflict?: boolean;
+  selectedSize?: string;
+  selectedToppings?: string[];
 }
 
 export interface IUpdateCartItemQuantityRequest {

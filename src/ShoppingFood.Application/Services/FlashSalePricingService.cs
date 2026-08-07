@@ -85,8 +85,10 @@ namespace ShoppingFood.Application.Services
             {
                 if (item.Product == null) continue;
 
-                decimal expectedPrice = flashSalePrices.TryGetValue(item.ProductId, out var fsp) 
-                                        ? fsp : item.Product.Price;
+                decimal baseExpectedPrice = flashSalePrices.TryGetValue(item.ProductId, out var fsp)
+                                            ? fsp : item.Product.Price;
+                // Cộng lại phần surcharge từ topping/size để không bị mất sau khi sync
+                decimal expectedPrice = baseExpectedPrice + item.ToppingAndSizeSurcharge;
 
                 if (item.PriceAtAdded != expectedPrice)
                 {

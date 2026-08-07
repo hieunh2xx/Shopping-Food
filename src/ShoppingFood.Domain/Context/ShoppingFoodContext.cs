@@ -292,6 +292,7 @@ namespace ShoppingFood.Domain.Context
                 entity.ToTable("CART_ITEM");
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.PriceAtAdded).HasColumnType("decimal(12,2)").IsRequired();
+                entity.Property(e => e.ToppingAndSizeSurcharge).HasColumnType("decimal(12,2)").IsRequired();
 
                 entity.HasQueryFilter(e => !e.Product.IsDeleted);
 

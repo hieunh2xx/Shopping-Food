@@ -9,6 +9,9 @@ namespace ShoppingFood.Domain.Models
         public Guid ProductId { get; set; }
         public int Quantity { get; set; }
         public decimal PriceAtAdded { get; set; }
+        public decimal ToppingAndSizeSurcharge { get; set; } = 0;
+        public string? SelectedSize { get; set; }
+        public string? SelectedToppings { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         // Navigation properties

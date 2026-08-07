@@ -258,7 +258,7 @@ export function ProductReviews({ productId, restaurantId }: { productId: string;
                           value={replyContent}
                           onChange={(e) => setReplyContent(e.target.value)}
                           placeholder="Viết câu trả lời..."
-                          className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+                          className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-semibold text-gray-900 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') handleSubmitReply(review.id);
                           }}

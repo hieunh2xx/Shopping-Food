@@ -1,4 +1,4 @@
-﻿import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import type { ICartContext, ICartItem, IProductDto } from '../interfaces';
 import toast from 'react-hot-toast';
 import { cartService } from '../services/CartService';
@@ -69,8 +69,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
               categoryName: '',
               stockStatus: 'InStock',
               images: [],
-              toppings: [],
-              sizes: [],
+              toppings: apiItem.toppings || [],
+              sizes: apiItem.sizes || [],
               createdAt: new Date().toISOString(),
               isHidden: false,
               averageRating: 0,
@@ -79,7 +79,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
               availableFrom: null,
               availableTo: null,
               isAvailableNow: true
-            } as IProductDto
+            } as IProductDto,
+            selectedSize: apiItem.selectedSize,
+            selectedToppings: apiItem.selectedToppings ? apiItem.selectedToppings.split(', ') : []
           };
         });
 
@@ -160,7 +162,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         productId: product.id,
         quantity,
         guestUserId: getGuestUserId(),
-        // Might need other fields if API supports them (size, toppings)
+        selectedSize,
+        selectedToppings
       });
     } catch (error: any) {
       toast.error(error.message);

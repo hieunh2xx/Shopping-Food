@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { authService } from '../../services/AuthService';
 import { restaurantService } from '../../services/RestaurantService';
 import type { IUserDto } from '../../interfaces';
@@ -414,7 +414,7 @@ export function SellerSettingsPage() {
                             reverseGeocode(pos.coords.latitude, pos.coords.longitude);
                           },
                           () => {
-                            toast.error('Không thể lấy vị trí. Vui lòng cấp quyền vị trí cho trình duyệt.', { id: 'gps' });
+                            toast.error('Không thể lấy vị trí. Vui lòng bấm vào biểu tượng 🔒 (ổ khóa) trên thanh địa chỉ trình duyệt để cấp quyền vị trí.', { id: 'gps' });
                           }
                         );
                       } else {

@@ -3,7 +3,6 @@ export interface IFlashSale {
   title: string;
   startDate: string;
   endDate: string;
-  description: string;
   status: string;
 }
 
@@ -39,7 +38,6 @@ export interface ICreateFlashSaleRequest {
   title: string;
   startDate: string;
   endDate: string;
-  description?: string;
 }
 
 export interface IUpdateFlashSaleRequest {

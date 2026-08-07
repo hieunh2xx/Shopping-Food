@@ -59,7 +59,12 @@ namespace ShoppingFood.Application.Features.Carts.Commands
                     guestUserId = Guid.NewGuid();
                 }
 
-                var product = await _productRepository.GetByIdAsync(request.ProductId);
+                var products = await _productRepository.GetAsync(
+                    predicate: p => p.Id == request.ProductId,
+                    include: q => q.Include(p => p.ProductSizes).Include(p => p.ProductToppings).ThenInclude(pt => pt.Topping),
+                    disableTracking: false
+                );
+                var product = products.FirstOrDefault();
                 if (product == null || product.Status != ProductStatus.Approved || product.IsHidden)
                     return ApiResponse.Failure(404, "Product not found or unavailable.");
 
@@ -78,7 +83,7 @@ namespace ShoppingFood.Application.Features.Carts.Commands
                     return conflictResult;
                 }
 
-                await AddOrUpdateCartItemAsync(cart.Id, product, request.Quantity);
+                await AddOrUpdateCartItemAsync(cart.Id, product, request.Quantity, request.SelectedSize, request.SelectedToppings);
 
                 await _unitOfWork.SaveChangesAsync();
 
@@ -127,10 +132,10 @@ namespace ShoppingFood.Application.Features.Carts.Commands
             await _unitOfWork.SaveChangesAsync();
         }
 
-        private async Task<CartItem?> GetCartItemAsync(Guid cartId, Guid productId)
+        private async Task<CartItem?> GetCartItemAsync(Guid cartId, Guid productId, string? selectedSize, string? selectedToppingsStr)
         {
             var existingCartItem = await _cartItemRepository.GetAsync(
-                predicate: i => i.CartId == cartId && i.ProductId == productId,
+                predicate: i => i.CartId == cartId && i.ProductId == productId && i.SelectedSize == selectedSize && i.SelectedToppings == selectedToppingsStr,
                 disableTracking: false
             );
             return existingCartItem.FirstOrDefault();
@@ -216,16 +221,35 @@ namespace ShoppingFood.Application.Features.Carts.Commands
             return cart;
         }
 
-        private async Task AddOrUpdateCartItemAsync(Guid cartId, Product product, int quantity)
+        private async Task AddOrUpdateCartItemAsync(Guid cartId, Product product, int quantity, string? selectedSize, List<string>? selectedToppings)
         {
             var flashSalePrice = await _flashSalePricingService.GetActiveFlashSalePriceAsync(product.Id);
-            var effectivePrice = flashSalePrice ?? product.Price;
+            decimal extraPrice = 0;
+            if (!string.IsNullOrEmpty(selectedSize))
+            {
+                var size = product.ProductSizes.FirstOrDefault(s => s.SizeName.Equals(selectedSize, StringComparison.OrdinalIgnoreCase));
+                if (size != null) extraPrice += size.ExtraPrice;
+            }
 
-            var item = await GetCartItemAsync(cartId, product.Id);
+            string? selectedToppingsStr = null;
+            if (selectedToppings != null && selectedToppings.Any())
+            {
+                foreach (var toppingName in selectedToppings)
+                {
+                    var topping = product.ProductToppings.FirstOrDefault(pt => pt.Topping != null && pt.Topping.ToppingName.Equals(toppingName, StringComparison.OrdinalIgnoreCase))?.Topping;
+                    if (topping != null) extraPrice += topping.Price;
+                }
+                selectedToppingsStr = string.Join(", ", selectedToppings);
+            }
+
+            var effectivePrice = (flashSalePrice ?? product.Price) + extraPrice;
+
+            var item = await GetCartItemAsync(cartId, product.Id, selectedSize, selectedToppingsStr);
             if (item != null)
             {
                 item.Quantity += quantity;
-                item.PriceAtAdded = effectivePrice; 
+                item.PriceAtAdded = effectivePrice;
+                item.ToppingAndSizeSurcharge = extraPrice;
                 _cartItemRepository.Update(item);
             }
             else
@@ -237,6 +261,9 @@ namespace ShoppingFood.Application.Features.Carts.Commands
                     ProductId = product.Id,
                     Quantity = quantity,
                     PriceAtAdded = effectivePrice,
+                    ToppingAndSizeSurcharge = extraPrice,
+                    SelectedSize = selectedSize,
+                    SelectedToppings = selectedToppingsStr,
                     CreatedAt = DateTime.UtcNow
                 }; 
                 _cartItemRepository.Add(newItem);

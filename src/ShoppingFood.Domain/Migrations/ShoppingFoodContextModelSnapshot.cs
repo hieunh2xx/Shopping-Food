@@ -187,6 +187,15 @@ namespace ShoppingFood.Domain.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
+                    b.Property<string>("SelectedSize")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SelectedToppings")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("ToppingAndSizeSurcharge")
+                        .HasColumnType("decimal(12,2)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CartId");
@@ -1077,6 +1086,12 @@ namespace ShoppingFood.Domain.Migrations
 
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
+
+                    b.Property<string>("SelectedSize")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SelectedToppings")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("TotalPrice")
                         .HasColumnType("decimal(12,2)");

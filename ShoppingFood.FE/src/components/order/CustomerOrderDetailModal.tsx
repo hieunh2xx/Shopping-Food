@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Package, MapPin, CreditCard, Clock, QrCode, XCircle, MessageCircle, RefreshCw, AlertTriangle, Star } from 'lucide-react';
 import { Modal, Button, Input, ConfirmModal } from '../common';
@@ -246,11 +246,11 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId, onNavigateA
                         <p className="font-medium text-gray-900">{item.itemName}</p>
                         <p className="text-xs text-gray-500">{item.quantity} x {formatCurrency(item.unitPrice)}</p>
                         
-                        {(item.size || item.topping) && (
+                        {(item.selectedSize || item.selectedToppings) && (
                           <p className="text-xs text-amber-600 mt-0.5">
-                            {item.size ? `Size: ${item.size}` : ''}
-                            {item.size && item.topping ? ' | ' : ''}
-                            {item.topping ? `Topping: ${item.topping}` : ''}
+                            {item.selectedSize ? `Size: ${item.selectedSize}` : ''}
+                            {item.selectedSize && item.selectedToppings ? ' | ' : ''}
+                            {item.selectedToppings ? `Topping: ${item.selectedToppings}` : ''}
                           </p>
                         )}
                       </div>

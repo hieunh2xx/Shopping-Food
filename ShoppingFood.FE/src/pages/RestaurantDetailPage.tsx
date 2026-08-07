@@ -8,6 +8,24 @@ import type { IRestaurantProfileDto, IProductDto, IMenuCategoryDto } from '../in
 import { ProductList } from '../components/product/ProductList';
 import toast from 'react-hot-toast';
 
+const isRestaurantOpen = (openTime?: string, closeTime?: string) => {
+  if (!openTime || !closeTime) return true;
+  
+  const now = new Date();
+  const currentTime = now.getHours() * 60 + now.getMinutes();
+  
+  const [openH, openM] = openTime.split(':').map(Number);
+  const [closeH, closeM] = closeTime.split(':').map(Number);
+  
+  const openTimeMins = openH * 60 + (openM || 0);
+  const closeTimeMins = closeH * 60 + (closeM || 0);
+  
+  if (closeTimeMins < openTimeMins) {
+    return currentTime >= openTimeMins || currentTime <= closeTimeMins;
+  }
+  
+  return currentTime >= openTimeMins && currentTime <= closeTimeMins;
+};
 export function RestaurantDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [restaurant, setRestaurant] = useState<IRestaurantProfileDto | null>(null);
@@ -152,10 +170,22 @@ export function RestaurantDetailPage() {
                       <span title="Mall" className="flex items-center"><Crown className="w-8 h-8 text-red-500" /></span>
                     )}
                   </h1>
-                  {restaurant.status === 'Active' && (
-                    <span className="inline-flex items-center gap-1 bg-green-500/20 text-green-300 px-2 py-1 rounded-lg text-xs font-medium border border-green-500/30">
+                  {restaurant.status === 'Active' ? (
+                    isRestaurantOpen(restaurant.openingTime, restaurant.closingTime) ? (
+                      <span className="inline-flex items-center gap-1 bg-green-500/20 text-green-300 px-2 py-1 rounded-lg text-xs font-medium border border-green-500/30">
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        Đang mở cửa
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 bg-gray-500/20 text-gray-300 px-2 py-1 rounded-lg text-xs font-medium border border-gray-500/30">
+                        <Clock className="w-3.5 h-3.5" />
+                        Đã đóng cửa
+                      </span>
+                    )
+                  ) : (
+                    <span className="inline-flex items-center gap-1 bg-red-500/20 text-red-300 px-2 py-1 rounded-lg text-xs font-medium border border-red-500/30">
                       <ShieldCheck className="w-3.5 h-3.5" />
-                      Đang mở cửa
+                      Tạm nghỉ
                     </span>
                   )}
                 </div>

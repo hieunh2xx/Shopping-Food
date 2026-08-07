@@ -14,5 +14,7 @@ namespace ShoppingFood.Application.Features.Carts.Commands
         public int Quantity { get; set; }
         public Guid? GuestUserId { get; set; }
         public bool ClearCartIfConflict { get; set; } = false;
+        public string? SelectedSize { get; set; }
+        public List<string>? SelectedToppings { get; set; }
     }
 }

@@ -152,7 +152,9 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                     ItemName = i.ItemName,
                     Quantity = i.Quantity,
                     UnitPrice = i.UnitPrice,
-                    TotalPrice = i.TotalPrice
+                    TotalPrice = i.TotalPrice,
+                    SelectedSize = i.SelectedSize,
+                    SelectedToppings = i.SelectedToppings
                 }).ToList()
             };
         }

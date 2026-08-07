@@ -54,6 +54,7 @@ namespace ShoppingFood.Application.Features.Restaurants.Queries
                 return ApiResponse.Failure(404, "Restaurant was not found");
 
             bool isOwnerOrAdmin = false;
+            Guid? userProfileId = null;
             if (request.CurrentUserId.HasValue)
             {
                 var users = await _userRepository.GetAsync(
@@ -63,6 +64,7 @@ namespace ShoppingFood.Application.Features.Restaurants.Queries
                 var currentUser = users.FirstOrDefault();
                 if (currentUser != null && currentUser.Profile != null)
                 {
+                    userProfileId = currentUser.Profile.Id;
                     isOwnerOrAdmin = currentUser.Profile.Role == UserRole.Admin || 
                                      restaurant.OwnerId == currentUser.Profile.Id;
                 }
@@ -73,10 +75,10 @@ namespace ShoppingFood.Application.Features.Restaurants.Queries
 
             var restaurantDto = _mapper.Map<RestaurantProfileDto>(restaurant);
 
-            if (request.CurrentUserId.HasValue)
+            if (userProfileId.HasValue)
             {
                 var favorite = await _favoriteRestaurantRepository.GetAsync(
-                    predicate: f => f.UserProfileId == request.CurrentUserId.Value && f.RestaurantId == request.Id,
+                    predicate: f => f.UserProfileId == userProfileId.Value && f.RestaurantId == request.Id,
                     disableTracking: true
                 );
                 restaurantDto.IsFavorite = favorite.Any();

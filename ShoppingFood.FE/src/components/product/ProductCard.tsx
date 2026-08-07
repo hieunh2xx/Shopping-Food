@@ -71,10 +71,16 @@ export function ProductCard({ product, flashSaleProduct }: ProductCardProps) {
           <h3 className="text-base font-semibold text-gray-900 line-clamp-2 leading-tight group-hover:text-orange-500 transition-colors">
             {product.itemName}
           </h3>
-          <span className="flex items-center gap-1 text-sm font-medium text-gray-900 bg-gray-50 px-1.5 py-0.5 rounded-lg whitespace-nowrap">
-            <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
-            4.8
-          </span>
+          {product.averageRating > 0 ? (
+            <span className="flex items-center gap-1 text-sm font-medium text-gray-900 bg-gray-50 px-1.5 py-0.5 rounded-lg whitespace-nowrap">
+              <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
+              {product.averageRating.toFixed(1)}
+            </span>
+          ) : (
+            <span className="flex items-center gap-1 text-[11px] font-medium text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded-lg whitespace-nowrap">
+              Mới
+            </span>
+          )}
         </div>
 
         <p className="text-sm text-gray-500 mb-3 line-clamp-1">

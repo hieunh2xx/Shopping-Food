@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { orderService } from '../../services/OrderService';
 import { authService } from '../../services/AuthService';
 import { chatService } from '../../services/ChatService';
@@ -551,10 +551,16 @@ export function SellerOrdersPage() {
                 <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
                   {selectedOrder.items.map((item: any) => (
                     <div key={item.id} className="flex justify-between items-start text-sm">
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900">{item.itemName}</p>
-                        <p className="text-gray-400 text-xs">SL: {item.quantity} x {item.unitPrice.toLocaleString('vi-VN')} đ</p>
-                      </div>
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900">{item.itemName}</p>
+                          {(item.selectedSize || item.selectedToppings) && (
+                            <div className="text-xs text-gray-500 mt-0.5 space-y-0.5">
+                              {item.selectedSize && <p>Size: {item.selectedSize}</p>}
+                              {item.selectedToppings && <p>Topping: {item.selectedToppings}</p>}
+                            </div>
+                          )}
+                          <p className="text-gray-400 text-xs mt-1">SL: {item.quantity} x {item.unitPrice.toLocaleString('vi-VN')} đ</p>
+                        </div>
                       <p className="font-bold text-gray-900">{(item.totalPrice).toLocaleString('vi-VN')} đ</p>
                     </div>
                   ))}

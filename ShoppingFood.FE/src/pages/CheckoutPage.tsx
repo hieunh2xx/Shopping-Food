@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Store, MapPin, Phone, User, Mail, ShieldCheck, ArrowLeft, Loader2, X } from 'lucide-react';
 import { useCart, useAuth } from '../hooks';
@@ -343,7 +343,7 @@ export function CheckoutPage() {
           toast.success('Đã lấy vị trí hiện tại');
         },
         () => {
-          toast.error('Không thể lấy vị trí. Vui lòng kiểm tra quyền truy cập vị trí của trình duyệt.');
+          toast.error('Không thể lấy vị trí. Vui lòng bấm vào biểu tượng 🔒 (ổ khóa) trên thanh địa chỉ trình duyệt để cấp quyền vị trí.');
         }
       );
     } else {
