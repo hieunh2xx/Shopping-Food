@@ -109,7 +109,8 @@ namespace ShoppingFood.Domain.Enums
         Pending,
         Approved,
         Rejected,
-        Completed
+        Completed,
+        Disputed
     }
 
     public enum InvoiceStatus
@@ -208,7 +209,8 @@ namespace ShoppingFood.Domain.Enums
         Order,
         Delivery,
         Loyalty,
-        Review
+        Review,
+        Payment
     }
 
     public enum ReportStatus

@@ -43,6 +43,8 @@ export const ROUTES = {
   ADMIN_FAQ: '/admin/faq',
   ADMIN_CHAT: '/admin/chat',
   ADMIN_FINANCE: '/admin/finance',
+  ADMIN_WITHDRAWALS: '/admin/withdrawals',
+  ADMIN_PAYMENTS: '/admin/payments',
   CUSTOMER_WALLET: '/profile?tab=wallet',
   SELLER_WALLET: '/seller/wallet',
   SHIPPER_WALLET: '/shipper/wallet',
@@ -65,7 +67,6 @@ export const ROUTES = {
   PAYMENT_ERROR: '/payment/error',
   PAYMENT_CANCEL: '/payment/cancel',
   PAYMENT_HISTORY: '/payment/history',
-  ADMIN_PAYMENTS: '/admin/payments',
   SELLER_CHAT: '/seller/chat',
 } as const;
 

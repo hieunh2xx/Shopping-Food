@@ -107,11 +107,22 @@ namespace ShoppingFood.Application.Features.Payments.Queries
     {
         private readonly IWithdrawalRequestRepository _withdrawalRepository;
         private readonly IUserRepository _userRepository;
+        private readonly IRestaurantProfileRepository _restaurantRepository;
+        private readonly IShipperProfileRepository _shipperRepository;
+        private readonly IPaymentSettlementService _paymentService;
 
-        public GetWithdrawalsHandler(IWithdrawalRequestRepository withdrawalRepository, IUserRepository userRepository)
+        public GetWithdrawalsHandler(
+            IWithdrawalRequestRepository withdrawalRepository, 
+            IUserRepository userRepository,
+            IRestaurantProfileRepository restaurantRepository,
+            IShipperProfileRepository shipperRepository,
+            IPaymentSettlementService paymentService)
         {
             _withdrawalRepository = withdrawalRepository;
             _userRepository = userRepository;
+            _restaurantRepository = restaurantRepository;
+            _shipperRepository = shipperRepository;
+            _paymentService = paymentService;
         }
 
         public async Task<ApiResponse> Handle(GetWithdrawalsQuery request, CancellationToken cancellationToken)
@@ -122,15 +133,41 @@ namespace ShoppingFood.Application.Features.Payments.Queries
             var users = await _userRepository.GetAsync(
                 predicate: u => u.Id == request.CurrentUserId.Value,
                 include: q => q.Include(u => u.Profile));
-            if (users.FirstOrDefault()?.Profile?.Role != UserRole.Admin)
+            var user = users.FirstOrDefault();
+            if (user?.Profile == null)
                 return ApiResponse.Failure(403, "Forbidden.");
 
+            bool isStaff = user.Profile.Role == UserRole.Admin || user.Profile.Role == UserRole.Coordinator;
+
+            var walletIds = new List<Guid>();
+            if (!isStaff)
+            {
+                if (user.Profile.Role == UserRole.Seller || user.Profile.Role == UserRole.Mall)
+                {
+                    var restaurants = await _restaurantRepository.GetAsync(predicate: r => r.OwnerId == user.Profile.Id);
+                    foreach (var r in restaurants)
+                    {
+                        var w = await _paymentService.GetOrCreateWalletAsync(WalletOwnerType.Seller, r.Id);
+                        walletIds.Add(w.Id);
+                    }
+                }
+                if (user.Profile.Role == UserRole.Shipper)
+                {
+                    var shippers = await _shipperRepository.GetAsync(predicate: s => s.UserProfileId == user.Profile.Id);
+                    foreach (var s in shippers)
+                    {
+                        var w = await _paymentService.GetOrCreateWalletAsync(WalletOwnerType.Shipper, s.Id);
+                        walletIds.Add(w.Id);
+                    }
+                }
+            }
+
             WithdrawalStatus? statusFilter = null;
-            if (!string.IsNullOrEmpty(request.Status) && Enum.TryParse<WithdrawalStatus>(request.Status, out var s))
-                statusFilter = s;
+            if (!string.IsNullOrEmpty(request.Status) && Enum.TryParse<WithdrawalStatus>(request.Status, out var parsedStatus))
+                statusFilter = parsedStatus;
 
             var withdrawals = await _withdrawalRepository.GetAsync(
-                predicate: w => !statusFilter.HasValue || w.Status == statusFilter.Value,
+                predicate: w => (!statusFilter.HasValue || w.Status == statusFilter.Value) && (isStaff || walletIds.Contains(w.WalletId)),
                 include: q => q.Include(w => w.Wallet),
                 orderBy: q => q.OrderByDescending(w => w.CreatedAt),
                 disableTracking: true);
@@ -144,6 +181,8 @@ namespace ShoppingFood.Application.Features.Payments.Queries
                 w.BankAccountHolder,
                 status = w.Status.ToString(),
                 ownerType = w.Wallet.OwnerType.ToString(),
+                w.TransferProofImageUrl,
+                w.RejectReason,
                 w.CreatedAt
             }).ToList();
 

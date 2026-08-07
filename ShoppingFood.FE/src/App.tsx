@@ -2,6 +2,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
+import { ConfirmProvider } from './contexts/ConfirmContext';
 import { AppRoutes } from './routes/AppRoutes';
 import { ScrollToTop } from './components/common/ScrollToTop';
 
@@ -44,7 +45,9 @@ function App() {
           }}
         />
         <CartProvider>
-          <AppRoutes />
+          <ConfirmProvider>
+            <AppRoutes />
+          </ConfirmProvider>
         </CartProvider>
       </AuthProvider>
     </BrowserRouter>

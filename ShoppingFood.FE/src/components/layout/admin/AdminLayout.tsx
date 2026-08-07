@@ -21,7 +21,8 @@ import {
   ServerCog,
   MessageSquareWarning,
   ShieldBan,
-  Activity
+  Activity,
+  Wallet
 } from 'lucide-react';
 import { useAuth, useSupportChatWatcher } from '../../../hooks';
 import { ROUTES } from '../../../routes/routeConfig';
@@ -67,6 +68,7 @@ export function AdminLayout() {
 
     // Tài chính & Thanh toán
     { name: 'Tài chính', path: ROUTES.ADMIN_FINANCE, icon: DollarSign, group: 'Tài chính & Thanh toán' },
+    { name: 'Duyệt Rút tiền', path: ROUTES.ADMIN_WITHDRAWALS, icon: Wallet, group: 'Tài chính & Thanh toán' },
     { name: 'Thanh toán', path: ROUTES.ADMIN_PAYMENTS, icon: CreditCard, group: 'Tài chính & Thanh toán' },
 
     // Hệ thống

@@ -58,13 +58,32 @@ class PaymentService {
     return httpClient.get(API_ENDPOINTS.PAYMENT.TRANSACTIONS, { params });
   }
 
+  async approveWithdrawal(data: { withdrawalId: string; approve: boolean; rejectReason?: string; transferProofImageUrl?: string }): Promise<IApiResponse<{ status: string }>> {
+    return httpClient.post(API_ENDPOINTS.PAYMENT.APPROVE_WITHDRAWAL, data);
+  }
+
+  async confirmWithdrawal(data: { withdrawalId: string; isReceived: boolean }): Promise<IApiResponse<{ status: string }>> {
+    return httpClient.post(API_ENDPOINTS.PAYMENT.CONFIRM_WITHDRAWAL, data);
+  }
+
+  async forceCompleteWithdrawal(data: { withdrawalId: string }): Promise<IApiResponse<{ status: string }>> {
+    return httpClient.post(API_ENDPOINTS.PAYMENT.FORCE_COMPLETE_WITHDRAWAL, data);
+  }
+
+  async uploadWithdrawalProof(file: File): Promise<IApiResponse<{ imageUrl: string }>> {
+    const formData = new FormData();
+    formData.append('File', file);
+    return httpClient.post(API_ENDPOINTS.PAYMENT.UPLOAD_PROOF, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  }
+
   async getWithdrawals(status?: string): Promise<IApiResponse<any[]>> {
     return httpClient.get(API_ENDPOINTS.PAYMENT.WITHDRAWALS, { params: { status } });
   }
 
-  async approveWithdrawal(withdrawalId: string, approve: boolean, rejectReason?: string): Promise<IApiResponse<any>> {
-    return httpClient.post(API_ENDPOINTS.PAYMENT.APPROVE_WITHDRAWAL, { withdrawalId, approve, rejectReason });
-  }
 
   async requestInvoice(data: { orderId: string; taxCode: string; companyName: string; companyAddress: string; email: string }): Promise<IApiResponse<any>> {
     return httpClient.post(API_ENDPOINTS.PAYMENT.INVOICE, data);

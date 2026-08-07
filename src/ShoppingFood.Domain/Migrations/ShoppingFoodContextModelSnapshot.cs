@@ -2326,6 +2326,9 @@ namespace ShoppingFood.Domain.Migrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(12,2)");
 
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<Guid?>("ApprovedByUserId")
                         .HasColumnType("uniqueidentifier");
 
@@ -2353,6 +2356,9 @@ namespace ShoppingFood.Domain.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TransferProofImageUrl")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("UpdatedAt")

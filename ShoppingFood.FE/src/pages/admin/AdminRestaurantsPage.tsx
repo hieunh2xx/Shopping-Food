@@ -1,5 +1,5 @@
-﻿import { useState, useEffect } from 'react';
-import { useAdmin } from '../../hooks';
+import { useState, useEffect } from 'react';
+import { useConfirm } from '../../hooks';
 import { Store, ShieldAlert, ShieldCheck, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button, Input } from '../../components/common';
 import toast from 'react-hot-toast';
@@ -11,6 +11,7 @@ export function AdminRestaurantsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [total, setTotal] = useState(0);
+  const { confirm } = useConfirm();
 
   // Filters & Pagination
   const [searchTerm, setSearchTerm] = useState('');
@@ -54,7 +55,13 @@ export function AdminRestaurantsPage() {
   const handleToggleSuspend = async (restaurantId: string, currentStatus: string) => {
     const isSuspended = currentStatus === 'Suspended';
     const action = isSuspended ? 'MỞ KHÓA' : 'KHÓA';
-    if (!confirm(`Bạn có chắc muốn ${action} nhà hàng này không?`)) return;
+    
+    const isConfirmed = await confirm({
+      title: 'Xác nhận thao tác',
+      message: `Bạn có chắc muốn ${action} nhà hàng này không?`,
+      isDanger: !isSuspended
+    });
+    if (!isConfirmed) return;
 
     setIsUpdating(true);
     try {
@@ -77,7 +84,13 @@ export function AdminRestaurantsPage() {
   };
 
   const handleToggleVerification = async (restaurantId: string) => {
-    if (!confirm('Bạn có chắc muốn cấp/hủy nhãn Quán Ăn Chuẩn cho nhà hàng này không?')) return;
+    const isConfirmed = await confirm({
+      title: 'Xác nhận cấp nhãn',
+      message: 'Bạn có chắc muốn cấp/hủy nhãn Quán Ăn Chuẩn cho nhà hàng này không?',
+      isDanger: false
+    });
+    if (!isConfirmed) return;
+    
     setIsUpdating(true);
     try {
       const res = await httpClient.post<any>(API_ENDPOINTS.ADMIN.TOGGLE_VERIFICATION(restaurantId), {});

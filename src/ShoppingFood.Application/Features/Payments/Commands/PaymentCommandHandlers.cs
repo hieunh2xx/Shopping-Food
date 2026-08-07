@@ -122,7 +122,7 @@ namespace ShoppingFood.Application.Features.Payments.Commands
 
             var config = await _paymentService.GetConfigAsync();
             if (request.Amount < config.MinWithdrawalAmount)
-                return ApiResponse.Failure(400, $"Số tiền rút tối thiểu là {config.MinWithdrawalAmount:N0}đ.");
+                return ApiResponse.Failure(400, $"Minimum withdrawal amount is {config.MinWithdrawalAmount:N0}đ.");
 
             var users = await _userRepository.GetAsync(
                 predicate: u => u.Id == request.CurrentUserId.Value,
@@ -133,6 +133,7 @@ namespace ShoppingFood.Application.Features.Payments.Commands
 
             WalletOwnerType ownerType;
             Guid ownerId;
+            decimal codDebt = 0;
 
             if (user.Profile.Role == UserRole.Seller || user.Profile.Role == UserRole.Mall)
             {
@@ -151,15 +152,18 @@ namespace ShoppingFood.Application.Features.Payments.Commands
                 if (shipper == null) return ApiResponse.Failure(404, "Shipper not found.");
                 ownerType = WalletOwnerType.Shipper;
                 ownerId = shipper.Id;
+                codDebt = shipper.CodCollectedAmount;
             }
             else
             {
-                return ApiResponse.Failure(403, "Chỉ Seller và Shipper mới được rút tiền.");
+                return ApiResponse.Failure(403, "Only Sellers and Shippers can request withdrawals.");
             }
 
             var wallet = await _paymentService.GetOrCreateWalletAsync(ownerType, ownerId);
-            if (wallet.Balance < request.Amount)
-                return ApiResponse.Failure(400, "Số dư không đủ.");
+            
+            var availableBalance = wallet.Balance - codDebt;
+            if (availableBalance < request.Amount)
+                return ApiResponse.Failure(400, "Insufficient balance. (Note: COD debt cannot be withdrawn)");
 
             wallet.BankName = request.BankName;
             wallet.BankAccountNumber = request.BankAccountNumber;
@@ -180,10 +184,10 @@ namespace ShoppingFood.Application.Features.Payments.Commands
             _withdrawalRepository.Add(withdrawal);
 
             await _paymentService.RecordTransactionAsync(wallet, FinancialTransactionType.Withdrawal, -request.Amount,
-                $"Yêu cầu rút tiền #{withdrawal.Id}", withdrawal.Id, "Withdrawal");
+                $"Withdrawal request #{withdrawal.Id}", withdrawal.Id, "Withdrawal");
 
             await _unitOfWork.SaveChangesAsync();
-            return ApiResponse.Success(new { withdrawalId = withdrawal.Id, status = "Pending" }, "Yêu cầu rút tiền đã được gửi.");
+            return ApiResponse.Success(new { withdrawalId = withdrawal.Id, status = "Pending" }, "Withdrawal request submitted successfully.");
         }
     }
 
@@ -192,6 +196,7 @@ namespace ShoppingFood.Application.Features.Payments.Commands
         public Guid WithdrawalId { get; set; }
         public bool Approve { get; set; }
         public string? RejectReason { get; set; }
+        public string? TransferProofImageUrl { get; set; }
         public Guid? CurrentUserId { get; set; }
     }
 
@@ -227,8 +232,13 @@ namespace ShoppingFood.Application.Features.Payments.Commands
 
             if (request.Approve)
             {
+                if (string.IsNullOrEmpty(request.TransferProofImageUrl))
+                    return ApiResponse.Failure(400, "Please provide the transfer proof image url.");
+
                 withdrawal.Status = WithdrawalStatus.Approved;
                 withdrawal.ApprovedByUserId = request.CurrentUserId;
+                withdrawal.TransferProofImageUrl = request.TransferProofImageUrl;
+                withdrawal.ApprovedAt = DateTime.UtcNow;
             }
             else
             {
@@ -242,7 +252,149 @@ namespace ShoppingFood.Application.Features.Payments.Commands
             await _unitOfWork.SaveChangesAsync();
 
             return ApiResponse.Success(new { status = withdrawal.Status.ToString() },
-                request.Approve ? "Đã duyệt rút tiền." : "Đã từ chối yêu cầu rút tiền.");
+                request.Approve ? "Withdrawal approved successfully. Waiting for user confirmation." : "Withdrawal request rejected.");
+        }
+    }
+
+    public class ConfirmWithdrawalReceivedCommand : IRequest<ApiResponse>
+    {
+        public Guid WithdrawalId { get; set; }
+        public bool IsReceived { get; set; }
+        public Guid? CurrentUserId { get; set; }
+    }
+
+    public class ConfirmWithdrawalReceivedHandler : IRequestHandler<ConfirmWithdrawalReceivedCommand, ApiResponse>
+    {
+        private readonly IWithdrawalRequestRepository _withdrawalRepository;
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IUserRepository _userRepository;
+        private readonly IShipperProfileRepository _shipperRepository;
+        private readonly IRestaurantProfileRepository _restaurantRepository;
+
+        public ConfirmWithdrawalReceivedHandler(
+            IWithdrawalRequestRepository withdrawalRepository,
+            IUnitOfWork unitOfWork,
+            IUserRepository userRepository,
+            IShipperProfileRepository shipperRepository,
+            IRestaurantProfileRepository restaurantRepository)
+        {
+            _withdrawalRepository = withdrawalRepository;
+            _unitOfWork = unitOfWork;
+            _userRepository = userRepository;
+            _shipperRepository = shipperRepository;
+            _restaurantRepository = restaurantRepository;
+        }
+
+        public async Task<ApiResponse> Handle(ConfirmWithdrawalReceivedCommand request, CancellationToken cancellationToken)
+        {
+            if (!request.CurrentUserId.HasValue) return ApiResponse.Failure(401, "Unauthorized");
+
+            var withdrawals = await _withdrawalRepository.GetAsync(
+                predicate: w => w.Id == request.WithdrawalId,
+                include: q => q.Include(w => w.Wallet),
+                disableTracking: false);
+            var withdrawal = withdrawals.FirstOrDefault();
+            if (withdrawal == null) return ApiResponse.Failure(404, "Withdrawal not found.");
+            if (withdrawal.Status != WithdrawalStatus.Approved)
+                return ApiResponse.Failure(400, "Can only confirm approved requests.");
+
+            // Verify ownership
+            var users = await _userRepository.GetAsync(predicate: u => u.Id == request.CurrentUserId.Value, include: q => q.Include(u => u.Profile));
+            var user = users.FirstOrDefault();
+            if (user?.Profile == null) return ApiResponse.Failure(403, "Forbidden");
+
+            bool isOwner = false;
+            if (withdrawal.Wallet.OwnerType == WalletOwnerType.Shipper)
+            {
+                var shippers = await _shipperRepository.GetAsync(s => s.UserProfileId == user.Profile.Id);
+                if (shippers.Any(s => s.Id == withdrawal.Wallet.OwnerId)) isOwner = true;
+            }
+            else if (withdrawal.Wallet.OwnerType == WalletOwnerType.Seller)
+            {
+                var rests = await _restaurantRepository.GetAsync(r => r.OwnerId == user.Profile.Id);
+                if (rests.Any(r => r.Id == withdrawal.Wallet.OwnerId)) isOwner = true;
+            }
+
+            if (!isOwner) return ApiResponse.Failure(403, "You don't have permission to confirm this request.");
+
+            if (request.IsReceived)
+            {
+                withdrawal.Status = WithdrawalStatus.Completed;
+            }
+            else
+            {
+                withdrawal.Status = WithdrawalStatus.Disputed;
+            }
+            
+            withdrawal.UpdatedAt = DateTime.UtcNow;
+            _withdrawalRepository.Update(withdrawal);
+            await _unitOfWork.SaveChangesAsync();
+
+            return ApiResponse.Success(new { status = withdrawal.Status.ToString() }, 
+                request.IsReceived ? "Successfully confirmed withdrawal receipt." : "Dispute reported for withdrawal.");
+        }
+    }
+
+    public class ForceCompleteWithdrawalCommand : IRequest<ApiResponse>
+    {
+        public Guid WithdrawalId { get; set; }
+        public Guid? CurrentUserId { get; set; }
+    }
+
+    public class ForceCompleteWithdrawalHandler : IRequestHandler<ForceCompleteWithdrawalCommand, ApiResponse>
+    {
+        private readonly IWithdrawalRequestRepository _withdrawalRepository;
+        private readonly IUnitOfWork _unitOfWork;
+
+        public ForceCompleteWithdrawalHandler(IWithdrawalRequestRepository withdrawalRepository, IUnitOfWork unitOfWork)
+        {
+            _withdrawalRepository = withdrawalRepository;
+            _unitOfWork = unitOfWork;
+        }
+
+        public async Task<ApiResponse> Handle(ForceCompleteWithdrawalCommand request, CancellationToken cancellationToken)
+        {
+            var withdrawals = await _withdrawalRepository.GetAsync(w => w.Id == request.WithdrawalId, disableTracking: false);
+            var withdrawal = withdrawals.FirstOrDefault();
+            if (withdrawal == null) return ApiResponse.Failure(404, "Withdrawal not found.");
+            
+            if (withdrawal.Status != WithdrawalStatus.Disputed && withdrawal.Status != WithdrawalStatus.Approved)
+                return ApiResponse.Failure(400, "Can only force complete approved or disputed requests.");
+
+            withdrawal.Status = WithdrawalStatus.Completed;
+            withdrawal.UpdatedAt = DateTime.UtcNow;
+            _withdrawalRepository.Update(withdrawal);
+            await _unitOfWork.SaveChangesAsync();
+
+            return ApiResponse.Success(new { status = withdrawal.Status.ToString() }, "Successfully forced withdrawal completion.");
+        }
+    }
+
+    public class UploadWithdrawalProofCommand : IRequest<ApiResponse>
+    {
+        public Guid? CurrentUserId { get; set; }
+        public Microsoft.AspNetCore.Http.IFormFile File { get; set; } = null!;
+    }
+
+    public class UploadWithdrawalProofHandler : IRequestHandler<UploadWithdrawalProofCommand, ApiResponse>
+    {
+        private readonly IPhotoService _photoService;
+
+        public UploadWithdrawalProofHandler(IPhotoService photoService)
+        {
+            _photoService = photoService;
+        }
+
+        public async Task<ApiResponse> Handle(UploadWithdrawalProofCommand request, CancellationToken cancellationToken)
+        {
+            if (!request.CurrentUserId.HasValue) return ApiResponse.Failure(401, "Unauthorized");
+            if (request.File == null || request.File.Length == 0) return ApiResponse.Failure(400, "Please select an image file.");
+
+            var imageUrl = await _photoService.AddPhotoAsync(request.File);
+            if (string.IsNullOrEmpty(imageUrl))
+                return ApiResponse.Failure(500, "Failed to upload image.");
+
+            return ApiResponse.Success(new { imageUrl = imageUrl }, "Image uploaded successfully.");
         }
     }
 
@@ -276,14 +428,14 @@ namespace ShoppingFood.Application.Features.Payments.Commands
             if (!request.CurrentUserId.HasValue)
                 return ApiResponse.Failure(401, "Unauthorized.");
             if (request.Amount <= 0)
-                return ApiResponse.Failure(400, "Số tiền không hợp lệ.");
+                return ApiResponse.Failure(400, "Invalid amount.");
 
             var users = await _userRepository.GetAsync(
                 predicate: u => u.Id == request.CurrentUserId.Value,
                 include: q => q.Include(u => u.Profile));
             var profile = users.FirstOrDefault()?.Profile;
             if (profile?.Role != UserRole.Shipper)
-                return ApiResponse.Failure(403, "Chỉ shipper mới được nộp công nợ.");
+                return ApiResponse.Failure(403, "Only shippers can repay debt.");
 
             var shippers = await _shipperRepository.GetAsync(
                 predicate: s => s.UserProfileId == profile.Id,
@@ -291,7 +443,7 @@ namespace ShoppingFood.Application.Features.Payments.Commands
             var shipper = shippers.FirstOrDefault();
             if (shipper == null) return ApiResponse.Failure(404, "Shipper not found.");
             if (shipper.CodCollectedAmount <= 0)
-                return ApiResponse.Failure(400, "Không có công nợ cần nộp.");
+                return ApiResponse.Failure(400, "No debt to repay.");
 
             var repayAmount = Math.Min(request.Amount, shipper.CodCollectedAmount);
             shipper.CodCollectedAmount -= repayAmount;
@@ -300,7 +452,7 @@ namespace ShoppingFood.Application.Features.Payments.Commands
 
             var wallet = await _paymentService.GetOrCreateWalletAsync(WalletOwnerType.Shipper, shipper.Id);
             await _paymentService.RecordTransactionAsync(wallet, FinancialTransactionType.CodRemittance, -repayAmount,
-                $"Nộp tiền thu hộ COD về sàn", null, "CodRemittance");
+                $"Repaid COD debt to platform", null, "CodRemittance");
 
             await _unitOfWork.SaveChangesAsync();
             return ApiResponse.Success(new
@@ -308,7 +460,7 @@ namespace ShoppingFood.Application.Features.Payments.Commands
                 repaid = repayAmount,
                 remainingDebt = shipper.CodCollectedAmount,
                 debtLimit = shipper.DebtLimit
-            }, "Nộp công nợ thành công.");
+            }, "Debt repaid successfully.");
         }
     }
 
@@ -358,7 +510,7 @@ namespace ShoppingFood.Application.Features.Payments.Commands
             await _unitOfWork.SaveChangesAsync();
 
             return ApiResponse.Success(new { shipper.Id, shipper.DebtLimit, shipper.CodCollectedAmount },
-                "Cập nhật hạn mức công nợ thành công.");
+                "Debt limit updated successfully.");
         }
     }
 

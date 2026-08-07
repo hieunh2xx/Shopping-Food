@@ -59,7 +59,7 @@ class HttpClient {
     // Helper to detect if a message is purely English (lacks Vietnamese diacritics)
     const isEnglish = (msg: string) => {
       if (!msg || typeof msg !== 'string') return false;
-      const viRegex = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i;
+      const viRegex = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹ]/i;
       // If it contains letters but NO Vietnamese characters, treat as English
       return /[a-zA-Z]/.test(msg) && !viRegex.test(msg);
     };
@@ -256,6 +256,28 @@ class HttpClient {
         'failed to send otp sms': 'Không thể gửi SMS OTP, vui lòng thử lại',
         'failed to send otp to the new contact': 'Không thể gửi OTP đến thông tin liên hệ mới',
 
+        // Payments & Withdrawals
+        'please provide the transfer proof image url.': 'Vui lòng cung cấp ảnh bill chuyển khoản.',
+        'withdrawal approved successfully. waiting for user confirmation.': 'Đã duyệt rút tiền. Chờ người dùng xác nhận.',
+        'withdrawal request rejected.': 'Đã từ chối yêu cầu rút tiền.',
+        'can only confirm approved requests.': 'Chỉ có thể xác nhận các yêu cầu đang ở trạng thái Approved.',
+        'you don\'t have permission to confirm this request.': 'Bạn không có quyền xác nhận yêu cầu này.',
+        'successfully confirmed withdrawal receipt.': 'Xác nhận nhận tiền thành công.',
+        'dispute reported for withdrawal.': 'Đã gửi khiếu nại chưa nhận được tiền.',
+        'can only force complete approved or disputed requests.': 'Chỉ có thể ép buộc hoàn thành đơn Approved hoặc Disputed.',
+        'successfully forced withdrawal completion.': 'Đã ép buộc hoàn thành đơn rút tiền.',
+        'please select an image file.': 'Vui lòng chọn ảnh bill.',
+        'failed to upload image.': 'Lỗi khi upload ảnh.',
+        'image uploaded successfully.': 'Upload ảnh thành công.',
+        'only sellers and shippers can request withdrawals.': 'Chỉ Seller và Shipper mới được rút tiền.',
+        'insufficient balance.': 'Số dư không đủ.',
+        'withdrawal request submitted successfully.': 'Yêu cầu rút tiền đã được gửi.',
+        'invalid amount.': 'Số tiền không hợp lệ.',
+        'only shippers can repay debt.': 'Chỉ shipper mới được nộp công nợ.',
+        'no debt to repay.': 'Không có công nợ cần nộp.',
+        'debt repaid successfully.': 'Nộp công nợ thành công.',
+        'debt limit updated successfully.': 'Cập nhật hạn mức công nợ thành công.',
+
         // Nhóm 1: Auth / OTP / Firebase / Token
         'a valid email address is required.': 'Email không được để trống',
         'invalid email format.': 'Email không hợp lệ',
@@ -400,6 +422,10 @@ class HttpClient {
       // Layer 2: Pattern Match (fallback for generic/dynamic messages)
       if (lower.includes('temporarily suspended')) return 'Tài khoản của bạn đang bị tạm khóa nhận đơn';
       if (lower.includes('same store')) return 'Sản phẩm không cùng cửa hàng với giỏ hàng hiện tại. Vui lòng xóa giỏ hàng và thêm lại.';
+      if (lower.includes('minimum withdrawal amount is')) {
+        const amount = lower.match(/\d+([.,]\d+)?/);
+        return amount ? `Số tiền rút tối thiểu là ${amount[0]}đ` : 'Số tiền rút không hợp lệ';
+      }
       if (lower.includes('greater than 0')) return 'Giá trị phải lớn hơn 0';
       if (lower.includes('greater than or equal to 0')) return 'Giá trị phải lớn hoặc bằng 0';
       if (lower.includes('hh:mm format')) return 'Giá trị phải theo định dạng HH:mm';

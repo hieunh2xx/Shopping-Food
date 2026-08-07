@@ -1,5 +1,6 @@
-﻿import { useEffect, useState } from 'react';
-import { Banknote, ArrowDownCircle, History, TrendingUp, TrendingDown, RefreshCw, ChevronDown, Building2, Sparkles, Wallet, ShieldAlert, CircleDollarSign } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useConfirm } from '../../hooks';
+import { Banknote, ArrowDownCircle, History, TrendingUp, TrendingDown, RefreshCw, ChevronDown, Building2, Sparkles, Wallet, ShieldAlert, CircleDollarSign, CheckCircle, XCircle } from 'lucide-react';
 import { Card, Button, Input } from '../../components/common';
 import { paymentService, type IWalletDto, type ITransactionDto } from '../../services/PaymentService';
 import { formatCurrency, formatTransactionDescription } from '../../utils/formatters';
@@ -90,6 +91,69 @@ function TransactionHistory({ transactions, take, onLoadMore, onRefresh }: { tra
   );
 }
 
+function WithdrawalHistory({ withdrawals, onConfirm }: { withdrawals: any[]; onConfirm: (id: string, isReceived: boolean) => void }) {
+  if (withdrawals.length === 0) return null;
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'Pending': return <span className="px-2 py-0.5 text-xs font-medium rounded-md bg-yellow-100 text-yellow-800">Chờ duyệt</span>;
+      case 'Approved': return <span className="px-2 py-0.5 text-xs font-medium rounded-md bg-blue-100 text-blue-800">Đã chuyển</span>;
+      case 'Rejected': return <span className="px-2 py-0.5 text-xs font-medium rounded-md bg-red-100 text-red-800">Từ chối</span>;
+      case 'Completed': return <span className="px-2 py-0.5 text-xs font-medium rounded-md bg-green-100 text-green-800">Hoàn thành</span>;
+      case 'Disputed': return <span className="px-2 py-0.5 text-xs font-medium rounded-md bg-red-100 text-red-800 border border-red-200">Đang khiếu nại</span>;
+      default: return null;
+    }
+  };
+
+  return (
+    <Card className="p-6 border border-gray-100 mb-6">
+      <h3 className="font-bold text-gray-900 flex items-center gap-2 text-lg mb-5">
+        <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+          <ArrowDownCircle className="w-5 h-5 text-purple-600" />
+        </div>
+        Lịch sử rút tiền
+      </h3>
+      <div className="space-y-3">
+        {withdrawals.map((w) => (
+          <div key={w.id} className="p-4 rounded-xl border border-gray-100 hover:shadow-sm transition-shadow">
+            <div className="flex justify-between items-start mb-2">
+              <div>
+                <p className="font-bold text-gray-900 text-lg">{formatCurrency(w.amount)}</p>
+                <p className="text-xs text-gray-500">{new Date(w.createdAt).toLocaleString('vi-VN')} • Mã: {w.id.substring(0,8)}</p>
+              </div>
+              {getStatusBadge(w.status)}
+            </div>
+            
+            {(w.status === 'Approved' || w.status === 'Completed' || w.status === 'Disputed') && w.transferProofImageUrl && (
+              <a href={w.transferProofImageUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline mb-2 inline-block">
+                Xem bill chuyển khoản từ Admin
+              </a>
+            )}
+
+            {w.status === 'Rejected' && w.rejectReason && (
+              <p className="text-sm text-red-600 bg-red-50 p-2 rounded-lg mt-2">Lý do từ chối: {w.rejectReason}</p>
+            )}
+            
+            {w.status === 'Approved' && (
+              <div className="mt-3 pt-3 border-t flex flex-col sm:flex-row items-center gap-3 justify-between bg-blue-50/50 p-3 rounded-xl border border-blue-100">
+                <p className="text-sm text-blue-800 font-medium">Bạn đã nhận được tiền chưa?</p>
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={() => onConfirm(w.id, true)} className="bg-green-600 hover:bg-green-700 whitespace-nowrap">
+                    <CheckCircle className="w-4 h-4 mr-1" /> Đã nhận tiền
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => onConfirm(w.id, false)} className="text-red-600 border-red-200 hover:bg-red-50 whitespace-nowrap">
+                    <XCircle className="w-4 h-4 mr-1" /> Chưa nhận được
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
 /* ═══════════════════════════════════════════════════════════
    SELLER WALLET PAGE
    ═══════════════════════════════════════════════════════════ */
@@ -97,21 +161,23 @@ function TransactionHistory({ transactions, take, onLoadMore, onRefresh }: { tra
 export function SellerWalletPage() {
   const [wallet, setWallet] = useState<IWalletDto | null>(null);
   const [transactions, setTransactions] = useState<ITransactionDto[]>([]);
+  const [withdrawals, setWithdrawals] = useState<any[]>([]);
   const [withdrawForm, setWithdrawForm] = useState({ amount: '', bankName: '', bankAccountNumber: '', bankAccountHolder: '' });
   const [loading, setLoading] = useState(true);
   const [withdrawLoading, setWithdrawLoading] = useState(false);
   const [take, setTake] = useState(10);
+  const { confirm } = useConfirm();
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const [wRes, tRes] = await Promise.all([
+      const [wRes, tRes, wdRes] = await Promise.all([
         paymentService.getWallet(),
         paymentService.getTransactions({ take }),
+        paymentService.getWithdrawals()
       ]);
       if (!wRes.error && wRes.data) {
         setWallet(wRes.data);
-        // Pre-fill bank info if available
         if (wRes.data.bankName && !withdrawForm.bankName) {
           setWithdrawForm(prev => ({
             ...prev,
@@ -122,6 +188,7 @@ export function SellerWalletPage() {
         }
       }
       if (!tRes.error && tRes.data) setTransactions(tRes.data);
+      if (!wdRes.error && wdRes.data) setWithdrawals(wdRes.data);
     } catch (err: any) {
       toast.error(err.response?.data?.message);
     } finally {
@@ -130,6 +197,25 @@ export function SellerWalletPage() {
   };
 
   useEffect(() => { loadData(); }, [take]);
+
+  const handleConfirmWithdrawal = async (id: string, isReceived: boolean) => {
+    if (!isReceived) {
+      const confirmed = await confirm({
+        title: 'Xác nhận khiếu nại',
+        message: 'Bạn chắc chắn chưa nhận được tiền và muốn khiếu nại?',
+        isDanger: true,
+        confirmText: 'Khiếu nại',
+        cancelText: 'Hủy'
+      });
+      if (!confirmed) return;
+    }
+    
+    const res = await paymentService.confirmWithdrawal({ withdrawalId: id, isReceived });
+    if (!res.error) {
+      toast.success(isReceived ? 'Xác nhận thành công' : 'Đã gửi khiếu nại tới Admin');
+      loadData();
+    } else toast.error(res.message);
+  };
 
   const handleWithdraw = async () => {
     const amount = parseFloat(withdrawForm.amount);
@@ -174,7 +260,6 @@ export function SellerWalletPage() {
     <div className="p-6">
       <div className="space-y-6 w-full">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
-      {/* Wallet Header */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-green-600 to-teal-600 p-6 text-white shadow-xl shadow-green-500/20">
         <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
@@ -201,7 +286,6 @@ export function SellerWalletPage() {
             <p className="text-4xl font-black tracking-tight">{formatCurrency(wallet?.balance || 0)}</p>
           </div>
 
-          {/* Bank info */}
           {wallet?.bankName && (
             <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2.5">
               <Building2 className="w-4 h-4 text-green-200" />
@@ -211,7 +295,6 @@ export function SellerWalletPage() {
         </div>
       </div>
 
-      {/* Withdrawal Form */}
       <Card className="p-6 border border-gray-100 h-full">
         <h3 className="font-bold text-gray-900 mb-5 flex items-center gap-2 text-lg">
           <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
@@ -220,7 +303,6 @@ export function SellerWalletPage() {
           Rút tiền về ngân hàng
         </h3>
 
-        {/* Quick amount chips */}
         <div className="flex flex-wrap gap-2 mb-4">
           {[100000, 500000, 1000000, 2000000].map(v => (
             <button
@@ -271,9 +353,8 @@ export function SellerWalletPage() {
       </div>
       </div>
 
-      {/* Right Column: Transaction History */}
       <div className="w-full">
-        {/* Transaction History */}
+        <WithdrawalHistory withdrawals={withdrawals} onConfirm={handleConfirmWithdrawal} />
         <TransactionHistory transactions={transactions} take={take} onLoadMore={() => setTake(prev => prev + 10)} onRefresh={loadData} />
       </div>
     </div>
@@ -287,19 +368,22 @@ export function SellerWalletPage() {
 export function ShipperWalletPage() {
   const [wallet, setWallet] = useState<IWalletDto | null>(null);
   const [transactions, setTransactions] = useState<ITransactionDto[]>([]);
+  const [withdrawals, setWithdrawals] = useState<any[]>([]);
   const [repayAmount, setRepayAmount] = useState('');
   const [withdrawForm, setWithdrawForm] = useState({ amount: '', bankName: '', bankAccountNumber: '', bankAccountHolder: '' });
   const [loading, setLoading] = useState(true);
   const [repayLoading, setRepayLoading] = useState(false);
   const [withdrawLoading, setWithdrawLoading] = useState(false);
   const [take, setTake] = useState(10);
+  const { confirm } = useConfirm();
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const [wRes, tRes] = await Promise.all([
+      const [wRes, tRes, wdRes] = await Promise.all([
         paymentService.getWallet(),
         paymentService.getTransactions({ take }),
+        paymentService.getWithdrawals()
       ]);
       if (!wRes.error && wRes.data) {
         setWallet(wRes.data);
@@ -313,6 +397,7 @@ export function ShipperWalletPage() {
         }
       }
       if (!tRes.error && tRes.data) setTransactions(tRes.data);
+      if (!wdRes.error && wdRes.data) setWithdrawals(wdRes.data);
     } catch (err: any) {
       toast.error(err.response?.data?.message);
     } finally {
@@ -321,6 +406,25 @@ export function ShipperWalletPage() {
   };
 
   useEffect(() => { loadData(); }, [take]);
+
+  const handleConfirmWithdrawal = async (id: string, isReceived: boolean) => {
+    if (!isReceived) {
+      const confirmed = await confirm({
+        title: 'Xác nhận khiếu nại',
+        message: 'Bạn chắc chắn chưa nhận được tiền và muốn khiếu nại?',
+        isDanger: true,
+        confirmText: 'Khiếu nại',
+        cancelText: 'Hủy'
+      });
+      if (!confirmed) return;
+    }
+    
+    const res = await paymentService.confirmWithdrawal({ withdrawalId: id, isReceived });
+    if (!res.error) {
+      toast.success(isReceived ? 'Xác nhận thành công' : 'Đã gửi khiếu nại tới Admin');
+      loadData();
+    } else toast.error(res.message);
+  };
 
   const handleRepay = async () => {
     const amount = parseFloat(repayAmount);
@@ -528,6 +632,7 @@ export function ShipperWalletPage() {
 
       {/* Right Column: Transaction History */}
       <div className="w-full">
+        <WithdrawalHistory withdrawals={withdrawals} onConfirm={handleConfirmWithdrawal} />
         {/* Transaction History */}
         <TransactionHistory transactions={transactions} take={take} onLoadMore={() => setTake(prev => prev + 10)} onRefresh={loadData} />
       </div>

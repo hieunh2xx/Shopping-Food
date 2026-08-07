@@ -63,6 +63,30 @@ namespace ShoppingFood.API.Controllers
             return StatusCode(response.Code, response);
         }
 
+        [HttpPost("withdrawals/confirm")]
+        public async Task<IActionResult> ConfirmWithdrawal([FromBody] ConfirmWithdrawalReceivedCommand command)
+        {
+            command.CurrentUserId = userDto?.Id;
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpPost("withdrawals/force-complete")]
+        public async Task<IActionResult> ForceCompleteWithdrawal([FromBody] ForceCompleteWithdrawalCommand command)
+        {
+            command.CurrentUserId = userDto?.Id;
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpPost("withdrawals/upload-proof")]
+        public async Task<IActionResult> UploadWithdrawalProof([FromForm] UploadWithdrawalProofCommand command)
+        {
+            command.CurrentUserId = userDto?.Id;
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
+
         [HttpGet("transactions")]
         public async Task<IActionResult> GetTransactions([FromQuery] GetTransactionsQuery query)
         {

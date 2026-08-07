@@ -1,6 +1,8 @@
-﻿import { useEffect, useState } from 'react';
-import { DollarSign, TrendingUp, CheckCircle, XCircle, BarChart3 } from 'lucide-react';
-import { Card, Button } from '../../components/common';
+import { useEffect, useState, useRef } from 'react';
+import { useConfirm } from '../../hooks';
+import { DollarSign, TrendingUp, CheckCircle, XCircle, BarChart3, AlertCircle } from 'lucide-react';
+import { Card, Button, Input } from '../../components/common';
+import { Image as ImageIcon } from 'lucide-react';
 import { paymentService } from '../../services/PaymentService';
 import { formatCurrency } from '../../utils/formatters';
 import toast from 'react-hot-toast';
@@ -8,17 +10,30 @@ import toast from 'react-hot-toast';
 export function AdminFinancePage() {
   const [reconciliation, setReconciliation] = useState<any>(null);
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
+  const [disputedWithdrawals, setDisputedWithdrawals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { confirm } = useConfirm();
+
+  // Modal states
+  const [approveModalOpen, setApproveModalOpen] = useState(false);
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [currentWithdrawal, setCurrentWithdrawal] = useState<any>(null);
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [processing, setProcessing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const [recRes, wdRes] = await Promise.all([
+      const [recRes, wdRes, dispRes] = await Promise.all([
         paymentService.getReconciliation(),
         paymentService.getWithdrawals('Pending'),
+        paymentService.getWithdrawals('Disputed'),
       ]);
       if (!recRes.error) setReconciliation(recRes.data);
       if (!wdRes.error) setWithdrawals(wdRes.data || []);
+      if (!dispRes.error) setDisputedWithdrawals(dispRes.data || []);
     } finally {
       setLoading(false);
     }
@@ -26,12 +41,87 @@ export function AdminFinancePage() {
 
   useEffect(() => { loadData(); }, []);
 
-  const handleApprove = async (id: string, approve: boolean) => {
-    const res = await paymentService.approveWithdrawal(id, approve);
-    if (!res.error) {
-      toast.success(approve ? 'Đã duyệt' : 'Đã từ chối');
-      loadData();
-    } else toast.error(res.message);
+  const handleOpenApprove = (w: any) => {
+    setCurrentWithdrawal(w);
+    setProofFile(null);
+    setApproveModalOpen(true);
+  };
+
+  const handleOpenReject = (w: any) => {
+    setCurrentWithdrawal(w);
+    setRejectReason('');
+    setRejectModalOpen(true);
+  };
+
+  const handleConfirmApprove = async () => {
+    if (!proofFile) return toast.error('Vui lòng upload ảnh bill chuyển khoản');
+    
+    setProcessing(true);
+    try {
+      const uploadRes = await paymentService.uploadWithdrawalProof(proofFile);
+      if (uploadRes.error) {
+        toast.error(uploadRes.message || 'Lỗi upload ảnh');
+        return;
+      }
+      
+      const imageUrl = uploadRes.data?.imageUrl;
+      const res = await paymentService.approveWithdrawal({
+        withdrawalId: currentWithdrawal.id,
+        approve: true,
+        transferProofImageUrl: imageUrl
+      });
+
+      if (!res.error) {
+        toast.success(res.message || 'Đã duyệt');
+        setApproveModalOpen(false);
+        loadData();
+      } else toast.error(res.message);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleConfirmReject = async () => {
+    if (!rejectReason.trim()) return toast.error('Vui lòng nhập lý do từ chối');
+    
+    setProcessing(true);
+    try {
+      const res = await paymentService.approveWithdrawal({
+        withdrawalId: currentWithdrawal.id,
+        approve: false,
+        rejectReason
+      });
+
+      if (!res.error) {
+        toast.success(res.message || 'Đã từ chối');
+        setRejectModalOpen(false);
+        loadData();
+      } else toast.error(res.message);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleForceComplete = async (id: string) => {
+    const isConfirmed = await confirm({
+      title: 'Cưỡng chế chốt đơn',
+      message: 'Bạn có chắc chắn đã chuyển khoản và muốn chốt đơn này?',
+      isDanger: true,
+      confirmText: 'Chốt đơn',
+      cancelText: 'Hủy'
+    });
+    if (!isConfirmed) return;
+    
+    setProcessing(true);
+    try {
+      const res = await paymentService.forceCompleteWithdrawal({ withdrawalId: id });
+      if (!res.error) {
+        toast.success(res.message || 'Hoàn thành ép buộc thành công');
+        loadData();
+      } else toast.error(res.message);
+    } finally {
+      setProcessing(false);
+    }
   };
 
   if (loading) return <div className="p-8 text-center">Đang tải...</div>;
@@ -81,10 +171,10 @@ export function AdminFinancePage() {
                   <p className="text-sm text-gray-500">{w.bankName} • {w.bankAccountNumber} • {w.bankAccountHolder}</p>
                 </div>
                 <div className="flex gap-2">
-                  <Button size="sm" onClick={() => handleApprove(w.id, true)}>
+                  <Button size="sm" onClick={() => handleOpenApprove(w)}>
                     <CheckCircle className="w-4 h-4 mr-1" /> Duyệt
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleApprove(w.id, false)}>
+                  <Button size="sm" variant="outline" onClick={() => handleOpenReject(w)}>
                     <XCircle className="w-4 h-4 mr-1" /> Từ chối
                   </Button>
                 </div>
@@ -93,6 +183,106 @@ export function AdminFinancePage() {
           </div>
         )}
       </Card>
+
+      {/* Khiếu nại */}
+      {disputedWithdrawals.length > 0 && (
+        <Card className="p-6 mt-6 border-red-200 bg-red-50/30">
+          <h2 className="text-lg font-semibold mb-4 text-red-700 flex items-center">
+            <AlertCircle className="w-5 h-5 mr-2" />
+            Yêu cầu rút tiền bị khiếu nại
+          </h2>
+          <div className="space-y-3">
+            {disputedWithdrawals.map(w => (
+              <div key={w.id} className="flex items-center justify-between p-4 border border-red-200 bg-white rounded-xl">
+                <div>
+                  <p className="font-medium text-red-700">{formatCurrency(w.amount)} — {w.ownerType}</p>
+                  <p className="text-sm text-gray-500">{w.bankName} • {w.bankAccountNumber} • {w.bankAccountHolder}</p>
+                  <p className="text-xs text-red-600 mt-1">Lý do: User báo chưa nhận được tiền</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="danger" onClick={() => handleForceComplete(w.id)}>
+                    Cưỡng chế chốt đơn
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Modal Duyệt */}
+      {approveModalOpen && currentWithdrawal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md">
+            <h3 className="text-lg font-bold mb-2">Duyệt Yêu Cầu Rút Tiền</h3>
+            <p className="text-sm text-gray-500 mb-4">Vui lòng chuyển khoản <b>{formatCurrency(currentWithdrawal.amount)}</b> tới số tài khoản bên dưới và upload ảnh hóa đơn.</p>
+            
+            <div className="bg-gray-50 p-4 rounded-xl mb-4 text-sm">
+              <p>Ngân hàng: <b>{currentWithdrawal.bankName}</b></p>
+              <p>Số tài khoản: <b>{currentWithdrawal.bankAccountNumber}</b></p>
+              <p>Chủ tài khoản: <b>{currentWithdrawal.bankAccountHolder}</b></p>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Ảnh Bill Chuyển Khoản (*)</label>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                ref={fileInputRef}
+                onChange={(e) => setProofFile(e.target.files?.[0] || null)}
+              />
+              <div 
+                onClick={() => fileInputRef.current?.click()}
+                className="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center cursor-pointer hover:bg-gray-50"
+              >
+                {proofFile ? (
+                  <p className="text-sm font-medium text-blue-600">{proofFile.name}</p>
+                ) : (
+                  <div className="flex flex-col items-center text-gray-500">
+                    <ImageIcon className="w-8 h-8 mb-2" />
+                    <span className="text-sm">Click để chọn ảnh</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setApproveModalOpen(false)} disabled={processing}>Hủy</Button>
+              <Button onClick={handleConfirmApprove} disabled={processing || !proofFile}>
+                {processing ? 'Đang xử lý...' : 'Xác nhận duyệt'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Từ chối */}
+      {rejectModalOpen && currentWithdrawal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md">
+            <h3 className="text-lg font-bold mb-4">Từ chối Yêu Cầu Rút Tiền</h3>
+            <p className="text-sm text-gray-500 mb-4">Bạn đang từ chối yêu cầu rút <b>{formatCurrency(currentWithdrawal.amount)}</b> của <b>{currentWithdrawal.ownerType}</b>.</p>
+            
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Lý do từ chối (*)</label>
+              <Input 
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="VD: Thông tin tài khoản không hợp lệ..."
+                autoFocus
+              />
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setRejectModalOpen(false)} disabled={processing}>Hủy</Button>
+              <Button variant="danger" onClick={handleConfirmReject} disabled={processing || !rejectReason.trim()}>
+                {processing ? 'Đang xử lý...' : 'Xác nhận từ chối'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -46,7 +46,7 @@ namespace ShoppingFood.Tests.Features.Carts
                 .Options;
 
             _dbContext = new ShoppingFoodContext(options);
-            _dbContext.Database.EnsureCreated();
+            // Removed EnsureCreated() to bypass SQLite nvarchar(max) error, we only need _dbContext for transactions.
 
             _cartRepositoryMock = new Mock<ICartRepository>();
             _cartItemRepositoryMock = new Mock<ICartItemRepository>();
@@ -80,8 +80,8 @@ namespace ShoppingFood.Tests.Features.Carts
             // Arrange
             var productId = Guid.NewGuid();
             _productRepositoryMock
-                .Setup(r => r.GetByIdAsync(productId))
-                .ReturnsAsync((Product?)null);
+                .Setup(r => r.GetAsync(It.IsAny<Expression<Func<Product, bool>>>(), It.IsAny<Func<IQueryable<Product>, IOrderedQueryable<Product>>>(), It.IsAny<Func<IQueryable<Product>, IIncludableQueryable<Product, object>>>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<bool>()))
+                .ReturnsAsync(new List<Product>().AsReadOnly());
 
             var command = new AddToCartCommand { ProductId = productId, Quantity = 1 };
 
@@ -106,8 +106,8 @@ namespace ShoppingFood.Tests.Features.Carts
                 StockStatus = StockStatus.OutOfStock
             };
             _productRepositoryMock
-                .Setup(r => r.GetByIdAsync(productId))
-                .ReturnsAsync(product);
+                .Setup(r => r.GetAsync(It.IsAny<Expression<Func<Product, bool>>>(), It.IsAny<Func<IQueryable<Product>, IOrderedQueryable<Product>>>(), It.IsAny<Func<IQueryable<Product>, IIncludableQueryable<Product, object>>>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<bool>()))
+                .ReturnsAsync(new List<Product> { product }.AsReadOnly());
 
             var command = new AddToCartCommand { ProductId = productId, Quantity = 1 };
 
@@ -135,8 +135,8 @@ namespace ShoppingFood.Tests.Features.Carts
             };
 
             _productRepositoryMock
-                .Setup(r => r.GetByIdAsync(productId))
-                .ReturnsAsync(product);
+                .Setup(r => r.GetAsync(It.IsAny<Expression<Func<Product, bool>>>(), It.IsAny<Func<IQueryable<Product>, IOrderedQueryable<Product>>>(), It.IsAny<Func<IQueryable<Product>, IIncludableQueryable<Product, object>>>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<bool>()))
+                .ReturnsAsync(new List<Product> { product }.AsReadOnly());
 
             // Mock GetOrCreateCartAsync behavior (cart not exists initially)
             _cartRepositoryMock
@@ -166,11 +166,11 @@ namespace ShoppingFood.Tests.Features.Carts
             _cartItemRepositoryMock
                 .Setup(r => r.GetAsync(
                     It.IsAny<Expression<Func<CartItem, bool>>>(),
-                    null,
-                    null,
-                    0,
-                    10,
-                    false
+                    It.IsAny<Func<IQueryable<CartItem>, IOrderedQueryable<CartItem>>>(),
+                    It.IsAny<Func<IQueryable<CartItem>, IIncludableQueryable<CartItem, object>>>(),
+                    It.IsAny<int>(),
+                    It.IsAny<int>(),
+                    It.IsAny<bool>()
                 ))
                 .ReturnsAsync(new List<CartItem>().AsReadOnly());
 
@@ -188,8 +188,94 @@ namespace ShoppingFood.Tests.Features.Carts
             var result = await _handler.Handle(command, CancellationToken.None);
 
             // Assert
-            result.Code.Should().Be(200);
+            result.Code.Should().Be(200, $"failed with message: {result.Message}");
             result.Message.Should().Be("Added item to cart successfully");
+            _cartItemRepositoryMock.Verify(r => r.Add(It.IsAny<CartItem>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task Handle_ConflictRestaurant_ClearIfConflictFalse_Returns409()
+        {
+            var cartId = Guid.NewGuid();
+            var existingRestaurantId = Guid.NewGuid();
+            var newRestaurantId = Guid.NewGuid();
+            var productId = Guid.NewGuid();
+
+            var newProduct = new Product { Id = productId, RestaurantId = newRestaurantId, Status = ProductStatus.Approved, StockStatus = StockStatus.InStock };
+            var existingProduct = new Product { Id = Guid.NewGuid(), RestaurantId = existingRestaurantId };
+            
+            _productRepositoryMock.Setup(r => r.GetAsync(It.IsAny<Expression<Func<Product, bool>>>(), It.IsAny<Func<IQueryable<Product>, IOrderedQueryable<Product>>>(), It.IsAny<Func<IQueryable<Product>, IIncludableQueryable<Product, object>>>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<bool>()))
+                .ReturnsAsync(new List<Product> { newProduct }.AsReadOnly());
+            
+            _cartRepositoryMock.Setup(r => r.GetAsync(It.IsAny<Expression<Func<Cart, bool>>>(), It.IsAny<Func<IQueryable<Cart>, IOrderedQueryable<Cart>>>(), It.IsAny<Func<IQueryable<Cart>, IIncludableQueryable<Cart, object>>>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<bool>()))
+                .ReturnsAsync(new List<Cart> { new Cart { Id = cartId } }.AsReadOnly());
+
+            var existingCartItem = new CartItem { Id = Guid.NewGuid(), CartId = cartId, ProductId = existingProduct.Id, Product = existingProduct };
+
+            // Mock ValidateRestaurantConflictAsync (called with include for Product)
+            _cartItemRepositoryMock.Setup(r => r.GetAsync(
+                It.IsAny<Expression<Func<CartItem, bool>>>(),
+                null,
+                It.IsAny<Func<IQueryable<CartItem>, IIncludableQueryable<CartItem, object>>>(),
+                0, 10, false))
+                .ReturnsAsync(new List<CartItem> { existingCartItem }.AsReadOnly());
+
+            var command = new AddToCartCommand { ProductId = productId, Quantity = 1, ClearCartIfConflict = false, CurrentUserId = Guid.NewGuid() };
+
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            result.Code.Should().Be(409);
+            result.Message.Should().Contain("not from the same store");
+            _cartItemRepositoryMock.Verify(r => r.Delete(It.IsAny<CartItem>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task Handle_ConflictRestaurant_ClearIfConflictTrue_Returns200AndClearsCart()
+        {
+            var cartId = Guid.NewGuid();
+            var existingRestaurantId = Guid.NewGuid();
+            var newRestaurantId = Guid.NewGuid();
+            var productId = Guid.NewGuid();
+
+            var newProduct = new Product { Id = productId, RestaurantId = newRestaurantId, Status = ProductStatus.Approved, StockStatus = StockStatus.InStock };
+            var existingProduct = new Product { Id = Guid.NewGuid(), RestaurantId = existingRestaurantId };
+            
+            _productRepositoryMock.Setup(r => r.GetAsync(It.IsAny<Expression<Func<Product, bool>>>(), It.IsAny<Func<IQueryable<Product>, IOrderedQueryable<Product>>>(), It.IsAny<Func<IQueryable<Product>, IIncludableQueryable<Product, object>>>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<bool>()))
+                .ReturnsAsync(new List<Product> { newProduct }.AsReadOnly());
+            
+            _cartRepositoryMock.Setup(r => r.GetAsync(It.IsAny<Expression<Func<Cart, bool>>>(), It.IsAny<Func<IQueryable<Cart>, IOrderedQueryable<Cart>>>(), It.IsAny<Func<IQueryable<Cart>, IIncludableQueryable<Cart, object>>>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<bool>()))
+                .ReturnsAsync(new List<Cart> { new Cart { Id = cartId } }.AsReadOnly());
+
+            var existingCartItem = new CartItem { Id = Guid.NewGuid(), CartId = cartId, ProductId = existingProduct.Id, Product = existingProduct };
+
+            // Mock ValidateRestaurantConflictAsync
+            _cartItemRepositoryMock.Setup(r => r.GetAsync(
+                It.IsAny<Expression<Func<CartItem, bool>>>(),
+                null,
+                It.IsAny<Func<IQueryable<CartItem>, IIncludableQueryable<CartItem, object>>>(),
+                0, 10, false))
+                .ReturnsAsync(new List<CartItem> { existingCartItem }.AsReadOnly());
+
+            // Mock GetCartItemAsync (after clear)
+            _cartItemRepositoryMock.Setup(r => r.GetAsync(
+                It.IsAny<Expression<Func<CartItem, bool>>>(),
+                null, null, 0, 10, false))
+                .ReturnsAsync(new List<CartItem>().AsReadOnly());
+                
+            // Mock GetCartDtoAsync
+            _cartRepositoryMock.Setup(r => r.GetAsync(
+                It.IsAny<Expression<Func<Cart, bool>>>(),
+                null, It.IsAny<Func<IQueryable<Cart>, IIncludableQueryable<Cart, object>>>(), 0, 10, true))
+                .ReturnsAsync(new List<Cart> { new Cart { Id = cartId } }.AsReadOnly());
+                
+            _mapperMock.Setup(m => m.Map<CartDto>(It.IsAny<Cart>())).Returns(new CartDto { Id = cartId });
+
+            var command = new AddToCartCommand { ProductId = productId, Quantity = 1, ClearCartIfConflict = true, CurrentUserId = Guid.NewGuid() };
+
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            result.Code.Should().Be(200, $"failed with message: {result.Message}");
+            _cartItemRepositoryMock.Verify(r => r.Delete(existingCartItem), Times.Once);
             _cartItemRepositoryMock.Verify(r => r.Add(It.IsAny<CartItem>()), Times.Once);
         }
     }

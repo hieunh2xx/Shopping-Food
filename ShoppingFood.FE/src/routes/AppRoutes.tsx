@@ -37,6 +37,7 @@ import {
   AdminChatPage,
   AdminFinancePage,
   AdminFinanceOperationsPage,
+  AdminWithdrawalsPage,
   SellerWalletPage,
   ShipperWalletPage,
   NotFoundPage,
@@ -195,6 +196,7 @@ export function AppRoutes() {
         <Route path="chat" element={<AdminChatPage />} />
         <Route path="finance" element={<AdminFinancePage />} />
         <Route path="finance-config" element={<AdminFinanceOperationsPage />} />
+        <Route path="withdrawals" element={<AdminWithdrawalsPage />} />
         <Route path="payments" element={<AdminPaymentDashboardPage />} />
         <Route path="profile" element={<DashboardProfilePage />} />
         <Route path="system-logs" element={<AdminSystemLogsPage />} />
@@ -214,6 +216,7 @@ export function AppRoutes() {
         <Route path="shippers" element={<MonitorShippersPage />} />
         <Route path="history" element={<DispatchHistoryPage />} />
         <Route path="incidents" element={<CoordinatorIncidentsPage />} />
+        <Route path="withdrawals" element={<AdminWithdrawalsPage />} />
         <Route path="chat" element={<CoordinatorChatPage />} />
         <Route path="profile" element={<DashboardProfilePage />} />
       </Route>

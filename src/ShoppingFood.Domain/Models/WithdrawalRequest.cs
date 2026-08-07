@@ -13,6 +13,8 @@ namespace ShoppingFood.Domain.Models
         public WithdrawalStatus Status { get; set; } = WithdrawalStatus.Pending;
         public Guid? ApprovedByUserId { get; set; }
         public string? RejectReason { get; set; }
+        public string? TransferProofImageUrl { get; set; }
+        public DateTime? ApprovedAt { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
