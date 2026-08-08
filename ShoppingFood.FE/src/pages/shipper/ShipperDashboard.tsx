@@ -14,7 +14,8 @@ import {
   ArrowRight,
   Shield,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  Phone
 } from 'lucide-react';
 import { useAuth } from '../../hooks';
 import { shipperService } from '../../services';
@@ -678,9 +679,18 @@ export function ShipperDashboard() {
                         <div>
                           <span className="text-xs text-orange-600 font-bold uppercase tracking-wider">Đơn hàng #{index + 1}</span>
                           <h3 className="font-bold text-gray-900 text-lg">#{activeDelivery.orderId.slice(0, 8)} - {activeDelivery.restaurantName}</h3>
-                          <p className="text-xs text-gray-500 mt-1">
-                            <strong>Khách hàng:</strong> {activeDelivery.contactName} • {activeDelivery.contactPhone}
-                          </p>
+                          <div className="flex items-center gap-2 mt-2">
+                            <p className="text-xs text-gray-500 flex-1">
+                              <strong>Khách hàng:</strong> {activeDelivery.contactName} • {activeDelivery.contactPhone}
+                            </p>
+                            <a 
+                              href={`tel:${activeDelivery.contactPhone}`}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-600 border border-green-200 rounded-lg text-xs font-bold hover:bg-green-100 transition-colors"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Phone className="w-3.5 h-3.5" /> Gọi Khách
+                            </a>
+                          </div>
                         </div>
                         <div className="text-right">
                           <span className="text-xs text-gray-400 block">Thu nhập của bạn</span>
