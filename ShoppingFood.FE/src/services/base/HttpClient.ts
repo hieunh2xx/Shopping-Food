@@ -207,6 +207,8 @@ class HttpClient {
         'only approved products can be registered for flash sales.': 'Chỉ sản phẩm đã được duyệt mới có thể đăng ký Flash Sale',
 
         // Shipper
+        'arrival at restaurant confirmed successfully.': 'Xác nhận đã đến nhà hàng thành công.',
+        'cannot confirm arrival because the restaurant\'s gps coordinates are not configured.': 'Không thể xác nhận vì nhà hàng chưa cài đặt tọa độ GPS.',
         'shipper not found.': 'Không tìm thấy shipper',
         'shipper profile not found.': 'Không tìm thấy hồ sơ shipper',
         'shipper profile not found to apply penalty.': 'Không tìm thấy hồ sơ shipper để áp dụng phạt',
@@ -420,6 +422,17 @@ class HttpClient {
       }
 
       // Layer 2: Pattern Match (fallback for generic/dynamic messages)
+      if (lower.includes('invalid order status for completing delivery')) {
+        if (lower.includes('cancelled')) return 'Không thể hoàn tất giao hàng vì đơn hàng đã bị hủy.';
+        return 'Trạng thái đơn hàng không hợp lệ để hoàn tất giao hàng.';
+      }
+      if (lower.includes('too far from the restaurant')) {
+        const distMatch = lower.match(/current distance:\s*(\d+)/i);
+        const dist = distMatch ? `${distMatch[1]}m` : '';
+        return `Bạn đang ở quá xa nhà hàng ${dist ? `(${dist}) ` : ''}để xác nhận đến nơi (tối đa 200m).`;
+      }
+      if (lower.includes('invalid order status for arrival confirmation')) return 'Trạng thái đơn hàng không hợp lệ để xác nhận đến nơi.';
+      if (lower.includes('invalid order status')) return 'Trạng thái đơn hàng không hợp lệ để thực hiện thao tác này.';
       if (lower.includes('temporarily suspended')) return 'Tài khoản của bạn đang bị tạm khóa nhận đơn';
       if (lower.includes('same store')) return 'Sản phẩm không cùng cửa hàng với giỏ hàng hiện tại. Vui lòng xóa giỏ hàng và thêm lại.';
       if (lower.includes('minimum withdrawal amount is')) {

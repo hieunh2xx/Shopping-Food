@@ -15,7 +15,8 @@ import {
   Shield,
   Loader2,
   RefreshCw,
-  Phone
+  Phone,
+  Utensils
 } from 'lucide-react';
 import { useAuth } from '../../hooks';
 import { shipperService } from '../../services';
@@ -204,10 +205,13 @@ export function ShipperDashboard() {
 
 
 
-  // Lắng nghe sự kiện thông báo hệ thống real-time để hiển thị popup hoặc nhận đơn Force Assign
+  // Lắng nghe sự kiện thông báo hệ thống real-time để hiển thị popup hoặc nhận đơn Force Assign / Hủy đơn
   useEffect(() => {
     const handleNotification = async (e: CustomEvent) => {
       const n = e.detail;
+      const titleLower = (n.title || '').toLowerCase();
+      const msgLower = (n.message || '').toLowerCase();
+
       // 1. Nếu có đề xuất giao hàng mới
       if (n.title === 'Đề xuất giao hàng mới' && n.message) {
         const match = n.message.match(/'([a-fA-F0-9\-]{36})'/);
@@ -226,12 +230,11 @@ export function ShipperDashboard() {
       }
       // 2. Nếu bị gán bắt buộc (Force Assign)
       else if (n.title === 'Đơn hàng gán bắt buộc' && n.message) {
-        toast.success(`Nhận được thông báo Force Assign! Message: ${n.message}`, { duration: 5000 });
+        toast.success(`Nhận được thông báo Force Assign!`, { duration: 5000 });
         const match = n.message.match(/'([a-fA-F0-9\-]{36})'/);
         if (match && match[1]) {
           const orderId = match[1];
           try {
-            toast.success(`Bắt đầu lấy thông tin đơn: ${orderId}`, { duration: 3000 });
             const res = await shipperService.getProposedOffer(orderId, coords.lat, coords.lng);
             if (res.data) {
               // Tự động gán vào danh sách active deliveries
@@ -242,31 +245,46 @@ export function ShipperDashboard() {
               toast.success('Bạn vừa được điều phối viên gán trực tiếp một đơn hàng mới!');
               // Ẩn popup đề xuất nếu đang hiển thị cho đơn này
               setProposalPopupOffer(prev => prev?.orderId === orderId ? null : prev);
-            } else {
-              toast.error(`API trả về nhưng không có data. Lỗi: ${res.message}`);
             }
           } catch (err: any) {
             console.error('Lỗi khi lấy thông tin force assign:', err);
-            toast.error(err.response?.data?.message);
           }
-        } else {
-          toast.error(`Không thể trích xuất orderId từ message: ${n.message}`);
         }
       }
-      // 3. Nếu bị thu hồi đơn hàng hoặc chuyển giao cho người khác
-      else if ((n.title === 'Thu hồi đơn hàng' || n.title === 'Đơn hàng đã được chuyển giao') && n.message) {
-        toast.error(`Đơn hàng đã bị thu hồi! Message: ${n.message}`, { duration: 5000 });
-        const match = n.message.match(/'([a-fA-F0-9\-]{36})'/);
-        if (match && match[1]) {
-          const orderId = match[1];
-          setActiveDeliveries(prev => prev.filter(d => d.orderId !== orderId));
+      // 3. Nếu đơn hàng bị hủy, bị thu hồi hoặc chuyển giao cho người khác
+      else if (titleLower.includes('hủy') || titleLower.includes('cancel') || titleLower.includes('thu hồi') || titleLower.includes('chuyển giao') || msgLower.includes('hủy')) {
+        let orderId = n.targetId;
+        if (!orderId && n.message) {
+          const match = n.message.match(/'([a-fA-F0-9\-]{36})'/);
+          if (match && match[1]) {
+            orderId = match[1];
+          }
         }
+
+        if (orderId) {
+          setActiveDeliveries(prev => prev.filter(d => d.orderId !== orderId && !d.orderId.startsWith(orderId)));
+          setAvailableOffers(prev => prev.filter(o => o.orderId !== orderId && !o.orderId.startsWith(orderId)));
+          setProposalPopupOffer(prev => prev?.orderId === orderId ? null : prev);
+          toast.error(`Đơn hàng #${orderId.slice(0, 8)} đã bị hủy hoặc thu hồi.`, { duration: 5000 });
+        } else {
+          toast.error(n.message || 'Đơn hàng đã bị hủy hoặc thu hồi.', { duration: 5000 });
+        }
+        fetchAvailableOffers();
       }
     };
 
     window.addEventListener('ON_REALTIME_NOTIFICATION', handleNotification as EventListener);
     return () => window.removeEventListener('ON_REALTIME_NOTIFICATION', handleNotification as EventListener);
-  }, []);
+  }, [fetchAvailableOffers, coords.lat, coords.lng]);
+
+  // Tự động làm mới danh sách đề xuất đơn hàng mỗi 10 giây khi Online để đồng bộ real-time
+  useEffect(() => {
+    if (!isOnline) return;
+    const interval = setInterval(() => {
+      fetchAvailableOffers();
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [isOnline, fetchAvailableOffers]);
 
   // Handlers cho Proposal Popup
   const handleAcceptProposal = async (orderId: string) => {
@@ -420,7 +438,10 @@ export function ShipperDashboard() {
           longitude: coords.lng
         });
         if (!res.error) {
+          toast.success(res.message || 'Đã xác nhận đến nhà hàng thành công!');
           setActiveDeliveries(prev => prev.map(d => d.orderId === orderId ? { ...d, step: 'arrived' } : d));
+        } else {
+          toast.error(res.message);
         }
       } else if (activeDelivery.step === 'arrived') {
         setPendingPickupOrderId(activeDelivery.orderId);
@@ -451,7 +472,10 @@ export function ShipperDashboard() {
         longitude: coords.lng
       });
       if (!res.error) {
+        toast.success(res.message || 'Đã xác nhận lấy hàng thành công!');
         setActiveDeliveries(prev => prev.map(d => d.orderId === pendingPickupOrderId ? { ...d, step: 'picked_up' } : d));
+      } else {
+        toast.error(res.message);
       }
     } catch (err: any) {
       const status = err.response?.status;
@@ -742,13 +766,35 @@ export function ShipperDashboard() {
                         </div>
                       </div>
 
-                      <div className="border-t border-gray-100 pt-4 space-y-2 text-sm text-gray-600">
+                      <div className="border-t border-gray-100 pt-4 space-y-3 text-sm text-gray-600">
                         {activeDelivery.note && (
                           <p><strong>Ghi chú:</strong> {activeDelivery.note}</p>
                         )}
                         <p><strong>Khoảng cách:</strong> {activeDelivery.distanceInKm.toFixed(1)} km</p>
                         <p><strong>Tổng tiền thu hộ (COD):</strong> <span className="font-bold text-orange-600">{formatCurrency(activeDelivery.totalAmount)}</span></p>
-                        <div className="pt-2">
+
+                        {/* Order Items / Dishes List */}
+                        {activeDelivery.items && activeDelivery.items.length > 0 && (
+                          <div className="bg-orange-50/70 rounded-2xl p-3 border border-orange-100/80">
+                            <p className="text-xs font-bold text-gray-800 mb-2 flex items-center gap-1.5">
+                              <Utensils className="w-3.5 h-3.5 text-orange-500" />
+                              <span>Danh sách món ăn ({activeDelivery.items.reduce((sum, item) => sum + item.quantity, 0)} món):</span>
+                            </p>
+                            <div className="space-y-1.5 text-xs">
+                              {activeDelivery.items.map((item, i) => (
+                                <div key={i} className="flex justify-between items-center bg-white/80 px-2.5 py-1.5 rounded-xl border border-orange-100/50">
+                                  <span className="font-medium text-gray-800">
+                                    <strong className="text-orange-600 font-bold mr-1">{item.quantity}x</strong>
+                                    {item.itemName}
+                                  </span>
+                                  <span className="font-semibold text-gray-700 ml-2">{formatCurrency(item.totalPrice)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="pt-1">
                           <a
                             href={getDynamicMapLink(activeDelivery)}
                             target="_blank"
@@ -857,6 +903,26 @@ export function ShipperDashboard() {
                       <p className="text-gray-400">
                         <strong>Khách:</strong> {offer.contactName} • COD: {formatCurrency(offer.totalAmount)}
                       </p>
+
+                      {/* Items list for offer proposal card */}
+                      {offer.items && offer.items.length > 0 && (
+                        <div className="pt-2 border-t border-gray-100 text-xs">
+                          <p className="font-bold text-gray-700 mb-1 flex items-center gap-1 text-[11px]">
+                            <Utensils className="w-3 h-3 text-orange-500" /> Các món cần lấy:
+                          </p>
+                          <div className="space-y-1 bg-gray-50 p-2 rounded-lg border border-gray-100">
+                            {offer.items.map((item, i) => (
+                              <div key={i} className="flex justify-between text-[11px]">
+                                <span className="text-gray-700 truncate">
+                                  <strong className="text-orange-600 font-bold mr-1">{item.quantity}x</strong>
+                                  {item.itemName}
+                                </span>
+                                <span className="font-semibold text-gray-600 ml-2 shrink-0">{formatCurrency(item.totalPrice)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {offer.countdownSeconds > 0 && (
