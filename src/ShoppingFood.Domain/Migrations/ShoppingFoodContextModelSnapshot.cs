@@ -1080,6 +1080,46 @@ namespace ShoppingFood.Domain.Migrations
                     b.ToTable("ORDER_DISPATCH_HISTORY", (string)null);
                 });
 
+            modelBuilder.Entity("ShoppingFood.Domain.Models.OrderExplanationRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("RepliedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RequestMessage")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid>("RequestedByProfileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ShipperReply")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("RequestedByProfileId");
+
+                    b.ToTable("ORDER_EXPLANATION_REQUEST", (string)null);
+                });
+
             modelBuilder.Entity("ShoppingFood.Domain.Models.OrderItem", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2706,6 +2746,25 @@ namespace ShoppingFood.Domain.Migrations
                         .IsRequired();
 
                     b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.OrderExplanationRequest", b =>
+                {
+                    b.HasOne("ShoppingFood.Domain.Models.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ShoppingFood.Domain.Models.UserProfile", "RequestedBy")
+                        .WithMany()
+                        .HasForeignKey("RequestedByProfileId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+
+                    b.Navigation("RequestedBy");
                 });
 
             modelBuilder.Entity("ShoppingFood.Domain.Models.OrderItem", b =>
