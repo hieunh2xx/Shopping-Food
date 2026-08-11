@@ -72,7 +72,7 @@ namespace ShoppingFood.Application.Features.Admin.Commands
                 if (application == null)
                     return ApiResponse.Failure(404, $"Seller application with Id: '{request.ApplicationId}' was not found.");
 
-                if (application.Status != ApplicationStatus.Pending)
+                if (application.Status != ApplicationStatus.Pending && application.Status != ApplicationStatus.NeedsInfo)
                     return ApiResponse.Failure(400, $"Seller application is already processed. Current status: {application.Status}");
 
                 if (request.Action == "Approve")
@@ -132,12 +132,16 @@ namespace ShoppingFood.Application.Features.Admin.Commands
 
                 if (notification != null)
                 {
+                    var isMall = application.Type == ApplicationType.UpgradeToMall;
+                    var link = request.Action == "NeedsInfo"
+                        ? (isMall ? "/seller/mall-application" : "/profile?tab=applications")
+                        : "/profile?tab=applications";
                     await _notificationPushService.PushToUserAsync(notification.UserId, new
                     {
                         title = notification.Title,
                         message = notification.Message,
                         type = "System",
-                        link = "/profile"
+                        link
                     });
                 }
 
@@ -210,8 +214,8 @@ namespace ShoppingFood.Application.Features.Admin.Commands
                         ? $"<p>Xin chào,</p><p>Yêu cầu nâng cấp lên ShoppingFood Mall cho cửa hàng <strong>{application.BusinessName}</strong> đã bị từ chối phê duyệt.</p><p><strong>Lý do từ chối:</strong> {application.RejectionReason}</p>" 
                         : $"<p>Xin chào,</p><p>Yêu cầu đăng ký đối tác bán hàng cho cửa hàng <strong>{application.BusinessName}</strong> đã bị từ chối phê duyệt.</p><p><strong>Lý do từ chối:</strong> {application.RejectionReason}</p>",
                     "NeedsInfo" => isMall 
-                        ? $"<p>Xin chào,</p><p>Yêu cầu nâng cấp lên ShoppingFood Mall cho cửa hàng <strong>{application.BusinessName}</strong> cần bổ sung thông tin.</p><p><strong>Yêu cầu từ Admin:</strong> {application.RejectionReason}</p><p>Vui lòng cập nhật hồ sơ và gửi lại yêu cầu trên hệ thống.</p>" 
-                        : $"<p>Xin chào,</p><p>Yêu cầu đăng ký đối tác bán hàng cho cửa hàng <strong>{application.BusinessName}</strong> cần bổ sung thông tin.</p><p><strong>Yêu cầu từ Admin:</strong> {application.RejectionReason}</p><p>Vui lòng cập nhật hồ sơ và gửi lại yêu cầu trên hệ thống.</p>",
+                        ? $"<p>Xin chào,</p><p>Yêu cầu nâng cấp lên ShoppingFood Mall cho cửa hàng <strong>{application.BusinessName}</strong> cần bổ sung thông tin.</p><p><strong>Yêu cầu từ Admin:</strong> {application.RejectionReason}</p><p>Vui lòng vào <strong>Kênh người bán → Đăng ký Mall</strong> để cập nhật hồ sơ và gửi lại.</p>" 
+                        : $"<p>Xin chào,</p><p>Yêu cầu đăng ký đối tác bán hàng cho cửa hàng <strong>{application.BusinessName}</strong> cần bổ sung thông tin.</p><p><strong>Yêu cầu từ Admin:</strong> {application.RejectionReason}</p><p>Vui lòng vào <strong>Hồ sơ → Lịch sử đăng ký</strong>, chọn đơn và nhấn <strong>Bổ sung thông tin</strong>.</p>",
                     _ => ""
                 };
                
@@ -238,7 +242,9 @@ namespace ShoppingFood.Application.Features.Admin.Commands
                 {
                     "Approve" => isMall ? $"Yêu cầu nâng cấp lên Mall của cửa hàng '{application.BusinessName}' đã được duyệt. Vui lòng đăng xuất và đăng nhập lại để hệ thống cập nhật quyền mới." : $"Đơn đăng ký đối tác cửa hàng '{application.BusinessName}' của bạn đã được duyệt. Vui lòng đăng xuất và đăng nhập lại để truy cập Seller Dashboard.",
                     "Reject" => isMall ? $"Yêu cầu nâng cấp lên Mall của cửa hàng '{application.BusinessName}' đã bị từ chối. Lý do: {application.RejectionReason}." : $"Đơn đăng ký đối tác cửa hàng '{application.BusinessName}' của bạn đã bị từ chối. Lý do: {application.RejectionReason}.",
-                    "NeedsInfo" => isMall ? $"Yêu cầu nâng cấp lên Mall của cửa hàng '{application.BusinessName}' cần bổ sung thông tin. Yêu cầu: {application.RejectionReason}." : $"Đơn đăng ký đối tác cửa hàng '{application.BusinessName}' của bạn cần bổ sung thông tin. Yêu cầu: {application.RejectionReason}.",
+                    "NeedsInfo" => isMall
+                        ? $"Yêu cầu nâng cấp Mall '{application.BusinessName}' cần bổ sung. Yêu cầu: {application.RejectionReason}. Vào Kênh người bán → Đăng ký Mall để cập nhật và gửi lại."
+                        : $"Đơn đăng ký đối tác '{application.BusinessName}' cần bổ sung. Yêu cầu: {application.RejectionReason}. Vào Hồ sơ → Lịch sử đăng ký để bổ sung thông tin và gửi lại.",
                     _ => ""
                 };
 

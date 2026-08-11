@@ -242,44 +242,22 @@ export function NotificationBell() {
         if (role === 'Customer') return `${ROUTES.PROFILE}?tab=loyalty`;
         if (role === 'Admin') return ROUTES.ADMIN_MEMBER_RANKS;
         return null;
-      case 'System':
-        if (role === 'Shipper') {
-          const lower = n.title?.toLowerCase() || '';
-          if (lower.includes('uy tín')) return ROUTES.SHIPPER_PROFILE + '?tab=reputation';
-          if (lower.includes('giải trình') && n.targetId) {
-            return `${ROUTES.SHIPPER_DASHBOARD}?explanationOrderId=${n.targetId}`;
-          }
-          return null;
-        }
-        if (role === 'Seller' || role === 'Mall') {
-          const lower = n.title?.toLowerCase() || '';
-          if (lower.includes('tài xế') || lower.includes('hủy giao') || (lower.includes('đơn hàng') && lower.includes('hủy'))) {
-            return n.targetId
-              ? `${ROUTES.SELLER_SHIPPER_CANCELS}?orderId=${n.targetId}`
-              : ROUTES.SELLER_SHIPPER_CANCELS;
-          }
-          if (lower.includes('đơn hàng') || lower.includes('sự cố')) {
-            return n.targetId
-              ? `${ROUTES.SELLER_ORDERS}?orderId=${n.targetId}&status=Cancelled`
-              : ROUTES.SELLER_ORDERS;
-          }
-          return null;
-        }
-        if (role === 'Coordinator') {
-          const lower = n.title?.toLowerCase() || '';
-          if (lower.includes('sự cố') || lower.includes('khiếu nại') || lower.includes('báo cáo') || lower.includes('giải trình')) {
-            return n.targetId
-              ? `${ROUTES.COORDINATOR_INCIDENTS}?orderId=${n.targetId}`
-              : ROUTES.COORDINATOR_INCIDENTS;
-          }
-          return ROUTES.COORDINATOR_DASHBOARD;
-        }
+      case 'System': {
+        const lower = n.title?.toLowerCase() || '';
+        const msgLower = n.message?.toLowerCase() || '';
+        const isApplicationSupplement =
+          lower.includes('bổ sung') ||
+          msgLower.includes('hồ sơ → lịch sử đăng ký') ||
+          msgLower.includes('bổ sung thông tin') ||
+          lower.includes('nâng cấp mall cần bổ sung') ||
+          lower.includes('yêu cầu đối tác cần bổ sung') ||
+          lower.includes('đăng ký tài xế cần bổ sung');
+
         if (role === 'Admin') {
-          const lower = n.title?.toLowerCase() || '';
           if (lower.includes('hạng thành viên') || lower.includes('xếp hạng')) {
             return ROUTES.ADMIN_MEMBER_RANKS;
           }
-          if (lower.includes('đăng ký') || lower.includes('yêu cầu') || lower.includes('ứng tuyển')) {
+          if (lower.includes('đăng ký') || lower.includes('yêu cầu') || lower.includes('ứng tuyển') || lower.includes('bổ sung')) {
             return ROUTES.ADMIN_APPLICATIONS;
           }
           if (lower.includes('sản phẩm')) {
@@ -295,7 +273,45 @@ export function NotificationBell() {
           }
           return null;
         }
+
+        // Applicant: NeedsInfo / application status → nơi bổ sung hồ sơ
+        if (isApplicationSupplement) {
+          if ((lower.includes('mall') || msgLower.includes('mall')) && (role === 'Seller' || role === 'Mall')) {
+            return ROUTES.SELLER_MALL_APPLICATION;
+          }
+          return `${ROUTES.PROFILE}?tab=applications`;
+        }
+
+        if (role === 'Shipper') {
+          if (lower.includes('uy tín')) return ROUTES.SHIPPER_PROFILE + '?tab=reputation';
+          if (lower.includes('giải trình') && n.targetId) {
+            return `${ROUTES.SHIPPER_DASHBOARD}?explanationOrderId=${n.targetId}`;
+          }
+          return null;
+        }
+        if (role === 'Seller' || role === 'Mall') {
+          if (lower.includes('tài xế') || lower.includes('hủy giao') || (lower.includes('đơn hàng') && lower.includes('hủy'))) {
+            return n.targetId
+              ? `${ROUTES.SELLER_SHIPPER_CANCELS}?orderId=${n.targetId}`
+              : ROUTES.SELLER_SHIPPER_CANCELS;
+          }
+          if (lower.includes('đơn hàng') || lower.includes('sự cố')) {
+            return n.targetId
+              ? `${ROUTES.SELLER_ORDERS}?orderId=${n.targetId}&status=Cancelled`
+              : ROUTES.SELLER_ORDERS;
+          }
+          return null;
+        }
+        if (role === 'Coordinator') {
+          if (lower.includes('sự cố') || lower.includes('khiếu nại') || lower.includes('báo cáo') || lower.includes('giải trình')) {
+            return n.targetId
+              ? `${ROUTES.COORDINATOR_INCIDENTS}?orderId=${n.targetId}`
+              : ROUTES.COORDINATOR_INCIDENTS;
+          }
+          return ROUTES.COORDINATOR_DASHBOARD;
+        }
         return null;
+      }
       default:
         return null;
     }

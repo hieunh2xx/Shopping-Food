@@ -30,6 +30,7 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
     businessName: '',
     businessAddress: '',
     businessLicenseUrl: '',
+    foodSafetyCertificateUrl: '',
     shopImageUrl: '',
     contactInfo: '',
     otpCode: '',
@@ -38,6 +39,7 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
 
   // File Upload State
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFoodSafetyFile, setSelectedFoodSafetyFile] = useState<File | null>(null);
   const [selectedShopFile, setSelectedShopFile] = useState<File | null>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [legalModalState, setLegalModalState] = useState({
@@ -110,6 +112,34 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
       setErrors(prev => {
         const next = { ...prev };
         delete next.businessLicenseUrl;
+        return next;
+      });
+    }
+  };
+
+  const handleFoodSafetyFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File không được vượt quá 5MB');
+      return;
+    }
+
+    const extension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+    const allowedExtensions = ['.pdf', '.doc', '.docx', '.png', '.jpg', '.jpeg'];
+    if (!allowedExtensions.includes(extension)) {
+      toast.error('Chỉ chấp nhận các định dạng file .pdf, .doc, .docx, .png, .jpg, .jpeg');
+      return;
+    }
+
+    setSelectedFoodSafetyFile(file);
+    setForm(prev => ({ ...prev, foodSafetyCertificateUrl: file.name }));
+
+    if (errors.foodSafetyCertificateUrl) {
+      setErrors(prev => {
+        const next = { ...prev };
+        delete next.foodSafetyCertificateUrl;
         return next;
       });
     }
@@ -188,6 +218,7 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
     if (!form.businessAddress.trim()) newErrors.businessAddress = 'Vui lòng nhập địa chỉ';
     if (!form.contactInfo.trim()) newErrors.contactInfo = 'Vui lòng nhập thông tin liên hệ';
     if (!selectedFile) newErrors.businessLicenseUrl = 'Vui lòng tải lên Hợp đồng/Giấy phép';
+    if (!selectedFoodSafetyFile) newErrors.foodSafetyCertificateUrl = 'Vui lòng tải lên giấy phép ATTP';
     if (!selectedShopFile) newErrors.shopImageUrl = 'Vui lòng tải lên Ảnh chụp mặt tiền cửa hàng';
     if (!agreedToTerms) newErrors.agreedToTerms = 'Bạn phải đồng ý với Điều khoản và Chính sách';
 
@@ -222,6 +253,7 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
         businessName: form.businessName,
         businessAddress: form.businessAddress,
         businessLicenseUrl: form.businessLicenseUrl || 'pending.jpg',
+        foodSafetyCertificateUrl: form.foodSafetyCertificateUrl || 'pending.jpg',
         shopImageUrl: form.shopImageUrl || 'pending.jpg',
         contactInfo: form.contactInfo,
         idToken: idToken,
@@ -504,6 +536,61 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
                 <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
                   <span className="w-1 h-1 bg-red-600 rounded-full inline-block"></span>
                   {errors.businessLicenseUrl}
+                </p>
+              )}
+            </div>
+
+            <div className="pt-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Giấy phép an toàn vệ sinh thực phẩm (ATTP) <span className="text-red-500">*</span>
+              </label>
+              <div className={`border-2 border-dashed rounded-xl p-6 transition-colors ${errors.foodSafetyCertificateUrl ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-orange-500 bg-gray-50'}`}>
+                <div className="flex flex-col items-center justify-center text-center">
+                  {!selectedFoodSafetyFile ? (
+                    <>
+                      <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center mb-3">
+                        <UploadCloud className="w-6 h-6 text-orange-600" />
+                      </div>
+                      <p className="text-sm text-gray-600 mb-1">Kéo thả file vào đây hoặc click để chọn</p>
+                      <p className="text-xs text-gray-500 mb-4">Hỗ trợ: PDF, DOC, DOCX, PNG, JPG (Tối đa 5MB)</p>
+                      <label className="cursor-pointer inline-flex items-center justify-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                        Chọn File
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept=".pdf,.doc,.docx,image/png,image/jpeg"
+                          onChange={handleFoodSafetyFileChange}
+                        />
+                      </label>
+                    </>
+                  ) : (
+                    <div className="w-full flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center shrink-0">
+                          <CheckCircle2 className="w-5 h-5 text-green-500" />
+                        </div>
+                        <div className="text-left overflow-hidden">
+                          <p className="text-sm font-medium text-gray-900 truncate">{selectedFoodSafetyFile.name}</p>
+                          <p className="text-xs text-gray-500">{(selectedFoodSafetyFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                        </div>
+                      </div>
+                      <label className="cursor-pointer p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors text-sm font-medium shrink-0">
+                        Đổi file
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept=".pdf,.doc,.docx,image/png,image/jpeg"
+                          onChange={handleFoodSafetyFileChange}
+                        />
+                      </label>
+                    </div>
+                  )}
+                </div>
+              </div>
+              {errors.foodSafetyCertificateUrl && (
+                <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                  <span className="w-1 h-1 bg-red-600 rounded-full inline-block"></span>
+                  {errors.foodSafetyCertificateUrl}
                 </p>
               )}
             </div>

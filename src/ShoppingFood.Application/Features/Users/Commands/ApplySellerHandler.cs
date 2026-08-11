@@ -65,6 +65,7 @@ namespace ShoppingFood.Application.Features.Users.Commands
                     BusinessName = request.BusinessName,
                     BusinessAddress = request.BusinessAddress,
                     BusinessLicenseUrl = request.BusinessLicenseUrl,
+                    FoodSafetyCertificateUrl = request.FoodSafetyCertificateUrl,
                     ShopImageUrl = request.ShopImageUrl,
                     ContactInfo = request.ContactInfo,
                     Status = ApplicationStatus.Pending,

@@ -75,6 +75,7 @@ namespace ShoppingFood.Tests.Features.Users
                 BusinessName = "Bypass Shop",
                 BusinessAddress = "456 Avenue",
                 BusinessLicenseUrl = "http://license.url",
+                FoodSafetyCertificateUrl = "http://attp.png",
                 ShopImageUrl = "http://shop.url",
                 ContactInfo = "Contact info",
                 OtpCode = "bypass" // bypass check
@@ -287,6 +288,7 @@ namespace ShoppingFood.Tests.Features.Users
                 BusinessName = "Valid Shop",
                 BusinessAddress = "789 Street",
                 BusinessLicenseUrl = "http://license.png",
+                FoodSafetyCertificateUrl = "http://attp.png",
                 ShopImageUrl = "http://shop.png",
                 ContactInfo = "0111111113"
             };
@@ -303,6 +305,7 @@ namespace ShoppingFood.Tests.Features.Users
             var savedApp = await _dbContext.SellerApplications.FirstOrDefaultAsync(a => a.UserProfileId == profileId);
             savedApp.Should().NotBeNull();
             savedApp!.BusinessName.Should().Be("Valid Shop");
+            savedApp.FoodSafetyCertificateUrl.Should().Be("http://attp.png");
             savedApp.Status.Should().Be(ApplicationStatus.Pending);
         }
     }

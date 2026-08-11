@@ -23,6 +23,12 @@ namespace ShoppingFood.Application.Features.Users.Commands
                 .Must(url => HasValidExtension(url, ".jpg", ".jpeg", ".png", ".webp", ".pdf", ".doc", ".docx"))
                 .WithMessage("BusinessLicenseUrl must point to a valid image or document file (.jpg, .jpeg, .png, .webp, .pdf, .doc, .docx).");
 
+            RuleFor(p => p.FoodSafetyCertificateUrl)
+                .NotEmpty().WithMessage("{PropertyName} is required.")
+                .MaximumLength(255).WithMessage("{PropertyName} must not exceed 255 characters.")
+                .Must(url => HasValidExtension(url, ".jpg", ".jpeg", ".png", ".webp", ".pdf", ".doc", ".docx"))
+                .WithMessage("FoodSafetyCertificateUrl must point to a valid image or document file (.jpg, .jpeg, .png, .webp, .pdf, .doc, .docx).");
+
             RuleFor(p => p.ShopImageUrl)
                 .NotEmpty().WithMessage("{PropertyName} is required.")
                 .MaximumLength(255).WithMessage("{PropertyName} must not exceed 255 characters.")

@@ -60,7 +60,7 @@ class AuthService extends BaseService<IUserDto, IRegisterRequest> {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.USER.REGISTER_SHIPPER, data);
   }
 
-  async applySeller(data: { businessName: string, businessAddress: string, contactInfo: string, businessLicenseUrl: string, shopImageUrl: string }): Promise<IApiResponse<any>> {
+  async applySeller(data: { businessName: string, businessAddress: string, contactInfo: string, businessLicenseUrl: string, foodSafetyCertificateUrl: string, shopImageUrl: string }): Promise<IApiResponse<any>> {
     return httpClient.post<IApiResponse<any>>('/User/ApplySeller', data);
   }
 
@@ -72,7 +72,7 @@ class AuthService extends BaseService<IUserDto, IRegisterRequest> {
     return httpClient.get<IApiResponse<any>>(API_ENDPOINTS.USER.SELLER_APPLICATION_STATUS);
   }
 
-  async updateSellerApplication(data: { id: string; businessName: string; businessAddress: string; businessLicenseUrl: string; shopImageUrl: string; contactInfo: string }): Promise<IApiResponse<any>> {
+  async updateSellerApplication(data: { id: string; businessName: string; businessAddress: string; businessLicenseUrl: string; foodSafetyCertificateUrl?: string; shopImageUrl: string; contactInfo: string }): Promise<IApiResponse<any>> {
     return httpClient.put<IApiResponse<any>>(API_ENDPOINTS.USER.UPDATE_SELLER_APPLICATION, data);
   }
 

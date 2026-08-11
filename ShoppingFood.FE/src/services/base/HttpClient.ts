@@ -390,6 +390,8 @@ class HttpClient {
         'the maximum price must be greater than or equal to the minimum price.': 'Giá tối đa phải lớn hơn hoặc bằng giá tối thiểu',
         'shopimageurl must point to a valid image file (.jpg, .jpeg, .png, .webp).': 'Ảnh cửa hàng phải là file hình ảnh hợp lệ',
         'businesslicenseurl must point to a valid image or document file (.jpg, .jpeg, .png, .webp, .pdf, .doc, .docx).': 'Ảnh giấy phép kinh doanh phải là file hình ảnh hoặc tài liệu hợp lệ',
+        'foodsafetycertificateurl must point to a valid image or document file (.jpg, .jpeg, .png, .webp, .pdf, .doc, .docx).': 'Giấy phép ATTP phải là file hình ảnh hoặc tài liệu hợp lệ',
+        'foodsafetycertificateurl is required.': 'Vui lòng tải lên giấy phép an toàn vệ sinh thực phẩm (ATTP)',
         'delivery proof image must be a valid image file (.jpg, .jpeg, .png, .webp).': 'Ảnh bằng chứng phải là file hình ảnh hợp lệ',
         'reason is required when rejecting or requesting info': 'Vui lòng nhập lý do',
         'propertyname is required': 'Tên thuộc tính không được để trống',

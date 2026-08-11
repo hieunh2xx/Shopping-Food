@@ -116,6 +116,8 @@ namespace ShoppingFood.Application.Features.Users.Commands
             application.BusinessName = request.BusinessName;
             application.BusinessAddress = request.BusinessAddress;
             application.BusinessLicenseUrl = request.BusinessLicenseUrl;
+            if (!string.IsNullOrWhiteSpace(request.FoodSafetyCertificateUrl))
+                application.FoodSafetyCertificateUrl = request.FoodSafetyCertificateUrl;
             application.ShopImageUrl = request.ShopImageUrl;
             application.ContactInfo = request.ContactInfo;
             application.Status = ApplicationStatus.Pending;

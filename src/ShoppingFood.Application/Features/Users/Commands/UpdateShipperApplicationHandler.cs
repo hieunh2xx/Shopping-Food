@@ -73,6 +73,7 @@ namespace ShoppingFood.Application.Features.Users.Commands
                 application.VehicleRegistrationUrl = request.VehicleRegistrationUrl;
 
                 application.Status = ApplicationStatus.Pending; // Reset to pending after update
+                application.RejectionReason = null;
                 application.UpdatedAt = DateTime.UtcNow;
 
                 var title = "Yêu cầu Đăng ký giao hàng được bổ sung";

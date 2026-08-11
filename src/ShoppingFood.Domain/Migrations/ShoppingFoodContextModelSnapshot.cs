@@ -1679,6 +1679,13 @@ namespace ShoppingFood.Domain.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("FoodSafetyCertificateUrl")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasDefaultValue("");
+
                     b.Property<string>("RejectionReason")
                         .HasColumnType("nvarchar(max)");
 

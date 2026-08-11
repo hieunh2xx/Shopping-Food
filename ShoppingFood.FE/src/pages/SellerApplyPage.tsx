@@ -13,6 +13,7 @@ export function SellerApplyPage() {
     contactInfo: ''
   });
   const [businessLicenseFile, setBusinessLicenseFile] = useState<File | null>(null);
+  const [foodSafetyFile, setFoodSafetyFile] = useState<File | null>(null);
   const [shopImageFile, setShopImageFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -21,6 +22,10 @@ export function SellerApplyPage() {
 
     if (!businessLicenseFile) {
       toast.error('Vui lòng tải lên giấy phép kinh doanh');
+      return;
+    }
+    if (!foodSafetyFile) {
+      toast.error('Vui lòng tải lên giấy phép an toàn vệ sinh thực phẩm');
       return;
     }
     if (!shopImageFile) {
@@ -41,6 +46,16 @@ export function SellerApplyPage() {
       return;
     }
 
+    const foodSafetyExt = foodSafetyFile.name.substring(foodSafetyFile.name.lastIndexOf('.')).toLowerCase();
+    if (!allowedLicenseExtensions.includes(foodSafetyExt)) {
+      toast.error('Giấy phép ATTP phải là tệp ảnh hoặc tài liệu (.jpg, .jpeg, .png, .webp, .pdf, .doc, .docx).');
+      return;
+    }
+    if (foodSafetyFile.size > 5 * 1024 * 1024) {
+      toast.error('Giấy phép ATTP không được vượt quá 5MB');
+      return;
+    }
+
     const shopExt = shopImageFile.name.substring(shopImageFile.name.lastIndexOf('.')).toLowerCase();
     if (!allowedImageExtensions.includes(shopExt)) {
       toast.error('Logo/ảnh đại diện cửa hàng phải là tệp ảnh (.jpg, .jpeg, .png, .webp).');
@@ -58,6 +73,10 @@ export function SellerApplyPage() {
       if (licenseRes.error || !licenseRes.data) throw new Error('Lỗi tải giấy phép kinh doanh');
       const licenseUrl = licenseRes.data.imageUrl;
 
+      const foodSafetyRes = await authService.uploadImage(foodSafetyFile);
+      if (foodSafetyRes.error || !foodSafetyRes.data) throw new Error('Lỗi tải giấy phép ATTP');
+      const foodSafetyUrl = foodSafetyRes.data.imageUrl;
+
       const shopImageRes = await authService.uploadImage(shopImageFile);
       if (shopImageRes.error || !shopImageRes.data) throw new Error('Lỗi tải logo cửa hàng');
       const shopUrl = shopImageRes.data.imageUrl;
@@ -65,6 +84,7 @@ export function SellerApplyPage() {
       const res = await authService.applySeller({
         ...formData,
         businessLicenseUrl: licenseUrl,
+        foodSafetyCertificateUrl: foodSafetyUrl,
         shopImageUrl: shopUrl
       });
 
@@ -174,6 +194,38 @@ export function SellerApplyPage() {
                   </div>
                   <div className="flex flex-col">
                     <span className="text-sm font-medium text-green-800 truncate max-w-[180px] sm:max-w-[350px]" title={businessLicenseFile.name}>{businessLicenseFile.name}</span>
+                    <span className="text-xs text-green-600">Đã chọn thành công</span>
+                  </div>
+                </div>
+                <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Giấy phép an toàn vệ sinh thực phẩm (ATTP)</label>
+            <label className="relative flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-xl cursor-pointer bg-gray-50 hover:bg-orange-50 hover:border-orange-300 transition-colors group">
+              <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                <UploadCloud className="w-8 h-8 mb-2 text-gray-400 group-hover:text-orange-500 transition-colors" />
+                <p className="mb-1 text-sm text-gray-500"><span className="font-semibold text-orange-600">Bấm để tải lên</span> hoặc kéo thả file</p>
+                <p className="text-xs text-gray-400">PDF, JPG, PNG (Tối đa 5MB)</p>
+              </div>
+              <input
+                type="file"
+                accept="image/*,.pdf,.doc,.docx"
+                required
+                onChange={e => setFoodSafetyFile(e.target.files?.[0] || null)}
+                className="hidden"
+              />
+            </label>
+            {foodSafetyFile && (
+              <div className="mt-3 bg-green-50 border border-green-200 rounded-lg p-3 flex items-center justify-between shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-md bg-white border border-green-200 flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-green-800 truncate max-w-[180px] sm:max-w-[350px]" title={foodSafetyFile.name}>{foodSafetyFile.name}</span>
                     <span className="text-xs text-green-600">Đã chọn thành công</span>
                   </div>
                 </div>

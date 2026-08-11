@@ -12,6 +12,7 @@ namespace ShoppingFood.Dto.User
         public string BusinessName { get; set; } = string.Empty;
         public string BusinessAddress { get; set; } = string.Empty;
         public string BusinessLicenseUrl { get; set; } = string.Empty;
+        public string FoodSafetyCertificateUrl { get; set; } = string.Empty;
         public string ShopImageUrl { get; set; } = string.Empty;
         public string ContactInfo { get; set; } = string.Empty;
         public string? ApplicationReason { get; set; }

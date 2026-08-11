@@ -66,6 +66,7 @@ export function CustomerApplications() {
         businessAddress: app.businessAddress || '',
         contactInfo: app.contactInfo || '',
         businessLicenseUrl: isValidUrl(app.businessLicenseUrl) ? app.businessLicenseUrl : '',
+        foodSafetyCertificateUrl: isValidUrl(app.foodSafetyCertificateUrl) ? app.foodSafetyCertificateUrl : '',
         shopImageUrl: isValidUrl(app.shopImageUrl) ? app.shopImageUrl : ''
       });
     } else {
@@ -228,16 +229,24 @@ export function CustomerApplications() {
               <div>
                 <p className="font-bold">{app.status === 'NeedsInfo' ? 'Yêu cầu từ quản trị viên:' : 'Lý do từ chối:'}</p>
                 <p className="mt-1 whitespace-pre-line">{app.rejectionReason}</p>
+                {app.status === 'NeedsInfo' && (
+                  <p className="mt-2 text-orange-700/90 text-xs">
+                    Nhấn <strong>Bổ sung thông tin</strong> bên dưới để cập nhật hồ sơ và gửi lại để Admin xét duyệt.
+                  </p>
+                )}
               </div>
             </div>
           )}
 
           {app.status === 'NeedsInfo' && (
-            <div className="mt-5 flex justify-end">
+            <div className="mt-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <p className="text-xs text-gray-500">
+                Bạn cũng có thể mở lại tab này bất cứ lúc nào tại <strong>Hồ sơ → Lịch sử đăng ký</strong>.
+              </p>
               <Button
                 onClick={() => openUpdateModal(app)}
                 variant="primary"
-                className="!py-2 flex items-center gap-2"
+                className="!py-2 flex items-center gap-2 self-end"
               >
                 Bổ sung thông tin
                 <ChevronRight className="w-4 h-4" />
@@ -295,6 +304,7 @@ export function CustomerApplications() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                   {[
                     { field: 'businessLicenseUrl', label: 'Giấy phép kinh doanh' },
+                    { field: 'foodSafetyCertificateUrl', label: 'Giấy phép ATTP (an toàn vệ sinh)' },
                     { field: 'shopImageUrl', label: 'Hình ảnh mặt tiền quán' }
                   ].map(({ field, label }) => (
                     <div key={field}>
@@ -309,7 +319,9 @@ export function CustomerApplications() {
                           </div>
                         )}
                         <input 
-                          type="file" accept="image/*" required={!formData[field]}
+                          type="file"
+                          accept={field === 'shopImageUrl' ? 'image/*' : 'image/*,.pdf,.doc,.docx'}
+                          required={!formData[field]}
                           onChange={(e) => handleUploadImage(e, field)}
                           disabled={uploadingField === field || isUpdating}
                           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"

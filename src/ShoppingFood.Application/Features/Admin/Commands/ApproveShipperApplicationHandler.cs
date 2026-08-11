@@ -60,7 +60,7 @@ namespace ShoppingFood.Application.Features.Admin.Commands
                 if (application == null)
                     return ApiResponse.Failure(404, "Application not found");
 
-                if (application.Status != ApplicationStatus.Pending)
+                if (application.Status != ApplicationStatus.Pending && application.Status != ApplicationStatus.NeedsInfo)
                     return ApiResponse.Failure(400, $"Shipper application is already processed. Current status: {application.Status}");
 
                 if (request.Action == "Approve")
@@ -93,7 +93,7 @@ namespace ShoppingFood.Application.Features.Admin.Commands
                         title = notification.Title,
                         message = notification.Message,
                         type = "System",
-                        link = "/profile"
+                        link = "/profile?tab=applications"
                     });
                 }
 
@@ -205,7 +205,7 @@ namespace ShoppingFood.Application.Features.Admin.Commands
                 {
                     "Approve" => "Chúc mừng! Đơn đăng ký trở thành đối tác tài xế của bạn đã được phê duyệt thành công. Vui lòng đăng nhập lại để bắt đầu nhận đơn.",
                     "Reject" => $"Đơn đăng ký trở thành đối tác tài xế của bạn đã bị từ chối. Lý do {application.RejectionReason}.",
-                    "NeedsInfo" => $"Đơn đăng ký trở thành đối tác tài xế của bạn cần bổ sung thông tin. Yêu cầu: {application.RejectionReason}.",
+                    "NeedsInfo" => $"Đơn đăng ký tài xế cần bổ sung. Yêu cầu: {application.RejectionReason}. Vào Hồ sơ → Lịch sử đăng ký để bổ sung thông tin và gửi lại.",
                     _ => ""
                 };
 
@@ -242,7 +242,7 @@ namespace ShoppingFood.Application.Features.Admin.Commands
                 {
                     "Approve" => $"<p>Xin chào <strong>{application.UserProfile.FullName}</strong>,</p><p>Hồ sơ đăng ký đối tác tài xế của bạn đã được phê duyệt thành công trên hệ thống ShoppingFood.</p><p>Bạn đã có thể bắt đầu hoạt động và nhận đơn giao hàng. Chúc bạn có những hành trình thuận lợi!</p>",
                     "Reject" => $"<p>Xin chào <strong>{application.UserProfile.FullName}</strong>,</p><p>Đơn đăng ký đối tác tài xế của bạn chưa được phê duyệt.</p><p><strong>Lý do từ chối:</strong> {application.RejectionReason}</p>",
-                    "NeedsInfo" => $"<p>Xin chào <strong>{application.UserProfile.FullName}</strong>,</p><p>Đơn đăng ký đối tác tài xế của bạn cần bổ sung thêm thông tin.</p><p><strong>Yêu cầu từ Admin:</strong> {application.RejectionReason}</p><p>Vui lòng cập nhật lại thông tin chính xác và gửi lại yêu cầu duyệt trên hệ thống.</p>",
+                    "NeedsInfo" => $"<p>Xin chào <strong>{application.UserProfile.FullName}</strong>,</p><p>Đơn đăng ký đối tác tài xế của bạn cần bổ sung thêm thông tin.</p><p><strong>Yêu cầu từ Admin:</strong> {application.RejectionReason}</p><p>Vui lòng vào <strong>Hồ sơ → Lịch sử đăng ký</strong>, chọn đơn và nhấn <strong>Bổ sung thông tin</strong>.</p>",
                     _ => ""
                 };
 

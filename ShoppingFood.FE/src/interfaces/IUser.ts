@@ -104,6 +104,7 @@ export interface IRegisterSellerRequest {
   businessName: string;
   businessAddress: string;
   businessLicenseUrl: string;
+  foodSafetyCertificateUrl: string;
   shopImageUrl: string;
   contactInfo: string;
   idToken: string;

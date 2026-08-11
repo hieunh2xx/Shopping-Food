@@ -128,6 +128,7 @@ namespace ShoppingFood.Domain.Context
                 entity.Property(e => e.BusinessName).IsRequired().HasMaxLength(150);
                 entity.Property(e => e.BusinessAddress).IsRequired();
                 entity.Property(e => e.BusinessLicenseUrl).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.FoodSafetyCertificateUrl).IsRequired().HasMaxLength(255).HasDefaultValue(string.Empty);
                 entity.Property(e => e.ShopImageUrl).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.ContactInfo).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.Type).HasConversion<string>().IsRequired().HasDefaultValue(ApplicationType.NewSeller);

@@ -71,6 +71,7 @@ export const ROUTES = {
   PAYMENT_CANCEL: '/payment/cancel',
   PAYMENT_HISTORY: '/payment/history',
   SELLER_CHAT: '/seller/chat',
+  SELLER_MALL_APPLICATION: '/seller/mall-application',
 } as const;
 
 /**

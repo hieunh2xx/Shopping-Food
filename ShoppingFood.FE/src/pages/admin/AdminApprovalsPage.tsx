@@ -46,13 +46,16 @@ export function AdminApprovalsPage() {
     title: ''
   });
 
+  const [statusFilter, setStatusFilter] = useState<'Pending' | 'NeedsInfo' | 'All'>('Pending');
+
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
       const skip = (page - 1) * take;
+      const appStatus = statusFilter === 'All' ? undefined : statusFilter;
       const [sellersRes, shippersRes, productsRes] = await Promise.all([
-        adminService.getSellerApplications({ status: 'Pending', skip, take }),
-        adminService.getShipperApplications({ status: 'Pending', skip, take }),
+        adminService.getSellerApplications({ status: appStatus, skip, take }),
+        adminService.getShipperApplications({ status: appStatus, skip, take }),
         productService.search({ status: 'Pending', skip, take })
       ]);
 
@@ -74,7 +77,7 @@ export function AdminApprovalsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [page, take, activeTab]);
+  }, [page, take, statusFilter]);
 
   useEffect(() => {
     fetchData();
@@ -163,13 +166,35 @@ export function AdminApprovalsPage() {
   return (
     <div className="p-6">
       {/* Header */}
-      <div className="mb-8 flex justify-between items-center">
+      <div className="mb-8 flex flex-wrap justify-between items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Phê duyệt yêu cầu hệ thống</h1>
           <p className="text-sm text-gray-500 mt-1">
             Duyệt tài khoản đối tác Cửa hàng, Tài xế đăng ký mới và phê duyệt Món ăn mới được tải lên
           </p>
         </div>
+        {(activeTab === 'sellers' || activeTab === 'shippers') && (
+          <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl">
+            {([
+              { value: 'Pending' as const, label: 'Chờ duyệt' },
+              { value: 'NeedsInfo' as const, label: 'Chờ bổ sung' },
+              { value: 'All' as const, label: 'Tất cả' },
+            ]).map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => { setStatusFilter(opt.value); setPage(1); }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  statusFilter === opt.value
+                    ? 'bg-white text-orange-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Tabs */}
@@ -214,7 +239,11 @@ export function AdminApprovalsPage() {
           {/* Tab 1: Sellers */}
           {activeTab === 'sellers' && (
             sellers.length === 0 ? (
-              <div className="text-center py-16 text-gray-500">Chưa có hồ sơ cửa hàng nào chờ phê duyệt.</div>
+              <div className="text-center py-16 text-gray-500">
+                {statusFilter === 'NeedsInfo'
+                  ? 'Không có hồ sơ cửa hàng nào đang chờ bổ sung.'
+                  : 'Chưa có hồ sơ cửa hàng nào chờ phê duyệt.'}
+              </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
@@ -241,9 +270,19 @@ export function AdminApprovalsPage() {
                                 Mới
                               </span>
                             )}
+                            {app.status === 'NeedsInfo' && (
+                              <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-[10px] font-bold rounded-full border border-orange-200">
+                                Chờ bổ sung
+                              </span>
+                            )}
                           </div>
                           <div className="text-xs text-gray-500 mt-1">Email: {app.email}</div>
                           <div className="text-xs text-gray-500 mt-0.5">SĐT: {app.phone}</div>
+                          {app.status === 'NeedsInfo' && app.rejectionReason && (
+                            <div className="text-xs text-orange-700 bg-orange-50 p-2 rounded mt-2 border border-orange-100 max-w-xs">
+                              <span className="font-semibold">Đã yêu cầu:</span> {app.rejectionReason}
+                            </div>
+                          )}
                         </td>
                         <td className="py-4 px-6">
                           <div className="font-semibold text-orange-600">Tên shop: {app.businessName}</div>
@@ -256,13 +295,21 @@ export function AdminApprovalsPage() {
                           )}
                         </td>
                         <td className="py-4 px-6 text-center">
-                          <div className="flex justify-center gap-3">
+                          <div className="flex justify-center gap-3 flex-wrap">
                             {app.businessLicenseUrl && (
                               <button
                                 onClick={() => viewPhoto(app.businessLicenseUrl, `GPKD: ${app.businessName}`)}
                                 className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded hover:bg-blue-100 transition-colors"
                               >
                                 <FileText className="w-3.5 h-3.5" /> GPKD
+                              </button>
+                            )}
+                            {app.foodSafetyCertificateUrl && (
+                              <button
+                                onClick={() => viewPhoto(app.foodSafetyCertificateUrl, `ATTP: ${app.businessName}`)}
+                                className="inline-flex items-center gap-1 text-xs font-bold text-teal-600 bg-teal-50 px-2 py-1 rounded hover:bg-teal-100 transition-colors"
+                              >
+                                <FileText className="w-3.5 h-3.5" /> ATTP
                               </button>
                             )}
                             {app.shopImageUrl && (
@@ -283,12 +330,14 @@ export function AdminApprovalsPage() {
                             >
                               <CheckCircle className="w-4 h-4 text-green-600" /> Duyệt
                             </button>
-                            <button
-                              onClick={() => openActionModal('needsInfo', 'sellers', app.id, app.businessName)}
-                              className="inline-flex items-center gap-1 bg-orange-50 text-orange-700 hover:bg-orange-100 font-bold text-xs px-3 py-1.5 rounded-xl transition-all"
-                            >
-                              Yêu cầu bổ sung
-                            </button>
+                            {app.status !== 'NeedsInfo' && (
+                              <button
+                                onClick={() => openActionModal('needsInfo', 'sellers', app.id, app.businessName)}
+                                className="inline-flex items-center gap-1 bg-orange-50 text-orange-700 hover:bg-orange-100 font-bold text-xs px-3 py-1.5 rounded-xl transition-all"
+                              >
+                                Yêu cầu bổ sung
+                              </button>
+                            )}
                             <button
                               onClick={() => openActionModal('reject', 'sellers', app.id, app.businessName)}
                               className="inline-flex items-center gap-1 bg-red-50 text-red-700 hover:bg-red-100 font-bold text-xs px-3 py-1.5 rounded-xl transition-all"
@@ -308,7 +357,11 @@ export function AdminApprovalsPage() {
           {/* Tab 2: Shippers */}
           {activeTab === 'shippers' && (
             shippers.length === 0 ? (
-              <div className="text-center py-16 text-gray-500">Chưa có hồ sơ tài xế nào chờ phê duyệt.</div>
+              <div className="text-center py-16 text-gray-500">
+                {statusFilter === 'NeedsInfo'
+                  ? 'Không có hồ sơ tài xế nào đang chờ bổ sung.'
+                  : 'Chưa có hồ sơ tài xế nào chờ phê duyệt.'}
+              </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
@@ -324,11 +377,23 @@ export function AdminApprovalsPage() {
                     {shippers.map((app) => (
                       <tr key={app.id} className="hover:bg-gray-50/50 transition-colors">
                         <td className="py-4 px-6">
-                          <div className="font-semibold text-gray-900">{app.fullName}</div>
+                          <div className="font-semibold text-gray-900 flex items-center gap-2">
+                            {app.fullName}
+                            {app.status === 'NeedsInfo' && (
+                              <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-[10px] font-bold rounded-full border border-orange-200">
+                                Chờ bổ sung
+                              </span>
+                            )}
+                          </div>
                           <div className="text-xs text-gray-500 mt-0.5">Email: {app.email}</div>
                           <div className="text-xs text-gray-500 mt-0.5">SĐT: {app.phone}</div>
                           {app.identityCardNumber && (
                             <div className="text-xs text-gray-500 mt-0.5">CCCD: {app.identityCardNumber}</div>
+                          )}
+                          {app.status === 'NeedsInfo' && app.rejectionReason && (
+                            <div className="text-xs text-orange-700 bg-orange-50 p-2 rounded mt-2 border border-orange-100 max-w-xs">
+                              <span className="font-semibold">Đã yêu cầu:</span> {app.rejectionReason}
+                            </div>
                           )}
                         </td>
                         <td className="py-4 px-6">
@@ -379,12 +444,14 @@ export function AdminApprovalsPage() {
                             >
                               <CheckCircle className="w-4 h-4 text-green-600" /> Duyệt
                             </button>
-                            <button
-                              onClick={() => openActionModal('needsInfo', 'shippers', app.id, app.fullName)}
-                              className="inline-flex items-center gap-1 bg-orange-50 text-orange-700 hover:bg-orange-100 font-bold text-xs px-3 py-1.5 rounded-xl transition-all"
-                            >
-                              Yêu cầu bổ sung
-                            </button>
+                            {app.status !== 'NeedsInfo' && (
+                              <button
+                                onClick={() => openActionModal('needsInfo', 'shippers', app.id, app.fullName)}
+                                className="inline-flex items-center gap-1 bg-orange-50 text-orange-700 hover:bg-orange-100 font-bold text-xs px-3 py-1.5 rounded-xl transition-all"
+                              >
+                                Yêu cầu bổ sung
+                              </button>
+                            )}
                             <button
                               onClick={() => openActionModal('reject', 'shippers', app.id, app.fullName)}
                               className="inline-flex items-center gap-1 bg-red-50 text-red-700 hover:bg-red-100 font-bold text-xs px-3 py-1.5 rounded-xl transition-all"
