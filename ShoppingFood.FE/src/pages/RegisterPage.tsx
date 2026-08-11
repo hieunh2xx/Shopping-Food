@@ -20,7 +20,7 @@ export function RegisterPage({ isSeller = false }: RegisterPageProps) {
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-xl shadow-orange-500/20">
               <ChefHat className="w-7 h-7 text-gray-900" />
             </div>
-            <span className="text-2xl font-bold text-gray-900 group-hover:text-orange-600 transition-colors">Shopping Food</span>
+            <span className="text-2xl font-bold text-gray-900 group-hover:text-orange-600 transition-colors">UniEats</span>
           </Link>
 
           <h2 className="text-4xl font-bold text-gray-900 leading-tight mb-4">
@@ -60,7 +60,7 @@ export function RegisterPage({ isSeller = false }: RegisterPageProps) {
               <ChefHat className="w-6 h-6 text-gray-900" />
             </div>
             <span className="text-xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
-              Shopping Food
+              UniEats
             </span>
           </div>
 

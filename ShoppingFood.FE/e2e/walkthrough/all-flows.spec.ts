@@ -15,7 +15,7 @@ import { pauseForViewer, showStepLabel, visitStep } from '../helpers/walkthrough
 
 test.describe.configure({ mode: 'serial' });
 
-test.describe('Walkthrough — Toàn bộ luồng Shopping Food', () => {
+test.describe('Walkthrough — Toàn bộ luồng UniEats', () => {
   test('Luồng 1→5: Công khai → Khách hàng → Seller → Shipper → Admin → Thanh toán', async ({
     page,
   }) => {

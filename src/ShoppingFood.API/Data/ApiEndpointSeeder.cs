@@ -67,32 +67,40 @@ namespace ShoppingFood.API.Data
                 Console.WriteLine($"[ApiEndpointSeeder] Đã tự động nạp {endpointsToAdd.Count} API Endpoints mới vào DB.");
             }
 
-            // 2. Nạp danh sách RolePermissions mặc định nếu DB phân quyền rỗng
-            if (!await context.RolePermissions.AnyAsync())
+            // 2. Đồng bộ RolePermissions mặc định (thêm thiếu, không xóa quyền custom)
+            var rolePermissionsToAdd = new List<RolePermission>();
+            var allEndpoints = await context.ApiEndpoints.ToListAsync();
+            var existingRolePerms = await context.RolePermissions
+                .Select(rp => new { rp.ApiEndpointId, rp.Role })
+                .ToListAsync();
+            var existingSet = existingRolePerms
+                .Select(rp => $"{rp.ApiEndpointId}:{rp.Role}")
+                .ToHashSet();
+
+            foreach (var ep in allEndpoints)
             {
-                var rolePermissionsToAdd = new List<RolePermission>();
-                var allEndpoints = await context.ApiEndpoints.ToListAsync();
-
-                foreach (var ep in allEndpoints)
+                var roles = GetDefaultRolesForEndpoint(ep.Method, ep.Path);
+                foreach (var role in roles)
                 {
-                    var roles = GetDefaultRolesForEndpoint(ep.Method, ep.Path);
-                    foreach (var role in roles)
+                    var key = $"{ep.Id}:{role}";
+                    if (existingSet.Contains(key)) continue;
+
+                    rolePermissionsToAdd.Add(new RolePermission
                     {
-                        rolePermissionsToAdd.Add(new RolePermission
-                        {
-                            Id = Guid.NewGuid(),
-                            Role = role,
-                            ApiEndpointId = ep.Id
-                        });
-                    }
+                        Id = Guid.NewGuid(),
+                        Role = role,
+                        ApiEndpointId = ep.Id,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                    existingSet.Add(key);
                 }
+            }
 
-                if (rolePermissionsToAdd.Any())
-                {
-                    await context.RolePermissions.AddRangeAsync(rolePermissionsToAdd);
-                    await context.SaveChangesAsync();
-                    Console.WriteLine($"[ApiEndpointSeeder] Đã nạp {rolePermissionsToAdd.Count} RolePermissions mặc định.");
-                }
+            if (rolePermissionsToAdd.Any())
+            {
+                await context.RolePermissions.AddRangeAsync(rolePermissionsToAdd);
+                await context.SaveChangesAsync();
+                Console.WriteLine($"[ApiEndpointSeeder] Đã bổ sung {rolePermissionsToAdd.Count} RolePermissions mặc định còn thiếu.");
             }
         }
 
@@ -197,7 +205,9 @@ namespace ShoppingFood.API.Data
             new("*", "/api/discount/", new[] { UserRole.Seller, UserRole.Mall }),
             
             // === Promotion ===
-            new("*", "/api/promotion", new[] { UserRole.Seller, UserRole.Mall }),
+            // GET is public (home Buy X Get Y); write ops stay seller/mall
+            new("GET", "/api/promotion", new[] { UserRole.Customer, UserRole.Seller, UserRole.Mall, UserRole.Shipper }),
+            new("POST", "/api/promotion", new[] { UserRole.Seller, UserRole.Mall }),
             new("*", "/api/promotion/", new[] { UserRole.Seller, UserRole.Mall }),
             
             // === FlashSale ===
@@ -209,9 +219,11 @@ namespace ShoppingFood.API.Data
             new("*", "/api/flashsale/", new[] { UserRole.Admin }),
             
             // === LoyaltyPoint ===
+            new("GET", "/api/loyaltypoint", new[] { UserRole.Customer, UserRole.Seller, UserRole.Mall, UserRole.Shipper }),
             new("GET", "/api/loyaltypoint/tier-configs", new[] { UserRole.Admin }),
+            new("POST", "/api/loyaltypoint/tier-configs", new[] { UserRole.Admin }),
             new("POST", "/api/loyaltypoint/evaluate-tiers", new[] { UserRole.Admin }),
-            new("POST", "/api/loyaltypoint/adjust-user-tier", new[] { UserRole.Admin }),
+            new("PUT", "/api/loyaltypoint/adjust-user-tier", new[] { UserRole.Admin }),
             new("*", "/api/loyaltypoint/gifts", new[] { UserRole.Customer }),
             new("*", "/api/loyaltypoint/redeem", new[] { UserRole.Customer }),
             
@@ -222,14 +234,14 @@ namespace ShoppingFood.API.Data
             new("*", "/api/support/", new[] { UserRole.Customer }),
             
             // === Topping ===
-            new("GET", "/api/topping", Array.Empty<UserRole>()),
-            new("GET", "/api/topping/", Array.Empty<UserRole>()),
+            new("GET", "/api/topping", new[] { UserRole.Customer, UserRole.Seller, UserRole.Mall, UserRole.Shipper }),
+            new("GET", "/api/topping/", new[] { UserRole.Customer, UserRole.Seller, UserRole.Mall, UserRole.Shipper }),
             new("*", "/api/topping", new[] { UserRole.Seller, UserRole.Mall }),
             new("*", "/api/topping/", new[] { UserRole.Seller, UserRole.Mall }),
-            
+
             // === MenuCategory ===
-            new("GET", "/api/menucategory", Array.Empty<UserRole>()),
-            new("GET", "/api/menucategory/", Array.Empty<UserRole>()),
+            new("GET", "/api/menucategory", new[] { UserRole.Customer, UserRole.Seller, UserRole.Mall, UserRole.Shipper }),
+            new("GET", "/api/menucategory/", new[] { UserRole.Customer, UserRole.Seller, UserRole.Mall, UserRole.Shipper }),
             new("*", "/api/menucategory", new[] { UserRole.Seller, UserRole.Mall }),
             new("*", "/api/menucategory/", new[] { UserRole.Seller, UserRole.Mall }),
             
@@ -245,6 +257,7 @@ namespace ShoppingFood.API.Data
             // === System ===
             new("GET", "/api/system/legal", Array.Empty<UserRole>()),
             new("GET", "/api/system/global-menu-category", Array.Empty<UserRole>()),
+            new("GET", "/api/system/delivery-settings", Array.Empty<UserRole>()),
             new("GET", "/api/system/action-logs", new[] { UserRole.Admin }),
             new("GET", "/api/system/error-logs", new[] { UserRole.Admin }),
             
@@ -259,8 +272,8 @@ namespace ShoppingFood.API.Data
             new("*", "/api/cart/", new[] { UserRole.Customer, UserRole.Seller, UserRole.Mall, UserRole.Shipper }),
             
             // === Notification ===
-            new("*", "/api/notification", new[] { UserRole.Customer, UserRole.Seller, UserRole.Mall, UserRole.Shipper, UserRole.Coordinator }),
-            new("*", "/api/notification/", new[] { UserRole.Customer, UserRole.Seller, UserRole.Mall, UserRole.Shipper, UserRole.Coordinator }),
+            new("*", "/api/notification", new[] { UserRole.Customer, UserRole.Seller, UserRole.Mall, UserRole.Shipper, UserRole.Coordinator, UserRole.Admin }),
+            new("*", "/api/notification/", new[] { UserRole.Customer, UserRole.Seller, UserRole.Mall, UserRole.Shipper, UserRole.Coordinator, UserRole.Admin }),
             
             // === Chat ===
             new("*", "/api/chat", new[] { UserRole.Customer, UserRole.Seller, UserRole.Mall, UserRole.Shipper, UserRole.Coordinator }),

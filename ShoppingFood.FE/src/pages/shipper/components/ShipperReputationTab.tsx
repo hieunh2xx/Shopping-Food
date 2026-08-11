@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { shipperService } from '../../../services/shipperService';
+import { shipperService } from '../../../services/ShipperService';
 import type { IShipperReputationHistory } from '../../../interfaces';
 import { Loader2, ShieldCheck, AlertCircle, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import toast from 'react-hot-toast';

@@ -45,7 +45,7 @@ builder.Services.AddHostedService<SepayReconciliationWorker>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new() { Title = "Shopping Food API", Version = "v1" });
+    c.SwaggerDoc("v1", new() { Title = "UniEats API", Version = "v1" });
     
     // Add Bearer Token security definition in Swagger UI
     c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
@@ -120,10 +120,19 @@ using (var scope = app.Services.CreateScope())
         var logContext = services.GetRequiredService<LogContext>();
         
         // This will apply any pending migrations to the database
-        context.Database.Migrate();
-        logContext.Database.Migrate();
-        
-        Console.WriteLine("Database migrations applied successfully!");
+        try
+        {
+            context.Database.Migrate();
+            logContext.Database.Migrate();
+            Console.WriteLine("Database migrations applied successfully!");
+        }
+        catch (Exception migrateEx)
+        {
+            // Migration history can drift locally (duplicate columns). Continue with schema guard.
+            Console.WriteLine($"Database.Migrate warning: {migrateEx.Message}");
+        }
+
+        await ShoppingFood.API.Data.DatabaseSchemaGuard.EnsureCriticalColumnsAsync(context);
 
         if (app.Environment.IsDevelopment())
         {
@@ -148,7 +157,7 @@ if (app.Environment.IsDevelopment() || true) // always enable for user demo/test
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Shopping Food API v1");
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "UniEats API v1");
     });
 }
 

@@ -1,4 +1,4 @@
-# Shopping Food — System Design & Hướng dẫn vận hành
+# UniEats — System Design & Hướng dẫn vận hành
 
 Tài liệu này viết theo góc nhìn **người thiết kế hệ thống**: phạm vi hệ thống, đối tượng, cấu trúc package, hướng chạy code, và lưu ý khi vận hành (đặc biệt **Screen Run Test**).
 
@@ -8,7 +8,7 @@ Tài liệu này viết theo góc nhìn **người thiết kế hệ thống**: 
 
 ## 1. Tầm nhìn hệ thống
 
-**Shopping Food** là nền tảng đặt và giao đồ ăn trực tuyến (marketplace B2C), gồm:
+**UniEats** là nền tảng đặt và giao đồ ăn trực tuyến (marketplace B2C), gồm:
 
 | Thành phần | Vai trò | Thư mục |
 |------------|---------|---------|
@@ -29,7 +29,7 @@ flowchart LR
         Admin[Quản trị]
     end
 
-    subgraph System["Shopping Food System"]
+    subgraph System["UniEats System"]
         FE[Frontend Web<br/>:5173]
         API[Backend API<br/>:5091]
         DB[(SQL Server)]

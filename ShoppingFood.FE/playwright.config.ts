@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Playwright E2E Test Configuration for Shopping Food
+ * Playwright E2E Test Configuration for UniEats
  * 
  * Run with:
  *   npm run test:e2e          — headless
@@ -40,7 +40,7 @@ export default defineConfig({
       timeout: 120_000,
       env: {
         VITE_API_BASE_URL: 'http://localhost:5091/api',
-        VITE_APP_NAME: 'Shopping Food',
+        VITE_APP_NAME: 'UniEats',
         VITE_JWT_ISSUER: 'ShoppingFoodAPI',
         VITE_JWT_AUDIENCE: 'ShoppingFoodClient',
       },
@@ -67,6 +67,7 @@ export default defineConfig({
       timeout: 600_000,
       use: {
         ...devices['Desktop Chrome'],
+        channel: 'chrome',
         headless: false,
         video: 'on',
         trace: 'on',

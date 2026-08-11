@@ -1,4 +1,4 @@
-# Shopping Food — Package Diagrams
+# UniEats — Package Diagrams
 
 Chỉ mô tả **code production** (không gồm Tests / e2e).
 

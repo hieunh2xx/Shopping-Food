@@ -95,7 +95,7 @@ export function SellerApplyPage() {
             <Store className="w-8 h-8 text-orange-600" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Đăng ký trở thành Người Bán</h1>
-          <p className="mt-2 text-gray-500">Mở cửa hàng và bắt đầu kinh doanh trên Shopping Food</p>
+          <p className="mt-2 text-gray-500">Mở cửa hàng và bắt đầu kinh doanh trên UniEats</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">

@@ -1,3 +1,4 @@
+export { useCustomerChatWatcher } from './useCustomerChatWatcher';
 export { useAuth } from './useAuth';
 export { useProducts } from './useProducts';
 export { useCategories } from './useCategories';

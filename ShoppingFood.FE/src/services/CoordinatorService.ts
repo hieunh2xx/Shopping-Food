@@ -74,6 +74,14 @@ class CoordinatorService extends BaseService<any, any, any> {
     return httpClient.get<IApiResponse<IIncidentItemDto[]>>(API_ENDPOINTS.COORDINATOR.INCIDENTS, { params: { incidentType: type, skip, take } });
   }
 
+  async requestExplanation(orderId: string, message: string): Promise<IApiResponse<any>> {
+    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.COORDINATOR.REQUEST_EXPLANATION(orderId), { message });
+  }
+
+  async getOrderExplanation(orderId: string): Promise<IApiResponse<any[]>> {
+    return httpClient.get<IApiResponse<any[]>>(API_ENDPOINTS.COORDINATOR.GET_EXPLANATION(orderId));
+  }
+
   async resolveComplaint(reportId: string, data: IResolveIncidentRequest): Promise<IApiResponse<any>> {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.COORDINATOR.RESOLVE_COMPLAINT(reportId), data);
   }

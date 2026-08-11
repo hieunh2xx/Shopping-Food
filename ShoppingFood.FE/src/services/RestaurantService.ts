@@ -6,8 +6,6 @@ import type {
   IUpdateRestaurantBasicInfo,
   IUpdateRestaurantOperatingHours,
   IUpdateRestaurantStatus,
-  IUpdateRestaurantDeliveryRadius,
-  IUpdateRestaurantShippingFee,
   IUpdateRestaurantDeliveryConfig,
   INearbyRestaurantDto,
   IFavoriteRestaurantDto

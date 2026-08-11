@@ -176,3 +176,49 @@ export function formatTransactionDescription(desc: string): string {
   const uuidRegex = /#?([a-fA-F0-9]{8})-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}/g;
   return desc.replace(uuidRegex, (_match, p1) => `#${p1.toUpperCase()}`);
 }
+
+/** Haversine distance in kilometers */
+export function haversineDistanceKm(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
+  const p = 0.017453292519943295;
+  const c = Math.cos;
+  const a =
+    0.5 -
+    c((lat2 - lat1) * p) / 2 +
+    (c(lat1 * p) * c(lat2 * p) * (1 - c((lon2 - lon1) * p))) / 2;
+  return 12742 * Math.asin(Math.sqrt(a));
+}
+
+/** Under 1000 m → meters; otherwise → km (1 decimal). */
+export function formatDistanceKm(distanceKm: number): string {
+  if (!Number.isFinite(distanceKm) || distanceKm < 0) return '';
+  const meters = Math.round(distanceKm * 1000);
+  if (meters < 1000) {
+    return `${meters.toLocaleString('vi-VN')} m`;
+  }
+  return `${(meters / 1000).toFixed(1)} km`;
+}
+
+/** Mask email for admin UIs: j***@gmail.com */
+export function maskEmail(email?: string | null): string {
+  if (!email || !email.includes('@')) return email ? '***' : '—';
+  const [local, domain] = email.split('@');
+  if (!local) return `***@${domain}`;
+  const keep = Math.min(2, local.length);
+  return `${local.slice(0, keep)}${'*'.repeat(Math.max(3, local.length - keep))}@${domain}`;
+}
+
+/** Mask phone: 090***4567 (keep first 3 + last 4 when long enough) */
+export function maskPhone(phone?: string | null): string {
+  if (!phone) return '—';
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length < 7) return '*'.repeat(Math.max(3, phone.length));
+  const start = digits.slice(0, 3);
+  const end = digits.slice(-4);
+  return `${start}${'*'.repeat(Math.max(3, digits.length - 7))}${end}`;
+}
+

@@ -532,13 +532,20 @@ export function AdminApprovalsPage() {
       <Modal
         isOpen={actionModal.isOpen}
         onClose={() => setActionModal(prev => ({ ...prev, isOpen: false }))}
-        title={actionModal.type === 'approve' ? 'Xác nhận phê duyệt' : actionModal.type === 'needsInfo' ? 'Yêu cầu bổ sung thông tin' : 'Xác nhận từ chối'}
+        title={
+          actionModal.type === 'approve'
+            ? (actionModal.targetTab === 'shippers' ? 'Xác nhận duyệt tài xế' : actionModal.targetTab === 'sellers' ? 'Xác nhận duyệt cửa hàng' : 'Xác nhận duyệt món ăn')
+            : actionModal.type === 'needsInfo'
+              ? 'Yêu cầu bổ sung thông tin'
+              : (actionModal.targetTab === 'shippers' ? 'Từ chối hồ sơ tài xế' : actionModal.targetTab === 'sellers' ? 'Từ chối hồ sơ cửa hàng' : 'Từ chối món ăn')
+        }
         size="md"
       >
         <form onSubmit={(e) => { e.preventDefault(); handleActionSubmit(); }} className="space-y-4">
           <div className="py-2 text-center sm:text-left">
             <p className="text-gray-700">
-              Bạn đang chuẩn bị {actionModal.type === 'approve' ? 'phê duyệt' : actionModal.type === 'needsInfo' ? 'yêu cầu bổ sung' : 'từ chối'} hồ sơ/món ăn:
+              Bạn đang chuẩn bị {actionModal.type === 'approve' ? 'phê duyệt' : actionModal.type === 'needsInfo' ? 'yêu cầu bổ sung' : 'từ chối'}{' '}
+              {actionModal.targetTab === 'shippers' ? 'hồ sơ tài xế' : actionModal.targetTab === 'sellers' ? 'hồ sơ cửa hàng' : 'món ăn'}:
             </p>
             <p className="font-bold text-gray-900 text-lg mt-1">"{actionModal.targetName}"</p>
           </div>

@@ -29,6 +29,7 @@ export function SepayRedirectPage() {
         isOpen={open}
         sessionId={sessionId}
         onClose={() => navigate(returnUrl ?? ROUTES.ORDERS)}
+        onAbandoned={() => navigate(returnUrl ?? ROUTES.ORDERS)}
         onPaid={handlePaid}
       />
       {!open && <p>Đang chuyển hướng...</p>}

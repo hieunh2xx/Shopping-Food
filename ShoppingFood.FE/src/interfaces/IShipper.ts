@@ -27,6 +27,7 @@ export interface IProposedDeliveryOfferDto {
   restaurantLatitude?: number;
   restaurantLongitude?: number;
   distanceInKm: number;
+  deliveryDistanceInKm?: number;
   totalIncome: number;
   baseFee: number;
   distanceFee: number;
@@ -92,6 +93,22 @@ export interface IDailyIncomeReportDto {
   totalIncome: number;
 }
 
+export interface IShipperCompletedOrderDto {
+  orderId: string;
+  status: string;
+  totalAmount: number;
+  shippingFee: number;
+  itemsSubtotal: number;
+  baseFee: number;
+  distanceFee: number;
+  peakBonus: number;
+  totalIncome: number;
+  paymentMethod: string;
+  deliveryAddress: string;
+  contactName: string;
+  completedAt: string;
+}
+
 export interface IShipperIncomeReportDto {
   completedOrdersCount: number;
   totalBaseFees: number;
@@ -99,6 +116,7 @@ export interface IShipperIncomeReportDto {
   totalBonuses: number;
   totalIncome: number;
   dailyReports: IDailyIncomeReportDto[];
+  orders?: IShipperCompletedOrderDto[];
 }
 
 export interface IWorkingScheduleItemDto{

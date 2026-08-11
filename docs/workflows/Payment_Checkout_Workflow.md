@@ -1,86 +1,86 @@
-﻿# Tài liệu Quy trình: Thanh toán khi Checkout (Payment Checkout)
+# T�i li?u Quy tr�nh: Thanh to�n khi Checkout (Payment Checkout)
 
-Tài liệu mô tả chi tiết luồng **chọn phương thức thanh toán và settle** ngay khi đặt hàng trong hệ thống **Shopping Food**.
+T�i li?u m� t? chi ti?t lu?ng **ch?n phuong th?c thanh to�n v� settle** ngay khi d?t h�ng trong h? th?ng **UniEats**.
 
-> **Đọc trước:** [Payment_Requirements.md](./Payment_Requirements.md) (FR/NFR, state machine, acceptance criteria)  
-> SePay chi tiết: [Payment_Sepay_Workflow.md](./Payment_Sepay_Workflow.md)  
-> Ví / rút / COD debt: [Payment_Wallet_Withdraw_Workflow.md](./Payment_Wallet_Withdraw_Workflow.md)  
-> Đặt hàng tổng thể: [Checkout_Order_Workflow.md](./Checkout_Order_Workflow.md)
-
----
-
+> **�?c tru?c:** [Payment_Requirements.md](./Payment_Requirements.md) (FR/NFR, state machine, acceptance criteria)  
+> SePay chi ti?t: [Payment_Sepay_Workflow.md](./Payment_Sepay_Workflow.md)  
+> V� / r�t / COD debt: [Payment_Wallet_Withdraw_Workflow.md](./Payment_Wallet_Withdraw_Workflow.md)  
+> �?t h�ng t?ng th?: [Checkout_Order_Workflow.md](./Checkout_Order_Workflow.md)
 
 ---
 
-## Phần A — UI Interaction Trace (Nút bấm → Code → Data → Hiển thị)
-
-> UI Trace — Payment (gộp vào file này; SePay/Wallet xem thêm file Payment_* )  
-> Mỗi thao tác trả lời: **nút ở đâu** · **bấm chạy file/hàm nào** · **API/BE đâu** · **data trả về** · **hiển thị thế nào**.
-
-
-> Checkout gắn session: [05_Checkout_Order_UI_Trace.md](./05_Checkout_Order_UI_Trace.md) UT-ORD-06
 
 ---
 
-## UT-PAY-01 — Chọn phương thức thanh toán (radio trên Checkout)
+## Ph?n A � UI Interaction Trace (N�t b?m ? Code ? Data ? Hi?n th?)
 
-#### 1. Giao diện nút bấm ở đâu?
+> UI Trace � Payment (g?p v�o file n�y; SePay/Wallet xem th�m file Payment_* )  
+> M?i thao t�c tr? l?i: **n�t ? d�u** � **b?m ch?y file/h�m n�o** � **API/BE d�u** � **data tr? v?** � **hi?n th? th? n�o**.
 
-| Mục | Giá trị |
+
+> Checkout g?n session: [05_Checkout_Order_UI_Trace.md](./05_Checkout_Order_UI_Trace.md) UT-ORD-06
+
+---
+
+## UT-PAY-01 � Ch?n phuong th?c thanh to�n (radio tr�n Checkout)
+
+#### 1. Giao di?n n�t b?m ? d�u?
+
+| M?c | Gi� tr? |
 |-----|---------|
 | **Route** | `/checkout` |
 | **Page** | `pages/CheckoutPage.tsx` |
-| **Nhãn** | Radio theo `paymentMethods`: COD, SystemWallet, Sepay, (CreditCard/EWallet stub) |
-| **Loại control** | `<input type="radio" name="paymentMethod" ... onChange={handleInputChange}>` (~598–601) |
-| **Điều kiện** | List từ `GET /Payment/methods`; fallback hardcode nếu API trống |
+| **Nh�n** | Radio theo `paymentMethods`: COD, SystemWallet, Sepay, (CreditCard/EWallet stub) |
+| **Lo?i control** | `<input type="radio" name="paymentMethod" ... onChange={handleInputChange}>` (~598�601) |
+| **�i?u ki?n** | List t? `GET /Payment/methods`; fallback hardcode n?u API tr?ng |
 
-#### 2. Bấm xong chạy đến đâu? (Frontend)
+#### 2. B?m xong ch?y d?n d�u? (Frontend)
 
 ```text
 handleInputChange
-  → setFormData(prev => ({ ...prev, paymentMethod: method.code }))
-  → Không gọi API ngay
-  → Nếu SystemWallet: hiện "Số dư ví: {formatCurrency(walletBalance)}"
-  → Nếu EWallet: hiện chọn Momo/ZaloPay/VNPay
-  → Nếu CreditCard: hiện cardBrand + cardLastFour inputs
+  ? setFormData(prev => ({ ...prev, paymentMethod: method.code }))
+  ? Kh�ng g?i API ngay
+  ? N?u SystemWallet: hi?n "S? du v�: {formatCurrency(walletBalance)}"
+  ? N?u EWallet: hi?n ch?n Momo/ZaloPay/VNPay
+  ? N?u CreditCard: hi?n cardBrand + cardLastFour inputs
 ```
 
-Load methods lúc mount:
+Load methods l�c mount:
 
 ```text
-paymentService.getPaymentMethods() → GET /api/Payment/methods
-→ setPaymentMethods(res.data)
+paymentService.getPaymentMethods() ? GET /api/Payment/methods
+? setPaymentMethods(res.data)
 ```
 
-#### 3. Backend chạy đoạn nào?
+#### 3. Backend ch?y do?n n�o?
 
 ```text
 GET /api/Payment/methods
-  → GetPaymentMethodsHandler
-  → COD + SystemWallet luôn; Sepay nếu enabled+bank; else Card/EWallet stub
+  ? GetPaymentMethodsHandler
+  ? COD + SystemWallet lu�n; Sepay n?u enabled+bank; else Card/EWallet stub
 ```
 
-#### 4. Dữ liệu trả về ở đâu?
+#### 4. D? li?u tr? v? ? d�u?
 
 ```json
 {
   "data": [
-    { "code": "COD", "name": "Tiền mặt", "requiresAuth": false },
+    { "code": "COD", "name": "Ti?n m?t", "requiresAuth": false },
     { "code": "SystemWallet", "name": "...", "requiresAuth": true },
     { "code": "Sepay", "name": "...", "requiresAuth": true }
   ]
 }
 ```
 
-#### 5. Làm sao hiển thị ra?
+#### 5. L�m sao hi?n th? ra?
 
-| Nhánh | Hành vi UI |
+| Nh�nh | H�nh vi UI |
 |-------|------------|
-| Chọn radio | Border cam + ring; `formData.paymentMethod` dùng lúc `handleCheckout` |
-| SystemWallet | Hiện số dư (đã `getWallet` lúc load) |
-| Value gửi checkout | `paymentMethod` trong payload UT-ORD-06 |
+| Ch?n radio | Border cam + ring; `formData.paymentMethod` d�ng l�c `handleCheckout` |
+| SystemWallet | Hi?n s? du (d� `getWallet` l�c load) |
+| Value g?i checkout | `paymentMethod` trong payload UT-ORD-06 |
 
-#### 6. Sơ đồ nhanh
+#### 6. So d? nhanh
 
 ```mermaid
 sequenceDiagram
@@ -88,71 +88,71 @@ sequenceDiagram
     participant State as formData
     participant API as (sau) POST /Order/checkout
     Radio->>State: setPaymentMethod
-    Note over API: Chỉ gửi khi Đặt hàng
+    Note over API: Ch? g?i khi �?t h�ng
 ```
 
 ---
 
-## UT-PAY-02 — Mở SepayQrPaymentModal + load QR
+## UT-PAY-02 � M? SepayQrPaymentModal + load QR
 
-#### 1. Giao diện nút bấm ở đâu?
+#### 1. Giao di?n n�t b?m ? d�u?
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
-| **Không phải nút riêng** | Tự mở sau checkout SePay (UT-ORD-06) |
+| **Kh�ng ph?i n�t ri�ng** | T? m? sau checkout SePay (UT-ORD-06) |
 | **Component** | `components/payment/SepayQrPaymentModal.tsx` |
 | **Trigger** | `CheckoutPage`: `setIsSepayModalOpen(true)` + `sessionId` |
-| **Cũng mở từ** | `SepayRedirectPage` `/payment/sepay?sessionId=`; Order detail thanh toán lại |
+| **Cung m? t?** | `SepayRedirectPage` `/payment/sepay?sessionId=`; Order detail thanh to�n l?i |
 
-#### 2. Bấm xong chạy đến đâu? (Frontend)
+#### 2. B?m xong ch?y d?n d�u? (Frontend)
 
 ```text
 Modal isOpen + sessionId
-  → useEffect → loadQr() (L98–142)
-  → paymentService.getSepayQr(sessionId)
-  → GET /api/Payment/sepay/qr/{sessionId}
-  → setQrData({ qrImageUrl, invoiceNumber, transferContent, amount, remainingSeconds, bankName, ... })
-  → Poll: getPaymentSessionStatus (interval) → applySessionStatus
-  → Listen window event ON_REALTIME_NOTIFICATION → nếu payment paid → notifyPaid
+  ? useEffect ? loadQr() (L98�142)
+  ? paymentService.getSepayQr(sessionId)
+  ? GET /api/Payment/sepay/qr/{sessionId}
+  ? setQrData({ qrImageUrl, invoiceNumber, transferContent, amount, remainingSeconds, bankName, ... })
+  ? Poll: getPaymentSessionStatus (interval) ? applySessionStatus
+  ? Listen window event ON_REALTIME_NOTIFICATION ? n?u payment paid ? notifyPaid
 ```
 
-#### 3. Backend chạy đoạn nào?
+#### 3. Backend ch?y do?n n�o?
 
 ```text
 GET /api/Payment/sepay/qr/{sessionId}
-  → SepayController.GetQr → GetSepayQrHandler
-  → Build VietQR URL, transfer content, remainingSeconds
+  ? SepayController.GetQr ? GetSepayQrHandler
+  ? Build VietQR URL, transfer content, remainingSeconds
 
 GET /api/Payment/sepay/session/status?sessionId=
-  → GetPaymentSessionStatusHandler
+  ? GetPaymentSessionStatusHandler
 ```
 
-#### 4. Dữ liệu trả về ở đâu?
+#### 4. D? li?u tr? v? ? d�u?
 
 **QR (`ISepayQrDto` / data):**
 
-| Field | Hiển thị |
+| Field | Hi?n th? |
 |-------|----------|
 | `qrImageUrl` | `<img src={qrImageUrl}>` |
-| `transferContent` / `invoiceNumber` | Text nội dung CK + nút copy |
-| `amount` | Số tiền |
-| `itemsSubtotal`, `shippingFee` | Breakdown nếu có |
+| `transferContent` / `invoiceNumber` | Text n?i dung CK + n�t copy |
+| `amount` | S? ti?n |
+| `itemsSubtotal`, `shippingFee` | Breakdown n?u c� |
 | `remainingSeconds` | Countdown `m:ss` |
-| `bankName`, `bankAccountNumber`, `accountHolder` | Thông tin TK nhận |
-| `isPaid`, `displayStatus`, `statusLabel` | Badge trạng thái |
-| code **410** | `setError('Mã QR đã hết hạn (10 phút)...')` |
+| `bankName`, `bankAccountNumber`, `accountHolder` | Th�ng tin TK nh?n |
+| `isPaid`, `displayStatus`, `statusLabel` | Badge tr?ng th�i |
+| code **410** | `setError('M� QR d� h?t h?n (10 ph�t)...')` |
 
-#### 5. Làm sao hiển thị ra?
+#### 5. L�m sao hi?n th? ra?
 
-| Nhánh | Hành vi UI |
+| Nh�nh | H�nh vi UI |
 |-------|------------|
 | Loading | Spinner trong Modal |
-| OK | Ảnh QR + số tiền + countdown + bank info |
-| Paid | `markPaid()` → badge "Đã thanh toán"; `toast.success('SePay đã xác nhận...')`; `onPaid(invoice)` |
-| Checkout `onPaid` | `clearCart()`; đóng modal; navigate track (CheckoutPage) |
-| Expired poll | `toast.error('Mã QR đã hết hạn')` |
+| OK | ?nh QR + s? ti?n + countdown + bank info |
+| Paid | `markPaid()` ? badge "�� thanh to�n"; `toast.success('SePay d� x�c nh?n...')`; `onPaid(invoice)` |
+| Checkout `onPaid` | `clearCart()`; d�ng modal; navigate track (CheckoutPage) |
+| Expired poll | `toast.error('M� QR d� h?t h?n')` |
 
-#### 6. Sơ đồ nhanh
+#### 6. So d? nhanh
 
 ```mermaid
 sequenceDiagram
@@ -169,40 +169,40 @@ sequenceDiagram
       M->>Poll: status
     end
     SR-->>M: ON_REALTIME_NOTIFICATION
-    M->>CO: onPaid → clearCart + navigate
+    M->>CO: onPaid ? clearCart + navigate
 ```
 
 ---
 
-## UT-PAY-03 — Copy nội dung chuyển khoản
+## UT-PAY-03 � Copy n?i dung chuy?n kho?n
 
-#### 1. Giao diện nút bấm ở đâu?
+#### 1. Giao di?n n�t b?m ? d�u?
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
 | **Component** | `SepayQrPaymentModal.tsx` ~357 |
-| **Nhãn** | Nút copy cạnh `transferContent` |
-| **Hàm** | `copyTransferContent` (L205–210) |
+| **Nh�n** | N�t copy c?nh `transferContent` |
+| **H�m** | `copyTransferContent` (L205�210) |
 
-#### 2. Bấm xong chạy đến đâu? (Frontend)
+#### 2. B?m xong ch?y d?n d�u? (Frontend)
 
 ```text
 copyTransferContent()
-  → navigator.clipboard.writeText(qrData.transferContent)
-  → toast.success('Đã sao chép nội dung chuyển khoản')
+  ? navigator.clipboard.writeText(qrData.transferContent)
+  ? toast.success('�� sao ch�p n?i dung chuy?n kho?n')
 ```
 
-**Không** gọi API.
+**Kh�ng** g?i API.
 
 #### 3. Backend
 
 N/A.
 
-#### 4. Dữ liệu
+#### 4. D? li?u
 
-Dùng `qrData.transferContent` đã load từ QR API.
+D�ng `qrData.transferContent` d� load t? QR API.
 
-#### 5. Hiển thị
+#### 5. Hi?n th?
 
 Toast success; clipboard OS.
 
@@ -218,38 +218,38 @@ sequenceDiagram
 
 ---
 
-## UT-PAY-04 — Nút đồng bộ / Reconcile thủ công
+## UT-PAY-04 � N�t d?ng b? / Reconcile th? c�ng
 
-#### 1. Giao diện nút bấm ở đâu?
+#### 1. Giao di?n n�t b?m ? d�u?
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
-| **Component** | `SepayQrPaymentModal.tsx` — nút đồng bộ SePay |
-| **Hàm** | `handleManualReconcile` (L212–230) |
-| **Cũng có** | `PaymentResultPages.tsx` nút reconcile |
+| **Component** | `SepayQrPaymentModal.tsx` � n�t d?ng b? SePay |
+| **H�m** | `handleManualReconcile` (L212�230) |
+| **Cung c�** | `PaymentResultPages.tsx` n�t reconcile |
 
-#### 2. Bấm xong chạy đến đâu? (Frontend)
+#### 2. B?m xong ch?y d?n d�u? (Frontend)
 
 ```text
 handleManualReconcile
-  → toast.loading('Đang đồng bộ từ SePay...')
-  → paymentService.reconcileSepayPayment({ sessionId })
-  → POST /api/Payment/sepay/reconcile
-  → nếu success: applySessionStatus(paid) + toast.success
-  → else toast.error('Chưa thấy giao dịch...')
+  ? toast.loading('�ang d?ng b? t? SePay...')
+  ? paymentService.reconcileSepayPayment({ sessionId })
+  ? POST /api/Payment/sepay/reconcile
+  ? n?u success: applySessionStatus(paid) + toast.success
+  ? else toast.error('Chua th?y giao d?ch...')
 ```
 
-#### 3. Backend chạy đoạn nào?
+#### 3. Backend ch?y do?n n�o?
 
 ```text
 POST /api/Payment/sepay/reconcile
-  → SepayController.Reconcile
-  → ReconcileSepayPaymentHandler
-  → PaymentOrchestrationService.TryReconcileSessionAsync
-  → (cooldown 30s; query SePay API; ConfirmPaymentSessionByInvoiceAsync)
+  ? SepayController.Reconcile
+  ? ReconcileSepayPaymentHandler
+  ? PaymentOrchestrationService.TryReconcileSessionAsync
+  ? (cooldown 30s; query SePay API; ConfirmPaymentSessionByInvoiceAsync)
 ```
 
-#### 4. Dữ liệu trả về ở đâu?
+#### 4. D? li?u tr? v? ? d�u?
 
 ```json
 {
@@ -261,19 +261,19 @@ POST /api/Payment/sepay/reconcile
 }
 ```
 
-#### 5. Làm sao hiển thị ra?
+#### 5. L�m sao hi?n th? ra?
 
-| Nhánh | Hành vi UI |
+| Nh�nh | H�nh vi UI |
 |-------|------------|
-| success | UI chuyển paid + toast + `onPaid` path |
-| fail | toast.error; QR vẫn awaiting |
-| loading | toast.loading rồi dismiss |
+| success | UI chuy?n paid + toast + `onPaid` path |
+| fail | toast.error; QR v?n awaiting |
+| loading | toast.loading r?i dismiss |
 
 #### 6. Mermaid
 
 ```mermaid
 sequenceDiagram
-    participant Btn as Đồng bộ
+    participant Btn as �?ng b?
     participant API as POST /sepay/reconcile
     participant Orch as OrchestrationService
     Btn->>API: reconcile
@@ -283,37 +283,37 @@ sequenceDiagram
 
 ---
 
-## UT-PAY-05 — SignalR / notification xác nhận thanh toán
+## UT-PAY-05 � SignalR / notification x�c nh?n thanh to�n
 
-#### 1. Giao diện
+#### 1. Giao di?n
 
-Không nút — listener trong modal.
+Kh�ng n�t � listener trong modal.
 
 #### 2. Frontend
 
 ```text
 window.addEventListener('ON_REALTIME_NOTIFICATION', handleNotification)
-  → NotificationBell / NotificationRealtimeService phát event khi Hub nhận
-  → Nếu payload liên quan payment/session → notifyPaid / applySessionStatus
-  → toast 'SePay đã xác nhận thanh toán qua webhook!'
+  ? NotificationBell / NotificationRealtimeService ph�t event khi Hub nh?n
+  ? N?u payload li�n quan payment/session ? notifyPaid / applySessionStatus
+  ? toast 'SePay d� x�c nh?n thanh to�n qua webhook!'
 ```
 
-Hub phía BE: `/hubs/notifications` sau khi webhook worker confirm → insert Notification → Interceptor push.
+Hub ph�a BE: `/hubs/notifications` sau khi webhook worker confirm ? insert Notification ? Interceptor push.
 
 #### 3. Backend
 
 ```text
-SePay Webhook/IPN → queue → PaymentProcessingWorker
-  → ConfirmPaymentSessionByInvoiceAsync
-  → Order Paid + Notification entity
-  → NotificationPushInterceptor → NotificationHub
+SePay Webhook/IPN ? queue ? PaymentProcessingWorker
+  ? ConfirmPaymentSessionByInvoiceAsync
+  ? Order Paid + Notification entity
+  ? NotificationPushInterceptor ? NotificationHub
 ```
 
-#### 4. Dữ liệu
+#### 4. D? li?u
 
 Notification DTO: `title`, `message`, `type`, `targetId` (order/session).
 
-#### 5. Hiển thị
+#### 5. Hi?n th?
 
 Modal paid state + toast; Checkout `onPaid` clearCart + navigate.
 
@@ -333,27 +333,27 @@ sequenceDiagram
 
 ---
 
-## UT-PAY-06 — Đóng modal QR
+## UT-PAY-06 � ��ng modal QR
 
-#### 1. Giao diện
+#### 1. Giao di?n
 
-Nút đóng Modal (`onClose`) / X — SepayQrPaymentModal ~303; props từ CheckoutPage.
+N�t d�ng Modal (`onClose`) / X � SepayQrPaymentModal ~303; props t? CheckoutPage.
 
 #### 2. Frontend
 
 ```text
 CheckoutPage onClose:
   setIsSepayModalOpen(false)
-  clearCart()   // chú ý: clear cả khi chưa chắc paid — theo code hiện tại L865–866
+  clearCart()   // ch� �: clear c? khi chua ch?c paid � theo code hi?n t?i L865�866
 ```
 
-#### 3–4. Backend / data
+#### 3�4. Backend / data
 
-N/A (local UI). Session vẫn Pending trên server đến khi expire/webhook.
+N/A (local UI). Session v?n Pending tr�n server d?n khi expire/webhook.
 
-#### 5. Hiển thị
+#### 5. Hi?n th?
 
-Modal đóng; giỏ cleared; user có thể track đơn qua `?track=true` nếu đã navigate trước đó — nếu chỉ đóng sớm, đơn vẫn tồn tại chờ thanh toán.
+Modal d�ng; gi? cleared; user c� th? track don qua `?track=true` n?u d� navigate tru?c d� � n?u ch? d�ng s?m, don v?n t?n t?i ch? thanh to�n.
 
 #### 6. Mermaid
 
@@ -361,46 +361,46 @@ Modal đóng; giỏ cleared; user có thể track đơn qua `?track=true` nếu 
 sequenceDiagram
     participant X as Close
     participant CO as CheckoutPage
-    X->>CO: onClose → clearCart + setIsSepayModalOpen(false)
+    X->>CO: onClose ? clearCart + setIsSepayModalOpen(false)
 ```
 
 ---
 
-## UT-PAY-07 — Customer nạp ví (Top-up)
+## UT-PAY-07 � Customer n?p v� (Top-up)
 
-#### 1. Giao diện nút bấm ở đâu?
+#### 1. Giao di?n n�t b?m ? d�u?
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
-| **Route** | Profile tab wallet / `CustomerWalletPage` (thường `/profile` tab) |
+| **Route** | Profile tab wallet / `CustomerWalletPage` (thu?ng `/profile` tab) |
 | **Page** | `pages/payment/CustomerWalletPage.tsx` |
-| **Nhãn nút** | `"Nạp tiền"` (~171–175) |
-| **Input** | `topUpAmount` (default `'100000'`); chip số nhanh `onClick={() => setTopUpAmount(String(v))}` |
+| **Nh�n n�t** | `"N?p ti?n"` (~171�175) |
+| **Input** | `topUpAmount` (default `'100000'`); chip s? nhanh `onClick={() => setTopUpAmount(String(v))}` |
 
-#### 2. Bấm xong chạy đến đâu? (Frontend)
+#### 2. B?m xong ch?y d?n d�u? (Frontend)
 
 ```text
-handleTopUp (L63–83)
-  → validate amount >= 10000 else toast.error('Số tiền nạp tối thiểu 10.000đ')
-  → paymentService.topUpWallet(amount)
-  → POST /api/Payment/wallet/top-up { amount }
-  → toast.success('Đang chuyển hướng sang trang thanh toán...')
-  → navigate(`/payment/sepay?sessionId=${res.data.sessionId}&returnUrl=...profile?tab=wallet`)
-  → SepayRedirectPage / SepayQrPaymentModal flow (UT-PAY-02)
+handleTopUp (L63�83)
+  ? validate amount >= 10000 else toast.error('S? ti?n n?p t?i thi?u 10.000d')
+  ? paymentService.topUpWallet(amount)
+  ? POST /api/Payment/wallet/top-up { amount }
+  ? toast.success('�ang chuy?n hu?ng sang trang thanh to�n...')
+  ? navigate(`/payment/sepay?sessionId=${res.data.sessionId}&returnUrl=...profile?tab=wallet`)
+  ? SepayRedirectPage / SepayQrPaymentModal flow (UT-PAY-02)
 ```
 
-#### 3. Backend chạy đoạn nào?
+#### 3. Backend ch?y do?n n�o?
 
 ```text
 POST /api/Payment/wallet/top-up
-  → TopUpWalletHandler
-  → CreateTopUpSessionAsync (PaymentSession OrderId=null, expiry 10p)
-  → trả sessionId
+  ? TopUpWalletHandler
+  ? CreateTopUpSessionAsync (PaymentSession OrderId=null, expiry 10p)
+  ? tr? sessionId
 ```
 
-Confirm tiền vào ví: webhook → `ConfirmPaymentSessionByInvoiceAsync` nhánh TopUp → `FinancialTransactionType.TopUp`.
+Confirm ti?n v�o v�: webhook ? `ConfirmPaymentSessionByInvoiceAsync` nh�nh TopUp ? `FinancialTransactionType.TopUp`.
 
-#### 4. Dữ liệu trả về ở đâu?
+#### 4. D? li?u tr? v? ? d�u?
 
 ```json
 {
@@ -409,11 +409,11 @@ Confirm tiền vào ví: webhook → `ConfirmPaymentSessionByInvoiceAsync` nhán
 }
 ```
 
-#### 5. Làm sao hiển thị ra?
+#### 5. L�m sao hi?n th? ra?
 
-| Nhánh | Hành vi UI |
+| Nh�nh | H�nh vi UI |
 |-------|------------|
-| OK | Navigate SePay page; sau paid quay `returnUrl` wallet; `loadData` lại thấy balance tăng |
+| OK | Navigate SePay page; sau paid quay `returnUrl` wallet; `loadData` l?i th?y balance tang |
 | Validate | toast min 10k |
 | API error | toast.error |
 
@@ -421,7 +421,7 @@ Confirm tiền vào ví: webhook → `ConfirmPaymentSessionByInvoiceAsync` nhán
 
 ```mermaid
 sequenceDiagram
-    participant Btn as Nạp tiền
+    participant Btn as N?p ti?n
     participant API as POST /wallet/top-up
     participant SePay as /payment/sepay
     Btn->>API: topUpWallet
@@ -431,37 +431,37 @@ sequenceDiagram
 
 ---
 
-## UT-PAY-08 — Seller/Shipper rút tiền (Withdraw)
+## UT-PAY-08 � Seller/Shipper r�t ti?n (Withdraw)
 
-#### 1. Giao diện nút bấm ở đâu?
+#### 1. Giao di?n n�t b?m ? d�u?
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
 | **Page** | `pages/payment/PartnerWalletPages.tsx` (SellerWalletPage / ShipperWalletPage) |
-| **Nhãn nút** | `"Gửi yêu cầu rút tiền"` (~263–267, ~517–521) |
+| **Nh�n n�t** | `"G?i y�u c?u r�t ti?n"` (~263�267, ~517�521) |
 | **Form** | amount, bankName, bankAccountNumber, bankAccountHolder |
 
-#### 2. Bấm xong chạy đến đâu? (Frontend)
+#### 2. B?m xong ch?y d?n d�u? (Frontend)
 
 ```text
 handleWithdraw
-  → validate đủ field; amount >= 50000 (Seller page) → toast lỗi nếu sai
-  → paymentService.requestWithdrawal({ amount, bankName, bankAccountNumber, bankAccountHolder })
-  → POST /api/Payment/withdraw
-  → toast.success('Yêu cầu rút tiền đã được gửi')
-  → refresh wallet/transactions
+  ? validate d? field; amount >= 50000 (Seller page) ? toast l?i n?u sai
+  ? paymentService.requestWithdrawal({ amount, bankName, bankAccountNumber, bankAccountHolder })
+  ? POST /api/Payment/withdraw
+  ? toast.success('Y�u c?u r�t ti?n d� du?c g?i')
+  ? refresh wallet/transactions
 ```
 
-#### 3. Backend chạy đoạn nào?
+#### 3. Backend ch?y do?n n�o?
 
 ```text
 POST /api/Payment/withdraw
-  → RequestWithdrawalHandler
-  → Chỉ Seller/Shipper (Customer 403)
-  → Debit ví ngay + WithdrawalRequest Pending
+  ? RequestWithdrawalHandler
+  ? Ch? Seller/Shipper (Customer 403)
+  ? Debit v� ngay + WithdrawalRequest Pending
 ```
 
-#### 4. Dữ liệu trả về ở đâu?
+#### 4. D? li?u tr? v? ? d�u?
 
 ```json
 {
@@ -469,21 +469,21 @@ POST /api/Payment/withdraw
 }
 ```
 
-Balance mới phản ánh qua `GET /Payment/wallet`.
+Balance m?i ph?n �nh qua `GET /Payment/wallet`.
 
-#### 5. Làm sao hiển thị ra?
+#### 5. L�m sao hi?n th? ra?
 
-| Nhánh | Hành vi UI |
+| Nh�nh | H�nh vi UI |
 |-------|------------|
-| OK | Toast; số dư giảm; form có thể reset; danh sách GD cập nhật |
-| Validate | toast thiếu info / min 50k |
+| OK | Toast; s? du gi?m; form c� th? reset; danh s�ch GD c?p nh?t |
+| Validate | toast thi?u info / min 50k |
 | 403 Customer | toast message API |
 
 #### 6. Mermaid
 
 ```mermaid
 sequenceDiagram
-    participant Btn as Gửi yêu cầu rút tiền
+    participant Btn as G?i y�u c?u r�t ti?n
     participant API as POST /withdraw
     participant DB as WALLET debit + Withdrawal Pending
     Btn->>API: requestWithdrawal
@@ -493,47 +493,47 @@ sequenceDiagram
 
 ---
 
-## UT-PAY-09 — Shipper nộp công nợ COD
+## UT-PAY-09 � Shipper n?p c�ng n? COD
 
-#### 1. Giao diện nút bấm ở đâu?
+#### 1. Giao di?n n�t b?m ? d�u?
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
 | **Page** | `PartnerWalletPages.tsx` (Shipper section) |
-| **Nhãn nút** | `"Nộp tiền"` (~468–472) |
+| **Nh�n n�t** | `"N?p ti?n"` (~468�472) |
 | **Input** | `repayAmount`; chip max `setRepayAmount(String(codCollected))` |
 
-#### 2. Bấm xong chạy đến đâu? (Frontend)
+#### 2. B?m xong ch?y d?n d�u? (Frontend)
 
 ```text
 handleRepay
-  → parseFloat(repayAmount) > 0
-  → paymentService.repayShipperDebt(amount)
-  → POST /api/Payment/shipper/repay-debt
-  → toast.success(`Đã nộp ${formatCurrency(res.data?.repaid || amount)} công nợ COD`)
-  → reload wallet (codCollected giảm)
+  ? parseFloat(repayAmount) > 0
+  ? paymentService.repayShipperDebt(amount)
+  ? POST /api/Payment/shipper/repay-debt
+  ? toast.success(`�� n?p ${formatCurrency(res.data?.repaid || amount)} c�ng n? COD`)
+  ? reload wallet (codCollected gi?m)
 ```
 
 #### 3. Backend
 
 ```text
 POST /api/Payment/shipper/repay-debt
-  → giảm CodCollectedAmount / ghi txn CodRemittance
+  ? gi?m CodCollectedAmount / ghi txn CodRemittance
 ```
 
-#### 4. Dữ liệu
+#### 4. D? li?u
 
-`data.repaid` (số đã nộp) nếu có.
+`data.repaid` (s? d� n?p) n?u c�.
 
-#### 5. Hiển thị
+#### 5. Hi?n th?
 
-Toast + UI công nợ cập nhật sau `loadData`.
+Toast + UI c�ng n? c?p nh?t sau `loadData`.
 
 #### 6. Mermaid
 
 ```mermaid
 sequenceDiagram
-    participant Btn as Nộp tiền
+    participant Btn as N?p ti?n
     participant API as POST /shipper/repay-debt
     Btn->>API: repayShipperDebt
     API-->>Btn: toast + refresh COD debt
@@ -541,47 +541,47 @@ sequenceDiagram
 
 ---
 
-## UT-PAY-10 — Admin duyệt / từ chối rút tiền
+## UT-PAY-10 � Admin duy?t / t? ch?i r�t ti?n
 
-#### 1. Giao diện nút bấm ở đâu?
+#### 1. Giao di?n n�t b?m ? d�u?
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
-| **Route** | Admin finance (vd `/admin/finance` — `AdminFinancePage.tsx`) |
-| **Nhãn nút** | `"Duyệt"` / `"Từ chối"` (~84–88) |
-| **Hàm** | `handleApprove(w.id, true\|false)` |
+| **Route** | Admin finance (vd `/admin/finance` � `AdminFinancePage.tsx`) |
+| **Nh�n n�t** | `"Duy?t"` / `"T? ch?i"` (~84�88) |
+| **H�m** | `handleApprove(w.id, true\|false)` |
 
-#### 2. Bấm xong chạy đến đâu? (Frontend)
+#### 2. B?m xong ch?y d?n d�u? (Frontend)
 
 ```text
 handleApprove(id, approve)
-  → paymentService.approveWithdrawal(id, approve)
-  → POST /api/Payment/withdrawals/approve { withdrawalId, approve, rejectReason? }
-  → toast.success(approve ? 'Đã duyệt' : 'Đã từ chối')
-  → reload withdrawals list
+  ? paymentService.approveWithdrawal(id, approve)
+  ? POST /api/Payment/withdrawals/approve { withdrawalId, approve, rejectReason? }
+  ? toast.success(approve ? '�� duy?t' : '�� t? ch?i')
+  ? reload withdrawals list
 ```
 
 #### 3. Backend
 
 ```text
 ApproveWithdrawal handler
-  → Approve: status Approved/Completed
-  → Reject: status Rejected + Refund txn hoàn ví
+  ? Approve: status Approved/Completed
+  ? Reject: status Rejected + Refund txn ho�n v�
 ```
 
-#### 4. Dữ liệu
+#### 4. D? li?u
 
 ApiResponse; list `GET /Payment/withdrawals` refresh.
 
-#### 5. Hiển thị
+#### 5. Hi?n th?
 
-Toast; hàng Pending biến mất / đổi status trên bảng Admin.
+Toast; h�ng Pending bi?n m?t / d?i status tr�n b?ng Admin.
 
 #### 6. Mermaid
 
 ```mermaid
 sequenceDiagram
-    participant Btn as Duyệt / Từ chối
+    participant Btn as Duy?t / T? ch?i
     participant API as POST /withdrawals/approve
     Btn->>API: approveWithdrawal
     API-->>Btn: toast + reload table
@@ -589,27 +589,27 @@ sequenceDiagram
 
 ---
 
-## UT-PAY-11 — Confirm payment stub (Card/EWallet) từ Checkout
+## UT-PAY-11 � Confirm payment stub (Card/EWallet) t? Checkout
 
-#### 1. Giao diện
+#### 1. Giao di?n
 
-Không nút riêng — tự gọi trong `handleCheckout` khi `requiresPaymentConfirmation`.
+Kh�ng n�t ri�ng � t? g?i trong `handleCheckout` khi `requiresPaymentConfirmation`.
 
 #### 2. Frontend
 
 ```text
 await paymentService.confirmPayment(sessionId)
-→ POST /api/Payment/confirm
-→ rồi clearCart + toast đặt hàng thành công + navigate
+? POST /api/Payment/confirm
+? r?i clearCart + toast d?t h�ng th�nh c�ng + navigate
 ```
 
 #### 3. Backend
 
-`ConfirmPaymentSessionHandler` — **reject nếu method = Sepay**.
+`ConfirmPaymentSessionHandler` � **reject n?u method = Sepay**.
 
-#### 4–5. Data + UI
+#### 4�5. Data + UI
 
-Session Completed; Order Paid; UI như COD success path.
+Session Completed; Order Paid; UI nhu COD success path.
 
 #### 6. Mermaid
 
@@ -618,22 +618,22 @@ sequenceDiagram
     participant CO as handleCheckout
     participant API as POST /Payment/confirm
     CO->>API: confirmPayment(sessionId)
-    API-->>CO: Paid → navigate home track
+    API-->>CO: Paid ? navigate home track
 ```
 
 ---
 
-## Bảng field hiển thị quan trọng
+## B?ng field hi?n th? quan tr?ng
 
-| Nguồn | Field | UI |
+| Ngu?n | Field | UI |
 |-------|-------|-----|
-| Checkout response | `paymentSessionId` | Truyền vào Modal |
-| Checkout response | `requiresSepayRedirect` | Mở QR |
+| Checkout response | `paymentSessionId` | Truy?n v�o Modal |
+| Checkout response | `requiresSepayRedirect` | M? QR |
 | QR API | `qrImageUrl` | `<img>` |
 | QR API | `transferContent` | Text + copy |
 | QR API | `remainingSeconds` | Countdown |
 | Top-up | `sessionId` | Query `/payment/sepay` |
-| Wallet GET | `balance`, `codCollected` | Card số dư / nợ |
+| Wallet GET | `balance`, `codCollected` | Card s? du / n? |
 | Withdraw | `withdrawalId`, `status` | Admin table / history |
 
 ---
@@ -642,33 +642,33 @@ sequenceDiagram
 
 | File | UT |
 |------|-----|
-| `CheckoutPage.tsx` | PAY-01, ORD-06 gắn SePay |
-| `SepayQrPaymentModal.tsx` | PAY-02…06 |
+| `CheckoutPage.tsx` | PAY-01, ORD-06 g?n SePay |
+| `SepayQrPaymentModal.tsx` | PAY-02�06 |
 | `CustomerWalletPage.tsx` | PAY-07 |
 | `PartnerWalletPages.tsx` | PAY-08, PAY-09 |
 | `AdminFinancePage.tsx` | PAY-10 |
-| `PaymentService.ts` | Tất cả HTTP |
+| `PaymentService.ts` | T?t c? HTTP |
 | `SepayController.cs` / `PaymentController.cs` | BE |
 | Workers `Payment*` / `Sepay*` | Background confirm |
 
-**Chia tiền sau giao:** [../requirements/Revenue_Split_Requirements.md](../requirements/Revenue_Split_Requirements.md).
+**Chia ti?n sau giao:** [../requirements/Revenue_Split_Requirements.md](../requirements/Revenue_Split_Requirements.md).
 
 
 ---
 
-## Phần B — Workflow nghiệp vụ & Backend (chi tiết luồng)
-## 1. Luồng Tổng Quan (Workflow)
+## Ph?n B � Workflow nghi?p v? & Backend (chi ti?t lu?ng)
+## 1. Lu?ng T?ng Quan (Workflow)
 
-1. **Yêu cầu:** User vào `/checkout` với giỏ hàng hợp lệ.
-2. **Load methods:** FE gọi `GET /api/Payment/methods` → hiển thị COD / SystemWallet / Sepay (hoặc stub Card/EWallet).
-3. **Chọn method:** User chọn phương thức (+ địa chỉ, ghi chú…).
-4. **Checkout:** `POST /api/Order/checkout` → `CheckoutHandler` tạo Order → gọi `PaymentSettlementService.ProcessCheckoutPaymentAsync`.
+1. **Y�u c?u:** User v�o `/checkout` v?i gi? h�ng h?p l?.
+2. **Load methods:** FE g?i `GET /api/Payment/methods` ? hi?n th? COD / SystemWallet / Sepay (ho?c stub Card/EWallet).
+3. **Ch?n method:** User ch?n phuong th?c (+ d?a ch?, ghi ch��).
+4. **Checkout:** `POST /api/Order/checkout` ? `CheckoutHandler` t?o Order ? g?i `PaymentSettlementService.ProcessCheckoutPaymentAsync`.
 5. **Theo method:**
-   - **COD:** `PaymentStatus=Pending`, không session → toast thành công.
-   - **SystemWallet:** trừ ví → `Paid` ngay (hoặc lỗi thiếu tiền).
-   - **Sepay:** tạo `PaymentSession` 10 phút → response `requiresSepayRedirect` → mở `SepayQrPaymentModal`.
-   - **CreditCard/EWallet stub:** session 15 phút → `requiresPaymentConfirmation` → FE gọi `POST /api/Payment/confirm`.
-6. **Sau giao hàng:** settle hoa hồng / seller / shipper / COD debt → `Settled` + `IsFinancialSettled`.
+   - **COD:** `PaymentStatus=Pending`, kh�ng session ? toast th�nh c�ng.
+   - **SystemWallet:** tr? v� ? `Paid` ngay (ho?c l?i thi?u ti?n).
+   - **Sepay:** t?o `PaymentSession` 10 ph�t ? response `requiresSepayRedirect` ? m? `SepayQrPaymentModal`.
+   - **CreditCard/EWallet stub:** session 15 ph�t ? `requiresPaymentConfirmation` ? FE g?i `POST /api/Payment/confirm`.
+6. **Sau giao h�ng:** settle hoa h?ng / seller / shipper / COD debt ? `Settled` + `IsFinancialSettled`.
 
 ```mermaid
 sequenceDiagram
@@ -682,21 +682,21 @@ sequenceDiagram
 
     U->>FE: /checkout
     FE->>FE: GET /api/Payment/methods
-    U->>FE: Chọn method + Đặt hàng
+    U->>FE: Ch?n method + �?t h�ng
     FE->>Ord: POST /api/Order/checkout
     Ord->>CH: CheckoutCommand
     CH->>PS: ProcessCheckoutPaymentAsync
     alt COD
         PS->>DB: PaymentStatus=Pending
         CH-->>FE: success
-        FE-->>U: Toast đặt hàng OK
+        FE-->>U: Toast d?t h�ng OK
     else SystemWallet
         PS->>DB: Debit WALLET, Paid
         CH-->>FE: success
     else Sepay
         PS->>DB: PAYMENT_SESSION Pending 10m
         CH-->>FE: requiresSepayRedirect + sessionId
-        FE->>QR: Mở modal QR
+        FE->>QR: M? modal QR
     else Card/EWallet stub
         PS->>DB: Session 15m
         CH-->>FE: requiresPaymentConfirmation
@@ -706,9 +706,9 @@ sequenceDiagram
 
 ---
 
-## Bước 1: Người dùng vào Checkout & load methods
+## Bu?c 1: Ngu?i d�ng v�o Checkout & load methods
 
-**Thông tin:**
+**Th�ng tin:**
 - **URL (FE):** `/checkout`
 - **API:** `GET /api/Payment/methods`
 - **HTTP Method:** GET
@@ -718,18 +718,18 @@ sequenceDiagram
 **File Service:** `ShoppingFood.FE/src/services/PaymentService.ts`  
 **Handler:** `src/ShoppingFood.Application/Features/Payments/Queries/GetPaymentMethodsHandler.cs`
 
-| Method code | Khi hiện | requiresAuth | Ghi chú |
+| Method code | Khi hi?n | requiresAuth | Ghi ch� |
 |-------------|----------|--------------|---------|
-| `COD` | Luôn | false | Guest OK |
-| `SystemWallet` | Luôn | true | Hiện số dư ví |
-| `Sepay` | SePay enabled **và** resolve được bank | true | Ưu tiên online |
-| `CreditCard` / `EWallet` | Khi **không** có SePay | true | **Stub** — không phải PSP thật |
+| `COD` | Lu�n | false | Guest OK |
+| `SystemWallet` | Lu�n | true | Hi?n s? du v� |
+| `Sepay` | SePay enabled **v�** resolve du?c bank | true | Uu ti�n online |
+| `CreditCard` / `EWallet` | Khi **kh�ng** c� SePay | true | **Stub** � kh�ng ph?i PSP th?t |
 
 ---
 
-## Bước 2: Gửi Checkout
+## Bu?c 2: G?i Checkout
 
-**Thông tin:**
+**Th�ng tin:**
 - **URL:** `/api/Order/checkout`
 - **HTTP Method:** POST
 - **Controller:** `OrderController.Checkout`
@@ -743,14 +743,14 @@ public async Task<IActionResult> Checkout([FromBody] CheckoutCommand command)
 }
 ```
 
-**FE** (`CheckoutPage.tsx` — sau khi nhận response):
+**FE** (`CheckoutPage.tsx` � sau khi nh?n response):
 
 ```typescript
 const requiresSepay = res.data?.requiresSepayRedirect === true;
 const requiresConfirm = res.data?.requiresPaymentConfirmation === true;
 
 if (requiresSepay && sessionId) {
-  // mở SepayQrPaymentModal + toast quét QR
+  // m? SepayQrPaymentModal + toast qu�t QR
 }
 if (requiresConfirm && sessionId) {
   await paymentService.confirmPayment(sessionId);
@@ -759,13 +759,13 @@ if (requiresConfirm && sessionId) {
 
 ---
 
-## Bước 3: Backend settle theo PaymentMethod
+## Bu?c 3: Backend settle theo PaymentMethod
 
 **File:** `src/ShoppingFood.Application/Services/PaymentSettlementService.cs`  
 **Method:** `ProcessCheckoutPaymentAsync`  
-**Lines:** ~120–214
+**Lines:** ~120�214
 
-Trước switch: tính split hoa hồng từ `PlatformFinanceConfig.CommissionRate` (default 10%):
+Tru?c switch: t�nh split hoa h?ng t? `PlatformFinanceConfig.CommissionRate` (default 10%):
 
 ```csharp
 var config = await GetConfigAsync();
@@ -780,45 +780,45 @@ order.SellerPayout = split.SellerPayout;
 ```csharp
 case PaymentMethod.COD:
     order.PaymentStatus = PaymentStatus.Pending;
-    return null; // không tạo session
+    return null; // kh�ng t?o session
 ```
 
-**Kết quả:** Order tạo xong, chờ seller/shipper; tiền thu khi giao.
+**K?t qu?:** Order t?o xong, ch? seller/shipper; ti?n thu khi giao.
 
 ### 3.2. SystemWallet
 
 ```csharp
 case PaymentMethod.SystemWallet:
     if (!userId.HasValue)
-        return "Ví hệ thống chỉ dành cho khách hàng đã đăng nhập.";
+        return "V� h? th?ng ch? d�nh cho kh�ch h�ng d� dang nh?p.";
     var customerWallet = await GetOrCreateWalletAsync(WalletOwnerType.Customer, userId.Value);
     if (customerWallet.Balance < order.TotalAmount)
-        return "Số dư ví không đủ. Vui lòng nạp thêm tiền.";
+        return "S? du v� kh�ng d?. Vui l�ng n?p th�m ti?n.";
     await RecordTransactionAsync(customerWallet, FinancialTransactionType.Payment, -order.TotalAmount,
-        $"Thanh toán đơn hàng #{order.Id}", order.Id, "Order");
+        $"Thanh to�n don h�ng #{order.Id}", order.Id, "Order");
     order.PaymentStatus = PaymentStatus.Paid;
     return null;
 ```
 
-**DB:** `WALLET`, `FINANCIAL_TRANSACTION` (type Payment, số âm).
+**DB:** `WALLET`, `FINANCIAL_TRANSACTION` (type Payment, s? �m).
 
 ### 3.3. Sepay
 
 ```csharp
 case PaymentMethod.Sepay:
     if (!_sepayService.IsEnabled)
-        return "Cổng thanh toán SePay chưa được cấu hình.";
+        return "C?ng thanh to�n SePay chua du?c c?u h�nh.";
     if (!userId.HasValue)
-        return "Thanh toán online SePay yêu cầu đăng nhập.";
+        return "Thanh to�n online SePay y�u c?u dang nh?p.";
     var bank = await _bankAccountResolver.ResolveAsync();
     if (bank == null)
-        return "Chưa cấu hình tài khoản ngân hàng SePay...";
-    // Tạo PaymentSession: InvoiceNumber, ExpiresAt = UtcNow.AddMinutes(10)
+        return "Chua c?u h�nh t�i kho?n ng�n h�ng SePay...";
+    // T?o PaymentSession: InvoiceNumber, ExpiresAt = UtcNow.AddMinutes(10)
     // order.PaymentSessionId = session.Id; PaymentStatus = Pending
 ```
 
-**FE:** mở QR — chi tiết [Payment_Sepay_Workflow.md](./Payment_Sepay_Workflow.md).  
-**Cấm:** `POST /Payment/confirm` với Sepay.
+**FE:** m? QR � chi ti?t [Payment_Sepay_Workflow.md](./Payment_Sepay_Workflow.md).  
+**C?m:** `POST /Payment/confirm` v?i Sepay.
 
 ### 3.4. CreditCard / EWallet (stub)
 
@@ -836,57 +836,57 @@ case PaymentMethod.EWallet:
 await paymentService.confirmPayment(sessionId); // POST /api/Payment/confirm
 ```
 
-→ Handler đánh dấu session Completed + Order Paid (**không gọi cổng thẻ thật**).
+? Handler d�nh d?u session Completed + Order Paid (**kh�ng g?i c?ng th? th?t**).
 
 ---
 
-## Bước 4: Confirm session (chỉ non-Sepay)
+## Bu?c 4: Confirm session (ch? non-Sepay)
 
-**Thông tin:**
+**Th�ng tin:**
 - **URL:** `/api/Payment/confirm`
 - **HTTP Method:** POST
 - **File:** `PaymentController.cs` + `PaymentCommandHandlers.cs` (`ConfirmPaymentSessionHandler`)
 
-**Rule quan trọng:** Nếu method = Sepay → **reject** (không cho FE tự confirm).
+**Rule quan tr?ng:** N?u method = Sepay ? **reject** (kh�ng cho FE t? confirm).
 
 ---
 
-## Bước 5: Settle khi giao hàng thành công
+## Bu?c 5: Settle khi giao h�ng th�nh c�ng
 
-Khi shipper `confirm-delivered` hoặc seller self-delivery confirm:
+Khi shipper `confirm-delivered` ho?c seller self-delivery confirm:
 
-| Tình huống | Việc xảy ra |
+| T�nh hu?ng | Vi?c x?y ra |
 |------------|-------------|
-| COD + platform delivery | Tăng `ShipperProfile.CodCollectedAmount`; credit seller/platform; `PaymentStatus=Settled` |
-| Đã Paid (Wallet/Sepay/Card) | Split seller/shipper/platform; `Settled` |
+| COD + platform delivery | Tang `ShipperProfile.CodCollectedAmount`; credit seller/platform; `PaymentStatus=Settled` |
+| �� Paid (Wallet/Sepay/Card) | Split seller/shipper/platform; `Settled` |
 | Self-delivery | `SettleSelfDeliveryOrderAsync` |
-| Guard | `IsFinancialSettled` → không settle 2 lần |
+| Guard | `IsFinancialSettled` ? kh�ng settle 2 l?n |
 
 **File:** `PaymentSettlementService.SettleOrderOnDeliveryAsync` / `SettleSelfDeliveryOrderAsync`.
 
-**Hủy đơn đã Paid online:** `ProcessRefundAsync` → hoàn tiền ví Customer.
+**H?y don d� Paid online:** `ProcessRefundAsync` ? ho�n ti?n v� Customer.
 
 ---
 
-## Sơ đồ file đi qua (Call chain)
+## So d? file di qua (Call chain)
 
 ```text
 CheckoutPage.tsx
-  → PaymentService.getPaymentMethods()
-  → OrderService.checkout()
-  → (optional) PaymentService.confirmPayment()
-  → (optional) SepayQrPaymentModal.tsx
-       ↓
+  ? PaymentService.getPaymentMethods()
+  ? OrderService.checkout()
+  ? (optional) PaymentService.confirmPayment()
+  ? (optional) SepayQrPaymentModal.tsx
+       ?
 OrderController.Checkout / PaymentController.*
-       ↓
+       ?
 CheckoutHandler
-       ↓
+       ?
 PaymentSettlementService.ProcessCheckoutPaymentAsync
-       ↓
+       ?
 ORDER + WALLET + FINANCIAL_TRANSACTION + PAYMENT_SESSION
 ```
 
-| Vai trò | Đường dẫn |
+| Vai tr� | �u?ng d?n |
 |---------|-----------|
 | FE Checkout | `ShoppingFood.FE/src/pages/CheckoutPage.tsx` |
 | FE Payment API | `ShoppingFood.FE/src/services/PaymentService.ts` |
@@ -900,45 +900,45 @@ ORDER + WALLET + FINANCIAL_TRANSACTION + PAYMENT_SESSION
 
 ---
 
-## Các thông báo (Toast / Message)
+## C�c th�ng b�o (Toast / Message)
 
-| Message | Nơi | Trigger |
+| Message | Noi | Trigger |
 |---------|-----|---------|
-| Đặt hàng thành công! Mã đơn… | CheckoutPage | COD / Wallet / sau confirm stub |
-| Đơn hàng đã tạo. Quét mã QR… | CheckoutPage | Sepay + mở modal |
-| Số dư ví không đủ. Vui lòng nạp thêm tiền. | API → toast | SystemWallet fail |
-| Ví hệ thống chỉ dành cho khách đã đăng nhập | API | Guest chọn Wallet |
-| Cổng thanh toán SePay chưa được cấu hình | API | Sepay off |
+| �?t h�ng th�nh c�ng! M� don� | CheckoutPage | COD / Wallet / sau confirm stub |
+| �on h�ng d� t?o. Qu�t m� QR� | CheckoutPage | Sepay + m? modal |
+| S? du v� kh�ng d?. Vui l�ng n?p th�m ti?n. | API ? toast | SystemWallet fail |
+| V� h? th?ng ch? d�nh cho kh�ch d� dang nh?p | API | Guest ch?n Wallet |
+| C?ng thanh to�n SePay chua du?c c?u h�nh | API | Sepay off |
 
 ---
 
-## Các cơ chế bảo mật / nghiệp vụ quan trọng
+## C�c co ch? b?o m?t / nghi?p v? quan tr?ng
 
-1. **Guest thực tế chỉ COD** — online methods `requiresAuth`.
-2. **Sepay không confirm tay** — chống giả Paid.
-3. **Số dư ví** kiểm tra trước khi debit.
-4. **Hoa hồng** từ `PLATFORM_FINANCE_CONFIG` (default 10%).
+1. **Guest th?c t? ch? COD** � online methods `requiresAuth`.
+2. **Sepay kh�ng confirm tay** � ch?ng gi? Paid.
+3. **S? du v�** ki?m tra tru?c khi debit.
+4. **Hoa h?ng** t? `PLATFORM_FINANCE_CONFIG` (default 10%).
 5. **Settle idempotent** qua `IsFinancialSettled`.
-6. **CreditCard/EWallet = stub** — không dùng như PSP production.
+6. **CreditCard/EWallet = stub** � kh�ng d�ng nhu PSP production.
 
 ---
 
-## Checklist tự test
+## Checklist t? test
 
-- [ ] `GET /methods` đúng khi SePay on vs off
-- [ ] COD → Order Pending, không QR, không trừ ví
-- [ ] SystemWallet đủ tiền → Paid + balance giảm đúng `TotalAmount`
-- [ ] SystemWallet thiếu tiền → lỗi, không tạo Paid
-- [ ] Sepay → QR modal, **không** gọi `/confirm`
-- [ ] Card stub (khi không SePay) → `/confirm` → Paid
-- [ ] Giao hàng → Settled + split đúng; COD tăng debt shipper
-- [ ] Hủy đơn đã Paid online → hoàn ví
+- [ ] `GET /methods` d�ng khi SePay on vs off
+- [ ] COD ? Order Pending, kh�ng QR, kh�ng tr? v�
+- [ ] SystemWallet d? ti?n ? Paid + balance gi?m d�ng `TotalAmount`
+- [ ] SystemWallet thi?u ti?n ? l?i, kh�ng t?o Paid
+- [ ] Sepay ? QR modal, **kh�ng** g?i `/confirm`
+- [ ] Card stub (khi kh�ng SePay) ? `/confirm` ? Paid
+- [ ] Giao h�ng ? Settled + split d�ng; COD tang debt shipper
+- [ ] H?y don d� Paid online ? ho�n v�
 
 ---
 
-## Tóm tắt
+## T�m t?t
 
-Checkout payment = **methods → `ProcessCheckoutPaymentAsync` → (COD | Wallet | Sepay | stub) → (QR/confirm) → settle khi giao**.  
-Mọi rule số tiền / expiry / commission: xem [Payment_Requirements.md](./Payment_Requirements.md).
+Checkout payment = **methods ? `ProcessCheckoutPaymentAsync` ? (COD | Wallet | Sepay | stub) ? (QR/confirm) ? settle khi giao**.  
+M?i rule s? ti?n / expiry / commission: xem [Payment_Requirements.md](./Payment_Requirements.md).
 
-> Liên kết: [Payment_Sepay_Workflow.md](./Payment_Sepay_Workflow.md) · [README workflows](./README.md)
+> Li�n k?t: [Payment_Sepay_Workflow.md](./Payment_Sepay_Workflow.md) � [README workflows](./README.md)

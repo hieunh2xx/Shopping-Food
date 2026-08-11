@@ -1,6 +1,6 @@
 export type ChatSessionStatus = 'Open' | 'Closed';
 export type ChatTopic = 'OrderIssue' | 'OrderCancellation' | 'SystemIssue' | 'General';
-export type UserRole = 'Customer' | 'Seller' | 'Shipper' | 'Admin' | 'Coordinator';
+export type UserRole = 'Customer' | 'Seller' | 'Shipper' | 'Admin' | 'Coordinator' | 'Mall';
 
 export interface IChatSession {
   id: string;
@@ -26,4 +26,34 @@ export interface IChatMessage {
 
 export interface ICreateChatSessionRequest {
   topic: ChatTopic;
+}
+
+export interface ISellerOrderChatSummary {
+  id: string;
+  userId: string;
+  customerName?: string;
+  orderId?: string;
+  relatedOrderIds?: string[];
+  restaurantId?: string;
+  topic: string;
+  status: string;
+  createdAt: string;
+  lastMessage?: string;
+  lastMessageAt?: string;
+}
+
+export interface ICustomerChatSummary {
+  id: string;
+  userId: string;
+  orderId?: string;
+  relatedOrderIds?: string[];
+  relatedSessionIds?: string[];
+  restaurantId?: string;
+  restaurantName?: string;
+  topic: string;
+  status: string;
+  createdAt: string;
+  lastMessage?: string;
+  lastMessageAt?: string;
+  lastSenderRole?: string;
 }

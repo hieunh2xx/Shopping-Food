@@ -22,16 +22,18 @@ namespace ShoppingFood.Application.Features.Carts.Commands
         private readonly ICartRepository _cartRepository;
         private readonly ICartItemRepository _cartItemRepository;
         private readonly IProductRepository _productRepository;
+        private readonly IBuyXGetYPromotionRepository _promotionRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly ShoppingFoodContext _dbContext;
-        private readonly IHttpContextAccessor _httpContextAccessor; // Inject HttpContextAccessor
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IFlashSalePricingService _flashSalePricingService;
 
         public AddToCartHandler(
             ICartRepository cartRepository,
             ICartItemRepository cartItemRepository,
             IProductRepository productRepository,
+            IBuyXGetYPromotionRepository promotionRepository,
             IUnitOfWork unitOfWork,
             IMapper mapper, 
             ShoppingFoodContext dbContext,
@@ -41,6 +43,7 @@ namespace ShoppingFood.Application.Features.Carts.Commands
             _cartRepository = cartRepository;
             _cartItemRepository = cartItemRepository;
             _productRepository = productRepository;
+            _promotionRepository = promotionRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _dbContext = dbContext;
@@ -57,6 +60,19 @@ namespace ShoppingFood.Application.Features.Carts.Commands
                 if (request.CurrentUserId == null && guestUserId == null)
                 {
                     guestUserId = Guid.NewGuid();
+                }
+
+                if (request.BuyXGetYPromotionId.HasValue)
+                {
+                    var promoResult = await AddBuyXGetYBundleAsync(request, guestUserId, cancellationToken);
+                    if (promoResult.Error || promoResult.Code >= 400)
+                    {
+                        await transaction.RollbackAsync(cancellationToken);
+                        return promoResult;
+                    }
+
+                    await transaction.CommitAsync(cancellationToken);
+                    return promoResult;
                 }
 
                 var products = await _productRepository.GetAsync(
@@ -101,6 +117,125 @@ namespace ShoppingFood.Application.Features.Carts.Commands
             }
         }
 
+        private async Task<ApiResponse> AddBuyXGetYBundleAsync(AddToCartCommand request, Guid? guestUserId, CancellationToken cancellationToken)
+        {
+            var promoId = request.BuyXGetYPromotionId!.Value;
+            var sets = Math.Max(1, request.Quantity);
+
+            var promos = await _promotionRepository.GetAsync(
+                predicate: p => p.Id == promoId,
+                include: q => q
+                    .Include(p => p.TriggerProduct).ThenInclude(tp => tp.ProductSizes)
+                    .Include(p => p.TriggerProduct).ThenInclude(tp => tp.ProductToppings).ThenInclude(pt => pt.Topping)
+                    .Include(p => p.GiftProduct).ThenInclude(gp => gp.Images),
+                disableTracking: false);
+            var promo = promos.FirstOrDefault();
+            if (promo == null || !promo.IsActive)
+                return ApiResponse.Failure(404, "Chương trình khuyến mãi không tồn tại hoặc đã tắt.");
+
+            var now = DateTime.UtcNow;
+            if (promo.StartDate > now || promo.EndDate < now)
+                return ApiResponse.Failure(400, "Chương trình khuyến mãi chưa hiệu lực hoặc đã hết hạn.");
+
+            var trigger = promo.TriggerProduct;
+            var gift = promo.GiftProduct;
+            if (trigger == null || gift == null)
+                return ApiResponse.Failure(404, "Không tìm thấy món trong chương trình khuyến mãi.");
+
+            if (trigger.Status != ProductStatus.Approved || trigger.IsHidden || trigger.StockStatus != StockStatus.InStock)
+                return ApiResponse.Failure(400, "Món mua trong khuyến mãi không khả dụng.");
+            if (gift.Status != ProductStatus.Approved || gift.IsHidden || gift.StockStatus != StockStatus.InStock)
+                return ApiResponse.Failure(400, "Món tặng trong khuyến mãi không khả dụng.");
+            if (!trigger.IsCurrentlyAvailable(now) || !gift.IsCurrentlyAvailable(now))
+                return ApiResponse.Failure(400, "Món trong khuyến mãi hiện chưa tới giờ mở bán.");
+
+            if (request.ProductId != Guid.Empty && request.ProductId != promo.TriggerProductId)
+                return ApiResponse.Failure(400, "Sản phẩm không khớp chương trình Mua X Tặng Y.");
+
+            var cart = await GetOrCreateCartAsync(request.CurrentUserId, guestUserId);
+            var conflictResult = await ValidateRestaurantConflictAsync(cart, trigger, request.ClearCartIfConflict);
+            if (conflictResult != null)
+                return conflictResult;
+
+            var buyQty = promo.BuyQuantity * sets;
+            var giftQty = promo.GiftQuantity * sets;
+
+            var existingParents = await _cartItemRepository.GetAsync(
+                predicate: i => i.CartId == cart.Id
+                    && i.BuyXGetYPromotionId == promoId
+                    && !i.IsGift
+                    && i.ProductId == promo.TriggerProductId,
+                disableTracking: false);
+            var parent = existingParents.FirstOrDefault();
+
+            var flashSalePrice = await _flashSalePricingService.GetActiveFlashSalePriceAsync(trigger.Id);
+            var triggerPrice = flashSalePrice ?? trigger.Price;
+
+            if (parent != null)
+            {
+                parent.Quantity += buyQty;
+                parent.PriceAtAdded = triggerPrice;
+                _cartItemRepository.Update(parent);
+
+                var gifts = await _cartItemRepository.GetAsync(
+                    predicate: i => i.CartId == cart.Id && i.ParentCartItemId == parent.Id && i.IsGift,
+                    disableTracking: false);
+                var giftItem = gifts.FirstOrDefault();
+                if (giftItem != null)
+                {
+                    giftItem.Quantity += giftQty;
+                    giftItem.PriceAtAdded = 0;
+                    _cartItemRepository.Update(giftItem);
+                }
+                else
+                {
+                    _cartItemRepository.Add(new CartItem
+                    {
+                        Id = Guid.NewGuid(),
+                        CartId = cart.Id,
+                        ProductId = gift.Id,
+                        Quantity = giftQty,
+                        PriceAtAdded = 0,
+                        IsGift = true,
+                        BuyXGetYPromotionId = promoId,
+                        ParentCartItemId = parent.Id,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+            }
+            else
+            {
+                var parentId = Guid.NewGuid();
+                _cartItemRepository.Add(new CartItem
+                {
+                    Id = parentId,
+                    CartId = cart.Id,
+                    ProductId = trigger.Id,
+                    Quantity = buyQty,
+                    PriceAtAdded = triggerPrice,
+                    IsGift = false,
+                    BuyXGetYPromotionId = promoId,
+                    CreatedAt = DateTime.UtcNow
+                });
+                _cartItemRepository.Add(new CartItem
+                {
+                    Id = Guid.NewGuid(),
+                    CartId = cart.Id,
+                    ProductId = gift.Id,
+                    Quantity = giftQty,
+                    PriceAtAdded = 0,
+                    IsGift = true,
+                    BuyXGetYPromotionId = promoId,
+                    ParentCartItemId = parentId,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+
+            await _unitOfWork.SaveChangesAsync();
+            var dto = await GetCartDtoAsync(cart.Id);
+            return ApiResponse.Success(dto, "Đã thêm khuyến mãi Mua X Tặng Y vào giỏ");
+        }
+
         private async Task<ApiResponse> ValidateRestaurantConflictAsync(Cart cart, Product product, bool clearCartIfConflict)
         {
             var existingCartItems = await _cartItemRepository.GetAsync(
@@ -135,7 +270,12 @@ namespace ShoppingFood.Application.Features.Carts.Commands
         private async Task<CartItem?> GetCartItemAsync(Guid cartId, Guid productId, string? selectedSize, string? selectedToppingsStr)
         {
             var existingCartItem = await _cartItemRepository.GetAsync(
-                predicate: i => i.CartId == cartId && i.ProductId == productId && i.SelectedSize == selectedSize && i.SelectedToppings == selectedToppingsStr,
+                predicate: i => i.CartId == cartId
+                    && i.ProductId == productId
+                    && i.SelectedSize == selectedSize
+                    && i.SelectedToppings == selectedToppingsStr
+                    && i.BuyXGetYPromotionId == null
+                    && !i.IsGift,
                 disableTracking: false
             );
             return existingCartItem.FirstOrDefault();
@@ -145,7 +285,9 @@ namespace ShoppingFood.Application.Features.Carts.Commands
         {
             var updatedCarts = await _cartRepository.GetAsync(
                 predicate: c => c.Id == cartId,
-                include: q => q.Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Images),
+                include: q => q
+                    .Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Images)
+                    .Include(c => c.Items).ThenInclude(i => i.BuyXGetYPromotion),
                 disableTracking: true
             );
             var updatedCart = updatedCarts.FirstOrDefault();

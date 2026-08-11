@@ -31,6 +31,8 @@ function getTransactionBadge(type: string) {
     CodRepayment: { label: 'Nộp COD', cls: 'bg-indigo-100 text-indigo-700' },
     CodRemittance: { label: 'Nộp COD', cls: 'bg-indigo-100 text-indigo-700' },
     SellerPayout: { label: 'Thanh toán đơn', cls: 'bg-green-100 text-green-700' },
+    ShippingSubsidy: { label: 'Bù freeship', cls: 'bg-rose-100 text-rose-700' },
+    Adjustment: { label: 'Điều chỉnh', cls: 'bg-gray-100 text-gray-700' },
   };
   const info = map[type] || { label: type, cls: 'bg-gray-100 text-gray-700' };
   return <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${info.cls}`}>{info.label}</span>;
@@ -387,6 +389,8 @@ export function ShipperWalletPage() {
       ]);
       if (!wRes.error && wRes.data) {
         setWallet(wRes.data);
+        const debt = Number(wRes.data.codCollectedAmount || 0);
+        setRepayAmount(debt > 0 ? String(Math.round(debt)) : '');
         if (wRes.data.bankName && !withdrawForm.bankName) {
           setWithdrawForm(prev => ({
             ...prev,
@@ -560,29 +564,63 @@ export function ShipperWalletPage() {
         <div className="flex gap-3">
           <div className="flex-1">
             <Input
-              placeholder="Nhập số tiền nộp"
+              placeholder={codCollected > 0 ? `Tối đa ${formatCurrency(codCollected)}` : 'Không còn công nợ COD'}
               value={repayAmount}
               onChange={e => setRepayAmount(e.target.value.replace(/\D/g, ''))}
+              disabled={codCollected <= 0}
             />
             {repayAmount && !isNaN(parseInt(repayAmount)) && (
               <p className="text-xs text-gray-400 mt-1 ml-1">{formatCurrency(parseInt(repayAmount))}</p>
             )}
+            {codCollected <= 0 && (
+              <p className="text-xs text-gray-400 mt-1 ml-1">Hiện không có số tiền COD cần nộp.</p>
+            )}
           </div>
           <Button
+            type="button"
             onClick={handleRepay}
-            disabled={repayLoading}
-            className="px-5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shrink-0"
+            disabled={repayLoading || codCollected <= 0 || parseFloat(repayAmount || '0') <= 0}
+            className="px-5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shrink-0 disabled:opacity-50"
           >
             {repayLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'Nộp tiền'}
           </Button>
         </div>
         {codCollected > 0 && (
           <button
-            onClick={() => setRepayAmount(String(codCollected))}
+            type="button"
+            onClick={() => {
+              setRepayAmount(String(Math.round(codCollected)));
+              // Nộp ngay toàn bộ khi bấm
+            }}
             className="mt-3 text-sm text-amber-600 hover:text-amber-700 font-semibold hover:underline"
           >
-            Nộp toàn bộ ({formatCurrency(codCollected)})
+            Điền toàn bộ ({formatCurrency(codCollected)})
           </button>
+        )}
+        {codCollected > 0 && (
+          <Button
+            type="button"
+            onClick={async () => {
+              setRepayAmount(String(Math.round(codCollected)));
+              setRepayLoading(true);
+              try {
+                const res = await paymentService.repayShipperDebt(Math.round(codCollected));
+                if (!res.error) {
+                  toast.success(`Đã nộp ${formatCurrency(res.data?.repaid || codCollected)} công nợ COD`);
+                  setRepayAmount('');
+                  loadData();
+                } else toast.error(res.message);
+              } catch (err: any) {
+                toast.error(err.response?.data?.message || 'Nộp COD thất bại');
+              } finally {
+                setRepayLoading(false);
+              }
+            }}
+            disabled={repayLoading}
+            className="mt-3 w-full bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl"
+          >
+            {repayLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : `Nộp toàn bộ ${formatCurrency(codCollected)}`}
+          </Button>
         )}
       </Card>
 

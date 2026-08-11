@@ -1,13 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
-import { CheckCircle, XCircle, FileImage, Image as ImageIcon, AlertCircle } from 'lucide-react';
+import { FileImage, Image as ImageIcon } from 'lucide-react';
 import { Card, Button, Input } from '../../components/common';
 import { paymentService } from '../../services/PaymentService';
 import { formatCurrency, formatDate } from '../../utils/formatters';
+import { useConfirm } from '../../hooks';
 import toast from 'react-hot-toast';
 
 type WithdrawalStatus = 'Pending' | 'Approved' | 'Rejected' | 'Completed' | 'Disputed';
 
 export function AdminWithdrawalsPage() {
+  const { confirm } = useConfirm();
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState<string>('');
@@ -103,7 +105,13 @@ export function AdminWithdrawalsPage() {
   };
 
   const handleForceComplete = async (id: string) => {
-    if (!window.confirm('Bạn có chắc chắn đã chuyển khoản và muốn chốt đơn này?')) return;
+    const confirmed = await confirm({
+      title: 'Chốt rút tiền',
+      message: 'Bạn có chắc chắn đã chuyển khoản và muốn chốt đơn này?',
+      confirmText: 'Chốt đơn',
+      isDanger: true,
+    });
+    if (!confirmed) return;
     
     const res = await paymentService.forceCompleteWithdrawal({ withdrawalId: id });
     if (!res.error) {

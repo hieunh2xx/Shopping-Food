@@ -65,7 +65,7 @@ export function Footer() {
                 <ChefHat className="w-5 h-5 text-gray-900" />
               </div>
               <span className="text-lg font-bold bg-gradient-to-r from-orange-400 to-orange-500 bg-clip-text text-transparent">
-                Shopping Food
+                UniEats
               </span>
             </Link>
             <p className="text-sm text-gray-600 leading-relaxed">
@@ -135,7 +135,7 @@ export function Footer() {
 
         <div className="mt-10 pt-6 border-t border-gray-200 text-center">
           <p className="text-xs text-gray-500">
-            © {new Date().getFullYear()} Shopping Food. All rights reserved.
+            © {new Date().getFullYear()} UniEats. All rights reserved.
           </p>
         </div>
       </div>

@@ -172,11 +172,20 @@ namespace ShoppingFood.Domain.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("BuyXGetYPromotionId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid>("CartId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsGift")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid?>("ParentCartItemId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("PriceAtAdded")
                         .HasColumnType("decimal(12,2)");
@@ -198,7 +207,11 @@ namespace ShoppingFood.Domain.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BuyXGetYPromotionId");
+
                     b.HasIndex("CartId");
+
+                    b.HasIndex("ParentCartItemId");
 
                     b.HasIndex("ProductId");
 
@@ -1072,6 +1085,12 @@ namespace ShoppingFood.Domain.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("BuyXGetYPromotionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsGift")
+                        .HasColumnType("bit");
 
                     b.Property<string>("ItemName")
                         .IsRequired()
@@ -2420,11 +2439,21 @@ namespace ShoppingFood.Domain.Migrations
 
             modelBuilder.Entity("ShoppingFood.Domain.Models.CartItem", b =>
                 {
+                    b.HasOne("ShoppingFood.Domain.Models.BuyXGetYPromotion", "BuyXGetYPromotion")
+                        .WithMany()
+                        .HasForeignKey("BuyXGetYPromotionId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("ShoppingFood.Domain.Models.Cart", "Cart")
                         .WithMany("Items")
                         .HasForeignKey("CartId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("ShoppingFood.Domain.Models.CartItem", "ParentCartItem")
+                        .WithMany()
+                        .HasForeignKey("ParentCartItemId")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("ShoppingFood.Domain.Models.Product", "Product")
                         .WithMany()
@@ -2432,7 +2461,11 @@ namespace ShoppingFood.Domain.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.Navigation("BuyXGetYPromotion");
+
                     b.Navigation("Cart");
+
+                    b.Navigation("ParentCartItem");
 
                     b.Navigation("Product");
                 });

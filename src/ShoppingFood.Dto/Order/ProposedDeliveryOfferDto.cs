@@ -20,6 +20,8 @@ namespace ShoppingFood.Dto.Order
         public double? RestaurantLatitude { get; set; }
         public double? RestaurantLongitude { get; set; }
         public double DistanceInKm { get; set; }
+        /// <summary>Distance from restaurant to customer delivery address (km).</summary>
+        public double? DeliveryDistanceInKm { get; set; }
         public decimal TotalIncome { get; set; }
         public decimal BaseFee { get; set; }
         public decimal DistanceFee { get; set; }

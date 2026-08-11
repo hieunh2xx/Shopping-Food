@@ -48,7 +48,35 @@ namespace ShoppingFood.Application.Features.Carts.Commands
                 if (cartItem == null)
                     return ApiResponse.Failure(404, "Item not found in cart.");
 
-                _cartItemRepository.Delete(cartItem);
+                // Xóa cả bundle Mua X Tặng Y (parent + gift)
+                var toDelete = new List<CartItem> { cartItem };
+                if (cartItem.BuyXGetYPromotionId.HasValue)
+                {
+                    if (cartItem.IsGift && cartItem.ParentCartItemId.HasValue)
+                    {
+                        var parents = await _cartItemRepository.GetAsync(
+                            predicate: i => i.Id == cartItem.ParentCartItemId.Value,
+                            disableTracking: false);
+                        var parent = parents.FirstOrDefault();
+                        if (parent != null) toDelete.Add(parent);
+
+                        var siblings = await _cartItemRepository.GetAsync(
+                            predicate: i => i.ParentCartItemId == cartItem.ParentCartItemId && i.Id != cartItem.Id,
+                            disableTracking: false);
+                        toDelete.AddRange(siblings);
+                    }
+                    else if (!cartItem.IsGift)
+                    {
+                        var gifts = await _cartItemRepository.GetAsync(
+                            predicate: i => i.ParentCartItemId == cartItem.Id,
+                            disableTracking: false);
+                        toDelete.AddRange(gifts);
+                    }
+                }
+
+                foreach (var item in toDelete.DistinctBy(x => x.Id))
+                    _cartItemRepository.Delete(item);
+
                 await _unitOfWork.SaveChangesAsync();
 
                 var updatedCarts = await _cartRepository.GetAsync(
@@ -74,7 +102,7 @@ namespace ShoppingFood.Application.Features.Carts.Commands
                 predicate: i => i.CartId == cartId && i.ProductId == productId,
                 disableTracking: false
             );
-            return existingCartItem.FirstOrDefault();
+            return existingCartItem.FirstOrDefault(i => !i.IsGift) ?? existingCartItem.FirstOrDefault();
         }
 
         private async Task<Cart?> GetCartAsync(Guid? userId, Guid? guestUserId)

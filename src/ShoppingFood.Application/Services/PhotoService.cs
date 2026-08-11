@@ -14,12 +14,20 @@ namespace ShoppingFood.Application.Services
 
         public PhotoService(IConfiguration config)
         {
-            var acc = new Account(
-                config["CloudinarySettings:CloudName"],
-                config["CloudinarySettings:ApiKey"],
-                config["CloudinarySettings:ApiSecret"]
-            );
+            var cloudName = config["CloudinarySettings:CloudName"];
+            var apiKey = config["CloudinarySettings:ApiKey"];
+            var apiSecret = config["CloudinarySettings:ApiSecret"];
 
+            if (string.IsNullOrWhiteSpace(cloudName) ||
+                string.IsNullOrWhiteSpace(apiKey) ||
+                string.IsNullOrWhiteSpace(apiSecret))
+            {
+                throw new InvalidOperationException(
+                    "CloudinarySettings chưa được cấu hình. " +
+                    "Điền CloudName, ApiKey, ApiSecret trong appsettings hoặc User Secrets.");
+            }
+
+            var acc = new Account(cloudName, apiKey, apiSecret);
             _cloudinary = new Cloudinary(acc);
         }
 

@@ -23,15 +23,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   });
 
-  // Get or create guest user ID
+  // Get or create guest user ID — keep sending guest id after login so BE can merge guest cart
   const getGuestUserId = useCallback(() => {
-    if (isAuthenticated) return undefined;
     let guestId = localStorage.getItem(GUEST_ID_KEY);
-    if (!guestId) {
+    if (!guestId && !isAuthenticated) {
       guestId = crypto.randomUUID();
       localStorage.setItem(GUEST_ID_KEY, guestId);
     }
-    return guestId;
+    return guestId || undefined;
   }, [isAuthenticated]);
 
   // Sync cart state to localStorage for optimistic persistence
@@ -42,6 +41,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const fetchCart = useCallback(async () => {
     try {
       const guestUserId = getGuestUserId();
+      // Authenticated users still pass guestUserId so server can merge leftover guest cart
       const res = await cartService.getCart(guestUserId);
       if (!res.error && res.data) {
         let apiItems: any[] = [];
@@ -52,15 +52,35 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
 
         const mappedItems: ICartItem[] = apiItems.map((apiItem: any) => {
-          if (apiItem.product && apiItem.product.id) return apiItem as ICartItem;
+          if (apiItem.product && apiItem.product.id) {
+            return {
+              ...apiItem,
+              id: apiItem.id,
+              priceAtAdded: apiItem.priceAtAdded,
+              isGift: !!apiItem.isGift,
+              buyXGetYPromotionId: apiItem.buyXGetYPromotionId,
+              parentCartItemId: apiItem.parentCartItemId,
+              promotionLabel: apiItem.promotionLabel,
+              promoBuyQuantity: apiItem.promoBuyQuantity,
+              promoGiftQuantity: apiItem.promoGiftQuantity,
+            } as ICartItem;
+          }
           
           return {
+            id: apiItem.id,
             quantity: apiItem.quantity,
             isProductDeleted: apiItem.isProductDeleted,
+            priceAtAdded: apiItem.priceAtAdded,
+            isGift: !!apiItem.isGift,
+            buyXGetYPromotionId: apiItem.buyXGetYPromotionId,
+            parentCartItemId: apiItem.parentCartItemId,
+            promotionLabel: apiItem.promotionLabel,
+            promoBuyQuantity: apiItem.promoBuyQuantity,
+            promoGiftQuantity: apiItem.promoGiftQuantity,
             product: {
               id: apiItem.productId,
               itemName: apiItem.productName || 'Sản phẩm',
-              price: apiItem.priceAtAdded || 0,
+              price: apiItem.priceAtAdded ?? 0,
               primaryImageUrl: apiItem.productImageUrl,
               restaurantId: apiItem.restaurantId || '',
               restaurantName: apiItem.restaurantName || '',
@@ -68,6 +88,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
               categoryId: '',
               categoryName: '',
               stockStatus: 'InStock',
+              status: 'Approved',
               images: [],
               toppings: apiItem.toppings || [],
               sizes: apiItem.sizes || [],
@@ -85,10 +106,41 @@ export function CartProvider({ children }: { children: ReactNode }) {
           };
         });
 
-        setItems(mappedItems);
+        // Không gộp dòng khuyến mãi / gift với món thường
+        const deduped = mappedItems.reduce<ICartItem[]>((acc, item) => {
+          if (!item?.product?.id) return acc;
+          if (item.id || item.buyXGetYPromotionId || item.isGift) {
+            acc.push(item);
+            return acc;
+          }
+          const size = item.selectedSize || '';
+          const tops = [...(item.selectedToppings || [])].sort().join(',');
+          const existing = acc.find(
+            (x) =>
+              !x.buyXGetYPromotionId &&
+              !x.isGift &&
+              !x.id &&
+              x.product.id === item.product.id &&
+              (x.selectedSize || '') === size &&
+              [...(x.selectedToppings || [])].sort().join(',') === tops
+          );
+          if (existing) {
+            existing.quantity += item.quantity || 0;
+          } else {
+            acc.push(item);
+          }
+          return acc;
+        }, []);
+
+        setItems(deduped);
+        return deduped;
       }
+      // API ok but empty/missing payload — trust server over ghost localStorage
+      setItems([]);
+      return [];
     } catch (error) {
       console.error('Failed to fetch cart', error);
+      return null;
     }
   }, [getGuestUserId]);
 
@@ -97,9 +149,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
     fetchCart();
   }, [fetchCart, isAuthenticated, getGuestUserId]);
 
-  const totalItems = items.reduce((sum, item) => sum + (item?.quantity || 0), 0);
+  // Đếm theo “xuất/combo” trên UI: bỏ món tặng; KM Mua X Tặng Y = số set (quantity / buyQty)
+  const totalItems = items.reduce((sum, item) => {
+    if (!item || item.isGift) return sum;
+    if (item.buyXGetYPromotionId) {
+      const step = Math.max(1, Number(item.promoBuyQuantity) || 1);
+      return sum + Math.max(1, Math.round((item.quantity || 0) / step));
+    }
+    return sum + (item.quantity || 0);
+  }, 0);
   const totalPrice = items.reduce((sum, item) => {
     if (!item || !item.product) return sum;
+    if (item.isGift) return sum;
+    if (typeof item.priceAtAdded === 'number') {
+      return sum + item.priceAtAdded * item.quantity;
+    }
     let itemPrice = item.product.flashSalePrice ?? item.product.price ?? 0;
     if (item.selectedSize) {
       const sizeOpt = item.product.sizes?.find(s => s.sizeName === item.selectedSize);
@@ -156,7 +220,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
     }, 0);
 
-    // API call
+    // API call — then re-sync from server (avoids ghost local-only cart)
     try {
       await cartService.addToCart({
         productId: product.id,
@@ -165,30 +229,71 @@ export function CartProvider({ children }: { children: ReactNode }) {
         selectedSize,
         selectedToppings
       });
+      await fetchCart();
     } catch (error: any) {
       toast.error(error.message);
-      // Ideally rollback on failure
+      await fetchCart();
     }
-  }, [getGuestUserId]);
+  }, [getGuestUserId, fetchCart]);
+
+  const addBuyXGetY = useCallback(async ({
+    promotionId,
+    triggerProduct,
+    sets = 1,
+  }: {
+    promotionId: string;
+    triggerProduct: IProductDto;
+    sets?: number;
+  }) => {
+    try {
+      await cartService.addToCart({
+        productId: triggerProduct.id,
+        quantity: Math.max(1, sets),
+        guestUserId: getGuestUserId(),
+        buyXGetYPromotionId: promotionId,
+      });
+      await fetchCart();
+      toast.success(`Đã thêm khuyến mãi: ${triggerProduct.itemName}`);
+    } catch (error: any) {
+      toast.error(error?.message || 'Không thêm được khuyến mãi vào giỏ');
+      await fetchCart();
+    }
+  }, [getGuestUserId, fetchCart]);
 
   const removeItem = useCallback(async (productId: string, selectedSize?: string, selectedToppings?: string[]) => {
-    // Optimistic update
-    setItems((prev) => prev.filter((item) => 
-      !(item.product.id === productId &&
+    // Optimistic: xóa cả bundle nếu là dòng KM
+    setItems((prev) => {
+      const target = prev.find((item) =>
+        item.product.id === productId &&
         item.selectedSize === selectedSize &&
-        JSON.stringify(item.selectedToppings?.sort() || []) === JSON.stringify(selectedToppings?.sort() || []))
-    ));
+        JSON.stringify(item.selectedToppings?.sort() || []) === JSON.stringify(selectedToppings?.sort() || [])
+      );
+      if (target?.buyXGetYPromotionId) {
+        const parentId = target.isGift ? target.parentCartItemId : target.id;
+        return prev.filter((item) => {
+          if (item.buyXGetYPromotionId !== target.buyXGetYPromotionId) return true;
+          if (parentId && (item.id === parentId || item.parentCartItemId === parentId)) return false;
+          return item.product.id !== productId;
+        });
+      }
+      return prev.filter((item) =>
+        !(item.product.id === productId &&
+          item.selectedSize === selectedSize &&
+          JSON.stringify(item.selectedToppings?.sort() || []) === JSON.stringify(selectedToppings?.sort() || []))
+      );
+    });
 
-    // API call
     try {
       await cartService.removeCartItem({
         productId,
         guestUserId: getGuestUserId()
       });
+      await fetchCart();
     } catch (error: any) {
       toast.error('Lỗi khi xóa món trên server');
+      await fetchCart();
     }
-  }, [getGuestUserId]);
+  }, [getGuestUserId, fetchCart]);
 
   const updateQuantity = useCallback(async (
     productId: string, 
@@ -219,10 +324,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
         quantity,
         guestUserId: getGuestUserId()
       });
+      await fetchCart();
     } catch (error: any) {
       toast.error('Lỗi cập nhật số lượng trên server');
+      await fetchCart();
     }
-  }, [removeItem, getGuestUserId]);
+  }, [removeItem, getGuestUserId, fetchCart]);
 
   const clearCart = useCallback(async () => {
     setItems([]);
@@ -238,6 +345,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     totalItems,
     totalPrice,
     addItem,
+    addBuyXGetY,
     removeItem,
     updateQuantity,
     clearCart,

@@ -46,14 +46,15 @@ namespace ShoppingFood.Application.Features.Orders.Queries
 
                 var orders = await _orderRepository.GetAsync(
                     predicate: o => o.ShipperId == shipperProfile.Id &&
-                                    o.Status == Domain.Enums.OrderStatus.Delivered &&
+                                    (o.Status == Domain.Enums.OrderStatus.Delivered || o.Status == Domain.Enums.OrderStatus.Cancelled) &&
                                     o.UpdatedAt >= startDate &&
                                     o.UpdatedAt <= endDate,
                     disableTracking: true
-                    
                     );
 
-                var dailyReports = orders.GroupBy(o => o.UpdatedAt.Date).Select(g =>
+                var deliveredOrders = orders.Where(o => o.Status == Domain.Enums.OrderStatus.Delivered).ToList();
+
+                var dailyReports = deliveredOrders.GroupBy(o => o.UpdatedAt.Date).Select(g =>
                 {
                     var ordersInDay = g.ToList();
                     var dayBaseFee = ordersInDay.Sum(o => o.ShipperBaseFeeAmount);
@@ -72,11 +73,30 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                     };
                 }).OrderBy(d => d.Date).ToList();
 
-                var completedOrderCount = orders.Count();
+                var completedOrderCount = deliveredOrders.Count;
                 var totalBaseFees = dailyReports.Sum(d => d.BaseFees);
                 var totalDistanceFees = dailyReports.Sum(d => d.DistanceFees);
                 var totalBonuses = dailyReports.Sum(d => d.Bonus);
                 var totalIncome = dailyReports.Sum(d => d.TotalIncome);
+
+                var orderDtos = orders
+                    .OrderByDescending(o => o.UpdatedAt)
+                    .Select(o => new ShipperCompletedOrderDto
+                    {
+                        OrderId = o.Id,
+                        Status = o.Status.ToString(),
+                        TotalAmount = o.TotalAmount,
+                        ShippingFee = o.ShippingFee,
+                        ItemsSubtotal = o.ItemsSubtotal > 0 ? o.ItemsSubtotal : Math.Max(0, o.TotalAmount - o.ShippingFee),
+                        BaseFee = o.ShipperBaseFeeAmount,
+                        DistanceFee = o.ShipperDistanceFeeAmount,
+                        PeakBonus = o.ShipperPeakBonus,
+                        TotalIncome = o.ShipperIncome,
+                        PaymentMethod = o.PaymentMethod.ToString(),
+                        DeliveryAddress = o.DeliveryAddress,
+                        ContactName = o.ContactName,
+                        CompletedAt = o.UpdatedAt
+                    }).ToList();
 
                 var result = new ShipperIncomeReportDto
                 {
@@ -86,6 +106,7 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                     TotalBonuses = totalBonuses,
                     TotalIncome = totalIncome,
                     DailyReports = dailyReports,
+                    Orders = orderDtos,
                 };
 
                 return ApiResponse.Success(result, "Successfully retrieved shipper income report.");

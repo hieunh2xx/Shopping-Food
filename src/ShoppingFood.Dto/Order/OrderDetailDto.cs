@@ -32,6 +32,13 @@ namespace ShoppingFood.Dto.Order
         public string PaymentStatus { get; set; } = string.Empty;
         public Guid? PaymentSessionId { get; set; }
         public string? DiscountCode { get; set; }
+        public string? RejectReason { get; set; }
+        public decimal ShippingFee { get; set; }
+        public decimal ItemsSubtotal { get; set; }
+        public decimal ShipperIncome { get; set; }
+        public decimal ShipperBaseFeeAmount { get; set; }
+        public decimal ShipperDistanceFeeAmount { get; set; }
+        public decimal ShipperPeakBonus { get; set; }
         public List<OrderItemDto> Items { get; set; } = new List<OrderItemDto>();
     }
 }

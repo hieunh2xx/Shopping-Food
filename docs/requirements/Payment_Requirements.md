@@ -1,6 +1,6 @@
 # Requirements: Thanh toán & Tài chính (Payment & Finance)
 
-Tài liệu **yêu cầu nghiệp vụ** cho phân hệ thanh toán Shopping Food. Đọc trước khi đọc các workflow chi tiết.
+Tài liệu **yêu cầu nghiệp vụ** cho phân hệ thanh toán UniEats. Đọc trước khi đọc các workflow chi tiết.
 
 > Workflow liên quan:
 > - [../workflows/Payment_Checkout_Workflow.md](../workflows/Payment_Checkout_Workflow.md) — thanh toán khi đặt hàng

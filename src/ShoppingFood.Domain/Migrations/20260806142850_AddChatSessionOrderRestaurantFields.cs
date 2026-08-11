@@ -11,17 +11,12 @@ namespace ShoppingFood.Domain.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<Guid>(
-                name: "OrderId",
-                table: "CHAT_SESSION",
-                type: "uniqueidentifier",
-                nullable: true);
-
-            migrationBuilder.AddColumn<Guid>(
-                name: "RestaurantId",
-                table: "CHAT_SESSION",
-                type: "uniqueidentifier",
-                nullable: true);
+            migrationBuilder.Sql("""
+                IF COL_LENGTH('dbo.CHAT_SESSION', 'OrderId') IS NULL
+                    ALTER TABLE dbo.CHAT_SESSION ADD OrderId uniqueidentifier NULL;
+                IF COL_LENGTH('dbo.CHAT_SESSION', 'RestaurantId') IS NULL
+                    ALTER TABLE dbo.CHAT_SESSION ADD RestaurantId uniqueidentifier NULL;
+                """);
         }
 
         /// <inheritdoc />

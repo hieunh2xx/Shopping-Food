@@ -74,6 +74,7 @@ namespace ShoppingFood.Tests.Features.Orders
             _configRepoMock = new Mock<IPlatformFinanceConfigRepository>();
             _flashSalePricingMock = new Mock<IFlashSalePricingService>();
             _notificationRepoMock = new Mock<INotificationRepository>();
+            var cartMergeMock = new Mock<ICartMergeService>();
 
             _handler = new CheckoutHandler(
                 _cartRepoMock.Object,
@@ -92,7 +93,8 @@ namespace ShoppingFood.Tests.Features.Orders
                 _httpContextMock.Object,
                 _configRepoMock.Object,
                 _flashSalePricingMock.Object,
-                _notificationRepoMock.Object
+                _notificationRepoMock.Object,
+                cartMergeMock.Object
             );
         }
 

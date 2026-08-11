@@ -20,7 +20,7 @@ export interface ICreatePointGiftConfigRequest {
 }
 
 export interface IUpdatePointGiftConfigRequest {
-  id: string;
+  id?: string;
   pointRequired: number;
   isActive: boolean;
 }

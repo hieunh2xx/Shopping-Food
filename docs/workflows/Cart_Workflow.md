@@ -1,70 +1,70 @@
-﻿# Tài liệu Quy trình: Giỏ hàng (Cart)
+# T�i li?u Quy tr�nh: Gi? h�ng (Cart)
 
-Tài liệu này mô tả chi tiết luồng **thêm / xem / cập nhật / xóa / clear** giỏ hàng trong hệ thống **Shopping Food**, hỗ trợ cả **user đã đăng nhập** và **guest** (`guestUserId` lưu `localStorage` key `sf_guest_id`).
+T�i li?u n�y m� t? chi ti?t lu?ng **th�m / xem / c?p nh?t / x�a / clear** gi? h�ng trong h? th?ng **UniEats**, h? tr? c? **user d� dang nh?p** v� **guest** (`guestUserId` luu `localStorage` key `sf_guest_id`).
 
-> Guest cart: request **không** gửi header `Authorization` → `AuthenticationFilter` coi là `isGuestCartRequest` và bypass JWT. User đã login: Filter inject `CurrentUserId` vào Command/Query.
-
----
-
+> Guest cart: request **kh�ng** g?i header `Authorization` ? `AuthenticationFilter` coi l� `isGuestCartRequest` v� bypass JWT. User d� login: Filter inject `CurrentUserId` v�o Command/Query.
 
 ---
 
-## Phần A — UI Interaction Trace (Nút bấm → Code → Data → Hiển thị)
 
-> UI Trace — Cart  
-> Mỗi thao tác trả lời: **nút ở đâu** · **bấm chạy file/hàm nào** · **API/BE đâu** · **data trả về** · **hiển thị thế nào**.
+---
+
+## Ph?n A � UI Interaction Trace (N�t b?m ? Code ? Data ? Hi?n th?)
+
+> UI Trace � Cart  
+> M?i thao t�c tr? l?i: **n�t ? d�u** � **b?m ch?y file/h�m n�o** � **API/BE d�u** � **data tr? v?** � **hi?n th? th? n�o**.
 
 
-**State trung tâm:** `CartProvider` trong `ShoppingFood.FE/src/contexts/CartContext.tsx`  
-**Hook:** `useCart()` → `hooks/useCart.ts` (re-export context)  
+**State trung t�m:** `CartProvider` trong `ShoppingFood.FE/src/contexts/CartContext.tsx`  
+**Hook:** `useCart()` ? `hooks/useCart.ts` (re-export context)  
 **Keys localStorage:** `sf_cart` (optimistic), `sf_guest_id` (guest)
 
 ---
 
-## UT-CART-01 — Thêm vào giỏ từ ProductCard
+## UT-CART-01 � Th�m v�o gi? t? ProductCard
 
-#### 1. Giao diện nút bấm ở đâu?
+#### 1. Giao di?n n�t b?m ? d�u?
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
-| **Route** | `/`, `/products`, `/restaurant/:id`, … (mọi nơi render `ProductCard`) |
-| **Page** | Ví dụ `pages/HomePage.tsx`, `pages/ProductsPage.tsx` |
+| **Route** | `/`, `/products`, `/restaurant/:id`, � (m?i noi render `ProductCard`) |
+| **Page** | V� d? `pages/HomePage.tsx`, `pages/ProductsPage.tsx` |
 | **Component** | `components/product/ProductCard.tsx` |
-| **Nhãn nút** | `"Thêm vào giỏ"` (hoặc `"Hết hàng"` nếu OutOfStock) |
-| **Loại control** | `<button onClick={...}>` cuối card |
-| **Điều kiện hiện** | Luôn hiện; `disabled` khi `stockStatus === 'OutOfStock'` |
+| **Nh�n n�t** | `"Th�m v�o gi?"` (ho?c `"H?t h�ng"` n?u OutOfStock) |
+| **Lo?i control** | `<button onClick={...}>` cu?i card |
+| **�i?u ki?n hi?n** | Lu�n hi?n; `disabled` khi `stockStatus === 'OutOfStock'` |
 
-#### 2. Bấm xong chạy đến đâu? (Frontend)
+#### 2. B?m xong ch?y d?n d�u? (Frontend)
 
 ```text
-ProductCard button onClick (ProductCard.tsx ~104–110)
-  → e.stopPropagation()  // không navigate vào detail
-  → if stockStatus !== 'OutOfStock':
-       addItem(product, 1)   // từ useCart()
-  → CartContext.addItem (CartContext.tsx ~119–169)
-       1) setItems(...) optimistic (cộng qty nếu trùng product+size+toppings)
-       2) setTimeout → toast.success("Đã thêm vào giỏ: …" | "Đã cập nhật số lượng: …")
+ProductCard button onClick (ProductCard.tsx ~104�110)
+  ? e.stopPropagation()  // kh�ng navigate v�o detail
+  ? if stockStatus !== 'OutOfStock':
+       addItem(product, 1)   // t? useCart()
+  ? CartContext.addItem (CartContext.tsx ~119�169)
+       1) setItems(...) optimistic (c?ng qty n?u tr�ng product+size+toppings)
+       2) setTimeout ? toast.success("�� th�m v�o gi?: �" | "�� c?p nh?t s? lu?ng: �")
        3) cartService.addToCart({ productId, quantity, guestUserId })
-  → httpClient.post('/Cart', body)
+  ? httpClient.post('/Cart', body)
 ```
 
-**Cùng pattern add nhanh:**
+**C�ng pattern add nhanh:**
 - `HomePage.tsx` ~356: `onClick={() => addItem(product, 1)}`
-- `FlashSalePage.tsx`, `BuyXGetYPage.tsx`, `BuyXGetYSection.tsx` — `addItem(...)` với qty khác
+- `FlashSalePage.tsx`, `BuyXGetYPage.tsx`, `BuyXGetYSection.tsx` � `addItem(...)` v?i qty kh�c
 
-#### 3. Backend chạy đoạn nào?
+#### 3. Backend ch?y do?n n�o?
 
 ```text
 POST /api/Cart
-  → CartController.AddToCart (CartController.cs L14–18)
-  → MediatR → AddToCartHandler.Handle (Features/Carts/Commands/AddToCartHandler.cs)
-  → Kiểm tra product tồn tại / stock
-  → Conflict 409 nếu khác restaurant với item đang có trong cart
-  → Insert/Update CartItem → SaveChanges
-  → ApiResponse.Success(dto, "Added item to cart successfully")
+  ? CartController.AddToCart (CartController.cs L14�18)
+  ? MediatR ? AddToCartHandler.Handle (Features/Carts/Commands/AddToCartHandler.cs)
+  ? Ki?m tra product t?n t?i / stock
+  ? Conflict 409 n?u kh�c restaurant v?i item dang c� trong cart
+  ? Insert/Update CartItem ? SaveChanges
+  ? ApiResponse.Success(dto, "Added item to cart successfully")
 ```
 
-#### 4. Dữ liệu trả về ở đâu?
+#### 4. D? li?u tr? v? ? d�u?
 
 ```json
 {
@@ -75,28 +75,28 @@ POST /api/Cart
 }
 ```
 
-| Field / Case | Ý nghĩa |
+| Field / Case | � nghia |
 |--------------|---------|
 | 404 | Product not found / unavailable |
 | 400 | Out of stock |
-| 409 | Khác cửa hàng — message hỏi empty cart |
+| 409 | Kh�c c?a h�ng � message h?i empty cart |
 
-**Request FE gửi:** `{ productId, quantity, guestUserId? }` — size/toppings hiện **optimistic local**, API add cơ bản theo productId.
+**Request FE g?i:** `{ productId, quantity, guestUserId? }` � size/toppings hi?n **optimistic local**, API add co b?n theo productId.
 
-#### 5. Làm sao hiển thị ra?
+#### 5. L�m sao hi?n th? ra?
 
-| Nhánh | Hành vi UI |
+| Nh�nh | H�nh vi UI |
 |-------|------------|
-| Optimistic OK | `items` trong Context đổi ngay → badge giỏ Header (`totalItems`) tăng |
-| Toast success | `Đã thêm vào giỏ: {itemName}` hoặc cập nhật số lượng |
-| API error | `toast.error(...)` — state local **không rollback** (comment trong code) |
-| localStorage | `useEffect` ghi `sf_cart` mỗi khi `items` đổi |
+| Optimistic OK | `items` trong Context d?i ngay ? badge gi? Header (`totalItems`) tang |
+| Toast success | `�� th�m v�o gi?: {itemName}` ho?c c?p nh?t s? lu?ng |
+| API error | `toast.error(...)` � state local **kh�ng rollback** (comment trong code) |
+| localStorage | `useEffect` ghi `sf_cart` m?i khi `items` d?i |
 
-#### 6. Sơ đồ nhanh
+#### 6. So d? nhanh
 
 ```mermaid
 sequenceDiagram
-    participant Btn as ProductCard "Thêm vào giỏ"
+    participant Btn as ProductCard "Th�m v�o gi?"
     participant Ctx as CartContext.addItem
     participant API as POST /api/Cart
     participant UI as Badge + Toast
@@ -109,48 +109,48 @@ sequenceDiagram
 
 ---
 
-## UT-CART-02 — Thêm vào giỏ từ ProductDetailPage (có size/topping)
+## UT-CART-02 � Th�m v�o gi? t? ProductDetailPage (c� size/topping)
 
-#### 1. Giao diện nút bấm ở đâu?
+#### 1. Giao di?n n�t b?m ? d�u?
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
 | **Route** | `/products/:id` |
 | **Page** | `pages/ProductDetailPage.tsx` |
-| **Component** | cùng page |
-| **Nhãn nút** | `"Thêm vào giỏ"` (disabled/"Hết hàng" nếu out of stock) |
-| **Loại control** | Button `onClick={handleAddToCart}` (~292) |
-| **Điều kiện hiện** | Sau khi load product; user chọn size/topping phía trên |
+| **Component** | c�ng page |
+| **Nh�n n�t** | `"Th�m v�o gi?"` (disabled/"H?t h�ng" n?u out of stock) |
+| **Lo?i control** | Button `onClick={handleAddToCart}` (~292) |
+| **�i?u ki?n hi?n** | Sau khi load product; user ch?n size/topping ph�a tr�n |
 
-#### 2. Bấm xong chạy đến đâu? (Frontend)
+#### 2. B?m xong ch?y d?n d�u? (Frontend)
 
 ```text
-handleAddToCart (ProductDetailPage.tsx L85–87)
-  → addItem(product, 1, selectedSize || undefined, selectedToppings.length ? selectedToppings : undefined)
-  → CartContext.addItem (như UT-CART-01)
-  → cartService.addToCart({ productId, quantity, guestUserId })
+handleAddToCart (ProductDetailPage.tsx L85�87)
+  ? addItem(product, 1, selectedSize || undefined, selectedToppings.length ? selectedToppings : undefined)
+  ? CartContext.addItem (nhu UT-CART-01)
+  ? cartService.addToCart({ productId, quantity, guestUserId })
 ```
 
-#### 3. Backend chạy đoạn nào?
+#### 3. Backend ch?y do?n n�o?
 
-Giống UT-CART-01 — `AddToCartHandler`.
+Gi?ng UT-CART-01 � `AddToCartHandler`.
 
-#### 4. Dữ liệu trả về ở đâu?
+#### 4. D? li?u tr? v? ? d�u?
 
-Giống UT-CART-01.
+Gi?ng UT-CART-01.
 
-#### 5. Làm sao hiển thị ra?
+#### 5. L�m sao hi?n th? ra?
 
-| Nhánh | Hành vi UI |
+| Nh�nh | H�nh vi UI |
 |-------|------------|
-| Success | Toast + Context `items` có `selectedSize` / `selectedToppings` (local) |
-| Key trùng | Cùng product+size+toppings → cộng `quantity` trong `setItems` |
+| Success | Toast + Context `items` c� `selectedSize` / `selectedToppings` (local) |
+| Key tr�ng | C�ng product+size+toppings ? c?ng `quantity` trong `setItems` |
 
-#### 6. Sơ đồ nhanh
+#### 6. So d? nhanh
 
 ```mermaid
 sequenceDiagram
-    participant Btn as "Thêm vào giỏ" Detail
+    participant Btn as "Th�m v�o gi?" Detail
     participant FE as handleAddToCart
     participant Ctx as CartContext
     participant API as POST /Cart
@@ -162,51 +162,51 @@ sequenceDiagram
 
 ---
 
-## UT-CART-03 — Mở giỏ hàng (ShoppingDrawer) từ Header
+## UT-CART-03 � M? gi? h�ng (ShoppingDrawer) t? Header
 
-#### 1. Giao diện nút bấm ở đâu?
+#### 1. Giao di?n n�t b?m ? d�u?
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
-| **Route** | Mọi trang dùng `MainLayout` / Header |
+| **Route** | M?i trang d�ng `MainLayout` / Header |
 | **Page** | Layout |
-| **Component** | `components/layout/Header.tsx` nhúng `<ShoppingDrawer />` (~95, ~184) |
-| **Nhãn nút** | Icon `ShoppingCart` (title `"Giỏ hàng & Đơn hàng"`) |
-| **Loại control** | `<button onClick={() => { setIsOpen(true); setActiveTab('cart'); }}>` — ShoppingDrawer.tsx ~225–236 |
-| **Điều kiện hiện** | Luôn; badge số nếu `totalItems > 0` |
+| **Component** | `components/layout/Header.tsx` nh�ng `<ShoppingDrawer />` (~95, ~184) |
+| **Nh�n n�t** | Icon `ShoppingCart` (title `"Gi? h�ng & �on h�ng"`) |
+| **Lo?i control** | `<button onClick={() => { setIsOpen(true); setActiveTab('cart'); }}>` � ShoppingDrawer.tsx ~225�236 |
+| **�i?u ki?n hi?n** | Lu�n; badge s? n?u `totalItems > 0` |
 
-#### 2. Bấm xong chạy đến đâu? (Frontend)
+#### 2. B?m xong ch?y d?n d�u? (Frontend)
 
 ```text
 ShoppingDrawer trigger button
-  → setIsOpen(true)
-  → setActiveTab('cart')
-  → createPortal drawer (không gọi API ngay cho cart — items đã có trong Context)
-  → Nếu sau đó user chuyển tab "Đơn hàng":
-       useEffect → fetchOrders → orderService.getMyOrders / getGuestOrders
+  ? setIsOpen(true)
+  ? setActiveTab('cart')
+  ? createPortal drawer (kh�ng g?i API ngay cho cart � items d� c� trong Context)
+  ? N?u sau d� user chuy?n tab "�on h�ng":
+       useEffect ? fetchOrders ? orderService.getMyOrders / getGuestOrders
 ```
 
-**Không** gọi lại `getCart` chỉ vì mở drawer (cart đã sync lúc mount/`isAuthenticated` đổi qua `fetchCart`).
+**Kh�ng** g?i l?i `getCart` ch? v� m? drawer (cart d� sync l�c mount/`isAuthenticated` d?i qua `fetchCart`).
 
-#### 3. Backend chạy đoạn nào?
+#### 3. Backend ch?y do?n n�o?
 
-Không HTTP khi chỉ mở drawer.  
-(Khi load lần đầu app: `GET /api/Cart?guestUserId=` → `GetCartHandler`.)
+Kh�ng HTTP khi ch? m? drawer.  
+(Khi load l?n d?u app: `GET /api/Cart?guestUserId=` ? `GetCartHandler`.)
 
-#### 4. Dữ liệu trả về ở đâu?
+#### 4. D? li?u tr? v? ? d�u?
 
-N/A cho click mở.  
-`GET /Cart` khi `fetchCart`: `data` = array items hoặc `{ items: [...] }`.
+N/A cho click m?.  
+`GET /Cart` khi `fetchCart`: `data` = array items ho?c `{ items: [...] }`.
 
-#### 5. Làm sao hiển thị ra?
+#### 5. L�m sao hi?n th? ra?
 
-| Nhánh | Hành vi UI |
+| Nh�nh | H�nh vi UI |
 |-------|------------|
-| Mở | Overlay + panel phải `max-w-md`, tab Giỏ hàng |
-| Badge | `totalItems` từ Context |
-| Empty | Text "Giỏ hàng trống" + nút "Tiếp tục tìm kiếm" |
+| M? | Overlay + panel ph?i `max-w-md`, tab Gi? h�ng |
+| Badge | `totalItems` t? Context |
+| Empty | Text "Gi? h�ng tr?ng" + n�t "Ti?p t?c t�m ki?m" |
 
-#### 6. Sơ đồ nhanh
+#### 6. So d? nhanh
 
 ```mermaid
 sequenceDiagram
@@ -215,61 +215,61 @@ sequenceDiagram
     participant Ctx as items (Context)
 
     Icon->>Dr: setIsOpen(true), tab=cart
-    Dr->>Ctx: đọc items/totalItems (render)
+    Dr->>Ctx: d?c items/totalItems (render)
 ```
 
 ---
 
-## UT-CART-04 — Tăng / giảm số lượng (+ / −)
+## UT-CART-04 � Tang / gi?m s? lu?ng (+ / -)
 
-#### 1. Giao diện nút bấm ở đâu?
+#### 1. Giao di?n n�t b?m ? d�u?
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
-| **Route** | Drawer đang mở |
-| **Component** | `ShoppingDrawer.tsx` trong từng dòng item |
-| **Nhãn nút** | Icon `Minus` / `Plus` (~423–433) |
-| **Loại control** | `<button onClick={() => updateQuantity(...)}>` |
-| **Điều kiện hiện** | Có item trong group nhà hàng |
+| **Route** | Drawer dang m? |
+| **Component** | `ShoppingDrawer.tsx` trong t?ng d�ng item |
+| **Nh�n n�t** | Icon `Minus` / `Plus` (~423�433) |
+| **Lo?i control** | `<button onClick={() => updateQuantity(...)}>` |
+| **�i?u ki?n hi?n** | C� item trong group nh� h�ng |
 
-#### 2. Bấm xong chạy đến đâu? (Frontend)
+#### 2. B?m xong ch?y d?n d�u? (Frontend)
 
 ```text
 Minus: updateQuantity(productId, quantity - 1, selectedSize, selectedToppings)
 Plus:  updateQuantity(productId, quantity + 1, ...)
-  → CartContext.updateQuantity (L190–222)
-       if quantity <= 0 → removeItem(...)
+  ? CartContext.updateQuantity (L190�222)
+       if quantity <= 0 ? removeItem(...)
        else setItems map quantity
-       → cartService.updateQuantity({ productId, quantity, guestUserId })
-  → httpClient.put('/Cart', body)
+       ? cartService.updateQuantity({ productId, quantity, guestUserId })
+  ? httpClient.put('/Cart', body)
 ```
 
-#### 3. Backend chạy đoạn nào?
+#### 3. Backend ch?y do?n n�o?
 
 ```text
 PUT /api/Cart
-  → CartController.UpdateQuantity
-  → UpdateCartItemQuantityHandler.Handle
-  → Success: "Cart item quantity updated successfully."
+  ? CartController.UpdateQuantity
+  ? UpdateCartItemQuantityHandler.Handle
+  ? Success: "Cart item quantity updated successfully."
 ```
 
-#### 4. Dữ liệu trả về ở đâu?
+#### 4. D? li?u tr? v? ? d�u?
 
 ```json
 { "error": false, "message": "Cart item quantity updated successfully.", "data": { /* cart dto */ } }
 ```
 
-404 nếu cart/item không tồn tại.
+404 n?u cart/item kh�ng t?n t?i.
 
-#### 5. Làm sao hiển thị ra?
+#### 5. L�m sao hi?n th? ra?
 
-| Nhánh | Hành vi UI |
+| Nh�nh | H�nh vi UI |
 |-------|------------|
-| OK | Số qty trên UI đổi ngay (optimistic); `totalPrice` / `selectedTotal` recalculate |
-| qty→0 | Item biến mất (qua `removeItem`) |
-| Error | `toast.error('Lỗi cập nhật số lượng trên server')` |
+| OK | S? qty tr�n UI d?i ngay (optimistic); `totalPrice` / `selectedTotal` recalculate |
+| qty?0 | Item bi?n m?t (qua `removeItem`) |
+| Error | `toast.error('L?i c?p nh?t s? lu?ng tr�n server')` |
 
-#### 6. Sơ đồ nhanh
+#### 6. So d? nhanh
 
 ```mermaid
 sequenceDiagram
@@ -284,46 +284,46 @@ sequenceDiagram
 
 ---
 
-## UT-CART-05 — Xóa một món (Trash)
+## UT-CART-05 � X�a m?t m�n (Trash)
 
-#### 1. Giao diện nút bấm ở đâu?
+#### 1. Giao di?n n�t b?m ? d�u?
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
 | **Component** | `ShoppingDrawer.tsx` ~378 |
-| **Nhãn nút** | Icon `Trash2` |
-| **Loại control** | `onClick={() => removeItem(item.product.id, item.selectedSize, item.selectedToppings)}` |
+| **Nh�n n�t** | Icon `Trash2` |
+| **Lo?i control** | `onClick={() => removeItem(item.product.id, item.selectedSize, item.selectedToppings)}` |
 
-#### 2. Bấm xong chạy đến đâu? (Frontend)
+#### 2. B?m xong ch?y d?n d�u? (Frontend)
 
 ```text
-removeItem(...) (CartContext L171–188)
-  → setItems(filter ...) optimistic
-  → cartService.removeCartItem({ productId, guestUserId })
-  → httpClient.delete('/Cart', { params })
+removeItem(...) (CartContext L171�188)
+  ? setItems(filter ...) optimistic
+  ? cartService.removeCartItem({ productId, guestUserId })
+  ? httpClient.delete('/Cart', { params })
 ```
 
-#### 3. Backend chạy đoạn nào?
+#### 3. Backend ch?y do?n n�o?
 
 ```text
 DELETE /api/Cart?productId=&guestUserId=
-  → CartController.RemoveCartItem
-  → RemoveCartItemCommandHandler
-  → "Item removed from cart successfully."
+  ? CartController.RemoveCartItem
+  ? RemoveCartItemCommandHandler
+  ? "Item removed from cart successfully."
 ```
 
-#### 4. Dữ liệu trả về ở đâu?
+#### 4. D? li?u tr? v? ? d�u?
 
-Success message như trên; 404 Cart/Item not found.
+Success message nhu tr�n; 404 Cart/Item not found.
 
-#### 5. Làm sao hiển thị ra?
+#### 5. L�m sao hi?n th? ra?
 
-| Nhánh | Hành vi UI |
+| Nh�nh | H�nh vi UI |
 |-------|------------|
-| OK | Dòng item biến mất; badge giảm |
-| Error | `toast.error('Lỗi khi xóa món trên server')` |
+| OK | D�ng item bi?n m?t; badge gi?m |
+| Error | `toast.error('L?i khi x�a m�n tr�n server')` |
 
-#### 6. Sơ đồ nhanh
+#### 6. So d? nhanh
 
 ```mermaid
 sequenceDiagram
@@ -336,53 +336,53 @@ sequenceDiagram
 
 ---
 
-## UT-CART-06 — Xóa tất cả giỏ (ConfirmModal)
+## UT-CART-06 � X�a t?t c? gi? (ConfirmModal)
 
-#### 1. Giao diện nút bấm ở đâu?
+#### 1. Giao di?n n�t b?m ? d�u?
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
 | **Component** | `ShoppingDrawer.tsx` |
-| **Nhãn nút** | `"Xóa tất cả"` (~252–257) — chỉ khi `activeTab==='cart' && groups.length>0` |
-| **Confirm** | `ConfirmModal` title `"Xóa giỏ hàng"`, description `"Bạn có chắc chắn muốn xóa toàn bộ giỏ hàng?"` (~579–586) |
+| **Nh�n n�t** | `"X�a t?t c?"` (~252�257) � ch? khi `activeTab==='cart' && groups.length>0` |
+| **Confirm** | `ConfirmModal` title `"X�a gi? h�ng"`, description `"B?n c� ch?c ch?n mu?n x�a to�n b? gi? h�ng?"` (~579�586) |
 
-#### 2. Bấm xong chạy đến đâu? (Frontend)
+#### 2. B?m xong ch?y d?n d�u? (Frontend)
 
 ```text
-"Xóa tất cả" → setClearCartConfirmModal(true)
-User Confirm → onConfirm:
-  → clearCart() (CartContext L224–231)
+"X�a t?t c?" ? setClearCartConfirmModal(true)
+User Confirm ? onConfirm:
+  ? clearCart() (CartContext L224�231)
        setItems([])
        cartService.clearCart({ guestUserId })
-  → httpClient.delete('/Cart/clear', { params })
-  → setClearCartConfirmModal(false)
+  ? httpClient.delete('/Cart/clear', { params })
+  ? setClearCartConfirmModal(false)
 ```
 
-#### 3. Backend chạy đoạn nào?
+#### 3. Backend ch?y do?n n�o?
 
 ```text
 DELETE /api/Cart/clear?guestUserId=
-  → CartController.ClearCart
-  → ClearCartCommandHandler
-  → "Cart cleared successfully."
+  ? CartController.ClearCart
+  ? ClearCartCommandHandler
+  ? "Cart cleared successfully."
 ```
 
-#### 4. Dữ liệu trả về ở đâu?
+#### 4. D? li?u tr? v? ? d�u?
 
-Success dto + message; 404 nếu không có cart.
+Success dto + message; 404 n?u kh�ng c� cart.
 
-#### 5. Làm sao hiển thị ra?
+#### 5. L�m sao hi?n th? ra?
 
-| Nhánh | Hành vi UI |
+| Nh�nh | H�nh vi UI |
 |-------|------------|
-| Confirm | Modal đóng; `items=[]`; UI empty state; badge 0 |
-| API fail | `console.error` — **không** toast (khác remove single) |
+| Confirm | Modal d�ng; `items=[]`; UI empty state; badge 0 |
+| API fail | `console.error` � **kh�ng** toast (kh�c remove single) |
 
-#### 6. Sơ đồ nhanh
+#### 6. So d? nhanh
 
 ```mermaid
 sequenceDiagram
-    participant Btn as "Xóa tất cả"
+    participant Btn as "X�a t?t c?"
     participant M as ConfirmModal
     participant Ctx as clearCart
     participant API as DELETE /Cart/clear
@@ -394,51 +394,51 @@ sequenceDiagram
 
 ---
 
-## UT-CART-07 — Tiến hành thanh toán (vào Checkout)
+## UT-CART-07 � Ti?n h�nh thanh to�n (v�o Checkout)
 
-#### 1. Giao diện nút bấm ở đâu?
+#### 1. Giao di?n n�t b?m ? d�u?
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
-| **Component** | `ShoppingDrawer.tsx` footer ~464–470 |
-| **Nhãn nút** | `"Tiến hành thanh toán"` |
-| **Loại control** | `<Button onClick={handleCheckout} disabled={!selectedProvider}>` |
-| **Điều kiện** | Đã chọn 1 nhà hàng (`selectedProvider`) trong drawer |
+| **Component** | `ShoppingDrawer.tsx` footer ~464�470 |
+| **Nh�n n�t** | `"Ti?n h�nh thanh to�n"` |
+| **Lo?i control** | `<Button onClick={handleCheckout} disabled={!selectedProvider}>` |
+| **�i?u ki?n** | �� ch?n 1 nh� h�ng (`selectedProvider`) trong drawer |
 
-#### 2. Bấm xong chạy đến đâu? (Frontend)
+#### 2. B?m xong ch?y d?n d�u? (Frontend)
 
 ```text
-handleCheckout (ShoppingDrawer.tsx L71–86)
-  → Nếu item isProductDeleted trong group → toast.error(...) return
-  → setIsOpen(false)
-  → checkoutUrl = `/checkout?restaurantId={selectedProvider}`
-  → if isAuthenticated: navigate(checkoutUrl)
-  → else: navigate(/login, { state: { returnUrl: checkoutUrl } })
+handleCheckout (ShoppingDrawer.tsx L71�86)
+  ? N?u item isProductDeleted trong group ? toast.error(...) return
+  ? setIsOpen(false)
+  ? checkoutUrl = `/checkout?restaurantId={selectedProvider}`
+  ? if isAuthenticated: navigate(checkoutUrl)
+  ? else: navigate(/login, { state: { returnUrl: checkoutUrl } })
 ```
 
-**Không** gọi API cart ở bước này.
+**Kh�ng** g?i API cart ? bu?c n�y.
 
-#### 3. Backend chạy đoạn nào?
+#### 3. Backend ch?y do?n n�o?
 
-N/A (navigation only). Checkout gọi API ở `CheckoutPage`.
+N/A (navigation only). Checkout g?i API ? `CheckoutPage`.
 
-#### 4. Dữ liệu trả về ở đâu?
+#### 4. D? li?u tr? v? ? d�u?
 
 N/A.
 
-#### 5. Làm sao hiển thị ra?
+#### 5. L�m sao hi?n th? ra?
 
-| Nhánh | Hành vi UI |
+| Nh�nh | H�nh vi UI |
 |-------|------------|
-| Auth | Đóng drawer → trang `/checkout?restaurantId=...` |
-| Guest | Đóng drawer → `/login` rồi quay lại checkout |
-| Món ngừng bán | Toast đỏ, ở lại drawer |
+| Auth | ��ng drawer ? trang `/checkout?restaurantId=...` |
+| Guest | ��ng drawer ? `/login` r?i quay l?i checkout |
+| M�n ng?ng b�n | Toast d?, ? l?i drawer |
 
-#### 6. Sơ đồ nhanh
+#### 6. So d? nhanh
 
 ```mermaid
 sequenceDiagram
-    participant Btn as "Tiến hành thanh toán"
+    participant Btn as "Ti?n h�nh thanh to�n"
     participant Nav as react-router
     participant Page as CheckoutPage
 
@@ -448,22 +448,22 @@ sequenceDiagram
 
 ---
 
-## Tóm tắt call chain Cart
+## T�m t?t call chain Cart
 
 ```text
 UI (ProductCard / Detail / Drawer)
-  → useCart() / CartContext
-  → CartService (/Cart, /Cart/clear)
-  → CartController → *Handler
-  → Context setItems + toast + localStorage sf_cart
-  → Header badge totalItems
+  ? useCart() / CartContext
+  ? CartService (/Cart, /Cart/clear)
+  ? CartController ? *Handler
+  ? Context setItems + toast + localStorage sf_cart
+  ? Header badge totalItems
 ```
 
-| File quan trọng | Vai trò |
+| File quan tr?ng | Vai tr� |
 |-----------------|---------|
 | `contexts/CartContext.tsx` | State + optimistic + API |
 | `services/CartService.ts` | HTTP |
-| `components/layout/ShoppingDrawer.tsx` | UI giỏ |
+| `components/layout/ShoppingDrawer.tsx` | UI gi? |
 | `components/product/ProductCard.tsx` | Add nhanh |
 | `pages/ProductDetailPage.tsx` | Add + options |
 | `API/Controllers/CartController.cs` | Endpoints |
@@ -472,43 +472,43 @@ UI (ProductCard / Detail / Drawer)
 
 ---
 
-## Phần B — Workflow nghiệp vụ & Backend (chi tiết luồng)
-## 1. Luồng Tổng Quan (Workflow)
+## Ph?n B � Workflow nghi?p v? & Backend (chi ti?t lu?ng)
+## 1. Lu?ng T?ng Quan (Workflow)
 
-1. **Khởi tạo FE:** `CartProvider` mount → `getGuestUserId()` nếu chưa login → `cartService.getCart(guestUserId)` → đồng bộ state + `sf_cart` localStorage.
-2. **Thêm món:** UI gọi `addItem` → optimistic update + toast → `POST /api/Cart` (`productId`, `quantity`, optional `guestUserId`, `clearCartIfConflict`).
-3. **Backend Add:** Tạo GuestUser nếu cần → GetOrCreate Cart → check quán conflict / stock → thêm hoặc cộng dồn `CartItem` (giá FlashSale nếu có).
-4. **Xem giỏ:** `GET /api/Cart?guestUserId=` → sync giá flash sale → trả `CartDto`.
-5. **Đổi số lượng:** `PUT /api/Cart` — quantity ≤ 0 thì xóa item.
-6. **Xóa món:** `DELETE /api/Cart?productId=&guestUserId=`.
-7. **Xóa hết:** `DELETE /api/Cart/clear?guestUserId=` (ConfirmModal trên Drawer).
-8. **Ràng buộc quán:** Một cart chỉ 1 `RestaurantId`; khác quán → HTTP **409** (FE có thể gửi `clearCartIfConflict: true`).
+1. **Kh?i t?o FE:** `CartProvider` mount ? `getGuestUserId()` n?u chua login ? `cartService.getCart(guestUserId)` ? d?ng b? state + `sf_cart` localStorage.
+2. **Th�m m�n:** UI g?i `addItem` ? optimistic update + toast ? `POST /api/Cart` (`productId`, `quantity`, optional `guestUserId`, `clearCartIfConflict`).
+3. **Backend Add:** T?o GuestUser n?u c?n ? GetOrCreate Cart ? check qu�n conflict / stock ? th�m ho?c c?ng d?n `CartItem` (gi� FlashSale n?u c�).
+4. **Xem gi?:** `GET /api/Cart?guestUserId=` ? sync gi� flash sale ? tr? `CartDto`.
+5. **�?i s? lu?ng:** `PUT /api/Cart` � quantity = 0 th� x�a item.
+6. **X�a m�n:** `DELETE /api/Cart?productId=&guestUserId=`.
+7. **X�a h?t:** `DELETE /api/Cart/clear?guestUserId=` (ConfirmModal tr�n Drawer).
+8. **R�ng bu?c qu�n:** M?t cart ch? 1 `RestaurantId`; kh�c qu�n ? HTTP **409** (FE c� th? g?i `clearCartIfConflict: true`).
 
 ```mermaid
 sequenceDiagram
-    actor U as Người dùng / Guest
+    actor U as Ngu?i d�ng / Guest
     participant FE as CartContext
     participant API as CartController
     participant H as MediatR Handlers
     participant DB as SQL Server
 
-    U->>FE: Thêm món / sửa / xóa
-    alt Chưa login
-        FE->>FE: guestUserId từ sf_guest_id
-        FE->>API: Request + guestUserId (không Bearer)
-    else Đã login
+    U->>FE: Th�m m�n / s?a / x�a
+    alt Chua login
+        FE->>FE: guestUserId t? sf_guest_id
+        FE->>API: Request + guestUserId (kh�ng Bearer)
+    else �� login
         FE->>API: Request + Bearer JWT
         Note over API: Filter set CurrentUserId
     end
     API->>H: Add / Get / Update / Remove / Clear
     H->>DB: CART + CART_ITEM (+ GUEST_USER)
     H-->>FE: CartDto / Success
-    FE-->>U: Toast / cập nhật Drawer
+    FE-->>U: Toast / c?p nh?t Drawer
 ```
 
 ---
 
-## Bước 1: Quản lý Guest ID & State (Frontend)
+## Bu?c 1: Qu?n l� Guest ID & State (Frontend)
 
 **Files:**
 - `ShoppingFood.FE/src/contexts/CartContext.tsx`
@@ -548,18 +548,18 @@ async clearCart(params) { return httpClient.delete(API_ENDPOINTS.CART.CLEAR, { p
 
 ---
 
-## Bước 2: Controller API
+## Bu?c 2: Controller API
 
 **File:** `src/ShoppingFood.API/Controllers/CartController.cs`  
 **Base route:** `api/Cart` (qua `CommonController`)
 
-| Method | Route | Command/Query | Việc |
+| Method | Route | Command/Query | Vi?c |
 |--------|-------|---------------|------|
-| POST | `/api/Cart` | `AddToCartCommand` | Thêm / cộng dồn |
-| GET | `/api/Cart` | `GetCartQuery` | Lấy giỏ |
-| PUT | `/api/Cart` | `UpdateCartItemQuantityCommand` | Đổi SL |
-| DELETE | `/api/Cart` | `RemoveCartItemCommand` (query) | Xóa 1 món |
-| DELETE | `/api/Cart/clear` | `ClearCartCommand` (query) | Xóa hết |
+| POST | `/api/Cart` | `AddToCartCommand` | Th�m / c?ng d?n |
+| GET | `/api/Cart` | `GetCartQuery` | L?y gi? |
+| PUT | `/api/Cart` | `UpdateCartItemQuantityCommand` | �?i SL |
+| DELETE | `/api/Cart` | `RemoveCartItemCommand` (query) | X�a 1 m�n |
+| DELETE | `/api/Cart/clear` | `ClearCartCommand` (query) | X�a h?t |
 
 ```csharp
 [HttpPost]
@@ -584,12 +584,12 @@ public async Task<IActionResult> ClearCart([FromQuery] ClearCartCommand command)
 
 ---
 
-## Bước 3: Thêm vào giỏ (AddToCart)
+## Bu?c 3: Th�m v�o gi? (AddToCart)
 
-**Thông tin:**
+**Th�ng tin:**
 - **URL:** `/api/Cart`
 - **HTTP Method:** POST
-- **Auth:** JWT **hoặc** Guest (không Authorization)
+- **Auth:** JWT **ho?c** Guest (kh�ng Authorization)
 
 **Command:** `src/ShoppingFood.Application/Features/Carts/Commands/AddToCartCommand.cs`
 
@@ -606,7 +606,7 @@ public class AddToCartCommand : BaseCommand, IRequest<ApiResponse>
 **Handler:** `AddToCartHandler.cs`
 
 ```csharp
-// Nếu không có CurrentUserId và GuestUserId → tự tạo Guid mới làm guest
+// N?u kh�ng c� CurrentUserId v� GuestUserId ? t? t?o Guid m?i l�m guest
 var product = await _productRepository.GetByIdAsync(request.ProductId);
 if (product == null || product.Status != ProductStatus.Approved || product.IsHidden)
     return ApiResponse.Failure(404, "Product not found or unavailable.");
@@ -614,13 +614,13 @@ if (product.StockStatus != StockStatus.InStock)
     return ApiResponse.Failure(400, "Product is out of stock.");
 
 var cart = await GetOrCreateCartAsync(request.CurrentUserId, guestUserId);
-// Conflict khác RestaurantId → 409 hoặc clear nếu ClearCartIfConflict
+// Conflict kh�c RestaurantId ? 409 ho?c clear n?u ClearCartIfConflict
 await AddOrUpdateCartItemAsync(cart.Id, product, request.Quantity);
 // PriceAtAdded = FlashSale price ?? product.Price
 return ApiResponse.Success(dto, "Added item to cart successfully");
 ```
 
-**Tạo GuestUser** (khi guest chưa có trong DB):
+**T?o GuestUser** (khi guest chua c� trong DB):
 
 ```csharp
 var guestUser = new GuestUser
@@ -633,23 +633,23 @@ var guestUser = new GuestUser
 };
 ```
 
-**Inject CurrentUserId:** `AuthenticationFilter` Lines ~215–224 — nếu có JWT hợp lệ:
+**Inject CurrentUserId:** `AuthenticationFilter` Lines ~215�224 � n?u c� JWT h?p l?:
 
 ```csharp
 command.CurrentUserId = user.Id;
 ```
 
-**Guest bypass:** `AuthenticationFilter` — `isGuestCartRequest` khi path `/api/Cart` và **không** có header Authorization (Lines 98–108).
+**Guest bypass:** `AuthenticationFilter` � `isGuestCartRequest` khi path `/api/Cart` v� **kh�ng** c� header Authorization (Lines 98�108).
 
 ---
 
-## Bước 4: Lấy giỏ (GetCart)
+## Bu?c 4: L?y gi? (GetCart)
 
-**Thông tin:**
-- **URL:** `/api/Cart?guestUserId={guid}` (guest) hoặc Bearer (user)
+**Th�ng tin:**
+- **URL:** `/api/Cart?guestUserId={guid}` (guest) ho?c Bearer (user)
 - **HTTP Method:** GET
 
-**Query:** `GetCartQuery.cs` — `GuestUserId`
+**Query:** `GetCartQuery.cs` � `GuestUserId`
 
 **Handler:** `GetCartHandler.cs`
 
@@ -660,14 +660,14 @@ if (!request.CurrentUserId.HasValue && !request.GuestUserId.HasValue)
 // Load cart by UserAccountId OR GuestUserId
 await _flashSalePricingService.SyncCartItemPricesAsync(cart);
 return ApiResponse.Success(dto, "Get cart details successfully");
-// Cart null → empty CartDto
+// Cart null ? empty CartDto
 ```
 
 ---
 
-## Bước 5: Cập nhật số lượng (Update)
+## Bu?c 5: C?p nh?t s? lu?ng (Update)
 
-**Thông tin:**
+**Th�ng tin:**
 - **URL:** `/api/Cart`
 - **HTTP Method:** PUT
 - **Body:** `{ productId, quantity, guestUserId? }`
@@ -680,62 +680,62 @@ if (request.Quantity <= 0)
 else
 {
     cartItem.Quantity = request.Quantity;
-    // cập nhật PriceAtAdded theo flash sale nếu có
+    // c?p nh?t PriceAtAdded theo flash sale n?u c�
 }
 ```
 
-**FE:** `CartContext.updateQuantity` — nếu `quantity <= 0` gọi `removeItem`.
+**FE:** `CartContext.updateQuantity` � n?u `quantity <= 0` g?i `removeItem`.
 
 ---
 
-## Bước 6: Xóa món / Clear
+## Bu?c 6: X�a m�n / Clear
 
-### Remove một món
+### Remove m?t m�n
 
 - **URL:** `DELETE /api/Cart?productId=...&guestUserId=...`
-- **Handler:** `RemoveCartItemCommandHandler.cs` — 401 nếu thiếu user/guest; 404 nếu không có cart/item.
+- **Handler:** `RemoveCartItemCommandHandler.cs` � 401 n?u thi?u user/guest; 404 n?u kh�ng c� cart/item.
 
-### Clear toàn bộ
+### Clear to�n b?
 
 - **URL:** `DELETE /api/Cart/clear?guestUserId=...`
-- **Handler:** `ClearCartCommandHandler.cs` — xóa tất cả `CartItem` của cart.
-- **FE Confirm:** `ConfirmModal` trong `ShoppingDrawer.tsx` trước khi `clearCart()`.
+- **Handler:** `ClearCartCommandHandler.cs` � x�a t?t c? `CartItem` c?a cart.
+- **FE Confirm:** `ConfirmModal` trong `ShoppingDrawer.tsx` tru?c khi `clearCart()`.
 
 ---
 
-## Database liên quan
+## Database li�n quan
 
-| Bảng | Việc |
+| B?ng | Vi?c |
 |------|------|
-| `GUEST_USER` | Tạo khi guest thêm món lần đầu |
-| `CART` | 1-1 với User **hoặc** Guest (`UserAccountId` / `GuestUserId`) |
+| `GUEST_USER` | T?o khi guest th�m m�n l?n d?u |
+| `CART` | 1-1 v?i User **ho?c** Guest (`UserAccountId` / `GuestUserId`) |
 | `CART_ITEM` | ProductId, Quantity, PriceAtAdded |
 | `PRODUCT` | Check Approved, !Hidden, InStock, RestaurantId |
 
 ---
 
-## Sơ đồ file đi qua (Call chain)
+## So d? file di qua (Call chain)
 
 ```text
 ProductCard / ProductDetail / ShoppingDrawer
-  ↓
+  ?
 CartContext.addItem | updateQuantity | removeItem | clearCart | fetchCart
-  ↓
-CartService.ts → HttpClient
-  ↓
-AuthenticationFilter  (guest bypass HOẶC JWT → CurrentUserId)
-  ↓
+  ?
+CartService.ts ? HttpClient
+  ?
+AuthenticationFilter  (guest bypass HO?C JWT ? CurrentUserId)
+  ?
 CartController
-  ↓
+  ?
 AddToCartHandler / GetCartHandler / UpdateCartItemQuantityHandler
 RemoveCartItemCommandHandler / ClearCartCommandHandler
-  ↓
+  ?
 ICartRepository + ICartItemRepository + ShoppingFoodContext
-  ↓
+  ?
 CART / CART_ITEM / GUEST_USER
 ```
 
-| Vai trò | Đường dẫn đầy đủ |
+| Vai tr� | �u?ng d?n d?y d? |
 |---------|------------------|
 | Context FE | `ShoppingFood.FE/src/contexts/CartContext.tsx` |
 | Service FE | `ShoppingFood.FE/src/services/CartService.ts` |
@@ -748,49 +748,49 @@ CART / CART_ITEM / GUEST_USER
 
 ---
 
-## Các thông báo (Toast / Message)
+## C�c th�ng b�o (Toast / Message)
 
-| Message | Nơi | Trigger |
+| Message | Noi | Trigger |
 |---------|-----|---------|
-| `Đã thêm vào giỏ: {itemName}` | `CartContext.addItem` | Thêm mới |
-| `Đã cập nhật số lượng: {itemName}` | `CartContext.addItem` | Đã có sẵn trong state |
-| `Lỗi khi thêm vào giỏ hàng trên server` | catch addItem | API fail |
-| `Lỗi khi xóa món trên server` | removeItem | API fail |
-| `Lỗi cập nhật số lượng trên server` | updateQuantity | API fail |
-| `Product not found or unavailable.` | API | SP không hợp lệ |
-| `Product is out of stock.` | API | Hết hàng |
-| `The item you selected is not from the same store...` (409) | API | Conflict quán |
-| `Unauthorized. Neither logged-in user nor guest ID was provided.` | API | Thiếu cả 2 id |
-| `Cart is empty.` / `Get cart details successfully` | API Get | — |
-| `Added item to cart successfully` | API Add | — |
+| `�� th�m v�o gi?: {itemName}` | `CartContext.addItem` | Th�m m?i |
+| `�� c?p nh?t s? lu?ng: {itemName}` | `CartContext.addItem` | �� c� s?n trong state |
+| `L?i khi th�m v�o gi? h�ng tr�n server` | catch addItem | API fail |
+| `L?i khi x�a m�n tr�n server` | removeItem | API fail |
+| `L?i c?p nh?t s? lu?ng tr�n server` | updateQuantity | API fail |
+| `Product not found or unavailable.` | API | SP kh�ng h?p l? |
+| `Product is out of stock.` | API | H?t h�ng |
+| `The item you selected is not from the same store...` (409) | API | Conflict qu�n |
+| `Unauthorized. Neither logged-in user nor guest ID was provided.` | API | Thi?u c? 2 id |
+| `Cart is empty.` / `Get cart details successfully` | API Get | � |
+| `Added item to cart successfully` | API Add | � |
 
 ---
 
-## Các cơ chế bảo mật / nghiệp vụ quan trọng
+## C�c co ch? b?o m?t / nghi?p v? quan tr?ng
 
-1. **Guest không cần JWT** nhưng **bắt buộc** `guestUserId` (FE luôn tạo UUID).
-2. **Không trộn Authorization giả** với guest path nếu muốn đi bypass guest — có Bearer thì Filter cố map user.
-3. **Một cart = một nhà hàng** — 409 khi conflict (trừ khi `clearCartIfConflict`).
-4. **Chỉ SP Approved, không ẩn, còn hàng** mới thêm được.
-5. **Giá lúc thêm** lấy FlashSale active nếu có (`IFlashSalePricingService`).
-6. GetCart **IgnoreQueryFilters** trên items để vẫn thấy SP soft-deleted (flag `isProductDeleted` phía DTO/FE).
-
----
-
-## Checklist tự test
-
-- [ ] Chưa login: thêm món → có `sf_guest_id` → F5 vẫn còn giỏ (API)
-- [ ] Thêm 2 món cùng quán → cộng dồn / nhiều dòng OK
-- [ ] Thêm món quán khác → 409 (hoặc clear nếu FE gửi flag)
-- [ ] Đổi SL / xóa món / clear (có Confirm) hoạt động
-- [ ] Login sau khi có guest cart: kiểm tra hành vi (cart user riêng theo `UserAccountId` — **không tự merge** trong code hiện tại)
-- [ ] SP OutOfStock / Hidden → không thêm được
-- [ ] Có Bearer hợp lệ → `CurrentUserId` được set, không cần guestUserId
+1. **Guest kh�ng c?n JWT** nhung **b?t bu?c** `guestUserId` (FE lu�n t?o UUID).
+2. **Kh�ng tr?n Authorization gi?** v?i guest path n?u mu?n di bypass guest � c� Bearer th� Filter c? map user.
+3. **M?t cart = m?t nh� h�ng** � 409 khi conflict (tr? khi `clearCartIfConflict`).
+4. **Ch? SP Approved, kh�ng ?n, c�n h�ng** m?i th�m du?c.
+5. **Gi� l�c th�m** l?y FlashSale active n?u c� (`IFlashSalePricingService`).
+6. GetCart **IgnoreQueryFilters** tr�n items d? v?n th?y SP soft-deleted (flag `isProductDeleted` ph�a DTO/FE).
 
 ---
 
-## Tóm tắt
+## Checklist t? test
 
-Cart Shopping Food = **REST `/api/Cart`** + **CartContext** với **guest UUID** hoặc **JWT user**. Backend đảm bảo 1 quán/cart, stock, flash price; Filter cho phép guest thao tác khi không gửi Authorization.
+- [ ] Chua login: th�m m�n ? c� `sf_guest_id` ? F5 v?n c�n gi? (API)
+- [ ] Th�m 2 m�n c�ng qu�n ? c?ng d?n / nhi?u d�ng OK
+- [ ] Th�m m�n qu�n kh�c ? 409 (ho?c clear n?u FE g?i flag)
+- [ ] �?i SL / x�a m�n / clear (c� Confirm) ho?t d?ng
+- [ ] Login sau khi c� guest cart: ki?m tra h�nh vi (cart user ri�ng theo `UserAccountId` � **kh�ng t? merge** trong code hi?n t?i)
+- [ ] SP OutOfStock / Hidden ? kh�ng th�m du?c
+- [ ] C� Bearer h?p l? ? `CurrentUserId` du?c set, kh�ng c?n guestUserId
 
-> Liên kết: [Login_Workflow.md](./Login_Workflow.md) · [Payment_Requirements.md](./Payment_Requirements.md) · [Checkout / Payment workflows](./Payment_Checkout_Workflow.md) · [INDEX](../ONBOARDING_INDEX.md)
+---
+
+## T�m t?t
+
+Cart UniEats = **REST `/api/Cart`** + **CartContext** v?i **guest UUID** ho?c **JWT user**. Backend d?m b?o 1 qu�n/cart, stock, flash price; Filter cho ph�p guest thao t�c khi kh�ng g?i Authorization.
+
+> Li�n k?t: [Login_Workflow.md](./Login_Workflow.md) � [Payment_Requirements.md](./Payment_Requirements.md) � [Checkout / Payment workflows](./Payment_Checkout_Workflow.md) � [INDEX](../ONBOARDING_INDEX.md)

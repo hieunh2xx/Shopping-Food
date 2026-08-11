@@ -14,8 +14,17 @@ namespace ShoppingFood.Domain.Models
         public string? SelectedToppings { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+        /// <summary>Khuyến mãi Mua X Tặng Y gắn với dòng giỏ (cả món mua và món tặng).</summary>
+        public Guid? BuyXGetYPromotionId { get; set; }
+        /// <summary>Món tặng (giá 0) thuộc bundle.</summary>
+        public bool IsGift { get; set; }
+        /// <summary>Trỏ tới dòng món mua (parent) khi đây là món tặng.</summary>
+        public Guid? ParentCartItemId { get; set; }
+
         // Navigation properties
         public virtual Cart Cart { get; set; } = null!;
         public virtual Product Product { get; set; } = null!;
+        public virtual BuyXGetYPromotion? BuyXGetYPromotion { get; set; }
+        public virtual CartItem? ParentCartItem { get; set; }
     }
 }

@@ -1,6 +1,6 @@
 # Tài liệu Quy trình: Notification Realtime (Bell / SignalR / Interceptor / Broadcast)
 
-Tài liệu mô tả luồng **thông báo realtime** trong **Shopping Food**: chuông đọc/đọc-all, SignalR `JoinUser`, EF `NotificationPushInterceptor`, Admin broadcast Flash Sale.
+Tài liệu mô tả luồng **thông báo realtime** trong **UniEats**: chuông đọc/đọc-all, SignalR `JoinUser`, EF `NotificationPushInterceptor`, Admin broadcast Flash Sale.
 
 > Chat widget + ChatHub: [Chat_Notification_Workflow.md](./Chat_Notification_Workflow.md)  
 > SePay dùng cùng event `ON_REALTIME_NOTIFICATION`: [Payment_Sepay_Workflow.md](./Payment_Sepay_Workflow.md)

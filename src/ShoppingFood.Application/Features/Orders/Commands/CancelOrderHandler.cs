@@ -69,6 +69,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     return ApiResponse.Failure(400, "Invalid order data");
 
                 order.Status = OrderStatus.Cancelled;
+                order.RejectReason = "[Customer Cancel] Khách hàng hủy đơn trước khi người bán xác nhận.";
                 order.UpdatedAt = DateTime.UtcNow;
 
                 await _paymentSettlementService.ProcessRefundAsync(order);

@@ -7,9 +7,11 @@ import { ROUTES } from '../routes/routeConfig';
 import { formatCurrency } from '../utils/formatters';
 import { orderService } from '../services/OrderService';
 import { discountService } from '../services/DiscountService';
+import { cartService } from '../services/CartService';
 import { paymentService, type IPaymentMethod } from '../services/PaymentService';
 import { restaurantService } from '../services/RestaurantService';
 import { userAddressService } from '../services/UserAddressService';
+import { supportService } from '../services/SupportService';
 import type { IDiscountDto, IUserAddressDto } from '../interfaces';
 import toast from 'react-hot-toast';
 import { Modal } from '../components/common/Modal';
@@ -44,13 +46,13 @@ function MapEvents({ onLocationSelected }: { onLocationSelected: (lat: number, l
 
 export function CheckoutPage() {
   const navigate = useNavigate();
-  const { items, clearCart } = useCart();
+  const { items, clearCart, refreshCart } = useCart();
   const { user, isAuthenticated } = useAuth();
   
   const [searchParams] = useSearchParams();
   
-  // Get guest ID from localStorage if not authenticated
-  const guestUserId = !isAuthenticated ? localStorage.getItem('sf_guest_id') || undefined : undefined;
+  // Always send guest id when present so BE can merge guest → user cart after login
+  const guestUserId = localStorage.getItem('sf_guest_id') || undefined;
 
   const urlRestaurantId = searchParams.get('restaurantId');
   const fallbackRestaurantId = items.length > 0 ? items[0].product.restaurantId : null;
@@ -59,9 +61,14 @@ export function CheckoutPage() {
   const firstItemOfRestaurant = items.find(i => i.product.restaurantId === restaurantId);
   const restaurantName = firstItemOfRestaurant ? firstItemOfRestaurant.product.restaurantName : '';
   const checkoutItems = items.filter(i => i.product.restaurantId === restaurantId);
+  const paidCheckoutItems = checkoutItems.filter(i => !i.isGift);
   
   const checkoutTotal = useMemo(() => {
     return checkoutItems.reduce((sum, item) => {
+      if (item.isGift) return sum;
+      if (typeof item.priceAtAdded === 'number') {
+        return sum + item.priceAtAdded * item.quantity;
+      }
       let itemPrice = item.product.flashSalePrice ?? item.product.price;
       if (item.selectedSize) {
         const sizeOpt = item.product.sizes?.find(s => s.sizeName === item.selectedSize);
@@ -106,6 +113,12 @@ export function CheckoutPage() {
   const [sepaySessionId, setSepaySessionId] = useState<string | null>(null);
   const [isSepayModalOpen, setIsSepayModalOpen] = useState(false);
   const [restaurantInfo, setRestaurantInfo] = useState<any>(null);
+  const [platformDelivery, setPlatformDelivery] = useState<{
+    freeDeliveryRadiusKm: number;
+    freeShippingMinimumOrder: number;
+    shippingFee: number;
+    feePerKm: number;
+  } | null>(null);
   const [savedAddresses, setSavedAddresses] = useState<IUserAddressDto[]>([]);
   const [saveAddress, setSaveAddress] = useState(true);
 
@@ -143,24 +156,48 @@ export function CheckoutPage() {
     if (hasFreeshipItem) return 0;
     if (!restaurantInfo) return 0;
 
-    const freeMinOrder = restaurantInfo.freeShippingMinimumOrder || 0;
+    const isPlatform = restaurantInfo.deliveryType === 'PlatformDelivery';
+    const freeMinOrder = isPlatform
+      ? (platformDelivery?.freeShippingMinimumOrder || 0)
+      : (restaurantInfo.freeShippingMinimumOrder || 0);
     if (checkoutTotal >= freeMinOrder && freeMinOrder > 0) return 0;
 
-    let distanceKm = 0;
-    if (formData.deliveryLatitude && formData.deliveryLongitude && restaurantInfo.latitude && restaurantInfo.longitude) {
-      distanceKm = calculateDistance(
-        formData.deliveryLatitude, 
-        formData.deliveryLongitude, 
-        restaurantInfo.latitude, 
-        restaurantInfo.longitude
-      );
-    }
-    
-    const freeRadius = restaurantInfo.freeDeliveryRadiusKm || 0;
+    // Platform fee must come from Admin DeliverySettings — never hardcode 15k
+    const flatCap = isPlatform
+      ? (platformDelivery?.shippingFee ?? restaurantInfo.shippingFee ?? 0)
+      : (restaurantInfo.shippingFee || 0);
+
+    const hasCoords = !!(
+      formData.deliveryLatitude &&
+      formData.deliveryLongitude &&
+      restaurantInfo.latitude &&
+      restaurantInfo.longitude
+    );
+
+    // No destination coords → charge flat fee (do not treat as 0km free-ship)
+    if (!hasCoords) return flatCap;
+
+    const distanceKm = calculateDistance(
+      formData.deliveryLatitude!,
+      formData.deliveryLongitude!,
+      restaurantInfo.latitude!,
+      restaurantInfo.longitude!
+    );
+
+    const freeRadius = isPlatform
+      ? (platformDelivery?.freeDeliveryRadiusKm ?? 3)
+      : (restaurantInfo.freeDeliveryRadiusKm ?? 0);
     if (distanceKm <= freeRadius) return 0;
 
-    return restaurantInfo.shippingFee || 0;
-  }, [hasFreeshipItem, restaurantInfo, formData.deliveryLatitude, formData.deliveryLongitude, checkoutTotal]);
+    if (isPlatform) {
+      const feePerKm = platformDelivery?.feePerKm || 3000;
+      const excessKm = Math.max(0, distanceKm - freeRadius);
+      const distanceBased = Math.max(feePerKm, Math.ceil(excessKm) * feePerKm);
+      return Math.min(flatCap || distanceBased, distanceBased);
+    }
+
+    return flatCap;
+  }, [hasFreeshipItem, restaurantInfo, platformDelivery, formData.deliveryLatitude, formData.deliveryLongitude, checkoutTotal]);
 
   useEffect(() => {
     if (!restaurantId) return;
@@ -170,6 +207,19 @@ export function CheckoutPage() {
       }
     });
   }, [restaurantId]);
+
+  useEffect(() => {
+    supportService.getDeliverySettings().then(res => {
+      if (!res.error && res.data) {
+        setPlatformDelivery({
+          freeDeliveryRadiusKm: Number(res.data.freeDeliveryRadiusKm ?? 3),
+          freeShippingMinimumOrder: Number(res.data.freeShippingMinimumOrder ?? 0),
+          shippingFee: Number(res.data.shippingFee ?? 0),
+          feePerKm: 3000, // matches BE default when finance ShipperFeePerKm unset
+        });
+      }
+    }).catch(() => { /* keep null → FE will show restaurant fee / 0 until loaded */ });
+  }, []);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -218,12 +268,9 @@ export function CheckoutPage() {
   }, [checkoutTotal, selectedDiscount, shippingFee]);
 
   const finalTotal = useMemo(() => {
-    const subtotalWithShipping = checkoutTotal + shippingFee;
-    if (selectedDiscount?.type === 'FreeShipping') {
-      return Math.max(0, checkoutTotal - discountAmount);
-    }
-    return Math.max(0, subtotalWithShipping - discountAmount);
-  }, [checkoutTotal, shippingFee, discountAmount, selectedDiscount]);
+    // FreeShipping: discountAmount === shippingFee → total = items only
+    return Math.max(0, checkoutTotal + shippingFee - discountAmount);
+  }, [checkoutTotal, shippingFee, discountAmount]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -357,8 +404,8 @@ export function CheckoutPage() {
       contactName: addr.contactName,
       contactPhone: addr.contactPhone,
       deliveryAddress: addr.addressLine,
-      deliveryLatitude: addr.latitude,
-      deliveryLongitude: addr.longitude
+      deliveryLatitude: addr.latitude ?? null,
+      deliveryLongitude: addr.longitude ?? null
     }));
   };
 
@@ -370,10 +417,36 @@ export function CheckoutPage() {
 
     setIsSubmitting(true);
     try {
+      const guestId = localStorage.getItem('sf_guest_id') || undefined;
+      // Snapshot UI cart before sync (refresh may clear React state asynchronously)
+      const localSnapshot = checkoutItems.map((i) => ({ ...i, product: i.product }));
+
+      let serverItems = await refreshCart();
+      const serverHasItems = Array.isArray(serverItems) && serverItems.length > 0;
+
+      // Ghost local cart: UI has items but server cart empty → push to API then checkout
+      if (!serverHasItems && localSnapshot.length > 0) {
+        for (const item of localSnapshot) {
+          await cartService.addToCart({
+            productId: item.product.id,
+            quantity: item.quantity,
+            guestUserId: guestId,
+            selectedSize: item.selectedSize,
+            selectedToppings: item.selectedToppings,
+          });
+        }
+        serverItems = await refreshCart();
+      }
+
+      if (!serverItems || serverItems.length === 0) {
+        toast.error('Giỏ hàng trên máy chủ đang trống. Vui lòng thêm lại món.');
+        return;
+      }
+
       const checkoutPayload: any = {
         ...formData,
         otpCode: isAuthenticated ? '' : otpCode,
-        guestUserId,
+        guestUserId: guestId,
         discountCode: selectedDiscount?.code || formData.discountCode,
         eWalletProvider: formData.paymentMethod === 'EWallet' ? formData.eWalletProvider : undefined,
         cardLastFour: formData.paymentMethod === 'CreditCard' ? formData.cardLastFour : undefined,
@@ -410,7 +483,12 @@ export function CheckoutPage() {
         navigate(`${ROUTES.HOME}?track=true&orderId=${orderId}`);
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message);
+      const data = error.response?.data;
+      const validationMsg =
+        data?.errors && typeof data.errors === 'object'
+          ? Object.values(data.errors).flat().filter(Boolean).join(' ')
+          : '';
+      toast.error(data?.message || validationMsg || error.message || 'Đặt hàng thất bại');
     } finally {
       setIsSubmitting(false);
     }
@@ -686,7 +764,7 @@ export function CheckoutPage() {
               <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center justify-between">
                 Tóm tắt đơn hàng
                 <span className="bg-orange-100 text-orange-700 text-xs px-2.5 py-1 rounded-full">
-                  {checkoutItems.length} món
+                  {paidCheckoutItems.length} món
                 </span>
               </h2>
               
@@ -696,21 +774,35 @@ export function CheckoutPage() {
               </div>
 
               <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-200">
-                {checkoutItems.map((item, idx) => {
-                  let itemUnitPrice = item.product.flashSalePrice ?? item.product.price;
-                  if (item.selectedSize) {
-                    const sizeOpt = item.product.sizes?.find(s => s.sizeName === item.selectedSize);
-                    if (sizeOpt) itemUnitPrice += sizeOpt.extraPrice;
-                  }
-                  if (item.selectedToppings && item.selectedToppings.length > 0) {
-                    item.selectedToppings.forEach(topName => {
-                      const topOpt = item.product.toppings?.find(t => t.name === topName || (t as any).toppingName === topName);
-                      if (topOpt) itemUnitPrice += topOpt.price;
-                    });
+                {paidCheckoutItems.map((item, idx) => {
+                  const giftChildren = item.buyXGetYPromotionId
+                    ? checkoutItems.filter(
+                        (g) =>
+                          g.isGift &&
+                          (g.parentCartItemId === item.id ||
+                            g.buyXGetYPromotionId === item.buyXGetYPromotionId)
+                      )
+                    : [];
+
+                  let itemUnitPrice =
+                    typeof item.priceAtAdded === 'number'
+                      ? item.priceAtAdded
+                      : (item.product.flashSalePrice ?? item.product.price);
+                  if (typeof item.priceAtAdded !== 'number') {
+                    if (item.selectedSize) {
+                      const sizeOpt = item.product.sizes?.find(s => s.sizeName === item.selectedSize);
+                      if (sizeOpt) itemUnitPrice += sizeOpt.extraPrice;
+                    }
+                    if (item.selectedToppings && item.selectedToppings.length > 0) {
+                      item.selectedToppings.forEach(topName => {
+                        const topOpt = item.product.toppings?.find(t => t.name === topName || (t as any).toppingName === topName);
+                        if (topOpt) itemUnitPrice += topOpt.price;
+                      });
+                    }
                   }
 
                   return (
-                    <div key={idx} className="flex gap-4">
+                    <div key={item.id || idx} className="flex gap-4">
                       <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 shrink-0 border border-gray-100">
                          {item.product.primaryImageUrl ? (
                           <img src={item.product.primaryImageUrl} alt={item.product.itemName} className="w-full h-full object-cover" />
@@ -720,10 +812,24 @@ export function CheckoutPage() {
                       </div>
                       <div className="flex-1">
                         <h4 className="font-medium text-gray-900 text-sm line-clamp-2">{item.product.itemName}</h4>
+                        {item.promotionLabel && (
+                          <span className="inline-block mt-1 text-[10px] font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded">
+                            {item.promotionLabel}
+                          </span>
+                        )}
                         <div className="text-xs text-gray-500 mt-1 space-y-0.5">
                           {item.selectedSize && <div>Size: {item.selectedSize}</div>}
                           {item.selectedToppings?.length ? <div>Thêm: {item.selectedToppings.join(', ')}</div> : null}
                         </div>
+                        {giftChildren.length > 0 && (
+                          <div className="mt-2 rounded-lg bg-emerald-50 border border-emerald-100 px-2 py-1.5 space-y-0.5">
+                            {giftChildren.map((g) => (
+                              <p key={g.id || g.product.id} className="text-[11px] text-emerald-700 font-medium">
+                                Tặng {g.quantity}× {g.product.itemName}
+                              </p>
+                            ))}
+                          </div>
+                        )}
                         <div className="flex justify-between items-center mt-2">
                           <span className="text-sm font-semibold text-gray-600">x{item.quantity}</span>
                           <span className="font-bold text-gray-900">{formatCurrency(itemUnitPrice * item.quantity)}</span>
@@ -863,8 +969,12 @@ export function CheckoutPage() {
         sessionId={sepaySessionId ?? ''}
         onClose={() => {
           setIsSepayModalOpen(false);
-          clearCart();
-          navigate(`${ROUTES.HOME}?track=true`);
+          setSepaySessionId(null);
+          void refreshCart();
+          navigate(ROUTES.ORDERS);
+        }}
+        onAbandoned={() => {
+          void refreshCart();
         }}
         onPaid={() => {
           clearCart();

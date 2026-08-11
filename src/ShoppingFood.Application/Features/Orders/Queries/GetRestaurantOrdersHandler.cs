@@ -81,16 +81,25 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                     PaymentMethod = o.PaymentMethod.ToString(),
                     CreatedAt = o.CreatedAt,
                     UpdatedAt = o.UpdatedAt,
+                    RejectReason = o.RejectReason,
+                    ShippingFee = o.ShippingFee,
+                    ItemsSubtotal = o.ItemsSubtotal,
+                    ShipperIncome = o.ShipperIncome,
+                    ShipperBaseFeeAmount = o.ShipperBaseFeeAmount,
+                    ShipperDistanceFeeAmount = o.ShipperDistanceFeeAmount,
+                    ShipperPeakBonus = o.ShipperPeakBonus,
                     Items = o.Items.Select(i => new OrderItemDto
                     {
                         Id = i.Id,
                         ProductId = i.ProductId ?? Guid.Empty,
                         ItemName = i.ItemName,
                         Quantity = i.Quantity,
-                        UnitPrice = i.UnitPrice,
-                        TotalPrice = i.TotalPrice,
+                        UnitPrice = i.IsGift ? 0 : i.UnitPrice,
+                        TotalPrice = i.IsGift ? 0 : i.TotalPrice,
                         SelectedSize = i.SelectedSize,
-                        SelectedToppings = i.SelectedToppings
+                        SelectedToppings = i.SelectedToppings,
+                        IsGift = i.IsGift,
+                        BuyXGetYPromotionId = i.BuyXGetYPromotionId
                     }).ToList()
                 }).ToList();
 

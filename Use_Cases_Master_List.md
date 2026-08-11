@@ -1,6 +1,6 @@
-# Master List of 150 System Use Cases - Shopping Food
+# Master List of 150 System Use Cases - UniEats
 
-Tài liệu này cung cấp danh sách đặc tả đầy đủ **150 Use Cases** của hệ thống đặt và giao nhận đồ ăn **Shopping Food**, được phân loại chi tiết theo **9 phân hệ chính**. Cấu trúc này đảm bảo tính quy mô và đáp ứng đầy đủ nghiệp vụ của một nền tảng thương mại điện tử giao đồ ăn chuyên nghiệp (Enterprise-level Food Delivery Platform).
+Tài liệu này cung cấp danh sách đặc tả đầy đủ **150 Use Cases** của hệ thống đặt và giao nhận đồ ăn **UniEats**, được phân loại chi tiết theo **9 phân hệ chính**. Cấu trúc này đảm bảo tính quy mô và đáp ứng đầy đủ nghiệp vụ của một nền tảng thương mại điện tử giao đồ ăn chuyên nghiệp (Enterprise-level Food Delivery Platform).
 
 ---
 

@@ -1,6 +1,6 @@
 # Tài liệu Quy trình: Đánh giá sản phẩm & Seller phản hồi / báo cáo
 
-Tài liệu mô tả luồng **Product Review** trên trang chi tiết sản phẩm (Customer) và **SellerReviewsPage** (Seller trả lời / báo cáo) trong **Shopping Food**.
+Tài liệu mô tả luồng **Product Review** trên trang chi tiết sản phẩm (Customer) và **SellerReviewsPage** (Seller trả lời / báo cáo) trong **UniEats**.
 
 > Admin duyệt báo cáo: [Support_Admin_Workflow.md](./Support_Admin_Workflow.md) (review-reports)  
 > Catalog / Product detail: [Product_Catalog_Workflow.md](./Product_Catalog_Workflow.md)

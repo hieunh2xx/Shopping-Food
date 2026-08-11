@@ -1,6 +1,6 @@
-# Screen Flow - Shopping Food System
+# Screen Flow - UniEats System
 
-Tài liệu này mô tả chi tiết luồng di chuyển giữa các màn hình (Screen Flow) trong ứng dụng **Shopping Food**, được xây dựng dựa trên đặc tả Use Cases (`Use_Cases.md`, `Use_Cases_Master_List.md`) và mã nguồn Front-end hiện tại (`AppRoutes.tsx`, `routeConfig.ts`).
+Tài liệu này mô tả chi tiết luồng di chuyển giữa các màn hình (Screen Flow) trong ứng dụng **UniEats**, được xây dựng dựa trên đặc tả Use Cases (`Use_Cases.md`, `Use_Cases_Master_List.md`) và mã nguồn Front-end hiện tại (`AppRoutes.tsx`, `routeConfig.ts`).
 
 ---
 

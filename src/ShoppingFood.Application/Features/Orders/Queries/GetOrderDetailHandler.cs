@@ -165,6 +165,7 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                 Id = order.Id,
                 UserAccountId = order.UserAccountId,
                 GuestUserId = order.GuestUserId,
+                ShipperId = order.ShipperId,
                 TotalAmount = order.TotalAmount,
                 DeliveryAddress = order.DeliveryAddress,
                 ContactName = order.ContactName,
@@ -175,7 +176,8 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                 CreatedAt = order.CreatedAt,
                 UpdatedAt = order.UpdatedAt,
                 CanCancel = order.Status == OrderStatus.Pending,
-                CanMessageSeller = order.UserAccountId.HasValue && MessageableStatuses.Contains(order.Status),
+                CanMessageSeller = order.UserAccountId.HasValue
+                    && (MessageableStatuses.Contains(order.Status) || chatSession != null),
                 RestaurantId = restaurant?.Id,
                 RestaurantName = restaurant?.RestaurantName,
                 OrderChatSessionId = chatSession?.Id,
@@ -183,6 +185,13 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                 PaymentStatus = paymentSession?.Status.ToString() ?? "",
                 PaymentSessionId = paymentSession?.Id,
                 DiscountCode = order.AppliedDiscount?.Code,
+                RejectReason = order.RejectReason,
+                ShippingFee = order.ShippingFee,
+                ItemsSubtotal = order.ItemsSubtotal,
+                ShipperIncome = order.ShipperIncome,
+                ShipperBaseFeeAmount = order.ShipperBaseFeeAmount,
+                ShipperDistanceFeeAmount = order.ShipperDistanceFeeAmount,
+                ShipperPeakBonus = order.ShipperPeakBonus,
                 Items = order.Items.Select(i => new OrderItemDto
                 {
                     Id = i.Id,
@@ -192,10 +201,12 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                         ? (i.Product.Images.FirstOrDefault(img => img.IsPrimary)?.ImageUrl ?? i.Product.Images.FirstOrDefault()?.ImageUrl)
                         : null,
                     Quantity = i.Quantity,
-                    UnitPrice = i.UnitPrice,
-                    TotalPrice = i.TotalPrice,
+                    UnitPrice = i.IsGift ? 0 : i.UnitPrice,
+                    TotalPrice = i.IsGift ? 0 : i.TotalPrice,
                     SelectedSize = i.SelectedSize,
-                    SelectedToppings = i.SelectedToppings
+                    SelectedToppings = i.SelectedToppings,
+                    IsGift = i.IsGift,
+                    BuyXGetYPromotionId = i.BuyXGetYPromotionId
                 }).ToList()
             };
         }

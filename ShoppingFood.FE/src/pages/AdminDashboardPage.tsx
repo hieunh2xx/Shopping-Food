@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { Users, DollarSign, ShoppingCart, TrendingUp, TrendingDown, Map as MapIcon, UserPlus, Truck, Store, Download } from 'lucide-react';
 import { Card } from '../components/common';
 import { adminService } from '../services/AdminService';
@@ -239,7 +239,10 @@ export function AdminDashboardPage() {
                     <YAxis yAxisId="left" tickFormatter={(val) => `${val / 1000}k`} axisLine={false} tickLine={false} />
                     <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} />
                     <Tooltip 
-                      formatter={(value: number, name: string) => [name === 'revenue' ? formatCurrency(value) : value, name === 'revenue' ? 'Doanh thu' : 'Số đơn']}
+                      formatter={(value, name) => [
+                        name === 'revenue' ? formatCurrency(Number(value ?? 0)) : Number(value ?? 0),
+                        name === 'revenue' ? 'Doanh thu' : 'Số đơn'
+                      ]}
                       contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                     />
                     <Legend />

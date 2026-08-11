@@ -73,7 +73,6 @@ class AdminService extends BaseService<unknown> {
   }
 
   async getActionLogs(skip: number = 0, take: number = 10, filter: string = '', orderDirection: string = 'desc'): Promise<IApiResponse<any[]>> {
-    console.log('API_ENDPOINTS.SYSTEM:', API_ENDPOINTS.SYSTEM);
     return httpClient.get<IApiResponse<any[]>>(API_ENDPOINTS.SYSTEM?.ACTION_LOGS || '/System/action-logs', {
       params: { skip, take, filter, orderDirection }
     });

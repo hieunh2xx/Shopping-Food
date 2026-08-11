@@ -15,6 +15,7 @@ export interface OrderSellerChatModalProps {
   title?: string;
   isSeller?: boolean;
   sessionStatus?: 'Open' | 'Closed';
+  onSessionReady?: (sessionId: string, orderId: string) => void;
 }
 
 export function OrderSellerChatModal({
@@ -26,56 +27,75 @@ export function OrderSellerChatModal({
   title,
   isSeller = false,
   sessionStatus,
+  onSessionReady,
 }: OrderSellerChatModalProps) {
   const { user, token } = useAuth();
-  const [sessionId, setSessionId] = useState<string | null>(initialSessionId ?? null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<IChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const activeSessionRef = useRef<string | null>(null);
 
   const handleReceive = useCallback((message: IChatMessage) => {
-    if (sessionId && message.sessionId !== sessionId) return;
+    const activeSid = activeSessionRef.current;
+    if (activeSid && message.sessionId !== activeSid) return;
     setMessages(prev => {
       if (prev.some(m => m.id === message.id)) return prev;
-      return [...prev, message];
+      // Replace optimistic temp message with real one
+      const withoutTemp = prev.filter(m => !(m.id.startsWith('temp-') && m.content === message.content && m.senderId === message.senderId));
+      return [...withoutTemp, message];
     });
-  }, [sessionId]);
+  }, []);
 
   useEffect(() => {
-    if (!isOpen || !token || !user) return;
+    if (!isOpen) {
+      setSessionId(null);
+      setMessages([]);
+      setInputText('');
+      activeSessionRef.current = null;
+      return;
+    }
+    if (!token || !user || !orderId) return;
 
     let active = true;
+    let joinedSid: string | null = null;
+
     const setup = async () => {
       setLoading(true);
+      setMessages([]);
       try {
         await chatService.startConnection(token);
         if (isSeller && restaurantId) {
           await chatService.joinSellerInbox(restaurantId);
         }
 
-        let sid = initialSessionId ?? sessionId;
-        if (!sid && !isSeller) {
+        let sid = initialSessionId ?? null;
+
+        // Customer hoặc Seller đều có thể tạo/mở phiên chat đơn hàng
+        if (!sid) {
           const res = await chatService.createOrderSession(orderId);
           if (res.error || !res.data) {
-            toast.error(res.message);
+            toast.error(res.message || 'Không tạo được phiên chat');
             return;
           }
           sid = res.data.id;
-          setSessionId(sid);
-          setMessages(res.data.messages || []);
-        } else if (!sid && isSeller) {
-          toast('Khách chưa gửi tin nhắn về đơn này.', { icon: '💬' });
-          return;
+          if (active) {
+            setSessionId(sid);
+            setMessages(res.data.messages || []);
+            onSessionReady?.(sid, orderId);
+          }
         }
 
         if (sid && active) {
           setSessionId(sid);
+          activeSessionRef.current = sid;
+          joinedSid = sid;
           await chatService.joinSession(sid);
-          const history = await chatService.getHistory(sid);
-          if (!history.error && history.data) {
-            setMessages(history.data);
+          const history = await chatService.getHistory(sid, { take: 20 });
+          if (!history.error && history.data?.items && active) {
+            setMessages(history.data.items);
           }
         }
       } catch {
@@ -93,9 +113,9 @@ export function OrderSellerChatModal({
       active = false;
       chatService.offReceiveMessage(handleReceive);
       chatService.offOrderChatMessage(handleReceive);
-      if (sessionId) chatService.leaveSession(sessionId).catch(() => undefined);
+      if (joinedSid) chatService.leaveSession(joinedSid).catch(() => undefined);
     };
-  }, [isOpen, token, user, orderId, initialSessionId, isSeller, restaurantId]);
+  }, [isOpen, token, user, orderId, initialSessionId, isSeller, restaurantId, handleReceive, onSessionReady]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -106,10 +126,22 @@ export function OrderSellerChatModal({
     const content = inputText.trim();
     setInputText('');
     setSending(true);
+
+    const optimistic: IChatMessage = {
+      id: `temp-${Date.now()}`,
+      sessionId,
+      senderId: user.id,
+      senderRole: user.role as IChatMessage['senderRole'],
+      content,
+      createdAt: new Date().toISOString(),
+    };
+    setMessages(prev => [...prev, optimistic]);
+
     try {
       await chatService.sendMessage(sessionId, user.id, user.role, content);
     } catch {
       toast.error('Gửi tin nhắn thất bại');
+      setMessages(prev => prev.filter(m => m.id !== optimistic.id));
       setInputText(content);
     } finally {
       setSending(false);
@@ -122,6 +154,7 @@ export function OrderSellerChatModal({
       onClose={onClose}
       title={title ?? (isSeller ? 'Chat với khách hàng' : 'Nhắn tin người bán')}
       size="md"
+      zIndexClass="z-[10500]"
     >
       <div className="flex flex-col h-80">
         {!isSeller && (
@@ -139,11 +172,11 @@ export function OrderSellerChatModal({
             <p className="text-center text-sm text-gray-400 py-8">Chưa có tin nhắn. Gửi lời nhắn đầu tiên.</p>
           ) : (
             messages.map(m => {
-              const mine = m.senderId === user?.id;
+              const mine = m.senderId?.toLowerCase() === user?.id?.toLowerCase();
               return (
                 <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${mine ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-800'}`}>
-                    {m.content}
+                  <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm font-medium shadow-sm ${mine ? 'bg-orange-600 text-white' : 'bg-white text-slate-900 border border-slate-200'} ${m.id.startsWith('temp-') ? 'opacity-70' : ''}`}>
+                    <span className={mine ? 'text-white' : 'text-slate-900'}>{m.content}</span>
                   </div>
                 </div>
               );
@@ -163,14 +196,14 @@ export function OrderSellerChatModal({
                 onChange={e => setInputText(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
                 placeholder="Nhập tin nhắn..."
-                className="flex-1 px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/30"
+                className="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-900 placeholder:text-slate-500 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/30"
                 disabled={loading || !sessionId}
               />
               <button
                 type="button"
                 onClick={handleSend}
                 disabled={loading || sending || !inputText.trim() || !sessionId}
-                className="p-2.5 rounded-xl bg-orange-500 text-white disabled:opacity-50 hover:bg-orange-600"
+                className="p-2.5 rounded-xl bg-orange-600 text-white disabled:opacity-40 hover:bg-orange-700"
               >
                 <Send className="w-4 h-4" />
               </button>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { orderService } from '../../services/OrderService';
 import { authService } from '../../services/AuthService';
 import { chatService } from '../../services/ChatService';
@@ -35,10 +36,11 @@ const STATUS_TABS = [
 
 export function SellerOrdersPage() {
   const { token } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [orders, setOrders] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('');
+  const [activeTab, setActiveTab] = useState(searchParams.get('status') || '');
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
@@ -65,23 +67,67 @@ export function SellerOrdersPage() {
     fetchOrders();
   }, [activeTab, page]);
 
+  // Deep-link từ thông báo: ?orderId=...&status=Cancelled
+  useEffect(() => {
+    const orderId = searchParams.get('orderId');
+    if (!orderId || isLoading) return;
+
+    const matched = orders.find((o) => o.id === orderId);
+    if (matched) {
+      setSelectedOrder(matched);
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete('orderId');
+        return next;
+      }, { replace: true });
+      return;
+    }
+
+    // Đơn không nằm trang hiện tại → lấy chi tiết trực tiếp
+    orderService.getOrderDetails(orderId).then((res) => {
+      if (!res.error && res.data) {
+        setSelectedOrder(res.data);
+        if (res.data.status === 'Cancelled' && activeTab !== 'Cancelled') {
+          setActiveTab('Cancelled');
+          setPage(1);
+        }
+      }
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete('orderId');
+        return next;
+      }, { replace: true });
+    });
+  }, [orders, isLoading, searchParams]);
+
   useEffect(() => {
     const handleNotification = (notif: INotificationDto) => {
+      const title = (notif.title || '').toLowerCase();
+      const isCancel =
+        title.includes('hủy') ||
+        title.includes('cancel') ||
+        title.includes('thất bại') ||
+        title.includes('sự cố');
+
+      if (isCancel) {
+        setActiveTab('Cancelled');
+        setPage(1);
+      }
+
       if (notif.targetId) {
         fetchOrders();
-        // If the selected order is the one being updated, refetch it
-        if (selectedOrder && notif.targetId === selectedOrder.id) {
-          orderService.getOrderDetails(selectedOrder.id).then(res => {
-            if (!res.error && res.data) setSelectedOrder(res.data);
-          });
-        }
+        orderService.getOrderDetails(notif.targetId).then(res => {
+          if (!res.error && res.data) setSelectedOrder(res.data);
+        });
+      } else {
+        fetchOrders();
       }
     };
     notificationRealtimeService.onNotification(handleNotification);
     return () => {
       notificationRealtimeService.offNotification(handleNotification);
     };
-  }, [selectedOrder]);
+  }, [activeTab, page]);
 
   useEffect(() => {
     const handleNotification = () => {
@@ -93,15 +139,7 @@ export function SellerOrdersPage() {
     };
   }, [activeTab, page]);
 
-  useEffect(() => {
-    authService.getProfile().then(res => {
-      if (!res.error && res.data?.sellerInfo?.restaurantId) {
-        setRestaurantId(res.data.sellerInfo.restaurantId);
-        if (res.data.sellerInfo.deliveryType) {
-          setDeliveryType(res.data.sellerInfo.deliveryType);
-        }
-      }
-    });
+  const refreshOrderChatMap = () => {
     chatService.getSellerOrderChats().then(res => {
       if (!res.error && res.data) {
         const map: Record<string, string> = {};
@@ -111,6 +149,18 @@ export function SellerOrdersPage() {
         setOrderChatMap(map);
       }
     });
+  };
+
+  useEffect(() => {
+    authService.getProfile().then(res => {
+      if (!res.error && res.data?.sellerInfo?.restaurantId) {
+        setRestaurantId(res.data.sellerInfo.restaurantId);
+        if (res.data.sellerInfo.deliveryType) {
+          setDeliveryType(res.data.sellerInfo.deliveryType);
+        }
+      }
+    });
+    refreshOrderChatMap();
   }, []);
 
   useEffect(() => {
@@ -118,6 +168,16 @@ export function SellerOrdersPage() {
     chatService.startConnection(token)
       .then(() => chatService.joinSellerInbox(restaurantId))
       .catch(() => undefined);
+
+    const onOrderChat = () => {
+      refreshOrderChatMap();
+    };
+    chatService.onOrderChatMessage(onOrderChat);
+    chatService.onNewOrderChat(onOrderChat);
+    return () => {
+      chatService.offOrderChatMessage(onOrderChat);
+      chatService.offNewOrderChat(onOrderChat);
+    };
   }, [token, restaurantId]);
 
   const fetchOrders = async () => {
@@ -133,10 +193,11 @@ export function SellerOrdersPage() {
         setOrders(res.data);
         setTotal(res.total || 0);
       } else {
-        toast.error(res.message);
+        toast.error(res.message || 'Không tải được danh sách đơn hàng.');
       }
-    } catch {
-      toast.error('Tải danh sách đơn hàng thất bại do lỗi kết nối mạng.');
+    } catch (err: any) {
+      const apiMsg = err?.response?.data?.message;
+      toast.error(apiMsg || 'Tải danh sách đơn hàng thất bại do lỗi kết nối mạng.');
     } finally {
       setIsLoading(false);
     }
@@ -359,6 +420,15 @@ export function SellerOrdersPage() {
                     <MapPin className="w-4 h-4 text-gray-400" />
                     <span className="line-clamp-1">{order.deliveryAddress}</span>
                   </div>
+                  {order.status === 'Cancelled' && order.rejectReason && (
+                    <div className="flex items-start gap-2 text-red-700 bg-red-50 border border-red-100 rounded-lg px-2.5 py-2">
+                      <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                      <span className="line-clamp-2">
+                        <strong>Lý do hủy:</strong>{' '}
+                        {String(order.rejectReason).replace(/^\[.*?\]\s*/, '')}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-between items-center">
@@ -435,6 +505,7 @@ export function SellerOrdersPage() {
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
+                          refreshOrderChatMap();
                           setSellerChat({
                             isOpen: true,
                             orderId: order.id,
@@ -549,33 +620,68 @@ export function SellerOrdersPage() {
               <div className="space-y-3">
                 <h4 className="font-bold text-gray-800 text-sm uppercase tracking-wider">Chi tiết món ăn</h4>
                 <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
-                  {selectedOrder.items.map((item: any) => (
+                  {selectedOrder.items.map((item: any) => {
+                    const isGift = !!item.isGift || String(item.itemName || '').startsWith('[Tặng]');
+                    const displayName = String(item.itemName || '').replace(/^\[Tặng\]\s*/, '');
+                    const unit = isGift ? 0 : (item.unitPrice || 0);
+                    const total = isGift ? 0 : (item.totalPrice ?? unit * (item.quantity || 0));
+                    return (
                     <div key={item.id} className="flex justify-between items-start text-sm">
                         <div className="flex-1">
-                          <p className="font-medium text-gray-900">{item.itemName}</p>
+                          <p className="font-medium text-gray-900 flex items-center gap-1.5 flex-wrap">
+                            {displayName}
+                            {isGift && (
+                              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                                Tặng kèm
+                              </span>
+                            )}
+                          </p>
                           {(item.selectedSize || item.selectedToppings) && (
                             <div className="text-xs text-gray-500 mt-0.5 space-y-0.5">
                               {item.selectedSize && <p>Size: {item.selectedSize}</p>}
                               {item.selectedToppings && <p>Topping: {item.selectedToppings}</p>}
                             </div>
                           )}
-                          <p className="text-gray-400 text-xs mt-1">SL: {item.quantity} x {item.unitPrice.toLocaleString('vi-VN')} đ</p>
+                          <p className="text-gray-400 text-xs mt-1">
+                            SL: {item.quantity} x {unit.toLocaleString('vi-VN')} đ
+                          </p>
                         </div>
-                      <p className="font-bold text-gray-900">{(item.totalPrice).toLocaleString('vi-VN')} đ</p>
+                      <p className={`font-bold ${isGift ? 'text-emerald-600' : 'text-gray-900'}`}>
+                        {isGift ? 'Miễn phí' : `${total.toLocaleString('vi-VN')} đ`}
+                      </p>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
               {/* Payment Section */}
               <div className="pt-4 border-t border-gray-100 text-sm space-y-2">
+                {selectedOrder.status === 'Cancelled' && (
+                  <div className="mb-2 p-3 bg-red-50 border border-red-100 rounded-xl text-sm text-red-700">
+                    <strong>Lý do hủy:</strong>{' '}
+                    {selectedOrder.rejectReason
+                      ? String(selectedOrder.rejectReason).replace(/^\[.*?\]\s*/, '')
+                      : 'Không có lý do được ghi nhận.'}
+                  </div>
+                )}
                 <div className="flex justify-between text-gray-500">
                   <span>Phương thức thanh toán:</span>
                   <span className="font-medium text-gray-900">{selectedOrder.paymentMethod}</span>
                 </div>
+                <div className="flex justify-between text-gray-500">
+                  <span>Tiền món:</span>
+                  <span className="font-medium text-gray-900">
+                    {(selectedOrder.itemsSubtotal ?? Math.max(0, (selectedOrder.totalAmount || 0) - (selectedOrder.shippingFee || 0))).toLocaleString('vi-VN')} đ
+                  </span>
+                </div>
+                <div className="flex justify-between text-gray-500">
+                  <span>Phí giao hàng:</span>
+                  <span className="font-medium text-gray-900">{(selectedOrder.shippingFee ?? 0).toLocaleString('vi-VN')} đ</span>
+                </div>
                 <div className="flex justify-between items-center text-lg font-bold">
                   <span className="text-gray-800">Tổng thanh toán:</span>
-                  <span className="text-orange-500">{selectedOrder.totalAmount.toLocaleString('vi-VN')} đ</span>
+                  <span className="text-orange-500">{(selectedOrder.totalAmount ?? 0).toLocaleString('vi-VN')} đ</span>
                 </div>
               </div>
 
@@ -679,6 +785,10 @@ export function SellerOrdersPage() {
         sessionId={sellerChat.sessionId}
         restaurantId={restaurantId ?? undefined}
         isSeller
+        onSessionReady={(sid, oid) => {
+          setOrderChatMap(prev => ({ ...prev, [oid]: sid }));
+          setSellerChat(prev => prev.orderId === oid ? { ...prev, sessionId: sid } : prev);
+        }}
       />
 
       {/* Cancel Order Prompt Modal */}

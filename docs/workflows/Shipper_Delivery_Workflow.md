@@ -1,69 +1,69 @@
-﻿# Tài liệu Quy trình: Shipper giao hàng (Shipper Delivery)
+# T�i li?u Quy tr�nh: Shipper giao h�ng (Shipper Delivery)
 
-Tài liệu mô tả luồng tài xế từ **bật online** → nhận đề xuất → giao hàng → báo cáo sự cố / uy tín trong hệ thống **Shopping Food**.
+T�i li?u m� t? lu?ng t�i x? t? **b?t online** ? nh?n d? xu?t ? giao h�ng ? b�o c�o s? c? / uy t�n trong h? th?ng **UniEats**.
 
-> Đơn phải ở `WaitingForShipper` (Seller gọi waiting-for-shipper) hoặc được Coordinator force-assign.  
-> Xem thêm: [Checkout_Order_Workflow.md](./Checkout_Order_Workflow.md) · [Coordinator_Dispatch_Workflow.md](./Coordinator_Dispatch_Workflow.md) · [Payment_Requirements.md](./Payment_Requirements.md) (settle COD khi delivered).
-
----
-
+> �on ph?i ? `WaitingForShipper` (Seller g?i waiting-for-shipper) ho?c du?c Coordinator force-assign.  
+> Xem th�m: [Checkout_Order_Workflow.md](./Checkout_Order_Workflow.md) � [Coordinator_Dispatch_Workflow.md](./Coordinator_Dispatch_Workflow.md) � [Payment_Requirements.md](./Payment_Requirements.md) (settle COD khi delivered).
 
 ---
 
-## Phần A — UI Interaction Trace (Nút bấm → Code → Data → Hiển thị)
 
-> UI Trace — Shipper  
-> Mỗi thao tác trả lời: **nút ở đâu** · **bấm chạy file/hàm nào** · **API/BE đâu** · **data trả về** · **hiển thị thế nào**.
+---
+
+## Ph?n A � UI Interaction Trace (N�t b?m ? Code ? Data ? Hi?n th?)
+
+> UI Trace � Shipper  
+> M?i thao t�c tr? l?i: **n�t ? d�u** � **b?m ch?y file/h�m n�o** � **API/BE d�u** � **data tr? v?** � **hi?n th? th? n�o**.
 
 
-**Route:** `/shipper` · **Page:** `pages/shipper/ShipperDashboard.tsx`  
+**Route:** `/shipper` � **Page:** `pages/shipper/ShipperDashboard.tsx`  
 **Service:** `services/ShipperService.ts`
 
 ---
 
-## UT-SHP-01 — Toggle **「Bật / Tắt trực tuyến」**
+## UT-SHP-01 � Toggle **?B?t / T?t tr?c tuy?n?**
 
-### 1. Giao diện nút ở đâu?
+### 1. Giao di?n n�t ? d�u?
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
 | **Route** | `/shipper` |
 | **Page** | `ShipperDashboard.tsx` |
 | **Control** | Toggle / button `onClick={handleToggleOnline}` (~605) |
-| **Nhãn UX** | BẬT / TẮT trạng thái trực tuyến |
+| **Nh�n UX** | B?T / T?T tr?ng th�i tr?c tuy?n |
 
-### 2. FE chạy đâu?
+### 2. FE ch?y d�u?
 
 ```text
 onClick
-  → handleToggleOnline (ShipperDashboard.tsx ~385+)
-       · newStatus = !isOnline
-  → shipperService.toggleOnline({ isOnline: newStatus })
-  → HttpClient POST /api/Shipper/toggle-online
+  ? handleToggleOnline (ShipperDashboard.tsx ~385+)
+       � newStatus = !isOnline
+  ? shipperService.toggleOnline({ isOnline: newStatus })
+  ? HttpClient POST /api/Shipper/toggle-online
 ```
 
-### 3. BE chạy đâu?
+### 3. BE ch?y d�u?
 
 ```text
-ShipperController → ToggleShipperOnlineHandler
-  → Kiểm tra role Shipper, profile tồn tại
-  → Nếu Suspended → Failure 403 + lý do / thời gian còn
-  → IsOnline = newStatus → Save
+ShipperController ? ToggleShipperOnlineHandler
+  ? Ki?m tra role Shipper, profile t?n t?i
+  ? N?u Suspended ? Failure 403 + l� do / th?i gian c�n
+  ? IsOnline = newStatus ? Save
 ```
 
-### 4. Data trả về
+### 4. Data tr? v?
 
 ```json
 { "code": 200, "error": false, "message": "...", "data": null }
 ```
-Hoặc `error: true`, `message`: `"Tài khoản của bạn đã bị khóa. Lý do: ..."`
+Ho?c `error: true`, `message`: `"T�i kho?n c?a b?n d� b? kh�a. L� do: ..."`
 
-### 5. Hiển thị
+### 5. Hi?n th?
 
-| Nhánh | UI |
+| Nh�nh | UI |
 |-------|-----|
-| OK | `setIsOnline(newStatus)` + `toast.success('Bạn đã BẬT/TẮT trạng thái trực tuyến!')` |
-| Fail | `toast.error(res.message \|\| ...)` — **không** đổi toggle |
+| OK | `setIsOnline(newStatus)` + `toast.success('B?n d� B?T/T?T tr?ng th�i tr?c tuy?n!')` |
+| Fail | `toast.error(res.message \|\| ...)` � **kh�ng** d?i toggle |
 
 ### 6. Sequence
 
@@ -80,205 +80,205 @@ sequenceDiagram
 
 ---
 
-## UT-SHP-02 — Nút **「Nhận đơn」** trên card Available Offers
+## UT-SHP-02 � N�t **?Nh?n don?** tr�n card Available Offers
 
-### 1. UI ở đâu?
+### 1. UI ? d�u?
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
-| **Vùng** | Danh sách available offers trên Dashboard |
-| **Nút** | Accept trên card — `onClick` → `handleAcceptOffer(offer.orderId)` (~860) |
-| **Nút phụ** | Reject → `handleRejectOffer` (~874) |
-| **Click card** | `setProposalPopupOffer(offer)` mở popup |
+| **V�ng** | Danh s�ch available offers tr�n Dashboard |
+| **N�t** | Accept tr�n card � `onClick` ? `handleAcceptOffer(offer.orderId)` (~860) |
+| **N�t ph?** | Reject ? `handleRejectOffer` (~874) |
+| **Click card** | `setProposalPopupOffer(offer)` m? popup |
 
 ### 2. FE
 
 ```text
 handleAcceptOffer(orderId)
-  → nếu !isOnline: toast.error('Vui lòng bật trạng thái trực tuyến để nhận đơn'); return
-  → shipperService.acceptOffer({ orderId })
-  → POST /api/Shipper/accept-offer
-  → success: toast 'Đã chấp nhận đơn hàng!' + refresh active delivery / offers
+  ? n?u !isOnline: toast.error('Vui l�ng b?t tr?ng th�i tr?c tuy?n d? nh?n don'); return
+  ? shipperService.acceptOffer({ orderId })
+  ? POST /api/Shipper/accept-offer
+  ? success: toast '�� ch?p nh?n don h�ng!' + refresh active delivery / offers
 ```
 
 ### 3. BE
 
 ```text
 Accept offer handler
-  → Gán ShipperId lên Order, Proposal Accepted
-  → Có thể tạo notification cho Customer/Seller
+  ? G�n ShipperId l�n Order, Proposal Accepted
+  ? C� th? t?o notification cho Customer/Seller
 ```
 
-### 4–5. Data & hiển thị
+### 4�5. Data & hi?n th?
 
 - Success: toast + `fetchAvailableOffers` / set `activeDelivery`  
-- Error API: `toast.error(err.response?.data?.message || 'Không thể nhận đơn...')`
+- Error API: `toast.error(err.response?.data?.message || 'Kh�ng th? nh?n don...')`
 
 ---
 
-## UT-SHP-03 — Popup đề xuất **OrderProposalPopup** (Accept / Reject / Timeout)
+## UT-SHP-03 � Popup d? xu?t **OrderProposalPopup** (Accept / Reject / Timeout)
 
 ### 1. UI
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
 | **Component** | `pages/shipper/components/OrderProposalPopup.tsx` |
-| **Mở khi** | Coordinator broadcast / force-assign / click card → `proposalPopupOffer` state |
-| **Nút** | Accept → `onAccept={handleAcceptProposal}` · Reject → `handleRejectProposal` |
-| **Timeout** | Timer trong popup → `handleTimeoutProposal` |
+| **M? khi** | Coordinator broadcast / force-assign / click card ? `proposalPopupOffer` state |
+| **N�t** | Accept ? `onAccept={handleAcceptProposal}` � Reject ? `handleRejectProposal` |
+| **Timeout** | Timer trong popup ? `handleTimeoutProposal` |
 
 ### 2. FE
 
 ```text
 handleAcceptProposal(orderId) (~271)
-  → POST /Shipper/accept-offer
-  → toast.success('Nhận đơn thành công!')
-  → đóng popup, đưa đơn vào active
+  ? POST /Shipper/accept-offer
+  ? toast.success('Nh?n don th�nh c�ng!')
+  ? d�ng popup, dua don v�o active
 
-handleRejectProposal → POST /Shipper/reject-offer
-handleTimeoutProposal → toast.error('Đã hết thời gian phản hồi đề xuất.')
+handleRejectProposal ? POST /Shipper/reject-offer
+handleTimeoutProposal ? toast.error('�� h?t th?i gian ph?n h?i d? xu?t.')
 ```
 
-**Force-assign qua SignalR** (~228): toast → `GET /Shipper/proposed-offer/{orderId}` → mở popup / set active.
+**Force-assign qua SignalR** (~228): toast ? `GET /Shipper/proposed-offer/{orderId}` ? m? popup / set active.
 
-### 3–5. BE / hiển thị
+### 3�5. BE / hi?n th?
 
-- Accept/Reject handlers cập nhật `OrderDeliveryProposal` + Order  
-- Thu hồi: toast.error `'Đơn hàng đã bị thu hồi!...'` (~257)
+- Accept/Reject handlers c?p nh?t `OrderDeliveryProposal` + Order  
+- Thu h?i: toast.error `'�on h�ng d� b? thu h?i!...'` (~257)
 
 ---
 
-## UT-SHP-04 — Nút **「Đã đến quán」** / **「Đã lấy hàng」**
+## UT-SHP-04 � N�t **?�� d?n qu�n?** / **?�� l?y h�ng?**
 
 ### 1. UI
 
-Trên card **active delivery** — các bước:
+Tr�n card **active delivery** � c�c bu?c:
 
-| Nhãn UX | Handler | API |
+| Nh�n UX | Handler | API |
 |---------|---------|-----|
-| Đến quán / Next step | `handleStepTransition` → confirm-arrived hoặc confirm-picked-up tùy status | `POST /Shipper/confirm-arrived` · `confirm-picked-up` |
+| �?n qu�n / Next step | `handleStepTransition` ? confirm-arrived ho?c confirm-picked-up t�y status | `POST /Shipper/confirm-arrived` � `confirm-picked-up` |
 | (~756) | `onClick={() => handleStepTransition(activeDelivery.orderId)}` | |
 
 ### 2. FE (~431+)
 
 ```text
 handleStepTransition(orderId)
-  → shipperService.confirmArrived / confirmPickedUp (theo bước hiện tại)
-  → cập nhật local activeDelivery status
-  → lỗi: toast.error('Đơn hàng không còn hợp lệ hoặc đã bị thu hồi.')
+  ? shipperService.confirmArrived / confirmPickedUp (theo bu?c hi?n t?i)
+  ? c?p nh?t local activeDelivery status
+  ? l?i: toast.error('�on h�ng kh�ng c�n h?p l? ho?c d� b? thu h?i.')
 ```
 
 ### 3. BE
 
-Handlers đổi `OrderStatus` / trạng thái giao tương ứng.
+Handlers d?i `OrderStatus` / tr?ng th�i giao tuong ?ng.
 
-### 5. Hiển thị
+### 5. Hi?n th?
 
-- UI bước tiến trên card (không nhất thiết toast success mỗi bước — xem code nhánh success)
+- UI bu?c ti?n tr�n card (kh�ng nh?t thi?t toast success m?i bu?c � xem code nh�nh success)
 - Fail: toast error
 
 ---
 
-## UT-SHP-05 — Nút **「Giao thành công」** → SuccessDeliveryModal
+## UT-SHP-05 � N�t **?Giao th�nh c�ng?** ? SuccessDeliveryModal
 
 ### 1. UI
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
-| **Nút** | Mở modal — `setSuccessModalOrderId(activeDelivery.orderId)` (~766) |
+| **N�t** | M? modal � `setSuccessModalOrderId(activeDelivery.orderId)` (~766) |
 | **Modal** | `components/SuccessDeliveryModal.tsx` |
-| **Trong modal** | Upload ảnh chứng minh + nút xác nhận giao |
+| **Trong modal** | Upload ?nh ch?ng minh + n�t x�c nh?n giao |
 
 ### 2. FE
 
 ```text
 SuccessDeliveryModal submit
-  → (upload ảnh nếu cần) authService.uploadImage / UploadImage
-  → shipperService.confirmDelivered({ orderId, proofImageUrl? })
-  → POST /api/Shipper/confirm-delivered
+  ? (upload ?nh n?u c?n) authService.uploadImage / UploadImage
+  ? shipperService.confirmDelivered({ orderId, proofImageUrl? })
+  ? POST /api/Shipper/confirm-delivered
 ```
 
 ### 3. BE
 
 ```text
 ConfirmDelivered handler
-  → Order status Delivered
-  → PaymentSettlementService.SettleOrderOnDeliveryAsync
-       · Cộng ví Seller / Shipper / Platform (xem Revenue_Split)
-  → ApiResponse success
+  ? Order status Delivered
+  ? PaymentSettlementService.SettleOrderOnDeliveryAsync
+       � C?ng v� Seller / Shipper / Platform (xem Revenue_Split)
+  ? ApiResponse success
 ```
 
-### 4. Data trả về
+### 4. Data tr? v?
 
-`{ error: false, message: "..." }` — settle xảy ra server-side.
+`{ error: false, message: "..." }` � settle x?y ra server-side.
 
-### 5. Hiển thị
+### 5. Hi?n th?
 
-| Success | `toast` trong modal: `'Chúc mừng! Giao hàng thành công.'` · đóng modal · xóa activeDelivery · refresh income nếu có |
-| Thiếu ảnh | `toast.error('Vui lòng tải ảnh chứng minh giao hàng')` |
+| Success | `toast` trong modal: `'Ch�c m?ng! Giao h�ng th�nh c�ng.'` � d�ng modal � x�a activeDelivery � refresh income n?u c� |
+| Thi?u ?nh | `toast.error('Vui l�ng t?i ?nh ch?ng minh giao h�ng')` |
 
 ---
 
-## UT-SHP-06 — Nút **「Giao thất bại」** (PromptModal)
+## UT-SHP-06 � N�t **?Giao th?t b?i?** (PromptModal)
 
 ### 1. UI
 
 ```text
-onClick → handleDeliveryFailedClick(orderId) (~773)
-  → mở PromptModal nhập lý do
-  → confirm → POST /Shipper/confirm-failed
+onClick ? handleDeliveryFailedClick(orderId) (~773)
+  ? m? PromptModal nh?p l� do
+  ? confirm ? POST /Shipper/confirm-failed
 ```
 
-### 5. Hiển thị
+### 5. Hi?n th?
 
-- Hiện code: `toast.error('Đã báo cáo giao hàng thất bại.')` sau khi gửi OK (dùng error toast — xem AL-SHP-12)
+- Hi?n code: `toast.error('�� b�o c�o giao h�ng th?t b?i.')` sau khi g?i OK (d�ng error toast � xem AL-SHP-12)
 
 ---
 
-## UT-SHP-07 — Nút **「Báo cáo sự cố」** → ReportIncidentModal
+## UT-SHP-07 � N�t **?B�o c�o s? c??** ? ReportIncidentModal
 
 ### 1. UI
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
-| **Mở** | `setReportModalOrderId(...)` (~786) |
+| **M?** | `setReportModalOrderId(...)` (~786) |
 | **Modal** | `ReportIncidentModal.tsx` |
-| **Nút gửi** | Submit form chi tiết sự cố |
+| **N�t g?i** | Submit form chi ti?t s? c? |
 
-### 2–5
+### 2�5
 
 ```text
-→ shipperService.reportOrder / POST /Shipper/Orders/{orderId}/report
-→ toast.success('Gửi báo cáo sự cố thành công. Coordinator sẽ xem xét...')
-→ đóng modal
+? shipperService.reportOrder / POST /Shipper/Orders/{orderId}/report
+? toast.success('G?i b�o c�o s? c? th�nh c�ng. Coordinator s? xem x�t...')
+? d�ng modal
 ```
 
-Validation: `toast.error('Vui lòng nhập chi tiết sự cố')`
+Validation: `toast.error('Vui l�ng nh?p chi ti?t s? c?')`
 
 ---
 
-## UT-SHP-08 — Nút **「Làm mới」** danh sách offers
+## UT-SHP-08 � N�t **?L�m m?i?** danh s�ch offers
 
 ```text
 onClick={fetchAvailableOffers} (~814, ~893)
-  → GET /Shipper/available-offers
-  → setOffers(res.data)
-  → nếu offline/API lỗi: toast theo message BE
+  ? GET /Shipper/available-offers
+  ? setOffers(res.data)
+  ? n?u offline/API l?i: toast theo message BE
 ```
 
 ---
 
-## Bảng tóm tắt Shipper
+## B?ng t�m t?t Shipper
 
-| ID | Nhãn | FE hàm | API | Hiển thị |
+| ID | Nh�n | FE h�m | API | Hi?n th? |
 |----|------|--------|-----|----------|
-| UT-SHP-01 | Toggle online | handleToggleOnline | POST toggle-online | toast BẬT/TẮT |
-| UT-SHP-02 | Nhận đơn (card) | handleAcceptOffer | accept-offer | toast + refresh |
-| UT-SHP-03 | Popup accept/reject | handleAcceptProposal… | accept/reject-offer | toast + đóng popup |
-| UT-SHP-04 | Đến quán / lấy hàng | handleStepTransition | confirm-arrived/picked-up | cập nhật bước UI |
-| UT-SHP-05 | Giao thành công | SuccessDeliveryModal | confirm-delivered | toast chúc mừng + settle |
-| UT-SHP-06 | Giao thất bại | PromptModal | confirm-failed | toast |
-| UT-SHP-07 | Báo sự cố | ReportIncidentModal | Orders/{id}/report | toast success |
+| UT-SHP-01 | Toggle online | handleToggleOnline | POST toggle-online | toast B?T/T?T |
+| UT-SHP-02 | Nh?n don (card) | handleAcceptOffer | accept-offer | toast + refresh |
+| UT-SHP-03 | Popup accept/reject | handleAcceptProposal� | accept/reject-offer | toast + d�ng popup |
+| UT-SHP-04 | �?n qu�n / l?y h�ng | handleStepTransition | confirm-arrived/picked-up | c?p nh?t bu?c UI |
+| UT-SHP-05 | Giao th�nh c�ng | SuccessDeliveryModal | confirm-delivered | toast ch�c m?ng + settle |
+| UT-SHP-06 | Giao th?t b?i | PromptModal | confirm-failed | toast |
+| UT-SHP-07 | B�o s? c? | ReportIncidentModal | Orders/{id}/report | toast success |
 | UT-SHP-08 | Refresh offers | fetchAvailableOffers | available-offers | re-render list |
 
 ## File neo
@@ -296,19 +296,19 @@ onClick={fetchAvailableOffers} (~814, ~893)
 
 ---
 
-## Phần B — Workflow nghiệp vụ & Backend (chi tiết luồng)
-## 1. Luồng Tổng Quan (Workflow)
+## Ph?n B � Workflow nghi?p v? & Backend (chi ti?t lu?ng)
+## 1. Lu?ng T?ng Quan (Workflow)
 
-1. **Online:** Shipper mở `/shipper` → bật online (`POST /api/Shipper/toggle-online`).
-2. **Nhận đề xuất:** Poll `available-offers` **hoặc** nhận Notification Force-Assign / Broadcast → `proposed-offer/{orderId}`.
-3. **Accept / Reject:** `accept-offer` hoặc `reject-offer` (kèm lat/lng).
-4. **Accept OK:** Order `ShipperId` gán, `Status = Shipping`; proposal `Accepted`.
-5. **Đến quán:** `confirm-arrived` (có thể kèm mã / GPS).
-6. **Lấy hàng:** `confirm-picked-up`.
-7. **GPS / lộ trình:** `location`, `delivery-route/{orderId}` trong lúc giao.
-8. **Giao thành công:** `confirm-delivered` → `Delivered` + `SettleOrderOnDeliveryAsync` (Payment).
-9. **Giao thất bại:** `confirm-failed` + lý do.
-10. **Khác:** Báo cáo sự cố đơn, xem `ReputationHistory`, thu nhập, lịch/khu vực.
+1. **Online:** Shipper m? `/shipper` ? b?t online (`POST /api/Shipper/toggle-online`).
+2. **Nh?n d? xu?t:** Poll `available-offers` **ho?c** nh?n Notification Force-Assign / Broadcast ? `proposed-offer/{orderId}`.
+3. **Accept / Reject:** `accept-offer` ho?c `reject-offer` (k�m lat/lng).
+4. **Accept OK:** Order `ShipperId` g�n, `Status = Shipping`; proposal `Accepted`.
+5. **�?n qu�n:** `confirm-arrived` (c� th? k�m m� / GPS).
+6. **L?y h�ng:** `confirm-picked-up`.
+7. **GPS / l? tr�nh:** `location`, `delivery-route/{orderId}` trong l�c giao.
+8. **Giao th�nh c�ng:** `confirm-delivered` ? `Delivered` + `SettleOrderOnDeliveryAsync` (Payment).
+9. **Giao th?t b?i:** `confirm-failed` + l� do.
+10. **Kh�c:** B�o c�o s? c? don, xem `ReputationHistory`, thu nh?p, l?ch/khu v?c.
 
 ```mermaid
 sequenceDiagram
@@ -329,7 +329,7 @@ sequenceDiagram
     API->>H: AcceptDeliveryOfferHandler
     H->>DB: Order.Shipping + ShipperId
 
-    S->>FE: Arrived → PickedUp → Delivered
+    S->>FE: Arrived ? PickedUp ? Delivered
     FE->>API: confirm-arrived / picked-up / delivered
     API->>H: Confirm*Handlers
     H->>Pay: SettleOrderOnDeliveryAsync
@@ -337,7 +337,7 @@ sequenceDiagram
     FE-->>S: Toast
 ```
 
-### Trạng thái đơn liên quan Shipper
+### Tr?ng th�i don li�n quan Shipper
 
 ```text
 WaitingForShipper --accept/force-assign--> Shipping --confirm-delivered--> Delivered
@@ -346,9 +346,9 @@ WaitingForShipper --accept/force-assign--> Shipping --confirm-delivered--> Deliv
 
 ---
 
-## Bước 1: Bật / tắt Online
+## Bu?c 1: B?t / t?t Online
 
-**Thông tin:**
+**Th�ng tin:**
 - **URL (FE):** `/shipper` (ShipperDashboard)
 - **API:** `POST /api/Shipper/toggle-online`
 - **HTTP Method:** POST
@@ -366,12 +366,12 @@ async toggleOnline(data: IToggleShipperOnlineRequest): Promise<IApiResponse<any>
 ```
 
 **Toast:**
-- Success: `Bạn đã BẬT trạng thái trực tuyến!` / `Bạn đã TẮT...`
-- Error: `Không thể thay đổi trạng thái...` / message suspended
+- Success: `B?n d� B?T tr?ng th�i tr?c tuy?n!` / `B?n d� T?T...`
+- Error: `Kh�ng th? thay d?i tr?ng th�i...` / message suspended
 
 ### 1.2. Controller
 
-**File:** `src/ShoppingFood.API/Controllers/ShipperController.cs` — Lines 20–25
+**File:** `src/ShoppingFood.API/Controllers/ShipperController.cs` � Lines 20�25
 
 ```csharp
 [HttpPost("toggle-online")]
@@ -391,7 +391,7 @@ public async Task<ActionResult<ApiResponse>> ToggleOnline([FromBody] ToggleShipp
 if (userProfile == null || userProfile.Role != UserRole.Shipper)
     return ApiResponse.Failure(403, "Forbidden. Only shipper can toggle online status.");
 
-// SuspendedUntil còn hiệu lực → 403 + lý do / phút còn lại
+// SuspendedUntil c�n hi?u l?c ? 403 + l� do / ph�t c�n l?i
 shipperProfile.IsOnline = request.IsOnline;
 shipperProfile.UpdatedAt = DateTime.UtcNow;
 ```
@@ -400,23 +400,23 @@ shipperProfile.UpdatedAt = DateTime.UtcNow;
 
 ---
 
-## Bước 2: Xem đề xuất / đơn khả dụng
+## Bu?c 2: Xem d? xu?t / don kh? d?ng
 
 ### 2.1. Available offers
 
-| Mục | Chi tiết |
+| M?c | Chi ti?t |
 |-----|----------|
 | **API** | `GET /api/Shipper/available-offers?latitude=&longitude=` |
-| **Controller** | `GetAvailableOffers` (L151–165) |
+| **Controller** | `GetAvailableOffers` (L151�165) |
 | **Query** | `GetAvailableOrdersForShipperQuery` |
 | **FE** | `shipperService.getAvailableOffers(lat, lng)` |
 
-### 2.2. Proposed offer (1 đơn)
+### 2.2. Proposed offer (1 don)
 
-| Mục | Chi tiết |
+| M?c | Chi ti?t |
 |-----|----------|
 | **API** | `GET /api/Shipper/proposed-offer/{orderId}?latitude=&longitude=` |
-| **Controller** | `GetProposedOffer` (L26–36) |
+| **Controller** | `GetProposedOffer` (L26�36) |
 | **Query** | `GetProposedDeliveryOfferQuery` |
 | **FE** | Popup `OrderProposalPopup` / sau Force-Assign notification |
 
@@ -433,16 +433,16 @@ public async Task<ActionResult<ApiResponse>> GetProposedOffer(Guid orderId, [Fro
 }
 ```
 
-**Realtime:** `ShipperDashboard` listen notification Force Assign → gọi `getProposedOffer` → toast `Bạn vừa được điều phối viên gán trực tiếp một đơn hàng mới!`
+**Realtime:** `ShipperDashboard` listen notification Force Assign ? g?i `getProposedOffer` ? toast `B?n v?a du?c di?u ph?i vi�n g�n tr?c ti?p m?t don h�ng m?i!`
 
 ---
 
-## Bước 3: Accept / Reject offer
+## Bu?c 3: Accept / Reject offer
 
 ### 3.1. Accept
 
 **API:** `POST /api/Shipper/accept-offer`  
-**Controller:** L38–43  
+**Controller:** L38�43  
 **Handler:** `src/ShoppingFood.Application/Features/Orders/Commands/AcceptDeliveryOfferHandler.cs`
 
 **Rules (Handle):**
@@ -459,39 +459,39 @@ AssignOrderToShipper(order, shipperProfile.Id); // Status = Shipping
 // Update proposal Accepted + DispatchHistory + Notify customer
 ```
 
-**FE toast:** `Nhận đơn thành công!` / `Đã chấp nhận đơn hàng!`
+**FE toast:** `Nh?n don th�nh c�ng!` / `�� ch?p nh?n don h�ng!`
 
 ### 3.2. Reject
 
 **API:** `POST /api/Shipper/reject-offer`  
 **Handler:** `RejectDeliveryOfferHandler.cs`  
-**FE:** Prompt lý do → `rejectOffer` → toast `Đã từ chối đơn hàng`  
+**FE:** Prompt l� do ? `rejectOffer` ? toast `�� t? ch?i don h�ng`  
 **DB:** `ORDER_DELIVERY_PROPOSAL.Status = Rejected` (+ history)
 
 ---
 
-## Bước 4: Arrived → Picked up → Delivered / Failed
+## Bu?c 4: Arrived ? Picked up ? Delivered / Failed
 
 ### 4.1. Confirm arrived
 
-| Mục | Chi tiết |
+| M?c | Chi ti?t |
 |-----|----------|
 | **API** | `POST /api/Shipper/confirm-arrived` |
-| **Controller** | L45–54 — gán `CurrentUserId` từ `userDto` |
+| **Controller** | L45�54 � g�n `CurrentUserId` t? `userDto` |
 | **Handler** | `ConfirmArrivedAtRestaurantHandler.cs` |
-| **FE** | Dashboard cập nhật bước lấy hàng |
+| **FE** | Dashboard c?p nh?t bu?c l?y h�ng |
 
 ### 4.2. Confirm picked up
 
-| Mục | Chi tiết |
+| M?c | Chi ti?t |
 |-----|----------|
 | **API** | `POST /api/Shipper/confirm-picked-up` |
 | **Handler** | `ConfirmPickedUpHandler.cs` |
-| **UI** | Có thể dùng `PickupCodeModal` |
+| **UI** | C� th? d�ng `PickupCodeModal` |
 
 ### 4.3. Update location
 
-| Mục | Chi tiết |
+| M?c | Chi ti?t |
 |-----|----------|
 | **API** | `POST /api/Shipper/location` |
 | **Handler** | `UpdateShipperLocationCommand` |
@@ -499,12 +499,12 @@ AssignOrderToShipper(order, shipperProfile.Id); // Status = Shipping
 
 ### 4.4. Delivery route
 
-| Mục | Chi tiết |
+| M?c | Chi ti?t |
 |-----|----------|
 | **API** | `GET /api/Shipper/delivery-route/{orderId}` |
 | **Query** | `GetDeliveryRouteQuery` |
 
-### 4.5. Confirm delivered (quan trọng — tài chính)
+### 4.5. Confirm delivered (quan tr?ng � t�i ch�nh)
 
 **API:** `POST /api/Shipper/confirm-delivered`  
 **Handler:** `ConfirmDeliverySuccessHandler.cs`
@@ -515,25 +515,25 @@ order.Status = OrderStatus.Delivered;
 await _paymentSettlementService.SettleOrderOnDeliveryAsync(order, shipperProfile);
 ```
 
-> Chi tiết chia tiền / công nợ COD: [Payment_Requirements.md](./Payment_Requirements.md).
+> Chi ti?t chia ti?n / c�ng n? COD: [Payment_Requirements.md](./Payment_Requirements.md).
 
-**FE:** `SuccessDeliveryModal` → `confirmDelivered`.
+**FE:** `SuccessDeliveryModal` ? `confirmDelivered`.
 
 ### 4.6. Confirm failed
 
 **API:** `POST /api/Shipper/confirm-failed`  
 **Handler:** `ConfirmDeliveryFailedHandler.cs`  
-**FE toast:** `Đã báo cáo giao hàng thất bại.` / lỗi mạng
+**FE toast:** `�� b�o c�o giao h�ng th?t b?i.` / l?i m?ng
 
 ---
 
-## Bước 5: Báo cáo sự cố đơn
+## Bu?c 5: B�o c�o s? c? don
 
 **API:** `POST /api/Shipper/Orders/{orderId}/report`  
-**Controller:** L199–208  
+**Controller:** L199�208  
 **Command:** `ReportOrderIncidentCommand`  
-**FE:** `ReportIncidentModal` → `shipperService.reportOrderIncident`  
-**DB:** `SYSTEM_REPORT` (target Order/Shipper…) → Coordinator xem incidents
+**FE:** `ReportIncidentModal` ? `shipperService.reportOrderIncident`  
+**DB:** `SYSTEM_REPORT` (target Order/Shipper�) ? Coordinator xem incidents
 
 ```csharp
 [HttpPost("Orders/{orderId}/report")]
@@ -548,7 +548,7 @@ public async Task<ActionResult<ApiResponse>> ReportOrderIncident(Guid orderId, [
 
 ---
 
-## Bước 6: Uy tín, thu nhập, lịch khu vực
+## Bu?c 6: Uy t�n, thu nh?p, l?ch khu v?c
 
 | API | Handler / Query | FE |
 |-----|-----------------|-----|
@@ -557,32 +557,32 @@ public async Task<ActionResult<ApiResponse>> ReportOrderIncident(Guid orderId, [
 | `GET/PUT /api/Shipper/schedule-area` | Get/Update schedule | Profile |
 | `POST /api/Shipper/review` | `CreateShipperReviewCommand` | Customer review shipper sau giao |
 
-Coordinator có thể **adjust reputation** / **suspend** — xem Coordinator workflow.
+Coordinator c� th? **adjust reputation** / **suspend** � xem Coordinator workflow.
 
-**Thu hồi đơn:** Notification release → Dashboard toast `Đơn hàng đã bị thu hồi!` và gỡ khỏi list.
+**Thu h?i don:** Notification release ? Dashboard toast `�on h�ng d� b? thu h?i!` v� g? kh?i list.
 
 ---
 
-## Sơ đồ file đi qua (Call chain)
+## So d? file di qua (Call chain)
 
 ```text
 ShipperDashboard.tsx (+ OrderProposalPopup, SuccessDeliveryModal, ReportIncidentModal)
-  ↓
+  ?
 ShipperService.ts
-  ↓
+  ?
 ShipperController.cs
-  ↓
+  ?
 ToggleShipperOnlineHandler
 AcceptDeliveryOfferHandler / RejectDeliveryOfferHandler
 ConfirmArrivedAtRestaurantHandler / ConfirmPickedUpHandler
 ConfirmDeliverySuccessHandler / ConfirmDeliveryFailedHandler
 UpdateShipperLocation / GetDeliveryRoute / ReportOrderIncident
-  ↓
+  ?
 ORDER, SHIPPER_PROFILE, ORDER_DELIVERY_PROPOSAL, ORDER_DISPATCH_HISTORY,
 NOTIFICATION, SYSTEM_REPORT, WALLET (settle)
 ```
 
-| Vai trò | Đường dẫn |
+| Vai tr� | �u?ng d?n |
 |---------|-----------|
 | FE Dashboard | `ShoppingFood.FE/src/pages/shipper/ShipperDashboard.tsx` |
 | FE Service | `ShoppingFood.FE/src/services/ShipperService.ts` |
@@ -594,47 +594,47 @@ NOTIFICATION, SYSTEM_REPORT, WALLET (settle)
 
 ---
 
-## Các thông báo (Toast)
+## C�c th�ng b�o (Toast)
 
 | Message | Trigger |
 |---------|---------|
-| Bạn đã BẬT/TẮT trạng thái trực tuyến! | toggle-online |
-| Vui lòng bật trạng thái trực tuyến để nhận đơn | Accept khi offline |
-| Nhận đơn thành công! / Đã chấp nhận đơn hàng! | accept-offer |
-| Đã từ chối đơn hàng | reject-offer |
-| Đã hết thời gian phản hồi đề xuất. | Timeout popup |
-| Force Assign / gán trực tiếp… | SignalR notification |
-| Đơn hàng đã bị thu hồi! | Release từ Coordinator |
-| Đã báo cáo giao hàng thất bại. | confirm-failed |
+| B?n d� B?T/T?T tr?ng th�i tr?c tuy?n! | toggle-online |
+| Vui l�ng b?t tr?ng th�i tr?c tuy?n d? nh?n don | Accept khi offline |
+| Nh?n don th�nh c�ng! / �� ch?p nh?n don h�ng! | accept-offer |
+| �� t? ch?i don h�ng | reject-offer |
+| �� h?t th?i gian ph?n h?i d? xu?t. | Timeout popup |
+| Force Assign / g�n tr?c ti?p� | SignalR notification |
+| �on h�ng d� b? thu h?i! | Release t? Coordinator |
+| �� b�o c�o giao h�ng th?t b?i. | confirm-failed |
 
 ---
 
-## Các cơ chế bảo mật / ràng buộc
+## C�c co ch? b?o m?t / r�ng bu?c
 
-1. Chỉ role **Shipper** + profile **Active** mới toggle/nhận đơn.
-2. **Phải online** mới accept; tài khoản **Suspended** bị chặn (permanent hoặc còn phút).
-3. Chỉ nhận đơn `WaitingForShipper` và **chưa có** `ShipperId` (tránh double-accept).
-4. Delivered chỉ từ `Shipping`; settle tài chính **idempotent** (`IsFinancialSettled`).
-5. GPS gửi kèm accept/location để tính khoảng cách / monitoring.
-6. Force-assign / release từ Coordinator ghi `ORDER_DISPATCH_HISTORY` + push notification.
-
----
-
-## Checklist tự test
-
-- [ ] Toggle online/offline; bị suspend thì không bật được
-- [ ] Seller đưa đơn sang WaitingForShipper → xuất hiện available/proposed
-- [ ] Accept → Status Shipping; shipper khác không nhận được
-- [ ] Reject → proposal Rejected
-- [ ] Arrived → PickedUp → Delivered; ví/COD cập nhật (Payment)
-- [ ] Confirm failed + report incident hiện ở Coordinator
-- [ ] Force-assign từ Coord → toast + đơn vào dashboard
-- [ ] Release → đơn biến mất khỏi shipper
+1. Ch? role **Shipper** + profile **Active** m?i toggle/nh?n don.
+2. **Ph?i online** m?i accept; t�i kho?n **Suspended** b? ch?n (permanent ho?c c�n ph�t).
+3. Ch? nh?n don `WaitingForShipper` v� **chua c�** `ShipperId` (tr�nh double-accept).
+4. Delivered ch? t? `Shipping`; settle t�i ch�nh **idempotent** (`IsFinancialSettled`).
+5. GPS g?i k�m accept/location d? t�nh kho?ng c�ch / monitoring.
+6. Force-assign / release t? Coordinator ghi `ORDER_DISPATCH_HISTORY` + push notification.
 
 ---
 
-## Tóm tắt
+## Checklist t? test
 
-Shipper vận hành trên `ShipperDashboard`: **Online → Offer → Shipping pipeline → Delivered/Failed**. Accept gắn `ShipperId` và `OrderStatus.Shipping`; Delivered kích hoạt **settlement tài chính**. Điều phối thủ công nằm ở Coordinator workflow.
+- [ ] Toggle online/offline; b? suspend th� kh�ng b?t du?c
+- [ ] Seller dua don sang WaitingForShipper ? xu?t hi?n available/proposed
+- [ ] Accept ? Status Shipping; shipper kh�c kh�ng nh?n du?c
+- [ ] Reject ? proposal Rejected
+- [ ] Arrived ? PickedUp ? Delivered; v�/COD c?p nh?t (Payment)
+- [ ] Confirm failed + report incident hi?n ? Coordinator
+- [ ] Force-assign t? Coord ? toast + don v�o dashboard
+- [ ] Release ? don bi?n m?t kh?i shipper
 
-> [Checkout_Order](./Checkout_Order_Workflow.md) · [Coordinator_Dispatch](./Coordinator_Dispatch_Workflow.md) · [Payment_Requirements](./Payment_Requirements.md)
+---
+
+## T�m t?t
+
+Shipper v?n h�nh tr�n `ShipperDashboard`: **Online ? Offer ? Shipping pipeline ? Delivered/Failed**. Accept g?n `ShipperId` v� `OrderStatus.Shipping`; Delivered k�ch ho?t **settlement t�i ch�nh**. �i?u ph?i th? c�ng n?m ? Coordinator workflow.
+
+> [Checkout_Order](./Checkout_Order_Workflow.md) � [Coordinator_Dispatch](./Coordinator_Dispatch_Workflow.md) � [Payment_Requirements](./Payment_Requirements.md)

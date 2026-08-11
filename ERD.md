@@ -1,6 +1,6 @@
-# Entity-Relationship Diagram (ERD) - Shopping Food
+# Entity-Relationship Diagram (ERD) - UniEats
 
-Tài liệu này đặc tả sơ đồ thực thể mối quan hệ (ERD) hoàn chỉnh cho hệ thống **Shopping Food**, được xây dựng dựa trên thiết kế và 4 Use Cases cốt lõi:
+Tài liệu này đặc tả sơ đồ thực thể mối quan hệ (ERD) hoàn chỉnh cho hệ thống **UniEats**, được xây dựng dựa trên thiết kế và 4 Use Cases cốt lõi:
 1. **User Registration** (Đăng ký tài khoản)
 2. **Review Seller Application** (Duyệt hồ sơ đối tác bán hàng)
 3. **Guest Checkout** (Thanh toán khách vãng lai)

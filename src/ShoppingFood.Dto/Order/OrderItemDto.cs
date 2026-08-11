@@ -17,5 +17,7 @@ namespace ShoppingFood.Dto.Order
         public decimal TotalPrice { get; set; }
         public string? SelectedSize { get; set; }
         public string? SelectedToppings { get; set; }
+        public bool IsGift { get; set; }
+        public Guid? BuyXGetYPromotionId { get; set; }
     }
 }

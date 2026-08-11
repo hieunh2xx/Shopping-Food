@@ -10,7 +10,8 @@ export function useSellerChatWatcher() {
   const location = useLocation();
 
   useEffect(() => {
-    if (!token || user?.role !== 'Seller') return;
+    const isSellerRole = user?.role === 'Seller' || user?.role === 'Mall';
+    if (!token || !isSellerRole) return;
 
     let isSubscribed = true;
 
@@ -62,6 +63,13 @@ export function useSellerChatWatcher() {
       }
     };
 
+    const handleNewOrderChat = () => {
+      if (location.pathname !== '/seller/chat') {
+        setHasUnread(true);
+      }
+      init();
+    };
+
     const checkStorage = () => {
       init();
     };
@@ -69,11 +77,13 @@ export function useSellerChatWatcher() {
 
     chatService.onOrderChatMessage(handleReceive);
     chatService.onReceiveMessage(handleReceive);
+    chatService.onNewOrderChat(handleNewOrderChat);
 
     return () => {
       isSubscribed = false;
       chatService.offOrderChatMessage(handleReceive);
       chatService.offReceiveMessage(handleReceive);
+      chatService.offNewOrderChat(handleNewOrderChat);
       window.removeEventListener('seller_chat_read_updated', checkStorage);
     };
   }, [token, user, location.pathname]);

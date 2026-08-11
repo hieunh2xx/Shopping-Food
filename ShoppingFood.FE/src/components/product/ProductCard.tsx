@@ -5,6 +5,7 @@ import { formatCurrency } from '../../utils/formatters';
 import { getProductDetailPath } from '../../routes/routeConfig';
 import { useCart } from '../../hooks';
 import type { IProductDto, IFlashSaleProduct } from '../../interfaces';
+import { ProductLocationMeta } from './ProductLocationMeta';
 
 interface ProductCardProps {
   product: IProductDto;
@@ -33,8 +34,7 @@ export function ProductCard({ product, flashSaleProduct }: ProductCardProps) {
             🍜
           </div>
         )}
-        
-        {/* Status Badge */}
+
         {product.stockStatus === 'OutOfStock' && (
           <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center">
             <span className="px-3 py-1 rounded-full bg-red-500 text-white text-sm font-medium">
@@ -43,7 +43,6 @@ export function ProductCard({ product, flashSaleProduct }: ProductCardProps) {
           </div>
         )}
 
-        {/* Promo Badge - Example static UI */}
         {product.stockStatus === 'InStock' && !flashSaleProduct && (
           <div className="absolute top-3 left-3 flex gap-2">
             <span className="px-2.5 py-1 rounded-lg bg-orange-500 text-white text-xs font-bold shadow-sm">
@@ -52,7 +51,6 @@ export function ProductCard({ product, flashSaleProduct }: ProductCardProps) {
           </div>
         )}
 
-        {/* Flash Sale Badge */}
         {flashSaleProduct && (
           <div className="absolute top-0 right-0">
             <div className="bg-gradient-to-br from-red-500 to-rose-600 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-xl shadow-lg flex flex-col items-center">
@@ -65,7 +63,6 @@ export function ProductCard({ product, flashSaleProduct }: ProductCardProps) {
         )}
       </div>
 
-      {/* Content */}
       <div className="p-4 flex-1 flex flex-col">
         <div className="flex justify-between items-start gap-2 mb-2">
           <h3 className="text-base font-semibold text-gray-900 line-clamp-2 leading-tight group-hover:text-orange-500 transition-colors">
@@ -83,9 +80,27 @@ export function ProductCard({ product, flashSaleProduct }: ProductCardProps) {
           )}
         </div>
 
-        <p className="text-sm text-gray-500 mb-3 line-clamp-1">
-          {product.restaurantName}
+        <p className="text-sm text-gray-500 mb-1 line-clamp-1">
+          <button
+            type="button"
+            className="hover:text-orange-600 hover:underline text-left"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (product.restaurantId) {
+                navigate(`/restaurant/${product.restaurantId}`);
+              }
+            }}
+          >
+            {product.restaurantName}
+          </button>
         </p>
+
+        <ProductLocationMeta
+          className="mb-3"
+          restaurantAddress={product.restaurantAddress}
+          restaurantLatitude={product.restaurantLatitude}
+          restaurantLongitude={product.restaurantLongitude}
+        />
 
         <div className="mt-auto flex items-center justify-between">
           <div className="flex flex-col">
@@ -105,8 +120,7 @@ export function ProductCard({ product, flashSaleProduct }: ProductCardProps) {
             </span>
           )}
         </div>
-        
-        {/* Quick Add Button */}
+
         <button
           onClick={(e) => {
             e.stopPropagation();

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Package, MapPin, CreditCard, Clock, QrCode, XCircle, MessageCircle, RefreshCw, AlertTriangle, Star } from 'lucide-react';
 import { Modal, Button, Input, ConfirmModal } from '../common';
@@ -19,9 +19,11 @@ interface OrderDetailModalProps {
   onClose: () => void;
   orderId: string;
   onNavigateAction?: () => void;
+  /** Tự mở khung chat với người bán sau khi tải chi tiết (vd: từ thông báo tin nhắn). */
+  autoOpenChat?: boolean;
 }
 
-export function CustomerOrderDetailModal({ isOpen, onClose, orderId, onNavigateAction }: OrderDetailModalProps) {
+export function CustomerOrderDetailModal({ isOpen, onClose, orderId, onNavigateAction, autoOpenChat = false }: OrderDetailModalProps) {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { refreshCart } = useCart();
@@ -42,14 +44,31 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId, onNavigateA
     restaurantId?: string;
     restaurantName?: string;
   }>({ isOpen: false, orderId: '' });
+  const autoOpenedForOrderRef = useRef<string>('');
+
+  const openSellerChat = (data: any) => {
+    if (!data) return;
+    setSellerChat({
+      isOpen: true,
+      orderId: data.id,
+      sessionId: data.orderChatSessionId,
+      restaurantId: data.restaurantId,
+      restaurantName: data.restaurantName,
+    });
+  };
+
+  const canChatWithSeller = (data: any) =>
+    !!(data?.canMessageSeller || data?.orderChatSessionId);
 
   useEffect(() => {
     if (isOpen && orderId) {
       loadOrderDetails();
     } else {
       setOrderData(null);
+      setSellerChat({ isOpen: false, orderId: '' });
+      autoOpenedForOrderRef.current = '';
     }
-  }, [isOpen, orderId]);
+  }, [isOpen, orderId, autoOpenChat]);
 
   useEffect(() => {
     const handleNotification = (notif: INotificationDto) => {
@@ -69,6 +88,18 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId, onNavigateA
       const res = await orderService.getOrderDetails(orderId);
       if (!res.error && res.data) {
         setOrderData(res.data);
+        const shouldAutoOpen =
+          autoOpenChat
+          || (typeof window !== 'undefined' && (
+            sessionStorage.getItem(`sf_open_chat_${orderId}`) === '1'
+            || new URLSearchParams(window.location.search).get('openChat') === '1'
+          ));
+        // Từ thông báo tin nhắn: luôn mở chat (modal tự tạo session nếu cần)
+        if (shouldAutoOpen && autoOpenedForOrderRef.current !== orderId) {
+          autoOpenedForOrderRef.current = orderId;
+          sessionStorage.removeItem(`sf_open_chat_${orderId}`);
+          openSellerChat(res.data);
+        }
       } else {
         toast.error(res.message);
         onClose();
@@ -225,26 +256,54 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId, onNavigateA
                 {orderData.discountCode && (
                   <p className="text-sm"><strong>Mã giảm giá:</strong> <span className="text-orange-600 font-bold">{orderData.discountCode}</span></p>
                 )}
+                {typeof orderData.itemsSubtotal === 'number' && (
+                  <p className="text-sm"><strong>Tiền món:</strong> {formatCurrency(orderData.itemsSubtotal)}</p>
+                )}
+                {typeof orderData.shippingFee === 'number' && (
+                  <p className="text-sm"><strong>Phí giao hàng:</strong> {formatCurrency(orderData.shippingFee)}</p>
+                )}
+                {!(typeof orderData.itemsSubtotal === 'number') && !(typeof orderData.shippingFee === 'number') && (
+                  <>
+                    <p className="text-sm"><strong>Tiền món:</strong> {formatCurrency(Math.max(0, (orderData.totalAmount || 0) - (orderData.shippingFee || 0)))}</p>
+                    <p className="text-sm"><strong>Phí giao hàng:</strong> {formatCurrency(orderData.shippingFee || 0)}</p>
+                  </>
+                )}
                 <p className="text-sm"><strong>Tổng tiền:</strong> <span className="text-orange-600 font-bold">{formatCurrency(orderData.totalAmount)}</span></p>
+                {orderData.status === 'Cancelled' && (
+                  <p className="text-sm text-red-600 mt-2"><strong>Lý do hủy:</strong> {orderData.rejectReason ? orderData.rejectReason.replace(/^\[.*?\]\s*/, '') : 'Không có lý do được ghi nhận.'}</p>
+                )}
               </div>
             </div>
 
             <div>
               <h4 className="font-bold text-gray-800 flex items-center gap-2 mb-3"><Package className="w-4 h-4 text-blue-500" /> Sản phẩm đã đặt</h4>
               <div className="border rounded-xl divide-y">
-                {orderData.items?.map((item: any) => (
+                {orderData.items?.map((item: any) => {
+                  const isGift = !!item.isGift || String(item.itemName || '').startsWith('[Tặng]');
+                  const displayName = String(item.itemName || '').replace(/^\[Tặng\]\s*/, '');
+                  const lineTotal = isGift ? 0 : (item.totalPrice ?? item.quantity * item.unitPrice);
+                  return (
                   <div key={item.id} className="p-3 flex items-center justify-between hover:bg-gray-50 transition-colors">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-lg bg-gray-200 overflow-hidden shrink-0">
                         {item.productImage ? (
-                          <img src={item.productImage} alt={item.itemName} className="w-full h-full object-cover" />
+                          <img src={item.productImage} alt={displayName} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-gray-400"><Package className="w-6 h-6" /></div>
                         )}
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900">{item.itemName}</p>
-                        <p className="text-xs text-gray-500">{item.quantity} x {formatCurrency(item.unitPrice)}</p>
+                        <p className="font-medium text-gray-900 flex items-center gap-1.5 flex-wrap">
+                          {displayName}
+                          {isGift && (
+                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                              Tặng kèm
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {item.quantity} x {isGift ? '0 ₫' : formatCurrency(item.unitPrice)}
+                        </p>
                         
                         {(item.selectedSize || item.selectedToppings) && (
                           <p className="text-xs text-amber-600 mt-0.5">
@@ -256,10 +315,10 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId, onNavigateA
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2">
-                      <div className="font-bold text-gray-800">
-                        {formatCurrency(item.quantity * item.unitPrice)}
+                      <div className={`font-bold ${isGift ? 'text-emerald-600' : 'text-gray-800'}`}>
+                        {isGift ? 'Miễn phí' : formatCurrency(lineTotal)}
                       </div>
-                      {orderData.status === 'Delivered' && (
+                      {orderData.status === 'Delivered' && !isGift && (
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();
@@ -274,7 +333,8 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId, onNavigateA
                       )}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
             
@@ -300,20 +360,15 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId, onNavigateA
                     <XCircle className="w-4 h-4 mr-1.5" /> Hủy đơn
                   </Button>
                 )}
-                {(orderData.canMessageSeller) && (
+                {canChatWithSeller(orderData) && (
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setSellerChat({
-                      isOpen: true,
-                      orderId: orderData.id,
-                      sessionId: orderData.orderChatSessionId,
-                      restaurantId: orderData.restaurantId,
-                      restaurantName: orderData.restaurantName,
-                    })}
+                    onClick={() => openSellerChat(orderData)}
                     className="text-blue-600 border-blue-200 hover:bg-blue-50"
                   >
-                    <MessageCircle className="w-4 h-4 mr-1.5" /> Nhắn người bán
+                    <MessageCircle className="w-4 h-4 mr-1.5" />
+                    {orderData.orderChatSessionId ? 'Mở chat với người bán' : 'Nhắn người bán'}
                   </Button>
                 )}
                 {['Delivered', 'Cancelled'].includes(orderData.status) && (
@@ -326,7 +381,7 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId, onNavigateA
                     <RefreshCw className="w-4 h-4 mr-1.5" /> Đặt lại
                   </Button>
                 )}
-                {isAuthenticated && orderData.status !== 'Pending' && !orderData.canMessageSeller && (
+                {isAuthenticated && orderData.status !== 'Pending' && !canChatWithSeller(orderData) && (
                   <Button 
                     variant="outline" 
                     size="sm"
@@ -335,22 +390,22 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId, onNavigateA
                     <AlertTriangle className="w-4 h-4 mr-1.5" /> Hỗ trợ
                   </Button>
                 )}
-                {isAuthenticated && ['Shipping', 'Delivered'].includes(orderData.status) && (
+                {isAuthenticated && orderData.shipperId && ['Shipping', 'Delivered', 'Cancelled'].includes(orderData.status) && (
                   <Button 
                     variant="outline" 
                     size="sm"
                     onClick={() => setShipperComplaintModal({ isOpen: true, orderId: orderData.id, reason: '', description: '', evidenceImageUrl: '' })}
                   >
-                    <AlertTriangle className="w-4 h-4 mr-1.5 text-orange-500" /> Báo cáo TX
+                    <AlertTriangle className="w-4 h-4 mr-1.5 text-orange-500" /> Báo cáo tài xế
                   </Button>
                 )}
-                {isAuthenticated && orderData.status === 'Delivered' && (
+                {isAuthenticated && orderData.shipperId && ['Delivered', 'Cancelled'].includes(orderData.status) && (
                   <Button 
                     variant="outline" 
                     size="sm"
                     onClick={() => setShipperReviewModal({ isOpen: true, orderId: orderData.id, rating: 5, comment: '' })}
                   >
-                    <Star className="w-4 h-4 mr-1.5 text-yellow-500" /> Đánh giá TX
+                    <Star className="w-4 h-4 mr-1.5 text-yellow-500" /> Đánh giá tài xế
                   </Button>
                 )}
               </div>
@@ -363,20 +418,15 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId, onNavigateA
       </Modal>
 
       {/* Nested Modals */}
-      <OrderSellerChatModal
-        isOpen={sellerChat.isOpen}
-        onClose={() => setSellerChat({ isOpen: false, orderId: '' })}
-        orderId={sellerChat.orderId}
-        sessionId={sellerChat.sessionId}
-        restaurantId={sellerChat.restaurantId}
-        title={sellerChat.restaurantName ? `Chat với ${sellerChat.restaurantName}` : undefined}
-      />
-
       {paymentModal.sessionId && (
         <SepayQrPaymentModal
           isOpen={paymentModal.isOpen}
           sessionId={paymentModal.sessionId}
           onClose={() => setPaymentModal({ isOpen: false, sessionId: '' })}
+          onAbandoned={() => {
+            setPaymentModal({ isOpen: false, sessionId: '' });
+            loadOrderDetails();
+          }}
           onPaid={() => {
             setPaymentModal({ isOpen: false, sessionId: '' });
             loadOrderDetails();

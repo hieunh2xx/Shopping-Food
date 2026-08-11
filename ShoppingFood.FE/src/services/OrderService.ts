@@ -44,6 +44,10 @@ class OrderService {
     return httpClient.get<IApiResponse<any[]>>(API_ENDPOINTS.ORDER.RESTAURANT_ORDERS, { params });
   }
 
+  public async getSellerShipperCancels(params?: { days?: number; skip?: number; take?: number }): Promise<IApiResponse<any>> {
+    return httpClient.get<IApiResponse<any>>(API_ENDPOINTS.ORDER.SELLER_SHIPPER_CANCELS, { params });
+  }
+
   public async getOrderDetails(id: string): Promise<IApiResponse<any>> {
     return httpClient.get<IApiResponse<any>>(API_ENDPOINTS.ORDER.DETAILS(id));
   }

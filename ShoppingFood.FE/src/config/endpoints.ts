@@ -45,6 +45,7 @@ export const API_ENDPOINTS = {
     PREPARE: '/Order/prepare', // POST
     WAITING_SHIPPER: '/Order/waiting-for-shipper', // POST
     SELLER_CANCEL: '/Order/seller-cancel', // POST
+    SELLER_SHIPPER_CANCELS: '/Order/SellerShipperCancels', // GET
   },
 
   // === Product (ProductController) ===
@@ -130,6 +131,8 @@ export const API_ENDPOINTS = {
   SYSTEM: {
     GLOBAL_MENU_CATEGORY: '/System/global-menu-category', // GET
     LEGAL: '/System/legal', // GET
+    DELIVERY_SETTINGS: '/System/delivery-settings', // GET (public)
+    PLATFORM_STATS: '/System/platform-stats', // GET (public)
     ACTION_LOGS: '/System/action-logs', // GET
     ERROR_LOGS: '/System/error-logs', // GET
   },
@@ -153,6 +156,8 @@ export const API_ENDPOINTS = {
     REVIEW: '/Shipper/review', // POST
     REPUTATION_HISTORY: '/Shipper/ReputationHistory', // GET
     REPORT_INCIDENT: (orderId: string) => `/Shipper/Orders/${orderId}/report`, // POST
+    SUBMIT_EXPLANATION: (orderId: string) => `/Shipper/orders/${orderId}/explanation`, // POST
+    GET_EXPLANATION: (orderId: string) => `/Shipper/orders/${orderId}/explanation`, // GET
   },
 
   // === Cart (CartController) ===
@@ -189,6 +194,8 @@ export const API_ENDPOINTS = {
     SEND_PROPOSAL: '/Coordinator/proposals',
     FORCE_ASSIGN: '/Coordinator/orders/force-assign',
     RESOLVE_INCIDENT: (orderId: string) => `/Coordinator/orders/${orderId}/resolve-incident`,
+    REQUEST_EXPLANATION: (orderId: string) => `/Coordinator/orders/${orderId}/request-explanation`,
+    GET_EXPLANATION: (orderId: string) => `/Coordinator/orders/${orderId}/explanation`,
     RELEASE_ORDER: (orderId: string) => `/Coordinator/orders/${orderId}/release`,
     MONITOR_SHIPPERS: '/Coordinator/shippers/monitoring',
     SUSPEND_SHIPPER: (shipperId: string) => `/Coordinator/shippers/${shipperId}/suspend`,
@@ -270,6 +277,7 @@ export const API_ENDPOINTS = {
     SEPAY_QR: (sessionId: string) => `/Payment/sepay/qr/${sessionId}`,
     SEPAY_STATUS: '/Payment/sepay/session/status',
     SEPAY_RECONCILE: '/Payment/sepay/reconcile',
+    SEPAY_ABANDON: '/Payment/sepay/abandon',
     HISTORY: '/Payment/history',
     DASHBOARD: '/Payment/dashboard',
   },
@@ -281,7 +289,9 @@ export const API_ENDPOINTS = {
     GET_CURRENT_SESSION: '/Chat/sessions/current',
     GET_USER_SESSIONS: '/Chat/sessions/my',
     CREATE_ORDER_SESSION: (orderId: string) => `/Chat/sessions/order/${orderId}`,
+    CREATE_RESTAURANT_SESSION: (restaurantId: string) => `/Chat/sessions/restaurant/${restaurantId}`,
     GET_SELLER_ORDERS: '/Chat/sessions/seller/orders',
+    GET_CUSTOMER_CHATS: '/Chat/sessions/customer',
     CLAIM_SESSION: (sessionId: string) => `/Chat/sessions/${sessionId}/claim`,
   }
 } as const;

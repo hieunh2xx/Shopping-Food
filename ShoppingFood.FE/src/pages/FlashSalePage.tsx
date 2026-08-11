@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pagination } from '../components/common/Pagination';
 import { Zap, ArrowLeft, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -8,7 +8,6 @@ import { productService } from '../services/ProductService';
 import type { IFlashSale, IFlashSaleProduct, IProductDto } from '../interfaces';
 import { formatCurrency } from '../utils/formatters';
 import { useCart } from '../hooks';
-import toast from 'react-hot-toast';
 
 export function FlashSalePage() {
   const [activeFlashSale, setActiveFlashSale] = useState<IFlashSale | null>(null);

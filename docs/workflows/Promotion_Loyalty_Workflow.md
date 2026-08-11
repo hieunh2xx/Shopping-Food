@@ -1,297 +1,297 @@
-﻿# Tài liệu Quy trình: Khuyến mãi & Loyalty (Promotion / Loyalty)
+# T�i li?u Quy tr�nh: Khuy?n m�i & Loyalty (Promotion / Loyalty)
 
-Tài liệu mô tả **Discount (voucher)**, **Buy X Get Y**, **Flash Sale**, và **Loyalty điểm / đổi quà / hạng** trong **Shopping Food** — gồm **Phần A (UI Trace)** và **Phần B (nghiệp vụ/backend)**.
+T�i li?u m� t? **Discount (voucher)**, **Buy X Get Y**, **Flash Sale**, v� **Loyalty di?m / d?i qu� / h?ng** trong **UniEats** � g?m **Ph?n A (UI Trace)** v� **Ph?n B (nghi?p v?/backend)**.
 
-> Requirements: [../requirements/Promotion_Loyalty_Requirements.md](../requirements/Promotion_Loyalty_Requirements.md) · Alerts: [../requirements/alerts/Promotion_Loyalty_Alerts.md](../requirements/alerts/Promotion_Loyalty_Alerts.md)  
+> Requirements: [../requirements/Promotion_Loyalty_Requirements.md](../requirements/Promotion_Loyalty_Requirements.md) � Alerts: [../requirements/alerts/Promotion_Loyalty_Alerts.md](../requirements/alerts/Promotion_Loyalty_Alerts.md)  
 > Checkout apply voucher: [Checkout_Order_Workflow.md](./Checkout_Order_Workflow.md)
 
 ---
 
-## Phần A — UI Interaction Trace (Nút bấm → Code → Data → Hiển thị)
+## Ph?n A � UI Interaction Trace (N�t b?m ? Code ? Data ? Hi?n th?)
 
-Mỗi thao tác: **nút ở đâu** · **bấm chạy file/hàm nào** · **API/BE** · **data trả về** · **hiển thị thế nào**.
+M?i thao t�c: **n�t ? d�u** � **b?m ch?y file/h�m n�o** � **API/BE** � **data tr? v?** � **hi?n th? th? n�o**.
 
 ---
 
-### UT-PRO-01 — Customer browse Flash Sale / BuyXGetY / Promotions
+### UT-PRO-01 � Customer browse Flash Sale / BuyXGetY / Promotions
 
-#### 1. Giao diện
+#### 1. Giao di?n
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
 | **Routes** | `/flash-sale`, `/buy-x-get-y`, `/promotions` |
 | **Pages** | `pages/FlashSalePage.tsx`, `BuyXGetYPage.tsx`, `PromotionsPage.tsx` |
 | **Sections** | `components/promotions/FlashSaleSection.tsx`, `BuyXGetYSection.tsx` |
-| **Nút / entry** | Nav / Home section → navigate; load data trên `useEffect` (không submit form) |
+| **N�t / entry** | Nav / Home section ? navigate; load data tr�n `useEffect` (kh�ng submit form) |
 
-#### 2. FE chạy đâu?
+#### 2. FE ch?y d�u?
 
 ```text
 FlashSalePage mount
-  → flashSaleService.getActiveFlashSales()
-  → flashSaleService.getFlashSaleProducts(saleId, skip, pageSize)
+  ? flashSaleService.getActiveFlashSales()
+  ? flashSaleService.getFlashSaleProducts(saleId, skip, pageSize)
 BuyXGetYPage / PromotionsPage
-  → promotionService.list / GET public promotions
-  → render cards → click product → /products/:id
+  ? promotionService.list / GET public promotions
+  ? render cards ? click product ? /products/:id
 ```
 
 #### 3. Backend
 
 ```text
-GET /api/FlashSale/active → list FlashSale Active
-GET /api/FlashSale/flash-sales/{id}/products → FlashSaleProduct Approved
-GET /api/Promotion → BuyXGetY list
+GET /api/FlashSale/active ? list FlashSale Active
+GET /api/FlashSale/flash-sales/{id}/products ? FlashSaleProduct Approved
+GET /api/Promotion ? BuyXGetY list
 ```
 
-#### 4–5. Data & hiển thị
+#### 4�5. Data & hi?n th?
 
-- `data`: danh sách sale/products/promos → grid cards, giá flash, countdown nếu có  
-- Lỗi mạng: `toast.error` trên một số page; phần browse thường fail silently / empty state  
+- `data`: danh s�ch sale/products/promos ? grid cards, gi� flash, countdown n?u c�  
+- L?i m?ng: `toast.error` tr�n m?t s? page; ph?n browse thu?ng fail silently / empty state  
 
 ---
 
-### UT-PRO-02 — Áp mã giảm giá tại Checkout
+### UT-PRO-02 � �p m� gi?m gi� t?i Checkout
 
-#### 1. Giao diện
+#### 1. Giao di?n
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
 | **Route** | `/checkout` |
 | **Page** | `pages/CheckoutPage.tsx` |
-| **Nút** | Mở modal mã → nhập code → **Áp dụng** → `handleApplyCode` |
-| **Gỡ mã** | Nút gỡ → clear `selectedDiscount` |
+| **N�t** | M? modal m� ? nh?p code ? **�p d?ng** ? `handleApplyCode` |
+| **G? m�** | N�t g? ? clear `selectedDiscount` |
 
 #### 2. FE
 
 ```text
 handleApplyCode
-  → discountService.applyDiscount({ code, restaurantId?, cartAmount: checkoutTotal })
-  → POST /api/Discount/apply
+  ? discountService.applyDiscount({ code, restaurantId?, cartAmount: checkoutTotal })
+  ? POST /api/Discount/apply
 ```
 
 #### 3. BE
 
-`DiscountController` → `ApplyDiscountHandler` — check Active, hạn, min order, usage limit.
+`DiscountController` ? `ApplyDiscountHandler` � check Active, h?n, min order, usage limit.
 
-#### 4. Data trả về
+#### 4. Data tr? v?
 
 ```json
 { "discountId": "...", "code": "SALE10", "discountAmount": 15000, ... }
 ```
 
-#### 5. Hiển thị
+#### 5. Hi?n th?
 
-| OK | `toast.success('Áp dụng mã giảm giá thành công')` + `setSelectedDiscount` → `finalTotal` giảm |
-| Fail | `toast.error(res.message \|\| 'Mã giảm giá không hợp lệ')` |
-| Gỡ | `toast.success('Đã gỡ mã giảm giá')` |
+| OK | `toast.success('�p d?ng m� gi?m gi� th�nh c�ng')` + `setSelectedDiscount` ? `finalTotal` gi?m |
+| Fail | `toast.error(res.message \|\| 'M� gi?m gi� kh�ng h?p l?')` |
+| G? | `toast.success('�� g? m� gi?m gi�')` |
 
-> Chi tiết checkout đầy đủ: [Checkout_Order_Workflow.md](./Checkout_Order_Workflow.md).
+> Chi ti?t checkout d?y d?: [Checkout_Order_Workflow.md](./Checkout_Order_Workflow.md).
 
 ---
 
-### UT-PRO-03 — Lưu voucher vào ví (`CustomerVouchers`)
+### UT-PRO-03 � Luu voucher v�o v� (`CustomerVouchers`)
 
-#### 1. Giao diện
+#### 1. Giao di?n
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
-| **Nơi** | Profile → tab vouchers — `components/profile/CustomerVouchers.tsx` |
-| **Nút** | **Lưu mã** trên voucher khả dụng → `onClick={() => handleSaveVoucher(voucher.id)}` |
+| **Noi** | Profile ? tab vouchers � `components/profile/CustomerVouchers.tsx` |
+| **N�t** | **Luu m�** tr�n voucher kh? d?ng ? `onClick={() => handleSaveVoucher(voucher.id)}` |
 
-#### 2–3
+#### 2�3
 
 ```text
 handleSaveVoucher(discountId)
-  → discountService.saveDiscount({ discountId })
-  → POST /api/Discount/save
-  → Insert CUSTOMER_DISCOUNT
+  ? discountService.saveDiscount({ discountId })
+  ? POST /api/Discount/save
+  ? Insert CUSTOMER_DISCOUNT
 ```
 
-#### 5. Hiển thị
+#### 5. Hi?n th?
 
-| OK | `toast.success('Đã lưu mã giảm giá vào ví!')` + reload list đã lưu |
-| Đã lưu / lỗi | `toast.error(res.message \|\| 'Bạn đã lưu mã này rồi...')` |
+| OK | `toast.success('�� luu m� gi?m gi� v�o v�!')` + reload list d� luu |
+| �� luu / l?i | `toast.error(res.message \|\| 'B?n d� luu m� n�y r?i...')` |
 
 ---
 
-### UT-PRO-04 — Đổi điểm lấy quà (`CustomerLoyalty`)
+### UT-PRO-04 � �?i di?m l?y qu� (`CustomerLoyalty`)
 
-#### 1. Giao diện
+#### 1. Giao di?n
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
 | **Component** | `components/profile/CustomerLoyalty.tsx` |
-| **Nút** | **Đổi quà** trên gift card → `handleRedeemGift(gift.id)` → ConfirmModal → `confirmRedeem` |
+| **N�t** | **�?i qu�** tr�n gift card ? `handleRedeemGift(gift.id)` ? ConfirmModal ? `confirmRedeem` |
 
-#### 2–3
+#### 2�3
 
 ```text
 confirmRedeem
-  → loyaltyPointService.redeemGift({ pointGiftConfigId })
-  → POST /api/LoyaltyPoint/redeem
-  → RedeemPointGiftHandler: trừ điểm, tạo CustomerDiscount từ PointGiftConfig.DiscountId
+  ? loyaltyPointService.redeemGift({ pointGiftConfigId })
+  ? POST /api/LoyaltyPoint/redeem
+  ? RedeemPointGiftHandler: tr? di?m, t?o CustomerDiscount t? PointGiftConfig.DiscountId
 ```
 
-#### 5. Hiển thị
+#### 5. Hi?n th?
 
-| OK | `toast.success('Đổi quà thành công! Mã giảm giá đã được thêm vào ví.')` + refresh điểm/quà |
-| Thiếu điểm | toast `Insufficient points balance.` (hoặc message VI từ API) |
-| Hủy confirm | không gọi API |
+| OK | `toast.success('�?i qu� th�nh c�ng! M� gi?m gi� d� du?c th�m v�o v�.')` + refresh di?m/qu� |
+| Thi?u di?m | toast `Insufficient points balance.` (ho?c message VI t? API) |
+| H?y confirm | kh�ng g?i API |
 
 ---
 
-### UT-PRO-05 — SellerDiscountsPage — CRUD + xóa/khóa
+### UT-PRO-05 � SellerDiscountsPage � CRUD + x�a/kh�a
 
-#### 1. Giao diện
+#### 1. Giao di?n
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
 | **Route** | `/seller/discounts` |
 | **Page** | `pages/seller/SellerDiscountsPage.tsx` |
-| **Nút** | **Tạo mã** → mở modal; **Sửa** / **Xóa** trên từng row; form `onSubmit={handleSubmit}` |
+| **N�t** | **T?o m�** ? m? modal; **S?a** / **X�a** tr�n t?ng row; form `onSubmit={handleSubmit}` |
 
 #### 2. FE
 
 ```text
 handleSubmit
-  → create: discountService.create(...) → POST /api/Discount
-  → update: discountService.update(id, ...) → POST /api/Discount/{id}
-handleDelete → ConfirmModal → DELETE /api/Discount/{id}
-handleShowStats → GET /api/Discount/stats
+  ? create: discountService.create(...) ? POST /api/Discount
+  ? update: discountService.update(id, ...) ? POST /api/Discount/{id}
+handleDelete ? ConfirmModal ? DELETE /api/Discount/{id}
+handleShowStats ? GET /api/Discount/stats
 ```
 
-#### 5. Hiển thị
+#### 5. Hi?n th?
 
-| Tạo | `toast.success('Đã tạo mã giảm giá mới')` + đóng modal + `fetchDiscounts` |
-| Sửa | `toast.success('Đã cập nhật mã giảm giá')` |
-| Xóa | `toast.success('Đã xóa mã giảm giá')` |
-| Fail | toast.error message / mạng |
+| T?o | `toast.success('�� t?o m� gi?m gi� m?i')` + d�ng modal + `fetchDiscounts` |
+| S?a | `toast.success('�� c?p nh?t m� gi?m gi�')` |
+| X�a | `toast.success('�� x�a m� gi?m gi�')` |
+| Fail | toast.error message / m?ng |
 
 ---
 
-### UT-PRO-06 — SellerPromotionsPage — Buy X Get Y CRUD
+### UT-PRO-06 � SellerPromotionsPage � Buy X Get Y CRUD
 
-#### 1. Giao diện
+#### 1. Giao di?n
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
 | **Route** | `/seller/promotions` |
 | **Page** | `pages/seller/SellerPromotionsPage.tsx` |
-| **Nút** | Tạo / Sửa / Xóa; form chọn TriggerProduct + GiftProduct |
+| **N�t** | T?o / S?a / X�a; form ch?n TriggerProduct + GiftProduct |
 
-#### 2–3
+#### 2�3
 
 ```text
-handleSubmit → POST /api/Promotion  hoặc  POST /api/Promotion/{id}
-handleDelete → DELETE /api/Promotion/{id}
+handleSubmit ? POST /api/Promotion  ho?c  POST /api/Promotion/{id}
+handleDelete ? DELETE /api/Promotion/{id}
 ```
 
-#### 5. Hiển thị
+#### 5. Hi?n th?
 
-`toast.success('Đã tạo/cập nhật/xóa khuyến mãi')` + reload table.
+`toast.success('�� t?o/c?p nh?t/x�a khuy?n m�i')` + reload table.
 
 ---
 
-### UT-PRO-07 — SellerFlashSalesPage — Đăng ký sản phẩm Flash Sale
+### UT-PRO-07 � SellerFlashSalesPage � �ang k� s?n ph?m Flash Sale
 
-#### 1. Giao diện
+#### 1. Giao di?n
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
 | **Route** | `/seller/flash-sales` |
 | **Page** | `pages/seller/SellerFlashSalesPage.tsx` |
-| **Nút** | **Xem SP đã đăng ký** → `handleViewProducts`; **Đăng ký** → `handleRegisterClick` → modal → `handleSubmit` |
+| **N�t** | **Xem SP d� dang k�** ? `handleViewProducts`; **�ang k�** ? `handleRegisterClick` ? modal ? `handleSubmit` |
 
-#### 2–3
+#### 2�3
 
 ```text
 handleSubmit
-  → flashSaleService.register({ flashSaleId, productId, flashSalePrice, stockLimit? })
-  → POST /api/FlashSale/register
-  → RegisterFlashSaleHandler (chỉ FlashSale Pending; giá < giá gốc; SP Approved của quán mình)
+  ? flashSaleService.register({ flashSaleId, productId, flashSalePrice, stockLimit? })
+  ? POST /api/FlashSale/register
+  ? RegisterFlashSaleHandler (ch? FlashSale Pending; gi� < gi� g?c; SP Approved c?a qu�n m�nh)
 ```
 
-#### 5. Hiển thị
+#### 5. Hi?n th?
 
-| OK | `toast.success('Đăng ký sản phẩm thành công!')` + đóng modal |
-| Validate | `toast.error('Vui lòng nhập thông tin hợp lệ')` |
-| BE fail | giá ≥ gốc / already registered / status không Pending → toast.error(res.message) |
+| OK | `toast.success('�ang k� s?n ph?m th�nh c�ng!')` + d�ng modal |
+| Validate | `toast.error('Vui l�ng nh?p th�ng tin h?p l?')` |
+| BE fail | gi� = g?c / already registered / status kh�ng Pending ? toast.error(res.message) |
 
 ---
 
-### UT-PRO-08 — AdminFlashSalePage — Tạo chương trình + duyệt SP
+### UT-PRO-08 � AdminFlashSalePage � T?o chuong tr�nh + duy?t SP
 
-#### 1. Giao diện
+#### 1. Giao di?n
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
 | **Route** | `/admin/flash-sales` |
 | **Page** | `pages/admin/AdminFlashSalePage.tsx` |
-| **Nút** | Tạo/Sửa (`handleSubmit`); Xóa (`window.confirm` → `handleDelete`); **Duyệt SP** (`handleOpenReviewModal`) → Duyệt / Từ chối (PromptModal lý do) |
+| **N�t** | T?o/S?a (`handleSubmit`); X�a (`window.confirm` ? `handleDelete`); **Duy?t SP** (`handleOpenReviewModal`) ? Duy?t / T? ch?i (PromptModal l� do) |
 
-#### 2–3
+#### 2�3
 
 ```text
-create/update → POST /api/FlashSale/flash-sales  |  POST .../flash-sales/{id}
-delete → DELETE /api/FlashSale/flash-sales/{id}
-review → flashSaleService.reviewFlashSaleProduct → POST /api/FlashSale/review-product
+create/update ? POST /api/FlashSale/flash-sales  |  POST .../flash-sales/{id}
+delete ? DELETE /api/FlashSale/flash-sales/{id}
+review ? flashSaleService.reviewFlashSaleProduct ? POST /api/FlashSale/review-product
 ```
 
-#### 5. Hiển thị
+#### 5. Hi?n th?
 
-| Tạo/Sửa | toast thành công |
-| Duyệt | `toast.success('Đã duyệt sản phẩm')` |
-| Từ chối | `toast.success('Đã từ chối sản phẩm')` + reason |
-| Xóa | `window.confirm` rồi toast |
+| T?o/S?a | toast th�nh c�ng |
+| Duy?t | `toast.success('�� duy?t s?n ph?m')` |
+| T? ch?i | `toast.success('�� t? ch?i s?n ph?m')` + reason |
+| X�a | `window.confirm` r?i toast |
 
 ---
 
-### UT-PRO-09 — AdminDiscountsPage + AdminLoyaltyConfigPage
+### UT-PRO-09 � AdminDiscountsPage + AdminLoyaltyConfigPage
 
 #### Admin Discounts (`AdminDiscountsPage.tsx`)
 
 ```text
-CRUD giống Seller (POST/DELETE /Discount)
-Khóa: Confirm → discountService.lockDiscount(id) → PATCH /api/Discount/{id}/lock
-  → toast.success('Đã khóa mã giảm giá')
+CRUD gi?ng Seller (POST/DELETE /Discount)
+Kh�a: Confirm ? discountService.lockDiscount(id) ? PATCH /api/Discount/{id}/lock
+  ? toast.success('�� kh�a m� gi?m gi�')
 ```
 
 #### Admin Loyalty (`AdminLoyaltyConfigPage.tsx`)
 
-| Tab | Nút / Submit | API |
+| Tab | N�t / Submit | API |
 |-----|--------------|-----|
-| gifts | Tạo/sửa PointGiftConfig | Admin `point-gift-config` APIs |
-| tiers | Thêm/sửa mốc hạng | `POST /LoyaltyPoint/tier-configs?tier=&minPoints=` |
-| evaluate | Chạy đánh giá | `POST /LoyaltyPoint/evaluate-tiers` |
+| gifts | T?o/s?a PointGiftConfig | Admin `point-gift-config` APIs |
+| tiers | Th�m/s?a m?c h?ng | `POST /LoyaltyPoint/tier-configs?tier=&minPoints=` |
+| evaluate | Ch?y d�nh gi� | `POST /LoyaltyPoint/evaluate-tiers` |
 
-Toast: cập nhật quà / tier / lỗi tải list.
+Toast: c?p nh?t qu� / tier / l?i t?i list.
 
 ---
 
-### Bảng tóm tắt Phần A
+### B?ng t�m t?t Ph?n A
 
-| ID | Nhãn / Màn | FE chính | API |
+| ID | Nh�n / M�n | FE ch�nh | API |
 |----|------------|----------|-----|
-| UT-PRO-01 | Browse Flash/BuyXGetY | FlashSalePage… | GET active / Promotion |
-| UT-PRO-02 | Áp mã checkout | CheckoutPage | POST /Discount/apply |
-| UT-PRO-03 | Lưu voucher | CustomerVouchers | POST /Discount/save |
-| UT-PRO-04 | Đổi quà điểm | CustomerLoyalty | POST /LoyaltyPoint/redeem |
+| UT-PRO-01 | Browse Flash/BuyXGetY | FlashSalePage� | GET active / Promotion |
+| UT-PRO-02 | �p m� checkout | CheckoutPage | POST /Discount/apply |
+| UT-PRO-03 | Luu voucher | CustomerVouchers | POST /Discount/save |
+| UT-PRO-04 | �?i qu� di?m | CustomerLoyalty | POST /LoyaltyPoint/redeem |
 | UT-PRO-05 | Seller Discount CRUD | SellerDiscountsPage | /Discount* |
 | UT-PRO-06 | Seller BuyXGetY | SellerPromotionsPage | /Promotion* |
-| UT-PRO-07 | Seller đăng ký Flash | SellerFlashSalesPage | POST /FlashSale/register |
-| UT-PRO-08 | Admin Flash + duyệt | AdminFlashSalePage | flash-sales + review-product |
+| UT-PRO-07 | Seller dang k� Flash | SellerFlashSalesPage | POST /FlashSale/register |
+| UT-PRO-08 | Admin Flash + duy?t | AdminFlashSalePage | flash-sales + review-product |
 | UT-PRO-09 | Admin Discount/Loyalty | Admin* pages | lock + gift/tier |
 
 ---
 
-## Phần B — Workflow nghiệp vụ & Backend
+## Ph?n B � Workflow nghi?p v? & Backend
 
-### 1. Luồng tổng quan
+### 1. Lu?ng t?ng quan
 
-1. **Seller/Admin tạo voucher** → khách **lưu** → **apply** lúc checkout.  
-2. **Buy X Get Y:** Seller CRUD → khách xem `/buy-x-get-y`.  
-3. **Flash Sale:** Admin tạo → Seller register SP → Admin duyệt → khách `/flash-sale`.  
-4. **Loyalty:** điểm + gifts + redeem; Admin gift/tier/evaluate; worker `MemberTierEvaluationWorker`.
+1. **Seller/Admin t?o voucher** ? kh�ch **luu** ? **apply** l�c checkout.  
+2. **Buy X Get Y:** Seller CRUD ? kh�ch xem `/buy-x-get-y`.  
+3. **Flash Sale:** Admin t?o ? Seller register SP ? Admin duy?t ? kh�ch `/flash-sale`.  
+4. **Loyalty:** di?m + gifts + redeem; Admin gift/tier/evaluate; worker `MemberTierEvaluationWorker`.
 
 ```mermaid
 sequenceDiagram
@@ -303,23 +303,23 @@ sequenceDiagram
     participant L as LoyaltyPointController
 
     Seller->>D: POST /Discount
-    Cust->>D: POST /save → POST /apply
+    Cust->>D: POST /save ? POST /apply
     Seller->>P: CRUD BuyXGetY
-    Seller->>F: register → Admin review-product
+    Seller->>F: register ? Admin review-product
     Cust->>F: GET /active
     Cust->>L: GET / + gifts + POST /redeem
 ```
 
 ### 2. Discount APIs
 
-| Method | Route | Việc |
+| Method | Route | Vi?c |
 |--------|-------|------|
-| GET/POST | `/api/Discount` | List / Tạo |
-| POST | `/api/Discount/save` | Customer lưu |
+| GET/POST | `/api/Discount` | List / T?o |
+| POST | `/api/Discount/save` | Customer luu |
 | GET/POST/DELETE | `/api/Discount/{id}` | Get / Update / Delete |
-| POST | `/api/Discount/apply` | Tính giảm (checkout) |
-| GET | `/api/Discount/stats` | Thống kê |
-| PATCH | `/api/Discount/{id}/lock` | Khóa |
+| POST | `/api/Discount/apply` | T�nh gi?m (checkout) |
+| GET | `/api/Discount/stats` | Th?ng k� |
+| PATCH | `/api/Discount/{id}/lock` | Kh�a |
 
 **DB:** `DISCOUNT`, `CUSTOMER_DISCOUNT`; `ORDER.AppliedDiscountId`.  
 **Types:** Percentage | FixedAmount | FreeShipping.
@@ -342,43 +342,43 @@ sequenceDiagram
 | DELETE | `/flash-sales/{id}` |
 
 **DB:** `FLASH_SALE`, `FLASH_SALE_PRODUCT` (Pending/Approved/Rejected).  
-**Pricing:** `IFlashSalePricingService` khi hiển thị/checkout.
+**Pricing:** `IFlashSalePricingService` khi hi?n th?/checkout.
 
 ### 5. Loyalty
 
-| Method | Route | Việc |
+| Method | Route | Vi?c |
 |--------|-------|------|
-| GET | `/api/LoyaltyPoint` | Điểm + tier |
-| GET | `/gifts` | Quà đổi điểm |
-| POST | `/redeem` | Đổi quà → voucher |
-| POST | `/evaluate-tiers` | Admin chạy đánh giá |
-| GET/POST | `/tier-configs` | Mốc hạng (BE: **POST** query tier/minPoints) |
-| PUT | `/adjust-user-tier` | Admin chỉnh hạng |
+| GET | `/api/LoyaltyPoint` | �i?m + tier |
+| GET | `/gifts` | Qu� d?i di?m |
+| POST | `/redeem` | �?i qu� ? voucher |
+| POST | `/evaluate-tiers` | Admin ch?y d�nh gi� |
+| GET/POST | `/tier-configs` | M?c h?ng (BE: **POST** query tier/minPoints) |
+| PUT | `/adjust-user-tier` | Admin ch?nh h?ng |
 
-> FE `updateTierConfig` có thể gọi PUT — cần khớp Controller **POST**.
+> FE `updateTierConfig` c� th? g?i PUT � c?n kh?p Controller **POST**.
 
-**Handler redeem:** `RedeemPointGiftHandler` — check gift active, voucher còn hạn/lượt, đủ điểm, chưa lưu trùng.
+**Handler redeem:** `RedeemPointGiftHandler` � check gift active, voucher c�n h?n/lu?t, d? di?m, chua luu tr�ng.
 
-### 6. Bảo mật / nghiệp vụ
+### 6. B?o m?t / nghi?p v?
 
-1. Apply voucher: Active, hạn, min order, usage per user/global.  
-2. Flash register: chỉ Pending campaign; SP Approved; giá flash &lt; giá gốc; đúng quán.  
-3. Redeem: trừ điểm atomic + CustomerDiscount.  
-4. Lock discount ngăn apply/save tiếp.
+1. Apply voucher: Active, h?n, min order, usage per user/global.  
+2. Flash register: ch? Pending campaign; SP Approved; gi� flash &lt; gi� g?c; d�ng qu�n.  
+3. Redeem: tr? di?m atomic + CustomerDiscount.  
+4. Lock discount ngan apply/save ti?p.
 
 ### 7. Checklist
 
-- [ ] Browse `/flash-sale` hiện SP Approved  
-- [ ] Apply mã checkout đúng giảm `finalTotal`  
-- [ ] Lưu voucher → hiện trong ví  
-- [ ] Redeem đủ điểm → voucher mới; thiếu điểm → lỗi  
-- [ ] Seller CRUD discount/promo; đăng ký flash OK  
-- [ ] Admin duyệt/từ chối flash product  
-- [ ] Admin lock discount → apply fail  
+- [ ] Browse `/flash-sale` hi?n SP Approved  
+- [ ] Apply m� checkout d�ng gi?m `finalTotal`  
+- [ ] Luu voucher ? hi?n trong v�  
+- [ ] Redeem d? di?m ? voucher m?i; thi?u di?m ? l?i  
+- [ ] Seller CRUD discount/promo; dang k� flash OK  
+- [ ] Admin duy?t/t? ch?i flash product  
+- [ ] Admin lock discount ? apply fail  
 
 ### 8. File neo
 
-| Tầng | Path |
+| T?ng | Path |
 |------|------|
 | Controllers | `DiscountController`, `PromotionController`, `FlashSaleController`, `LoyaltyPointController` |
 | FE services | `DiscountService.ts`, `PromotionService.ts`, `FlashSaleService.ts`, `LoyaltyPointService.ts` |
@@ -386,4 +386,4 @@ sequenceDiagram
 
 ---
 
-**Tóm tắt:** Promo = voucher + BuyXGetY + Flash + Loyalty; UI Trace UT-PRO-01…09 nằm Phần A; rule API/DB ở Phần B.
+**T�m t?t:** Promo = voucher + BuyXGetY + Flash + Loyalty; UI Trace UT-PRO-01�09 n?m Ph?n A; rule API/DB ? Ph?n B.

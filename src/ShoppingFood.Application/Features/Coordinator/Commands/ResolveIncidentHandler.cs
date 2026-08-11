@@ -1,15 +1,14 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using ShoppingFood.Application.Interfaces;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
 using ShoppingFood.Domain.Enums;
 using ShoppingFood.Domain.Models;
 using ShoppingFood.Repository.Interfaces;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ShoppingFood.Application.Features.Coordinator.Commands
@@ -19,23 +18,29 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
         private readonly IUserRepository _userRepository;
         private readonly IOrderRepository _orderRepository;
         private readonly IShipperProfileRepository _shipperProfileRepository;
+        private readonly ISystemReportRepository _systemReportRepository;
         private readonly INotificationRepository _notificationRepository;
         private readonly IShipperReputationHistoryRepository _reputationHistoryRepository;
+        private readonly IPaymentSettlementService _paymentSettlementService;
         private readonly IUnitOfWork _unitOfWork;
 
         public ResolveIncidentHandler(
             IUserRepository userRepository,
             IOrderRepository orderRepository,
             IShipperProfileRepository shipperProfileRepository,
+            ISystemReportRepository systemReportRepository,
             INotificationRepository notificationRepository,
             IShipperReputationHistoryRepository reputationHistoryRepository,
+            IPaymentSettlementService paymentSettlementService,
             IUnitOfWork unitOfWork)
         {
             _userRepository = userRepository;
             _orderRepository = orderRepository;
             _shipperProfileRepository = shipperProfileRepository;
+            _systemReportRepository = systemReportRepository;
             _notificationRepository = notificationRepository;
             _reputationHistoryRepository = reputationHistoryRepository;
+            _paymentSettlementService = paymentSettlementService;
             _unitOfWork = unitOfWork;
         }
 
@@ -59,7 +64,11 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
                     if(penaltyCheck != null) return penaltyCheck;
                 }
 
+                // Đơn hủy do sự cố nhưng vẫn Paid (SePay/online) → hoàn ví khách nếu chưa hoàn
+                await _paymentSettlementService.ProcessRefundAsync(order);
+
                 UpdateOrderIncidentStatus(order, request.ResolutionType, request.Notes);
+                await ResolveLinkedSystemReportsAsync(order.Id, request.Notes);
 
                 await AddNotificationToShipper(order, request.ResolutionType, request.Notes);
 
@@ -138,6 +147,26 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
             order.RejectReason = $"[Delivery Failed] Resolved: {resolutionType}. Note: {notes}";
             order.UpdatedAt = DateTime.UtcNow;
             _orderRepository.Update(order);
+        }
+
+        private async Task ResolveLinkedSystemReportsAsync(Guid orderId, string notes)
+        {
+            var reports = await _systemReportRepository.GetAsync(
+                predicate: r => r.TargetId == orderId
+                    && (r.TargetType == ReportTargetType.Order || r.TargetType == ReportTargetType.Restaurant)
+                    && r.Status == ReportStatus.Pending,
+                disableTracking: false
+            );
+
+            foreach (var report in reports)
+            {
+                report.Status = ReportStatus.Resolved;
+                report.Content = string.IsNullOrWhiteSpace(report.Content)
+                    ? $"[Resolved] {notes}"
+                    : $"{report.Content}\n[Resolved] {notes}";
+                report.UpdatedAt = DateTime.UtcNow;
+                _systemReportRepository.Update(report);
+            }
         }
 
         private async Task AddNotificationToShipper(Order order, string resolutionType, string notes)

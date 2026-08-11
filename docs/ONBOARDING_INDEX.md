@@ -1,4 +1,4 @@
-# Shopping Food — Onboarding
+# UniEats — Onboarding
 
 ## Một Feature = một Workflow (đã gộp UI + backend)
 

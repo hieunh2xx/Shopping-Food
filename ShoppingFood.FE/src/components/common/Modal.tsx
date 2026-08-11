@@ -9,6 +9,8 @@ interface ModalProps {
   children: ReactNode;
   size?: 'sm' | 'md' | 'lg';
   closeOnBackdrop?: boolean;
+  /** Mặc định 10000; modal lồng (vd chat trên chi tiết đơn) nên cao hơn */
+  zIndexClass?: string;
 }
 
 const sizeClasses = {
@@ -17,7 +19,15 @@ const sizeClasses = {
   lg: 'max-w-2xl',
 };
 
-export function Modal({ isOpen, onClose, title, children, size = 'md', closeOnBackdrop = true }: ModalProps) {
+export function Modal({
+  isOpen,
+  onClose,
+  title,
+  children,
+  size = 'md',
+  closeOnBackdrop = true,
+  zIndexClass = 'z-[10000]',
+}: ModalProps) {
   // Close on Escape key
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -36,7 +46,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'md', closeOnBa
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+    <div className={`fixed inset-0 ${zIndexClass} flex items-center justify-center p-4`}>
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"

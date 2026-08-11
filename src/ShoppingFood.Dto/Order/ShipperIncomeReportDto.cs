@@ -14,6 +14,7 @@ namespace ShoppingFood.Dto.Order
         public decimal TotalBonuses { get; set; }
         public decimal TotalIncome { get; set; }
         public List<DailyIncomeReportDto> DailyReports { get; set; } = new List<DailyIncomeReportDto>();
+        public List<ShipperCompletedOrderDto> Orders { get; set; } = new List<ShipperCompletedOrderDto>();
     }
 
     public class DailyIncomeReportDto
@@ -24,5 +25,22 @@ namespace ShoppingFood.Dto.Order
         public decimal DistanceFees { get; set; }
         public decimal Bonus { get; set; }
         public decimal TotalIncome { get; set; }
+    }
+
+    public class ShipperCompletedOrderDto
+    {
+        public Guid OrderId { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public decimal TotalAmount { get; set; }
+        public decimal ShippingFee { get; set; }
+        public decimal ItemsSubtotal { get; set; }
+        public decimal BaseFee { get; set; }
+        public decimal DistanceFee { get; set; }
+        public decimal PeakBonus { get; set; }
+        public decimal TotalIncome { get; set; }
+        public string PaymentMethod { get; set; } = string.Empty;
+        public string DeliveryAddress { get; set; } = string.Empty;
+        public string ContactName { get; set; } = string.Empty;
+        public DateTime CompletedAt { get; set; }
     }
 }

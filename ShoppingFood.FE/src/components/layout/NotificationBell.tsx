@@ -150,21 +150,56 @@ export function NotificationBell() {
     }
   };
 
+  const isChatNotification = (n: INotificationDto) =>
+    (n.title || '').toLowerCase().includes('tin nhắn');
+
   const getNotificationUrl = (n: INotificationDto): string | null => {
     const role = user?.role;
+    const chatNotif = isChatNotification(n);
+
+    // Tin nhắn đơn hàng → trang/hộp chat
+    if (chatNotif) {
+      if (role === 'Seller' || role === 'Mall') {
+        return n.targetId
+          ? `${ROUTES.SELLER_CHAT}?orderId=${n.targetId}`
+          : ROUTES.SELLER_CHAT;
+      }
+      if (role === 'Customer' && n.targetId) {
+        return `${ROUTES.MESSAGES}?orderId=${n.targetId}`;
+      }
+    }
+
     switch (n.notificationType) {
       case 'Order':
-        if (role === 'Customer') return null; // handled via custom event
-        if (role === 'Seller' || role === 'Mall') return ROUTES.SELLER_ORDERS;
+        if (role === 'Customer') return null; // handled via custom event / chat URL above
+        if (role === 'Seller' || role === 'Mall') {
+          const lower = n.title?.toLowerCase() || '';
+          if (lower.includes('tài xế hủy') || lower.includes('hủy giao')) {
+            return n.targetId
+              ? `${ROUTES.SELLER_SHIPPER_CANCELS}?orderId=${n.targetId}`
+              : ROUTES.SELLER_SHIPPER_CANCELS;
+          }
+          return n.targetId
+            ? `${ROUTES.SELLER_ORDERS}?orderId=${n.targetId}`
+            : ROUTES.SELLER_ORDERS;
+        }
         if (role === 'Shipper') return ROUTES.SHIPPER_DASHBOARD;
         if (role === 'Admin') {
           const lower = n.title?.toLowerCase() || '';
-          if (lower.includes('khiếu nại') || lower.includes('sự cố')) return ROUTES.ADMIN_INCIDENTS;
+          if (lower.includes('khiếu nại') || lower.includes('sự cố') || lower.includes('giải trình')) {
+            return n.targetId
+              ? `${ROUTES.ADMIN_INCIDENTS}?orderId=${n.targetId}`
+              : ROUTES.ADMIN_INCIDENTS;
+          }
           return ROUTES.ADMIN_DASHBOARD;
         }
         if (role === 'Coordinator') {
           const lower = n.title?.toLowerCase() || '';
-          if (lower.includes('khiếu nại') || lower.includes('sự cố')) return ROUTES.COORDINATOR_INCIDENTS;
+          if (lower.includes('khiếu nại') || lower.includes('sự cố') || lower.includes('báo cáo') || lower.includes('giải trình')) {
+            return n.targetId
+              ? `${ROUTES.COORDINATOR_INCIDENTS}?orderId=${n.targetId}`
+              : ROUTES.COORDINATOR_INCIDENTS;
+          }
           return ROUTES.COORDINATOR_DASHBOARD;
         }
         return null;
@@ -173,12 +208,20 @@ export function NotificationBell() {
         if (role === 'Shipper') return ROUTES.SHIPPER_DASHBOARD;
         if (role === 'Admin') {
           const lower = n.title?.toLowerCase() || '';
-          if (lower.includes('khiếu nại') || lower.includes('sự cố')) return ROUTES.ADMIN_INCIDENTS;
+          if (lower.includes('khiếu nại') || lower.includes('sự cố') || lower.includes('giải trình')) {
+            return n.targetId
+              ? `${ROUTES.ADMIN_INCIDENTS}?orderId=${n.targetId}`
+              : ROUTES.ADMIN_INCIDENTS;
+          }
           return ROUTES.ADMIN_DASHBOARD;
         }
         if (role === 'Coordinator') {
           const lower = n.title?.toLowerCase() || '';
-          if (lower.includes('khiếu nại') || lower.includes('sự cố')) return ROUTES.COORDINATOR_INCIDENTS;
+          if (lower.includes('khiếu nại') || lower.includes('sự cố') || lower.includes('giải trình')) {
+            return n.targetId
+              ? `${ROUTES.COORDINATOR_INCIDENTS}?orderId=${n.targetId}`
+              : ROUTES.COORDINATOR_INCIDENTS;
+          }
           return ROUTES.COORDINATOR_DASHBOARD;
         }
         return null;
@@ -196,21 +239,46 @@ export function NotificationBell() {
         }
         return null;
       case 'Loyalty':
-        if (role === 'Customer') return ROUTES.CUSTOMER_WALLET;
+        if (role === 'Customer') return `${ROUTES.PROFILE}?tab=loyalty`;
+        if (role === 'Admin') return ROUTES.ADMIN_MEMBER_RANKS;
         return null;
       case 'System':
         if (role === 'Shipper') {
           const lower = n.title?.toLowerCase() || '';
           if (lower.includes('uy tín')) return ROUTES.SHIPPER_PROFILE + '?tab=reputation';
+          if (lower.includes('giải trình') && n.targetId) {
+            return `${ROUTES.SHIPPER_DASHBOARD}?explanationOrderId=${n.targetId}`;
+          }
           return null;
         }
         if (role === 'Seller' || role === 'Mall') {
           const lower = n.title?.toLowerCase() || '';
-          if (lower.includes('đơn hàng')) return ROUTES.SELLER_ORDERS;
+          if (lower.includes('tài xế') || lower.includes('hủy giao') || (lower.includes('đơn hàng') && lower.includes('hủy'))) {
+            return n.targetId
+              ? `${ROUTES.SELLER_SHIPPER_CANCELS}?orderId=${n.targetId}`
+              : ROUTES.SELLER_SHIPPER_CANCELS;
+          }
+          if (lower.includes('đơn hàng') || lower.includes('sự cố')) {
+            return n.targetId
+              ? `${ROUTES.SELLER_ORDERS}?orderId=${n.targetId}&status=Cancelled`
+              : ROUTES.SELLER_ORDERS;
+          }
           return null;
+        }
+        if (role === 'Coordinator') {
+          const lower = n.title?.toLowerCase() || '';
+          if (lower.includes('sự cố') || lower.includes('khiếu nại') || lower.includes('báo cáo') || lower.includes('giải trình')) {
+            return n.targetId
+              ? `${ROUTES.COORDINATOR_INCIDENTS}?orderId=${n.targetId}`
+              : ROUTES.COORDINATOR_INCIDENTS;
+          }
+          return ROUTES.COORDINATOR_DASHBOARD;
         }
         if (role === 'Admin') {
           const lower = n.title?.toLowerCase() || '';
+          if (lower.includes('hạng thành viên') || lower.includes('xếp hạng')) {
+            return ROUTES.ADMIN_MEMBER_RANKS;
+          }
           if (lower.includes('đăng ký') || lower.includes('yêu cầu') || lower.includes('ứng tuyển')) {
             return ROUTES.ADMIN_APPLICATIONS;
           }
@@ -220,10 +288,12 @@ export function NotificationBell() {
           if (lower.includes('đánh giá')) {
             return ROUTES.ADMIN_REVIEW_REPORTS;
           }
-          if (lower.includes('sự cố') || lower.includes('khiếu nại')) {
-            return ROUTES.ADMIN_INCIDENTS;
+          if (lower.includes('sự cố') || lower.includes('khiếu nại') || lower.includes('báo cáo') || lower.includes('giải trình')) {
+            return n.targetId
+              ? `${ROUTES.ADMIN_INCIDENTS}?orderId=${n.targetId}`
+              : ROUTES.ADMIN_INCIDENTS;
           }
-          return null; // fallback to modal for other system notifications
+          return null;
         }
         return null;
       default:
@@ -245,16 +315,29 @@ export function NotificationBell() {
 
   const handleNavigateFromModal = () => {
     if (!selectedNotification) return;
-    const url = getNotificationUrl(selectedNotification);
     const role = user?.role;
-    
-    if (isCustomerOrderNav(selectedNotification, role)) {
+    const targetId = selectedNotification.targetId;
+    const chatNotif = isChatNotification(selectedNotification);
+
+    // Customer: tin nhắn → trang Tin nhắn; đơn hàng → drawer đơn
+    if (role === 'Customer' && chatNotif && targetId) {
       setIsOpen(false);
       setSelectedNotification(null);
-      window.dispatchEvent(new CustomEvent('openOrdersTabWithDetail', { detail: selectedNotification.targetId }));
+      navigate(`${ROUTES.MESSAGES}?orderId=${targetId}`);
       return;
     }
 
+    if (role === 'Customer' && isCustomerOrderNav(selectedNotification, role) && targetId) {
+      setIsOpen(false);
+      setSelectedNotification(null);
+      window.dispatchEvent(new CustomEvent('openOrdersTabWithDetail', {
+        detail: { orderId: targetId, openChat: false },
+      }));
+      navigate(`${ROUTES.HOME}?track=true&orderId=${targetId}`);
+      return;
+    }
+
+    const url = getNotificationUrl(selectedNotification);
     if (url) {
       setIsOpen(false);
       setSelectedNotification(null);
@@ -337,7 +420,9 @@ export function NotificationBell() {
                     {!n.isRead && (
                       <div className="w-2 h-2 rounded-full bg-orange-500" />
                     )}
-                    {getNotificationUrl(n) || isCustomerOrderNav(n, user?.role) ? (
+                    {getNotificationUrl(n)
+                      || isCustomerOrderNav(n, user?.role)
+                      || isChatNotification(n) ? (
                       <ChevronRight className="w-4 h-4 text-gray-300" />
                     ) : null}
                   </div>
@@ -379,7 +464,9 @@ export function NotificationBell() {
               >
                 Đóng
               </button>
-              {(getNotificationUrl(selectedNotification) || isCustomerOrderNav(selectedNotification, user?.role)) && (
+              {(getNotificationUrl(selectedNotification)
+                || isCustomerOrderNav(selectedNotification, user?.role)
+                || isChatNotification(selectedNotification)) && (
                 <button
                   onClick={handleNavigateFromModal}
                   className="px-6 py-2.5 bg-orange-500 text-white text-sm font-semibold rounded-xl hover:bg-orange-600 transition-all active:scale-95 flex items-center gap-2"

@@ -7,6 +7,7 @@ import { loyaltyPointService } from '../../services/LoyaltyPointService';
 import type { IUserDto } from '../../interfaces';
 import toast from 'react-hot-toast';
 import { adminService } from '../../services/AdminService';
+import { maskEmail, maskPhone } from '../../utils/formatters';
 
 const TIERS = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
 const TIER_COLORS: Record<string, string> = {
@@ -203,7 +204,7 @@ export function AdminUsersPage() {
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200 text-sm text-gray-500">
                 <th className="py-4 px-6 font-medium">Người dùng</th>
-                <th className="py-4 px-6 font-medium">Email</th>
+                <th className="py-4 px-6 font-medium">Email / SĐT</th>
                 <th className="py-4 px-6 font-medium">Vai trò</th>
                 <th className="py-4 px-6 font-medium text-center">Hạng thành viên</th>
                 <th className="py-4 px-6 font-medium text-center">Điểm</th>
@@ -240,7 +241,10 @@ export function AdminUsersPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="py-4 px-6 text-sm text-gray-600">{user.email || '—'}</td>
+                    <td className="py-4 px-6 text-sm text-gray-600">
+                      <div className="font-mono text-xs">{maskEmail(user.email)}</div>
+                      <div className="font-mono text-xs text-gray-400 mt-0.5">{maskPhone(user.phone)}</div>
+                    </td>
                     <td className="py-4 px-6">
                       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${
                           user.role === 'Admin' ? 'bg-purple-100 text-purple-700' :

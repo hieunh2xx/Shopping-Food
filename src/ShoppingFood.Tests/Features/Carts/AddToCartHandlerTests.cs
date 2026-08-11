@@ -30,6 +30,7 @@ namespace ShoppingFood.Tests.Features.Carts
         private readonly Mock<ICartRepository> _cartRepositoryMock;
         private readonly Mock<ICartItemRepository> _cartItemRepositoryMock;
         private readonly Mock<IProductRepository> _productRepositoryMock;
+        private readonly Mock<IBuyXGetYPromotionRepository> _promotionRepositoryMock;
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
         private readonly Mock<IMapper> _mapperMock;
         private readonly Mock<IHttpContextAccessor> _httpContextAccessorMock;
@@ -51,6 +52,7 @@ namespace ShoppingFood.Tests.Features.Carts
             _cartRepositoryMock = new Mock<ICartRepository>();
             _cartItemRepositoryMock = new Mock<ICartItemRepository>();
             _productRepositoryMock = new Mock<IProductRepository>();
+            _promotionRepositoryMock = new Mock<IBuyXGetYPromotionRepository>();
             _unitOfWorkMock = new Mock<IUnitOfWork>();
             _mapperMock = new Mock<IMapper>();
             _httpContextAccessorMock = new Mock<IHttpContextAccessor>();
@@ -60,6 +62,7 @@ namespace ShoppingFood.Tests.Features.Carts
                 _cartRepositoryMock.Object,
                 _cartItemRepositoryMock.Object,
                 _productRepositoryMock.Object,
+                _promotionRepositoryMock.Object,
                 _unitOfWorkMock.Object,
                 _mapperMock.Object,
                 _dbContext,

@@ -4,12 +4,21 @@ import type { IProductDto } from './IProduct';
  * Cart item — product + quantity + selected options
  */
 export interface ICartItem {
+  id?: string;
   product: IProductDto;
   quantity: number;
   selectedSize?: string;
   selectedToppings?: string[];
   note?: string;
   isProductDeleted?: boolean;
+  /** Giá đã chốt từ BE (món tặng = 0). */
+  priceAtAdded?: number;
+  isGift?: boolean;
+  buyXGetYPromotionId?: string;
+  parentCartItemId?: string;
+  promotionLabel?: string;
+  promoBuyQuantity?: number;
+  promoGiftQuantity?: number;
 }
 
 /**
@@ -26,10 +35,11 @@ export interface ICartState {
  */
 export interface ICartContext extends ICartState {
   addItem: (product: IProductDto, quantity?: number, selectedSize?: string, selectedToppings?: string[], note?: string) => void;
+  addBuyXGetY: (params: { promotionId: string; triggerProduct: IProductDto; sets?: number }) => Promise<void>;
   removeItem: (productId: string, selectedSize?: string, selectedToppings?: string[]) => void;
   updateQuantity: (productId: string, quantity: number, selectedSize?: string, selectedToppings?: string[]) => void;
   clearCart: () => void;
-  refreshCart: () => Promise<void>;
+  refreshCart: () => Promise<ICartItem[] | null>;
 }
 
 export interface IAddToCartRequest {
@@ -39,6 +49,7 @@ export interface IAddToCartRequest {
   clearCartIfConflict?: boolean;
   selectedSize?: string;
   selectedToppings?: string[];
+  buyXGetYPromotionId?: string;
 }
 
 export interface IUpdateCartItemQuantityRequest {

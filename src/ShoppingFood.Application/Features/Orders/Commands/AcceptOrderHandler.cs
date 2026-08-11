@@ -52,6 +52,13 @@ namespace ShoppingFood.Application.Features.Orders.Commands
 
                 if(order.Status != OrderStatus.Pending) return ApiResponse.Failure(400, "Only pending orders can be accepted.");
 
+                // Non-COD phải thanh toán xong trước khi nhà hàng nhận đơn
+                if (order.PaymentMethod != PaymentMethod.COD && order.PaymentStatus != PaymentStatus.Paid)
+                {
+                    return ApiResponse.Failure(400,
+                        "Đơn chưa thanh toán online — không thể nhận. Chờ khách hoàn tất SePay hoặc đơn sẽ tự hủy khi hết hạn.");
+                }
+
                 var sellerRestaurants = await _restaurantProfileRepository.GetAsync(
                     predicate: r => r.Owner.UserAccountId == request.CurrentUserId.Value,
                     disableTracking: true

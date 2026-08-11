@@ -16,5 +16,7 @@ namespace ShoppingFood.Application.Features.Carts.Commands
         public bool ClearCartIfConflict { get; set; } = false;
         public string? SelectedSize { get; set; }
         public List<string>? SelectedToppings { get; set; }
+        /// <summary>Nếu có: thêm bundle Mua X Tặng Y (Quantity = số suất khuyến mãi).</summary>
+        public Guid? BuyXGetYPromotionId { get; set; }
     }
 }

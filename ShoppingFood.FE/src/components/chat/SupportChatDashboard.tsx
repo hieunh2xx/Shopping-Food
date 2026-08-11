@@ -109,11 +109,9 @@ export function SupportChatDashboard({ role }: SupportChatDashboardProps) {
   };
 
   useEffect(() => {
-    console.log('[SupportChat] token:', token ? 'EXISTS' : 'NULL/UNDEFINED');
     if (!token) return;
 
     const connect = async () => {
-      console.log('[SupportChat] Starting connection...');
       try {
         await chatService.startConnection(token);
         // Nếu component đã unmount thì không đăng ký handler nữa
@@ -177,9 +175,9 @@ export function SupportChatDashboard({ role }: SupportChatDashboardProps) {
 
     if (!messages[session.id] || messages[session.id].length === 0) {
       try {
-        const historyRes = await chatService.getHistory(session.id);
-        if (historyRes.data) {
-          setMessages(prev => ({ ...prev, [session.id]: historyRes.data! }));
+        const historyRes = await chatService.getHistory(session.id, { take: 50 });
+        if (historyRes.data?.items) {
+          setMessages(prev => ({ ...prev, [session.id]: historyRes.data!.items }));
         }
       } catch (error) {
         console.error('Failed to load history', error);

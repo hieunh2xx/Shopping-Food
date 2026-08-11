@@ -1,4 +1,4 @@
-# Hướng dẫn Test Giao diện (Shopping Food FE)
+# Hướng dẫn Test Giao diện (UniEats FE)
 
 Dưới đây là danh sách các đường dẫn (Routes) quan trọng đã được cấu hình trên Front-end để bạn có thể sao chép và dán trực tiếp vào trình duyệt để test.
 

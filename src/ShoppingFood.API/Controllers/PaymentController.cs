@@ -127,6 +127,14 @@ namespace ShoppingFood.API.Controllers
             return StatusCode(response.Code, response);
         }
 
+        [HttpPost("sepay/abandon")]
+        public async Task<IActionResult> AbandonUnpaidSepay([FromBody] AbandonUnpaidSepayPaymentCommand command)
+        {
+            command.CurrentUserId = userDto?.Id;
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
+
         [HttpGet("history")]
         public async Task<IActionResult> GetPaymentHistory([FromQuery] GetPaymentHistoryQuery query)
         {

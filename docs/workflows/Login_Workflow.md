@@ -1,70 +1,70 @@
-﻿# Tài liệu Quy trình: Đăng nhập (Login)
+# T�i li?u Quy tr�nh: �ang nh?p (Login)
 
-Tài liệu này mô tả chi tiết luồng đăng nhập trong hệ thống **Shopping Food**: mật khẩu + TrustedDevice + OTP 2FA, kèm các đường đăng nhập thay thế (Google / Microsoft / Firebase Phone) và cơ chế Refresh Token phía Frontend.
+T�i li?u n�y m� t? chi ti?t lu?ng dang nh?p trong h? th?ng **UniEats**: m?t kh?u + TrustedDevice + OTP 2FA, k�m c�c du?ng dang nh?p thay th? (Google / Microsoft / Firebase Phone) v� co ch? Refresh Token ph�a Frontend.
 
-> **Lưu ý kiến trúc:** `POST /api/User/Login` xử lý **inline trong Controller** (không qua MediatR). OTP 2FA dùng MediatR (`SendLoginOtp` / `VerifyLoginOtp`).
-
----
-
+> **Luu � ki?n tr�c:** `POST /api/User/Login` x? l� **inline trong Controller** (kh�ng qua MediatR). OTP 2FA d�ng MediatR (`SendLoginOtp` / `VerifyLoginOtp`).
 
 ---
 
-## Phần A — UI Interaction Trace (Nút bấm → Code → Data → Hiển thị)
-
-> UI Trace — Auth / Login  
-> Mỗi thao tác trả lời: **nút ở đâu** · **bấm chạy file/hàm nào** · **API/BE đâu** · **data trả về** · **hiển thị thế nào**.
-
-
-**Page gốc:** Route `/login` → `pages/LoginPage.tsx` render `components/auth/LoginForm.tsx`.
 
 ---
 
-## UT-AUTH-01 — Nút / Form **「Đăng nhập」** (username + password)
+## Ph?n A � UI Interaction Trace (N�t b?m ? Code ? Data ? Hi?n th?)
 
-### 1. Giao diện nút bấm ở đâu?
+> UI Trace � Auth / Login  
+> M?i thao t�c tr? l?i: **n�t ? d�u** � **b?m ch?y file/h�m n�o** � **API/BE d�u** � **data tr? v?** � **hi?n th? th? n�o**.
 
-| Mục | Giá trị |
+
+**Page g?c:** Route `/login` ? `pages/LoginPage.tsx` render `components/auth/LoginForm.tsx`.
+
+---
+
+## UT-AUTH-01 � N�t / Form **?�ang nh?p?** (username + password)
+
+### 1. Giao di?n n�t b?m ? d�u?
+
+| M?c | Gi� tr? |
 |-----|---------|
 | **Route** | `/login` |
 | **Page** | `ShoppingFood.FE/src/pages/LoginPage.tsx` |
 | **Component** | `ShoppingFood.FE/src/components/auth/LoginForm.tsx` |
-| **Nhãn** | Button `"Đăng nhập"` (`size="lg"`, `type="submit"`) |
-| **Form** | `<form onSubmit={handleLoginSubmit}>` khi `loginMethod === 'standard'` và `step === 1` |
-| **Input** | Username/Email + Password (có nút hiện/ẩn MK) |
+| **Nh�n** | Button `"�ang nh?p"` (`size="lg"`, `type="submit"`) |
+| **Form** | `<form onSubmit={handleLoginSubmit}>` khi `loginMethod === 'standard'` v� `step === 1` |
+| **Input** | Username/Email + Password (c� n�t hi?n/?n MK) |
 
-### 2. Bấm xong chạy đến đâu? (Frontend)
+### 2. B?m xong ch?y d?n d�u? (Frontend)
 
 ```text
-User nhấn 「Đăng nhập」 / Enter
-  → form onSubmit
-  → LoginForm.handleLoginSubmit (LoginForm.tsx ~89+)
-       · validate userName/password (setErrors nếu rỗng)
-  → useAuth().login({ userName, password })     hooks/useAuth.ts → login()
-  → authService.login(credentials)              services/AuthService.ts → login()
-  → httpClient.post(API_ENDPOINTS.AUTH.LOGIN, credentials)
-       · services/base/HttpClient.ts
-       · URL: POST {API_BASE}/User/Login
+User nh?n ?�ang nh?p? / Enter
+  ? form onSubmit
+  ? LoginForm.handleLoginSubmit (LoginForm.tsx ~89+)
+       � validate userName/password (setErrors n?u r?ng)
+  ? useAuth().login({ userName, password })     hooks/useAuth.ts ? login()
+  ? authService.login(credentials)              services/AuthService.ts ? login()
+  ? httpClient.post(API_ENDPOINTS.AUTH.LOGIN, credentials)
+       � services/base/HttpClient.ts
+       � URL: POST {API_BASE}/User/Login
 ```
 
-### 3. Backend chạy đoạn nào?
+### 3. Backend ch?y do?n n�o?
 
 ```text
 POST /api/User/Login
-  → AuthenticationFilter — BYPASS (public)
-  → UserController.Login                          Controllers/UserController.cs ~86+
-       · Include Profile, tìm theo UserName hoặc Email
-       · So sánh PasswordHash (SHA256)
-       · TrustedDevice? → JWT đầy đủ
-       · Else → PreAuthToken + message "RequireOtp"
-       · Account locked → message "AccountLocked"
-  → TokenHelper.GenerateToken / GenerateRefreshToken / GeneratePreAuthToken
+  ? AuthenticationFilter � BYPASS (public)
+  ? UserController.Login                          Controllers/UserController.cs ~86+
+       � Include Profile, t�m theo UserName ho?c Email
+       � So s�nh PasswordHash (SHA256)
+       � TrustedDevice? ? JWT d?y d?
+       � Else ? PreAuthToken + message "RequireOtp"
+       � Account locked ? message "AccountLocked"
+  ? TokenHelper.GenerateToken / GenerateRefreshToken / GeneratePreAuthToken
        Core/Security/TokenHelper.cs
-  → return Ok(ApiResponse) hoặc BadRequest
+  ? return Ok(ApiResponse) ho?c BadRequest
 ```
 
-### 4. Dữ liệu trả về ở đâu?
+### 4. D? li?u tr? v? ? d�u?
 
-**Success (không OTP):**
+**Success (kh�ng OTP):**
 
 ```json
 {
@@ -82,7 +82,7 @@ POST /api/User/Login
 }
 ```
 
-**Cần OTP thiết bị mới:**
+**C?n OTP thi?t b? m?i:**
 
 ```json
 {
@@ -92,22 +92,22 @@ POST /api/User/Login
 }
 ```
 
-### 5. Làm sao hiển thị?
+### 5. L�m sao hi?n th??
 
-| Nhánh | Code FE | Hiển thị |
+| Nh�nh | Code FE | Hi?n th? |
 |-------|---------|----------|
-| Success | `fetchAndSetProfile` → `AuthContext.login` → `StorageUtil.setToken/setUser` → `toast.success('Đăng nhập thành công!')` → `handleRedirectByRole(role)` | Đổi route: Admin→`/admin`, Seller→`/seller`, Shipper→`/shipper`, Coordinator→dispatch, else `/` |
-| RequireOtp | `setPreAuthToken`, `setStep(2)`, `setAvailableMethods` | UI đổi sang màn chọn gửi OTP (không vào app) |
-| AccountLocked | tương tự OTP + `setIsLocked(true)` | Tiêu đề “Tài khoản đang bị khóa” |
-| Error | `toast.error(message)` | Toast đỏ góc phải (`App.tsx` Toaster) |
+| Success | `fetchAndSetProfile` ? `AuthContext.login` ? `StorageUtil.setToken/setUser` ? `toast.success('�ang nh?p th�nh c�ng!')` ? `handleRedirectByRole(role)` | �?i route: Admin?`/admin`, Seller?`/seller`, Shipper?`/shipper`, Coordinator?dispatch, else `/` |
+| RequireOtp | `setPreAuthToken`, `setStep(2)`, `setAvailableMethods` | UI d?i sang m�n ch?n g?i OTP (kh�ng v�o app) |
+| AccountLocked | tuong t? OTP + `setIsLocked(true)` | Ti�u d? �T�i kho?n dang b? kh�a� |
+| Error | `toast.error(message)` | Toast d? g�c ph?i (`App.tsx` Toaster) |
 
-`handleRedirectByRole` — `LoginForm.tsx` ~67–84.
+`handleRedirectByRole` � `LoginForm.tsx` ~67�84.
 
 ### 6. Sequence
 
 ```mermaid
 sequenceDiagram
-    participant N as Nút Đăng nhập
+    participant N as N�t �ang nh?p
     participant LF as LoginForm
     participant UA as useAuth
     participant API as UserController.Login
@@ -125,7 +125,7 @@ sequenceDiagram
     else RequireOtp
         API-->>UA: preAuthToken
         UA->>LF: requireOtp
-        LF->>LF: setStep(2) hiện OTP UI
+        LF->>LF: setStep(2) hi?n OTP UI
     else Error
         API-->>UA: message
         UA->>LF: toast.error
@@ -134,236 +134,236 @@ sequenceDiagram
 
 ---
 
-## UT-AUTH-02 — Nút **「Gửi OTP Email / Phone」** (sau RequireOtp)
+## UT-AUTH-02 � N�t **?G?i OTP Email / Phone?** (sau RequireOtp)
 
-### 1. UI ở đâu?
+### 1. UI ? d�u?
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
-| **Khi nào hiện** | `step === 2` trong `LoginForm.tsx` |
-| **Nút** | `"Gửi mã qua Email"` / `"Gửi mã qua SĐT"` (`handleSendOtp('email'|'phone')`) |
+| **Khi n�o hi?n** | `step === 2` trong `LoginForm.tsx` |
+| **N�t** | `"G?i m� qua Email"` / `"G?i m� qua S�T"` (`handleSendOtp('email'|'phone')`) |
 
-### 2. FE chạy đâu?
+### 2. FE ch?y d�u?
 
 ```text
-onClick → handleSendOtp(method)
-  → useAuth().sendLoginOtp({ preAuthToken, method })
-  → authService.sendLoginOtp(...)
-  → POST /api/User/SendLoginOtp
+onClick ? handleSendOtp(method)
+  ? useAuth().sendLoginOtp({ preAuthToken, method })
+  ? authService.sendLoginOtp(...)
+  ? POST /api/User/SendLoginOtp
 ```
 
 ### 3. Backend
 
 ```text
-UserController.SendLoginOtp → SendLoginOtpCommand → Handler
-  → Gửi email/SMS OTP gắn PreAuth
-  → ApiResponse success/fail
+UserController.SendLoginOtp ? SendLoginOtpCommand ? Handler
+  ? G?i email/SMS OTP g?n PreAuth
+  ? ApiResponse success/fail
 ```
 
-### 4–5. Data & hiển thị
+### 4�5. Data & hi?n th?
 
-- Success: `toast.success('Mã OTP đã được gửi!')` → thường chuyển `setStep(3)` nhập OTP (theo logic form)
+- Success: `toast.success('M� OTP d� du?c g?i!')` ? thu?ng chuy?n `setStep(3)` nh?p OTP (theo logic form)
 - Fail: `toast.error(...)`
 
 ---
 
-## UT-AUTH-03 — Form **「Xác nhận OTP」** (Verify Login / Unlock)
+## UT-AUTH-03 � Form **?X�c nh?n OTP?** (Verify Login / Unlock)
 
 ### 1. UI
 
-- `step` nhập OTP 6 số + Button submit `"Xác nhận"`
+- `step` nh?p OTP 6 s? + Button submit `"X�c nh?n"`
 - `onSubmit={isLocked ? ... : handleVerifyOtp}`
 
 ### 2. FE
 
 ```text
 handleVerifyOtp
-  → nếu isLocked: verifyUnlockAccount(preAuthToken, otpCode)
-  → else: verifyLoginOtp(preAuthToken, otpCode)
-  → authService.verifyLoginOtp / VerifyUnlockAccount
-  → POST /User/VerifyLoginOtp  hoặc  /User/VerifyUnlockAccount
+  ? n?u isLocked: verifyUnlockAccount(preAuthToken, otpCode)
+  ? else: verifyLoginOtp(preAuthToken, otpCode)
+  ? authService.verifyLoginOtp / VerifyUnlockAccount
+  ? POST /User/VerifyLoginOtp  ho?c  /User/VerifyUnlockAccount
 ```
 
 ### 3. BE
 
 ```text
 VerifyLoginOtpHandler / VerifyUnlock...
-  → Check OTP + PreAuth
-  → Generate JWT + Refresh
-  → (Unlock) đổi UserStatus Active
+  ? Check OTP + PreAuth
+  ? Generate JWT + Refresh
+  ? (Unlock) d?i UserStatus Active
 ```
 
-### 4–5. Data & hiển thị
+### 4�5. Data & hi?n th?
 
-- `data` giống login success (token, role…)
+- `data` gi?ng login success (token, role�)
 - `fetchAndSetProfile` + toast success + `handleRedirectByRole`
 
 ---
 
-## UT-AUTH-04 — Nút **Google Login**
+## UT-AUTH-04 � N�t **Google Login**
 
 ### 1. UI
 
-- `LoginForm.tsx` — component `@react-oauth/google` `GoogleLogin` (onSuccess / onError)
+- `LoginForm.tsx` � component `@react-oauth/google` `GoogleLogin` (onSuccess / onError)
 
 ### 2. FE
 
 ```text
 handleGoogleSuccess(credentialResponse)
-  → useAuth().loginGoogle(credentialResponse.credential)
-  → authService.loginGoogle({ credential })
-  → POST /api/User/LoginGoogle
+  ? useAuth().loginGoogle(credentialResponse.credential)
+  ? authService.loginGoogle({ credential })
+  ? POST /api/User/LoginGoogle
 ```
 
 ### 3. BE
 
-`UserController.LoginGoogle` → `LoginGoogleHandler` (verify Google token → tìm/tạo user → JWT)
+`UserController.LoginGoogle` ? `LoginGoogleHandler` (verify Google token ? t�m/t?o user ? JWT)
 
-### 4–5. Hiển thị
+### 4�5. Hi?n th?
 
-- Success: toast Google thành công + redirect theo role  
-- Fail: `toast.error('Đăng nhập Google thất bại')` (`handleGoogleError` hoặc hook)
+- Success: toast Google th�nh c�ng + redirect theo role  
+- Fail: `toast.error('�ang nh?p Google th?t b?i')` (`handleGoogleError` ho?c hook)
 
 ---
 
-## UT-AUTH-05 — Nút **Microsoft Login**
+## UT-AUTH-05 � N�t **Microsoft Login**
 
 ### 1. UI
 
-- Button Microsoft trên `LoginForm` → `onClick={handleMicrosoftLogin}`
+- Button Microsoft tr�n `LoginForm` ? `onClick={handleMicrosoftLogin}`
 
 ### 2. FE
 
 ```text
 handleMicrosoftLogin
-  → window.open(Microsoft authorize URL)  // popup
-  → popup nhận ?code= → main.tsx postMessage { type: 'microsoft-auth-code', code }
-  → LoginForm useEffect listener
-  → loginMicrosoft(code, redirectUri)
-  → POST /api/User/LoginMicrosoft
+  ? window.open(Microsoft authorize URL)  // popup
+  ? popup nh?n ?code= ? main.tsx postMessage { type: 'microsoft-auth-code', code }
+  ? LoginForm useEffect listener
+  ? loginMicrosoft(code, redirectUri)
+  ? POST /api/User/LoginMicrosoft
 ```
 
-**Entry popup handler:** `ShoppingFood.FE/src/main.tsx` (trước khi render App).
+**Entry popup handler:** `ShoppingFood.FE/src/main.tsx` (tru?c khi render App).
 
-### 3–5. BE / hiển thị
+### 3�5. BE / hi?n th?
 
-- `LoginMicrosoftHandler` → JWT  
+- `LoginMicrosoftHandler` ? JWT  
 - toast + `handleRedirectByRole`
 
 ---
 
-## UT-AUTH-06 — Tab **Đăng nhập SĐT** + Firebase OTP
+## UT-AUTH-06 � Tab **�ang nh?p S�T** + Firebase OTP
 
 ### 1. UI
 
-- Tab `"Số điện thoại"` → `setLoginMethod('phone')`
-- Form submit `handlePhoneLoginSubmit` → Firebase `signInWithPhoneNumber`
+- Tab `"S? di?n tho?i"` ? `setLoginMethod('phone')`
+- Form submit `handlePhoneLoginSubmit` ? Firebase `signInWithPhoneNumber`
 - Step OTP: `handleVerifyPhoneLoginOtp`
 
 ### 2. FE
 
 ```text
 confirmationResult.confirm(otpCode)
-  → idToken = user.getIdToken()
-  → loginFirebasePhone(idToken)
-  → POST /api/User/LoginFirebasePhone
+  ? idToken = user.getIdToken()
+  ? loginFirebasePhone(idToken)
+  ? POST /api/User/LoginFirebasePhone
 ```
 
-### 3–5
+### 3�5
 
-- BE verify Firebase token → JWT  
-- Toast / redirect như login thường  
-- Lỗi: `toast.error('Mã OTP không hợp lệ')`
+- BE verify Firebase token ? JWT  
+- Toast / redirect nhu login thu?ng  
+- L?i: `toast.error('M� OTP kh�ng h?p l?')`
 
 ---
 
-## UT-AUTH-07 — Link **「Quên mật khẩu?」**
+## UT-AUTH-07 � Link **?Qu�n m?t kh?u??**
 
 ### 1. UI
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
-| **Nút** | `<button>Quên mật khẩu?</button>` trong LoginForm (~352) |
+| **N�t** | `<button>Qu�n m?t kh?u?</button>` trong LoginForm (~352) |
 | **onClick** | `setIsForgotModalOpen(true)` |
 | **Modal** | `ForgotPasswordModal` (`isOpen`, `onClose`) |
 
-### 2–5. Ba bước trong Modal (chi tiết workflow)
+### 2�5. Ba bu?c trong Modal (chi ti?t workflow)
 
-| Bước UI | Hàm FE | API | Hiển thị sau success |
+| Bu?c UI | H�m FE | API | Hi?n th? sau success |
 |---------|--------|-----|----------------------|
-| 1 Gửi mã | `handleRequestOtp` → `authService.forgotPassword` | `POST /User/ForgotPassword` | toast + `setStep(2)` |
-| 2 Xác nhận OTP | `handleVerifyOtp` → `verifyResetOtp` | `POST /User/VerifyResetOtp` | toast + `setStep(3)` |
-| 3 Đặt MK mới | `handleResetPassword` → `resetPassword` | `POST /User/ResetPassword` | toast success + `handleClose()` đóng modal |
+| 1 G?i m� | `handleRequestOtp` ? `authService.forgotPassword` | `POST /User/ForgotPassword` | toast + `setStep(2)` |
+| 2 X�c nh?n OTP | `handleVerifyOtp` ? `verifyResetOtp` | `POST /User/VerifyResetOtp` | toast + `setStep(3)` |
+| 3 �?t MK m?i | `handleResetPassword` ? `resetPassword` | `POST /User/ResetPassword` | toast success + `handleClose()` d�ng modal |
 
-**BE:** `ForgotPasswordHandler` → Email OTP; `VerifyResetOtpHandler`; `ResetPasswordHandler` (SHA256 + IsUsed).
+**BE:** `ForgotPasswordHandler` ? Email OTP; `VerifyResetOtpHandler`; `ResetPasswordHandler` (SHA256 + IsUsed).
 
-**Hiển thị lỗi:** `toast.error` + `setErrors` trên Input.
+**Hi?n th? l?i:** `toast.error` + `setErrors` tr�n Input.
 
-→ Xem thêm: [../workflows/ForgotPassword_Workflow.md](../workflows/ForgotPassword_Workflow.md)
+? Xem th�m: [../workflows/ForgotPassword_Workflow.md](../workflows/ForgotPassword_Workflow.md)
 
 ---
 
-## UT-AUTH-08 — Đăng xuất (Header / Layout)
+## UT-AUTH-08 � �ang xu?t (Header / Layout)
 
 ### 1. UI
 
-- Thường trong Header user menu / Dashboard layout — gọi `useAuth().logout`
+- Thu?ng trong Header user menu / Dashboard layout � g?i `useAuth().logout`
 
 ### 2. FE
 
 ```text
 logout()
-  → authService.logout() → POST /User/Logout (optional)
-  → AuthContext.logout() → clear token/user storage
-  → toast.success('Đã đăng xuất')
-  → navigate('/login') (tùy chỗ gọi)
+  ? authService.logout() ? POST /User/Logout (optional)
+  ? AuthContext.logout() ? clear token/user storage
+  ? toast.success('�� dang xu?t')
+  ? navigate('/login') (t�y ch? g?i)
 ```
 
-### 3–5
+### 3�5
 
 - BE invalidate refresh token  
-- UI: mất session → PrivateRoute đẩy về login nếu vào trang bảo vệ
+- UI: m?t session ? PrivateRoute d?y v? login n?u v�o trang b?o v?
 
 ---
 
-## UT-AUTH-09 — Tự động Refresh Token (không phải nút)
+## UT-AUTH-09 � T? d?ng Refresh Token (kh�ng ph?i n�t)
 
-### 1. “UI” / điểm kích hoạt
+### 1. �UI� / di?m k�ch ho?t
 
-- Mọi request Axios 401 trong `HttpClient.ts` interceptor
+- M?i request Axios 401 trong `HttpClient.ts` interceptor
 
-### 2–5
+### 2�5
 
 ```text
-401 → authService.refreshToken(token)
-  → POST /User/RefreshToken
-  → nếu OK: setToken mới, retry request gốc
-  → nếu fail: clearAuth + window.location = /login
+401 ? authService.refreshToken(token)
+  ? POST /User/RefreshToken
+  ? n?u OK: setToken m?i, retry request g?c
+  ? n?u fail: clearAuth + window.location = /login
 ```
 
-**Hiển thị:** thường không toast; user thấy bị đưa về `/login`.
+**Hi?n th?:** thu?ng kh�ng toast; user th?y b? dua v? `/login`.
 
 ---
 
-## Bảng tóm tắt Auth
+## B?ng t�m t?t Auth
 
-| ID | Nhãn / Sự kiện | Component | FE hàm | API | Hiển thị kết quả |
+| ID | Nh�n / S? ki?n | Component | FE h�m | API | Hi?n th? k?t qu? |
 |----|----------------|-----------|--------|-----|------------------|
-| UT-AUTH-01 | Đăng nhập | LoginForm | handleLoginSubmit → useAuth.login | POST /User/Login | toast + navigate / OTP UI |
-| UT-AUTH-02 | Gửi OTP | LoginForm step2 | handleSendOtp | SendLoginOtp | toast |
-| UT-AUTH-03 | Xác nhận OTP | LoginForm | handleVerifyOtp | VerifyLoginOtp | toast + navigate |
+| UT-AUTH-01 | �ang nh?p | LoginForm | handleLoginSubmit ? useAuth.login | POST /User/Login | toast + navigate / OTP UI |
+| UT-AUTH-02 | G?i OTP | LoginForm step2 | handleSendOtp | SendLoginOtp | toast |
+| UT-AUTH-03 | X�c nh?n OTP | LoginForm | handleVerifyOtp | VerifyLoginOtp | toast + navigate |
 | UT-AUTH-04 | Google | LoginForm | handleGoogleSuccess | LoginGoogle | toast + navigate |
 | UT-AUTH-05 | Microsoft | LoginForm + main.tsx | handleMicrosoftLogin | LoginMicrosoft | toast + navigate |
-| UT-AUTH-06 | SĐT Firebase | LoginForm | handleVerifyPhoneLoginOtp | LoginFirebasePhone | toast + navigate |
-| UT-AUTH-07 | Quên MK | ForgotPasswordModal | 3 handlers | Forgot/Verify/Reset | toast + đóng modal |
-| UT-AUTH-08 | Đăng xuất | Header/Layout | useAuth.logout | Logout | clear + login |
+| UT-AUTH-06 | S�T Firebase | LoginForm | handleVerifyPhoneLoginOtp | LoginFirebasePhone | toast + navigate |
+| UT-AUTH-07 | Qu�n MK | ForgotPasswordModal | 3 handlers | Forgot/Verify/Reset | toast + d�ng modal |
+| UT-AUTH-08 | �ang xu?t | Header/Layout | useAuth.logout | Logout | clear + login |
 | UT-AUTH-09 | Auto refresh | HttpClient | interceptor | RefreshToken | retry / redirect |
 
 ---
 
 ## File neo Auth
 
-| Tầng | Path |
+| T?ng | Path |
 |------|------|
 | Page | `ShoppingFood.FE/src/pages/LoginPage.tsx` |
 | Form | `.../components/auth/LoginForm.tsx` |
@@ -380,22 +380,22 @@ logout()
 
 ---
 
-## Phần B — Workflow nghiệp vụ & Backend (chi tiết luồng)
-## 1. Luồng Tổng Quan (Workflow)
+## Ph?n B � Workflow nghi?p v? & Backend (chi ti?t lu?ng)
+## 1. Lu?ng T?ng Quan (Workflow)
 
-1. **Yêu cầu:** Người dùng mở `/login` → nhập UserName/Email + Password → nhấn Đăng nhập.
-2. **Gửi request:** Frontend (`useAuth.login` → `AuthService.login`) gọi `POST /api/User/Login`.
-3. **Xác thực mật khẩu:** `UserController.Login` tìm User, so sánh SHA256 hash, kiểm tra `Blocked` / `Inactive`.
-4. **TrustedDevice / Admin:** Nếu IP đã tin cậy (còn hạn) **hoặc** Role = Admin → cấp JWT + RefreshToken ngay (`message = "Login successful"`).
-5. **Require OTP:** Thiết bị mới → tạo **PreAuthToken** (10 phút) + `AvailableMethods` (`email`/`phone`) → `message = "RequireOtp"`.
-6. **Gửi OTP:** FE gọi `POST /api/User/SendLoginOtp` (method email hoặc phone) → lưu `OTP_RECORD`, gửi SMTP / Stringee.
-7. **Xác minh OTP:** FE gọi `POST /api/User/VerifyLoginOtp` → đánh dấu OTP đã dùng, tạo JWT + Refresh, **lưu TrustedDevice 30 ngày**.
-8. **Lưu session FE:** `StorageUtil.setToken` → `getProfile` → `AuthContext.login` → toast thành công.
-9. **Refresh (ngầm):** Access token hết hạn (~15 phút) → `HttpClient` 401 interceptor → `POST /api/User/RefreshToken` → cập nhật `sf_token`.
+1. **Y�u c?u:** Ngu?i d�ng m? `/login` ? nh?p UserName/Email + Password ? nh?n �ang nh?p.
+2. **G?i request:** Frontend (`useAuth.login` ? `AuthService.login`) g?i `POST /api/User/Login`.
+3. **X�c th?c m?t kh?u:** `UserController.Login` t�m User, so s�nh SHA256 hash, ki?m tra `Blocked` / `Inactive`.
+4. **TrustedDevice / Admin:** N?u IP d� tin c?y (c�n h?n) **ho?c** Role = Admin ? c?p JWT + RefreshToken ngay (`message = "Login successful"`).
+5. **Require OTP:** Thi?t b? m?i ? t?o **PreAuthToken** (10 ph�t) + `AvailableMethods` (`email`/`phone`) ? `message = "RequireOtp"`.
+6. **G?i OTP:** FE g?i `POST /api/User/SendLoginOtp` (method email ho?c phone) ? luu `OTP_RECORD`, g?i SMTP / Stringee.
+7. **X�c minh OTP:** FE g?i `POST /api/User/VerifyLoginOtp` ? d�nh d?u OTP d� d�ng, t?o JWT + Refresh, **luu TrustedDevice 30 ng�y**.
+8. **Luu session FE:** `StorageUtil.setToken` ? `getProfile` ? `AuthContext.login` ? toast th�nh c�ng.
+9. **Refresh (ng?m):** Access token h?t h?n (~15 ph�t) ? `HttpClient` 401 interceptor ? `POST /api/User/RefreshToken` ? c?p nh?t `sf_token`.
 
 ```mermaid
 sequenceDiagram
-    actor U as Người dùng
+    actor U as Ngu?i d�ng
     participant FE as LoginForm / useAuth
     participant API as UserController
     participant TH as TokenHelper
@@ -405,13 +405,13 @@ sequenceDiagram
     U->>FE: UserName + Password
     FE->>API: POST /api/User/Login
     API->>DB: Find User + Profile
-    API->>API: HashPassword so sánh
-    alt TrustedDevice hoặc Admin
+    API->>API: HashPassword so s�nh
+    alt TrustedDevice ho?c Admin
         API->>TH: GenerateToken + GenerateRefreshToken
-        API->>DB: Lưu RefreshToken (7 ngày)
+        API->>DB: Luu RefreshToken (7 ng�y)
         API-->>FE: LoginResponseDto
         FE->>FE: AuthContext + toast
-    else Thiết bị mới
+    else Thi?t b? m?i
         API->>TH: GeneratePreAuthToken
         API-->>FE: RequireOtp + PreAuthToken
         FE->>API: POST /api/User/SendLoginOtp
@@ -428,16 +428,16 @@ sequenceDiagram
 
 ---
 
-## Bước 1: Mở trang Đăng nhập (Frontend)
+## Bu?c 1: M? trang �ang nh?p (Frontend)
 
-**Thông tin:**
+**Th�ng tin:**
 - **URL (FE):** `/login`
 - **Page:** `ShoppingFood.FE/src/pages/LoginPage.tsx`
 - **Form:** `ShoppingFood.FE/src/components/auth/LoginForm.tsx`
 - **Hook:** `ShoppingFood.FE/src/hooks/useAuth.ts`
 - **Service:** `ShoppingFood.FE/src/services/AuthService.ts`
 
-**Gọi API từ AuthService:**
+**G?i API t? AuthService:**
 
 ```typescript
 async login(credentials: ILoginRequest): Promise<IApiResponse<any>> {
@@ -445,7 +445,7 @@ async login(credentials: ILoginRequest): Promise<IApiResponse<any>> {
 }
 ```
 
-**Xử lý response trong `useAuth.login`:**
+**X? l� response trong `useAuth.login`:**
 
 ```typescript
 if (response.message === "RequireOtp") {
@@ -455,21 +455,21 @@ if (response.message === "AccountLocked") {
   return { success: true, isLocked: true, requireOtp: true, data: response.data };
 }
 await fetchAndSetProfile(loginData);
-toast.success('Đăng nhập thành công!');
+toast.success('�ang nh?p th�nh c�ng!');
 ```
 
 ---
 
-## Bước 2: Xử lý Login mật khẩu (Backend — inline Controller)
+## Bu?c 2: X? l� Login m?t kh?u (Backend � inline Controller)
 
-**Thông tin:**
+**Th�ng tin:**
 - **URL:** `/api/User/Login`
 - **HTTP Method:** POST
 - **Auth:** Public (bypass trong `AuthenticationFilter`)
-- **Request DTO:** `src/ShoppingFood.Dto/User/Login.cs` — `{ userName, password }`
+- **Request DTO:** `src/ShoppingFood.Dto/User/Login.cs` � `{ userName, password }`
 
 **File:** `src/ShoppingFood.API/Controllers/UserController.cs`  
-**Method:** `Login` — Lines **86–180**
+**Method:** `Login` � Lines **86�180**
 
 ```csharp
 [HttpPost("Login")]
@@ -480,23 +480,23 @@ public async Task<ActionResult<ApiResponse>> Login([FromBody] Login request)
         .FirstOrDefaultAsync(u => u.UserName == request.UserName || u.Email == request.UserName);
 
     if (user == null)
-        return Unauthorized(ApiResponse.Failure(401, "Sai Tên đăng nhập / Email hoặc Mật khẩu."));
+        return Unauthorized(ApiResponse.Failure(401, "Sai T�n dang nh?p / Email ho?c M?t kh?u."));
 
     var passwordHash = HashPassword(request.Password);
     if (user.PasswordHash != passwordHash)
-        return Unauthorized(ApiResponse.Failure(401, "Sai Tên đăng nhập / Email hoặc Mật khẩu."));
+        return Unauthorized(ApiResponse.Failure(401, "Sai T�n dang nh?p / Email ho?c M?t kh?u."));
 
     if (user.Status == UserStatus.Blocked)
-        return Unauthorized(ApiResponse.Failure(403, "Tài khoản của bạn đã bị khóa bởi quản trị viên."));
+        return Unauthorized(ApiResponse.Failure(403, "T�i kho?n c?a b?n d� b? kh�a b?i qu?n tr? vi�n."));
 
     if (user.Status == UserStatus.Inactive)
     {
-        // PreAuthToken để mở khóa tài khoản (AccountLocked)
+        // PreAuthToken d? m? kh�a t�i kho?n (AccountLocked)
         var unlockPreAuthToken = TokenHelper.GeneratePreAuthToken(...);
         return Ok(ApiResponse.Success(new { PreAuthToken = unlockPreAuthToken, AvailableMethods = methods }, "AccountLocked"));
     }
 
-    // TrustedDevice theo IP hoặc Admin → JWT ngay
+    // TrustedDevice theo IP ho?c Admin ? JWT ngay
     var isTrusted = await _dbContext.TrustedDevices.AnyAsync(t =>
         t.UserAccountId == user.Id &&
         t.IpAddress == clientIp &&
@@ -512,13 +512,13 @@ public async Task<ActionResult<ApiResponse>> Login([FromBody] Login request)
         return Ok(ApiResponse.Success(loginResponse, "Login successful"));
     }
 
-    // Thiết bị mới → RequireOtp
+    // Thi?t b? m?i ? RequireOtp
     var preAuthToken = TokenHelper.GeneratePreAuthToken(user.UserName!, secretKey, issuer, audience);
     return Ok(ApiResponse.Success(responseDto, "RequireOtp"));
 }
 ```
 
-**Hash mật khẩu** (cùng thuật toán Register) — `UserController.HashPassword` Lines **432–438**:
+**Hash m?t kh?u** (c�ng thu?t to�n Register) � `UserController.HashPassword` Lines **432�438**:
 
 ```csharp
 private static string HashPassword(string password)
@@ -532,24 +532,24 @@ private static string HashPassword(string password)
 ```
 
 **Database:**
-| Bảng | Việc |
+| B?ng | Vi?c |
 |------|------|
-| `USER_ACCOUNT` | Tìm theo UserName/Email; cập nhật RefreshToken |
+| `USER_ACCOUNT` | T�m theo UserName/Email; c?p nh?t RefreshToken |
 | `USER_PROFILE` | Role, FullName, Avatar |
-| `TRUSTED_DEVICE` | Check IP còn hạn |
+| `TRUSTED_DEVICE` | Check IP c�n h?n |
 
 ---
 
-## Bước 3: TokenHelper — tạo JWT / PreAuth / Refresh
+## Bu?c 3: TokenHelper � t?o JWT / PreAuth / Refresh
 
 **File:** `src/ShoppingFood.Core/Security/TokenHelper.cs`
 
-| Method | Lines | Việc |
+| Method | Lines | Vi?c |
 |--------|-------|------|
-| `GenerateToken` | 46–64 | Access JWT HS256, default **15 phút**, claims `sub` + Name |
-| `GeneratePreAuthToken` | 66–69 | Gọi GenerateToken với **10 phút** |
-| `GenerateRefreshToken` | 71–77 | Random 32 bytes → Base64 |
-| `GetUsernameFromToken` | 14–44 | Đọc `sub` từ JWT (dùng cho PreAuth + Filter) |
+| `GenerateToken` | 46�64 | Access JWT HS256, default **15 ph�t**, claims `sub` + Name |
+| `GeneratePreAuthToken` | 66�69 | G?i GenerateToken v?i **10 ph�t** |
+| `GenerateRefreshToken` | 71�77 | Random 32 bytes ? Base64 |
+| `GetUsernameFromToken` | 14�44 | �?c `sub` t? JWT (d�ng cho PreAuth + Filter) |
 
 ```csharp
 public static string GenerateToken(string username, string secretKey, string issuer, string audience, int expiryMinutes = 15)
@@ -566,19 +566,19 @@ public static string GeneratePreAuthToken(...)
 
 Config: `JwtSettings:Secret` / `Issuer` / `Audience` trong `appsettings.json`.
 
-**Refresh cookie** — `AppendRefreshTokenCookie` (Lines 408–418): HttpOnly, Secure, SameSite=None, 7 ngày, tên cookie `refreshToken`.
+**Refresh cookie** � `AppendRefreshTokenCookie` (Lines 408�418): HttpOnly, Secure, SameSite=None, 7 ng�y, t�n cookie `refreshToken`.
 
 ---
 
-## Bước 4: Gửi OTP 2FA (SendLoginOtp)
+## Bu?c 4: G?i OTP 2FA (SendLoginOtp)
 
-**Thông tin:**
+**Th�ng tin:**
 - **URL:** `/api/User/SendLoginOtp`
 - **HTTP Method:** POST
 - **Auth:** Public
-- **Body:** `{ preAuthToken, method }` — `method` = `"email"` hoặc `"phone"`
+- **Body:** `{ preAuthToken, method }` � `method` = `"email"` ho?c `"phone"`
 
-**Controller** — Lines **182–194**:
+**Controller** � Lines **182�194**:
 
 ```csharp
 [HttpPost("SendLoginOtp")]
@@ -599,20 +599,20 @@ public async Task<ActionResult<ApiResponse>> SendLoginOtp([FromBody] SendLoginOt
 
 ```csharp
 username = TokenHelper.GetUsernameFromToken(request.PreAuthToken, _configuration);
-// Rate limit: tối đa 5 OTP / 10 phút cho cùng EmailOrPhone
-// Invalidate OTP cũ chưa dùng (IsUsed = true)
-// OTP 6 số, ExpiryTime = UtcNow + 10 phút
-// email → IEmailService.SendEmailOtpAsync
-// phone → IStringeeService.SendSmsOtpAsync
+// Rate limit: t?i da 5 OTP / 10 ph�t cho c�ng EmailOrPhone
+// Invalidate OTP cu chua d�ng (IsUsed = true)
+// OTP 6 s?, ExpiryTime = UtcNow + 10 ph�t
+// email ? IEmailService.SendEmailOtpAsync
+// phone ? IStringeeService.SendSmsOtpAsync
 ```
 
-**FE:** `useAuth.sendLoginOtp` → toast `'Mã OTP đã được gửi!'`
+**FE:** `useAuth.sendLoginOtp` ? toast `'M� OTP d� du?c g?i!'`
 
 ---
 
-## Bước 5: Xác minh OTP + TrustedDevice (VerifyLoginOtp)
+## Bu?c 5: X�c minh OTP + TrustedDevice (VerifyLoginOtp)
 
-**Thông tin:**
+**Th�ng tin:**
 - **URL:** `/api/User/VerifyLoginOtp`
 - **HTTP Method:** POST
 - **Body:** `{ preAuthToken, otpCode }`
@@ -620,8 +620,8 @@ username = TokenHelper.GetUsernameFromToken(request.PreAuthToken, _configuration
 **Handler:** `src/ShoppingFood.Application/Features/Users/Commands/VerifyLoginOtpHandler.cs`
 
 ```csharp
-// Parse PreAuthToken → username → load User + Profile
-// Tìm OtpRecord theo Email/Phone + OtpCode + !IsUsed
+// Parse PreAuthToken ? username ? load User + Profile
+// T�m OtpRecord theo Email/Phone + OtpCode + !IsUsed
 // Check ExpiryTime
 otpRecord.IsUsed = true;
 
@@ -630,22 +630,22 @@ var refreshToken = TokenHelper.GenerateRefreshToken();
 user.RefreshToken = refreshToken;
 user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
 
-// TrustedDevice theo IP — ExpiresAt = UtcNow + 30 days
+// TrustedDevice theo IP � ExpiresAt = UtcNow + 30 days
 _dbContext.TrustedDevices.Add(new TrustedDevice { ... });
 
 return ApiResponse.Success(loginResponse, "Verification successful");
 ```
 
-**FE:** `useAuth.verifyLoginOtp` → `fetchAndSetProfile` → toast `'Đăng nhập thành công!'`
+**FE:** `useAuth.verifyLoginOtp` ? `fetchAndSetProfile` ? toast `'�ang nh?p th�nh c�ng!'`
 
 ---
 
-## Bước 6: Lưu session Frontend (AuthContext + Storage)
+## Bu?c 6: Luu session Frontend (AuthContext + Storage)
 
 **Files:**
-- `ShoppingFood.FE/src/utils/storage.ts` — keys `sf_token`, `sf_user`
-- `ShoppingFood.FE/src/contexts/AuthContext.tsx` — restore on mount, `login` / `logout`
-- `ShoppingFood.FE/src/hooks/useAuth.ts` — `fetchAndSetProfile`
+- `ShoppingFood.FE/src/utils/storage.ts` � keys `sf_token`, `sf_user`
+- `ShoppingFood.FE/src/contexts/AuthContext.tsx` � restore on mount, `login` / `logout`
+- `ShoppingFood.FE/src/hooks/useAuth.ts` � `fetchAndSetProfile`
 
 ```typescript
 StorageUtil.setToken(loginData.token);
@@ -653,18 +653,18 @@ const profileRes = await authService.getProfile(); // GET /api/User/Profile
 ctxLogin(loginData.token, profileRes.data);
 ```
 
-`GET /api/User/Profile` **cần JWT** (không bypass) — gọi sau khi đã có access token.
+`GET /api/User/Profile` **c?n JWT** (kh�ng bypass) � g?i sau khi d� c� access token.
 
 ---
 
-## Bước 7: Refresh Token (HttpClient)
+## Bu?c 7: Refresh Token (HttpClient)
 
-**Thông tin:**
+**Th�ng tin:**
 - **URL:** `/api/User/RefreshToken`
 - **HTTP Method:** POST
-- **Auth:** Public (bypass); refresh lấy từ body hoặc cookie `refreshToken`
+- **Auth:** Public (bypass); refresh l?y t? body ho?c cookie `refreshToken`
 
-**FE:** `ShoppingFood.FE/src/services/base/HttpClient.ts` — response interceptor khi **401**:
+**FE:** `ShoppingFood.FE/src/services/base/HttpClient.ts` � response interceptor khi **401**:
 
 ```typescript
 const response = await authService.refreshToken(token);
@@ -675,77 +675,77 @@ if (!response.error && response.data) {
 }
 ```
 
-**BE:** `UserController.RefreshToken` Lines **294–314** → `RefreshTokenCommand` / Handler → JWT mới + cookie refresh.
+**BE:** `UserController.RefreshToken` Lines **294�314** ? `RefreshTokenCommand` / Handler ? JWT m?i + cookie refresh.
 
 ---
 
-## Phụ lục A: Đăng nhập Google
+## Ph? l?c A: �ang nh?p Google
 
-| Mục | Chi tiết |
+| M?c | Chi ti?t |
 |-----|----------|
-| FE | `LoginForm` + `@react-oauth/google` → `useAuth.loginGoogle(credential)` |
+| FE | `LoginForm` + `@react-oauth/google` ? `useAuth.loginGoogle(credential)` |
 | API | `POST /api/User/LoginGoogle` |
 | Handler | `src/ShoppingFood.Application/Features/Users/Commands/LoginGoogleHandler.cs` |
-| Logic | `GoogleJsonWebSignature.ValidateAsync` với `GoogleAuth:ClientId`; tìm/ tạo user theo email; cấp JWT |
-| Toast | `'Đăng nhập Google thành công!'` |
+| Logic | `GoogleJsonWebSignature.ValidateAsync` v?i `GoogleAuth:ClientId`; t�m/ t?o user theo email; c?p JWT |
+| Toast | `'�ang nh?p Google th�nh c�ng!'` |
 
 ```csharp
-// LoginGoogleHandler — validate credential, tìm User theo payload.Email
+// LoginGoogleHandler � validate credential, t�m User theo payload.Email
 payload = await GoogleJsonWebSignature.ValidateAsync(request.Credential, settings);
 ```
 
 ---
 
-## Phụ lục B: Đăng nhập Microsoft
+## Ph? l?c B: �ang nh?p Microsoft
 
-| Mục | Chi tiết |
+| M?c | Chi ti?t |
 |-----|----------|
-| FE | Popup OAuth → `main.tsx` bắt `?code=` → `postMessage` → `useAuth.loginMicrosoft(code, redirectUri)` |
+| FE | Popup OAuth ? `main.tsx` b?t `?code=` ? `postMessage` ? `useAuth.loginMicrosoft(code, redirectUri)` |
 | API | `POST /api/User/LoginMicrosoft` |
 | Handler | `LoginMicrosoftHandler.cs` |
 | Config FE | `ShoppingFood.FE/src/config/msalConfig.ts` + client id trong `LoginForm` |
-| Toast | `'Đăng nhập Microsoft thành công'` |
+| Toast | `'�ang nh?p Microsoft th�nh c�ng'` |
 
 ---
 
-## Phụ lục C: Đăng nhập Firebase Phone
+## Ph? l?c C: �ang nh?p Firebase Phone
 
-| Mục | Chi tiết |
+| M?c | Chi ti?t |
 |-----|----------|
-| FE | Firebase `RecaptchaVerifier` + `signInWithPhoneNumber` → lấy `idToken` → `useAuth.loginFirebasePhone` |
+| FE | Firebase `RecaptchaVerifier` + `signInWithPhoneNumber` ? l?y `idToken` ? `useAuth.loginFirebasePhone` |
 | API | `POST /api/User/LoginFirebasePhone` |
-| Handler | `LoginFirebasePhoneHandler.cs` — `FirebaseAuth.DefaultInstance.VerifyIdTokenAsync` |
-| Toast | `'Đăng nhập bằng số điện thoại thành công!'` |
+| Handler | `LoginFirebasePhoneHandler.cs` � `FirebaseAuth.DefaultInstance.VerifyIdTokenAsync` |
+| Toast | `'�ang nh?p b?ng s? di?n tho?i th�nh c�ng!'` |
 
-**Biến thể Stringee (cũ):** `POST /api/User/SendOtp` + `POST /api/User/LoginByPhone` (`LoginByPhoneHandler.cs`).
+**Bi?n th? Stringee (cu):** `POST /api/User/SendOtp` + `POST /api/User/LoginByPhone` (`LoginByPhoneHandler.cs`).
 
 ---
 
-## Sơ đồ file đi qua (Call chain)
+## So d? file di qua (Call chain)
 
 ```text
 LoginPage.tsx
-  ↓
+  ?
 LoginForm.tsx
-  ↓
+  ?
 useAuth.ts  (login / sendLoginOtp / verifyLoginOtp / loginGoogle / ...)
-  ↓
+  ?
 AuthService.ts + HttpClient.ts
-  ↓
+  ?
 AuthenticationFilter.cs  (bypass /api/User/Login*)
-  ↓
-UserController.Login  (inline)  OR  SendLoginOtp / VerifyLoginOtp → MediatR
-  ↓
+  ?
+UserController.Login  (inline)  OR  SendLoginOtp / VerifyLoginOtp ? MediatR
+  ?
 TokenHelper.cs
-  ↓
+  ?
 SendLoginOtpHandler / VerifyLoginOtpHandler
-  ↓
+  ?
 USER_ACCOUNT + USER_PROFILE + OTP_RECORD + TRUSTED_DEVICE
-  ↓
+  ?
 AuthContext.tsx + storage.ts (sf_token / sf_user)
 ```
 
-| Vai trò | Đường dẫn đầy đủ |
+| Vai tr� | �u?ng d?n d?y d? |
 |---------|------------------|
 | UI | `ShoppingFood.FE/src/components/auth/LoginForm.tsx` |
 | Hook | `ShoppingFood.FE/src/hooks/useAuth.ts` |
@@ -759,52 +759,52 @@ AuthContext.tsx + storage.ts (sf_token / sf_user)
 
 ---
 
-## Các thông báo (Toast / Message)
+## C�c th�ng b�o (Toast / Message)
 
-| Message | Nơi | Trigger |
+| Message | Noi | Trigger |
 |---------|-----|---------|
-| `Đăng nhập thành công!` | `useAuth` | Login OK / VerifyLoginOtp OK |
-| `RequireOtp` (message API) | FE branch | Thiết bị mới |
+| `�ang nh?p th�nh c�ng!` | `useAuth` | Login OK / VerifyLoginOtp OK |
+| `RequireOtp` (message API) | FE branch | Thi?t b? m?i |
 | `AccountLocked` (message API) | FE branch | Status Inactive |
-| `Mã OTP đã được gửi!` | `sendLoginOtp` | SendLoginOtp OK |
-| `Sai Tên đăng nhập / Email hoặc Mật khẩu.` | toast error | 401 Login |
-| `Tài khoản của bạn đã bị khóa bởi quản trị viên.` | toast error | Status Blocked |
-| `Quá nhiều yêu cầu OTP...` | toast error | Rate limit 429 |
+| `M� OTP d� du?c g?i!` | `sendLoginOtp` | SendLoginOtp OK |
+| `Sai T�n dang nh?p / Email ho?c M?t kh?u.` | toast error | 401 Login |
+| `T�i kho?n c?a b?n d� b? kh�a b?i qu?n tr? vi�n.` | toast error | Status Blocked |
+| `Qu� nhi?u y�u c?u OTP...` | toast error | Rate limit 429 |
 | `Invalid OTP.` / `OTP has expired.` | toast error | Verify fail |
-| `Đăng nhập Google / Microsoft / SĐT thành công` | useAuth | OAuth paths |
-| `Vui lòng đăng nhập lại` | HttpClient translate | 401 sau khi refresh fail |
+| `�ang nh?p Google / Microsoft / S�T th�nh c�ng` | useAuth | OAuth paths |
+| `Vui l�ng dang nh?p l?i` | HttpClient translate | 401 sau khi refresh fail |
 
 ---
 
-## Các cơ chế bảo mật quan trọng
+## C�c co ch? b?o m?t quan tr?ng
 
-1. **Password hashing:** SHA256 → Base64 (không lưu plain text).
-2. **TrustedDevice:** IP + ExpiresAt 30 ngày; Admin bỏ qua OTP.
-3. **PreAuthToken:** JWT ngắn (10 phút) chỉ để gửi/xác minh OTP — chưa phải session đầy đủ.
-4. **OTP one-time + rate limit:** Invalidate OTP cũ; tối đa 5 OTP / 10 phút; expiry OTP login **10 phút**.
-5. **Refresh HttpOnly cookie** + refresh lưu DB 7 ngày.
-6. **Access token ngắn** (~15 phút) + FE auto-refresh.
-7. **Bypass list có kiểm soát** cho Login/OTP/OAuth trong `AuthenticationFilter`.
-8. **⚠️** `GetUsernameFromToken` đọc claim không full ValidateToken signature trong một số path — dựa vào cấu trúc JWT.
-
----
-
-## Checklist tự test
-
-- [ ] Login đúng mật khẩu + IP lần đầu → `RequireOtp`
-- [ ] SendLoginOtp email/phone → nhận OTP
-- [ ] VerifyLoginOtp đúng → vào app + có `sf_token`
-- [ ] Login lại cùng IP trong 30 ngày → không OTP
-- [ ] Sai mật khẩu → 401
-- [ ] User Blocked → 403
-- [ ] Google / Microsoft / Firebase phone login thành công
-- [ ] Đợi access token hết hạn → API tự refresh (không đá về login ngay)
-- [ ] Logout → clear cookie/storage
+1. **Password hashing:** SHA256 ? Base64 (kh�ng luu plain text).
+2. **TrustedDevice:** IP + ExpiresAt 30 ng�y; Admin b? qua OTP.
+3. **PreAuthToken:** JWT ng?n (10 ph�t) ch? d? g?i/x�c minh OTP � chua ph?i session d?y d?.
+4. **OTP one-time + rate limit:** Invalidate OTP cu; t?i da 5 OTP / 10 ph�t; expiry OTP login **10 ph�t**.
+5. **Refresh HttpOnly cookie** + refresh luu DB 7 ng�y.
+6. **Access token ng?n** (~15 ph�t) + FE auto-refresh.
+7. **Bypass list c� ki?m so�t** cho Login/OTP/OAuth trong `AuthenticationFilter`.
+8. **??** `GetUsernameFromToken` d?c claim kh�ng full ValidateToken signature trong m?t s? path � d?a v�o c?u tr�c JWT.
 
 ---
 
-## Tóm tắt
+## Checklist t? test
 
-Login Shopping Food = **password inline trong `UserController`** + **TrustedDevice theo IP** + **OTP 2FA qua MediatR**; session FE lưu JWT localStorage; refresh qua cookie/API. OAuth (Google/MS/Firebase) là đường song song cùng cấp `LoginResponseDto`.
+- [ ] Login d�ng m?t kh?u + IP l?n d?u ? `RequireOtp`
+- [ ] SendLoginOtp email/phone ? nh?n OTP
+- [ ] VerifyLoginOtp d�ng ? v�o app + c� `sf_token`
+- [ ] Login l?i c�ng IP trong 30 ng�y ? kh�ng OTP
+- [ ] Sai m?t kh?u ? 401
+- [ ] User Blocked ? 403
+- [ ] Google / Microsoft / Firebase phone login th�nh c�ng
+- [ ] �?i access token h?t h?n ? API t? refresh (kh�ng d� v? login ngay)
+- [ ] Logout ? clear cookie/storage
 
-> Liên kết: [ForgotPassword_Workflow.md](./ForgotPassword_Workflow.md) · [Register_Workflow.md](./Register_Workflow.md) · [Part 5 Auth](../ONBOARDING_PART5_AUTH_DI_ALERTS.md) · [INDEX](../ONBOARDING_INDEX.md)
+---
+
+## T�m t?t
+
+Login UniEats = **password inline trong `UserController`** + **TrustedDevice theo IP** + **OTP 2FA qua MediatR**; session FE luu JWT localStorage; refresh qua cookie/API. OAuth (Google/MS/Firebase) l� du?ng song song c�ng c?p `LoginResponseDto`.
+
+> Li�n k?t: [ForgotPassword_Workflow.md](./ForgotPassword_Workflow.md) � [Register_Workflow.md](./Register_Workflow.md) � [Part 5 Auth](../ONBOARDING_PART5_AUTH_DI_ALERTS.md) � [INDEX](../ONBOARDING_INDEX.md)

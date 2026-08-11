@@ -1,5 +1,5 @@
 # Đặc tả Yêu cầu Nghiệp vụ (Requirements) - Phân hệ Shipper & Logistics
-**Dự án:** Shopping Food (Nền tảng Marketplace đặt & giao đồ ăn trực tuyến)  
+**Dự án:** UniEats (Nền tảng Marketplace đặt & giao đồ ăn trực tuyến)  
 **Tác giả:** BA & AI Agent Pair-Programming System  
 
 ---
@@ -7,7 +7,7 @@
 ## 1. Phạm vi Dự án (Project Scope)
 
 ### 1.1. Trong Phạm vi (In-Scope)
-Hệ thống **Shopping Food** được xây dựng là một Marketplace B2C kết nối Khách hàng, Cửa hàng (Seller) và Tài xế (Shipper) dưới sự điều phối của Điều phối viên (Coordinator) và Admin. Các phân hệ nghiệp vụ chính bao gồm:
+Hệ thống **UniEats** được xây dựng là một Marketplace B2C kết nối Khách hàng, Cửa hàng (Seller) và Tài xế (Shipper) dưới sự điều phối của Điều phối viên (Coordinator) và Admin. Các phân hệ nghiệp vụ chính bao gồm:
 *   **Authentication & Profile:** Quản lý đăng ký, đăng nhập (hỗ trợ Google/Microsoft OAuth, OTP), xác thực đa phân hệ cho Khách hàng, Seller, Shipper, Coordinator, và Admin.
 *   **Product & Menu Management:** Quản lý danh mục thực đơn, món ăn, kích cỡ (Size), topping đi kèm.
 *   **Order & Cart Management:** Giỏ hàng linh hoạt, đặt hàng online, đặt hàng vãng lai (Guest Checkout) và theo dõi trạng thái đơn hàng thời gian thực qua WebSockets (SignalR).

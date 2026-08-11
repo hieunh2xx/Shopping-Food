@@ -19,6 +19,7 @@ import {
   AdminPermissionsPage,
   SellerProductsPage,
   SellerOrdersPage,
+  SellerShipperCancelsPage,
   SellerSettingsPage,
   SellerCategoriesPage,
   SellerToppingsPage,
@@ -33,6 +34,7 @@ import {
   AdminApprovalsPage,
   AdminDiscountsPage,
   AdminLoyaltyConfigPage,
+  AdminMemberRanksPage,
   AdminFaqPage,
   AdminChatPage,
   AdminFinancePage,
@@ -78,7 +80,8 @@ import {
   AdminSystemLogsPage,
   AdminOrderComplaintsPage,
   SellerChatPage,
-  SellerMallApplicationPage
+  SellerMallApplicationPage,
+  CustomerMessagesPage
 } from '../pages';
 
 /**
@@ -116,6 +119,11 @@ export function AppRoutes() {
           </PrivateRoute>
         } />
         <Route path={ROUTES.HELP_CENTER} element={<HelpCenterPage />} />
+        <Route path={ROUTES.MESSAGES} element={
+          <PrivateRoute allowedRoles={['Customer']}>
+            <CustomerMessagesPage />
+          </PrivateRoute>
+        } />
         <Route path={ROUTES.REPORT_INCIDENT} element={<PrivateRoute><UserReportIncidentPage /></PrivateRoute>} />
         
         {/* Protected Client Routes inside UserLayout */}
@@ -150,6 +158,7 @@ export function AppRoutes() {
         <Route index element={<SellerDashboardPage />} />
         <Route path="products" element={<SellerProductsPage />} />
         <Route path="orders" element={<SellerOrdersPage />} />
+        <Route path="shipper-cancels" element={<SellerShipperCancelsPage />} />
         <Route path="settings" element={<SellerSettingsPage />} />
         <Route path="categories" element={<SellerCategoriesPage />} />
         <Route path="toppings" element={<SellerToppingsPage />} />
@@ -182,6 +191,7 @@ export function AppRoutes() {
         <Route path="approvals" element={<AdminApprovalsPage />} />
         <Route path="discounts" element={<AdminDiscountsPage />} />
         <Route path="loyalty" element={<AdminLoyaltyConfigPage />} />
+        <Route path="member-ranks" element={<AdminMemberRanksPage />} />
         <Route path="dispatch" element={<DispatchBoardPage />} />
         <Route path="shippers" element={<MonitorShippersPage />} />
         <Route path="dispatch-history" element={<DispatchHistoryPage />} />

@@ -7,6 +7,26 @@ import type { IProductDto } from '../../../interfaces';
 
 vi.mock('../../../hooks', () => ({
   useCart: vi.fn(),
+  useUserLocation: vi.fn(() => ({
+    address: 'Chưa cấp quyền',
+    fullAddress: '',
+    latitude: null,
+    longitude: null,
+    hasGps: false,
+    isLoading: false,
+  })),
+}));
+
+vi.mock('../../../contexts/UserLocationContext', () => ({
+  useUserLocation: vi.fn(() => ({
+    address: 'Chưa cấp quyền',
+    fullAddress: '',
+    latitude: null,
+    longitude: null,
+    hasGps: false,
+    isLoading: false,
+  })),
+  UserLocationProvider: ({ children }: any) => children,
 }));
 
 vi.mock('react-router-dom', () => ({

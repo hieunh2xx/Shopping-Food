@@ -10,11 +10,12 @@ import {
   Loader2
 } from 'lucide-react';
 import { shipperService } from '../../services';
-import type { IDailyIncomeReportDto } from '../../interfaces/IShipper';
+import type { IDailyIncomeReportDto, IShipperCompletedOrderDto } from '../../interfaces/IShipper';
 
 export function ShipperHistoryPage() {
   const [loading, setLoading] = useState(true);
   const [dailyReports, setDailyReports] = useState<IDailyIncomeReportDto[]>([]);
+  const [orders, setOrders] = useState<IShipperCompletedOrderDto[]>([]);
   const [totalIncome, setTotalIncome] = useState(0);
   const [totalOrders, setTotalOrders] = useState(0);
 
@@ -47,6 +48,7 @@ export function ShipperHistoryPage() {
       const res = await shipperService.getIncomeReport(startDate, endDate);
       if (res.data) {
         setDailyReports(res.data.dailyReports || []);
+        setOrders(res.data.orders || []);
         setTotalIncome(res.data.totalIncome);
         setTotalOrders(res.data.completedOrdersCount);
       }
@@ -154,8 +156,65 @@ export function ShipperHistoryPage() {
         </div>
       </div>
 
+      {/* Per-order list */}
+      <div className="space-y-3">
+        <h2 className="text-lg font-bold text-gray-900">Chi tiết từng đơn</h2>
+        {orders.length === 0 ? (
+          <div className="bg-white rounded-2xl p-8 text-center border border-gray-100 text-gray-400 text-sm">
+            Chưa có đơn trong khoảng thời gian này
+          </div>
+        ) : (
+          orders.map(order => (
+            <div key={order.orderId} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="font-bold text-gray-900">#{order.orderId.slice(0, 8).toUpperCase()}</p>
+                  <p className="text-xs text-gray-500">{order.contactName} · {order.deliveryAddress}</p>
+                </div>
+                <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                  order.status === 'Delivered' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                }`}>
+                  {order.status === 'Delivered' ? 'Hoàn thành' : 'Đã hủy'}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                <div>
+                  <p className="text-xs text-gray-400 uppercase font-bold">Tổng đơn</p>
+                  <p className="font-bold text-gray-900">{formatCurrency(order.totalAmount)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 uppercase font-bold">Tiền món</p>
+                  <p className="font-medium text-gray-800">{formatCurrency(order.itemsSubtotal)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 uppercase font-bold">Phí ship</p>
+                  <p className="font-medium text-gray-800">{formatCurrency(order.shippingFee)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 uppercase font-bold">Thu nhập</p>
+                  <p className="font-bold text-emerald-600">{formatCurrency(order.totalIncome)}</p>
+                </div>
+              </div>
+              {order.status === 'Delivered' && (
+                <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-100 text-xs space-y-1">
+                  <div className="flex justify-between"><span>Phí cơ bản</span><span className="font-bold">{formatCurrency(order.baseFee)}</span></div>
+                  <div className="flex justify-between"><span>Phí km</span><span className="font-bold">{formatCurrency(order.distanceFee)}</span></div>
+                  {(order.peakBonus || 0) > 0 && (
+                    <div className="flex justify-between"><span>Thưởng</span><span className="font-bold">{formatCurrency(order.peakBonus)}</span></div>
+                  )}
+                  <div className="flex justify-between text-gray-500 pt-1 border-t border-emerald-200/60">
+                    <span>Thanh toán</span><span>{order.paymentMethod}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+
       {/* Daily List */}
       <div className="space-y-4">
+        <h2 className="text-lg font-bold text-gray-900">Tổng hợp theo ngày</h2>
         {filteredReports.map((day, idx) => (
           <div key={idx} className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between gap-6 hover:shadow-md transition-shadow">
             

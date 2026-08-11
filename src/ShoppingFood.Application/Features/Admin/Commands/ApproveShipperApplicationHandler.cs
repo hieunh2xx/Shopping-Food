@@ -240,7 +240,7 @@ namespace ShoppingFood.Application.Features.Admin.Commands
 
                 string body = action switch
                 {
-                    "Approve" => $"<p>Xin chào <strong>{application.UserProfile.FullName}</strong>,</p><p>Hồ sơ đăng ký đối tác tài xế của bạn đã được phê duyệt thành công trên hệ thống ShoppingFood.</p><p>Bạn đã có thể bắt đầu hoạt động và nhận đơn giao hành. Chúc bạn có những hành trình thuận lợi!</p>",
+                    "Approve" => $"<p>Xin chào <strong>{application.UserProfile.FullName}</strong>,</p><p>Hồ sơ đăng ký đối tác tài xế của bạn đã được phê duyệt thành công trên hệ thống ShoppingFood.</p><p>Bạn đã có thể bắt đầu hoạt động và nhận đơn giao hàng. Chúc bạn có những hành trình thuận lợi!</p>",
                     "Reject" => $"<p>Xin chào <strong>{application.UserProfile.FullName}</strong>,</p><p>Đơn đăng ký đối tác tài xế của bạn chưa được phê duyệt.</p><p><strong>Lý do từ chối:</strong> {application.RejectionReason}</p>",
                     "NeedsInfo" => $"<p>Xin chào <strong>{application.UserProfile.FullName}</strong>,</p><p>Đơn đăng ký đối tác tài xế của bạn cần bổ sung thêm thông tin.</p><p><strong>Yêu cầu từ Admin:</strong> {application.RejectionReason}</p><p>Vui lòng cập nhật lại thông tin chính xác và gửi lại yêu cầu duyệt trên hệ thống.</p>",
                     _ => ""

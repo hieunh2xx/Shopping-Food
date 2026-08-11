@@ -11,17 +11,12 @@ namespace ShoppingFood.Domain.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<DateTime>(
-                name: "ApprovedAt",
-                table: "WITHDRAWAL_REQUEST",
-                type: "datetime2",
-                nullable: true);
-
-            migrationBuilder.AddColumn<string>(
-                name: "TransferProofImageUrl",
-                table: "WITHDRAWAL_REQUEST",
-                type: "nvarchar(max)",
-                nullable: true);
+            migrationBuilder.Sql("""
+                IF COL_LENGTH('dbo.WITHDRAWAL_REQUEST', 'ApprovedAt') IS NULL
+                    ALTER TABLE dbo.WITHDRAWAL_REQUEST ADD ApprovedAt datetime2 NULL;
+                IF COL_LENGTH('dbo.WITHDRAWAL_REQUEST', 'TransferProofImageUrl') IS NULL
+                    ALTER TABLE dbo.WITHDRAWAL_REQUEST ADD TransferProofImageUrl nvarchar(max) NULL;
+                """);
         }
 
         /// <inheritdoc />

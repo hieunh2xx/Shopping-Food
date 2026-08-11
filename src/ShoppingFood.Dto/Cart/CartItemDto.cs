@@ -20,6 +20,12 @@ namespace ShoppingFood.Dto.Cart
         public string? SelectedSize { get; set; }
         public string? SelectedToppings { get; set; }
         public decimal TotalPrice => Quantity * PriceAtAdded;
+        public bool IsGift { get; set; }
+        public Guid? BuyXGetYPromotionId { get; set; }
+        public Guid? ParentCartItemId { get; set; }
+        public string? PromotionLabel { get; set; }
+        public int? PromoBuyQuantity { get; set; }
+        public int? PromoGiftQuantity { get; set; }
         public List<ShoppingFood.Dto.Product.ProductSizeDto> Sizes { get; set; } = new List<ShoppingFood.Dto.Product.ProductSizeDto>();
         public List<ShoppingFood.Dto.Product.ProductToppingDto> Toppings { get; set; } = new List<ShoppingFood.Dto.Product.ProductToppingDto>();
     }

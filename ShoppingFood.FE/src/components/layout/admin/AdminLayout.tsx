@@ -11,6 +11,7 @@ import {
   ShieldAlert,
   Tag,
   Award,
+  Crown,
   Zap,
   BellRing,
   User,
@@ -65,6 +66,7 @@ export function AdminLayout() {
     { name: 'Khuyến mãi hệ thống', path: '/admin/discounts', icon: Tag, group: 'Marketing & Ưu đãi' },
     { name: 'Flash Sale', path: ROUTES.ADMIN_FLASH_SALES, icon: Zap, group: 'Marketing & Ưu đãi' },
     { name: 'Cấu hình Điểm', path: '/admin/loyalty', icon: Award, group: 'Marketing & Ưu đãi' },
+    { name: 'Hạng thành viên', path: '/admin/member-ranks', icon: Crown, group: 'Marketing & Ưu đãi' },
 
     // Tài chính & Thanh toán
     { name: 'Tài chính', path: ROUTES.ADMIN_FINANCE, icon: DollarSign, group: 'Tài chính & Thanh toán' },

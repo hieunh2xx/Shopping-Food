@@ -3,14 +3,16 @@ import { Search, SlidersHorizontal, MapPin, X, Star, Navigation, ArrowLeft } fro
 import { Link, useSearchParams } from 'react-router-dom';
 import { ROUTES } from '../routes/routeConfig';
 import { useProducts } from '../hooks';
-import { adminService } from '../services/AdminService';
+import { supportService } from '../services/SupportService';
 import { ProductList } from '../components/product/ProductList';
 import { Button, Pagination } from '../components/common';
 import type { ISearchProductQuery } from '../interfaces';
 import toast from 'react-hot-toast';
 
+const DEFAULT_PAGE_SIZE = 8;
+
 export function ProductsPage() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const initialCategory = searchParams.get('globalCategoryId') || 'all';
 
   const { products, total, isLoading, searchProducts } = useProducts();
@@ -20,7 +22,7 @@ export function ProductsPage() {
     globalCategoryId: initialCategory === 'all' ? undefined : initialCategory,
     filter: searchParams.get('search') || undefined,
     skip: 0,
-    take: 20,
+    take: DEFAULT_PAGE_SIZE,
   });
   const [keyword, setKeyword] = useState(searchParams.get('search') || '');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -40,19 +42,23 @@ export function ProductsPage() {
 
   useEffect(() => {
     const search = searchParams.get('search');
+    const cat = searchParams.get('globalCategoryId') || 'all';
+    setActiveCategory(cat);
     if (search !== null) {
       setKeyword(search);
-      setSearchQuery(prev => ({
-        ...prev,
-        filter: search,
-        skip: 0
-      }));
     }
+    setSearchQuery((prev) => ({
+      ...prev,
+      filter: search || undefined,
+      globalCategoryId: cat === 'all' ? undefined : cat,
+      skip: 0,
+    }));
   }, [searchParams]);
 
   const fetchGlobalCategories = async () => {
     try {
-      const res = await adminService.getGlobalMenuCategories(false); // only active
+      // Public system endpoint — works for guest + Customer (Admin path can 403)
+      const res = await supportService.getGlobalMenuCategories();
       if (!res.error && res.data) {
         setGlobalCategories(res.data);
       }
@@ -67,15 +73,23 @@ export function ProductsPage() {
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const next = new URLSearchParams(searchParams);
+    if (keyword.trim()) next.set('search', keyword.trim());
+    else next.delete('search');
+    setSearchParams(next);
     setSearchQuery((prev) => ({
       ...prev,
-      filter: keyword,
+      filter: keyword.trim() || undefined,
       skip: 0,
     }));
   };
 
   const handleCategoryChange = (categoryId: string) => {
     setActiveCategory(categoryId);
+    const next = new URLSearchParams(searchParams);
+    if (categoryId === 'all') next.delete('globalCategoryId');
+    else next.set('globalCategoryId', categoryId);
+    setSearchParams(next);
     setSearchQuery((prev) => ({
       ...prev,
       globalCategoryId: categoryId === 'all' ? undefined : categoryId,
@@ -228,6 +242,19 @@ export function ProductsPage() {
       </div>
 
       {/* Results */}
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <p className="text-sm text-gray-500">
+          {isLoading ? 'Đang tải…' : (
+            <>
+              <span className="font-semibold text-gray-800">{total.toLocaleString('vi-VN')}</span> món
+              {activeCategory !== 'all' && globalCategories.find((c) => c.id === activeCategory)?.name
+                ? ` · ${globalCategories.find((c) => c.id === activeCategory)?.name}`
+                : ''}
+            </>
+          )}
+        </p>
+      </div>
+
       <ProductList 
         products={products} 
         isLoading={isLoading} 
@@ -235,17 +262,25 @@ export function ProductsPage() {
       />
 
       {/* Pagination */}
-      {!isLoading && (
-        <div className="mt-8 flex justify-center">
+      {!isLoading && total > 0 && (
+        <div className="mt-8 flex flex-col items-center gap-3">
+          <p className="text-xs text-gray-400">
+            Trang {Math.floor((searchQuery.skip || 0) / (searchQuery.take || DEFAULT_PAGE_SIZE)) + 1}
+            {' / '}
+            {Math.max(1, Math.ceil(total / (searchQuery.take || DEFAULT_PAGE_SIZE)))}
+          </p>
           <Pagination 
-            currentPage={Math.floor((searchQuery.skip || 0) / (searchQuery.take || 20)) + 1}
-            totalPages={Math.ceil(total / (searchQuery.take || 20))}
-            onPageChange={(page) => setSearchQuery(prev => ({
-              ...prev,
-              skip: (page - 1) * (prev.take || 20)
-            }))}
-            pageSize={searchQuery.take || 20}
-            pageSizeOptions={[10, 20, 50, 100]}
+            currentPage={Math.floor((searchQuery.skip || 0) / (searchQuery.take || DEFAULT_PAGE_SIZE)) + 1}
+            totalPages={Math.max(1, Math.ceil(total / (searchQuery.take || DEFAULT_PAGE_SIZE)))}
+            onPageChange={(page) => {
+              setSearchQuery(prev => ({
+                ...prev,
+                skip: (page - 1) * (prev.take || DEFAULT_PAGE_SIZE)
+              }));
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            pageSize={searchQuery.take || DEFAULT_PAGE_SIZE}
+            pageSizeOptions={[8, 12, 20, 50]}
             onPageSizeChange={(size) => setSearchQuery(prev => ({
               ...prev,
               take: size,

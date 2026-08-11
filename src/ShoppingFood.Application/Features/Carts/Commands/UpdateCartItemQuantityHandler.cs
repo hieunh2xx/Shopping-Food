@@ -52,14 +52,49 @@ namespace ShoppingFood.Application.Features.Carts.Commands
 
                 if(request.Quantity <= 0)
                 {
+                    if (cartItem.BuyXGetYPromotionId.HasValue && !cartItem.IsGift)
+                    {
+                        var gifts = await _cartItemRepository.GetAsync(
+                            predicate: i => i.ParentCartItemId == cartItem.Id,
+                            disableTracking: false);
+                        foreach (var g in gifts) _cartItemRepository.Delete(g);
+                    }
                     _cartItemRepository.Delete(cartItem);
+                }
+                else if (cartItem.BuyXGetYPromotionId.HasValue && !cartItem.IsGift)
+                {
+                    // Quantity trên parent = số món mua (buyQuantity * sets). Đồng bộ món tặng.
+                    var promos = await _cartItemRepository.GetAsync(
+                        predicate: i => i.Id == cartItem.Id,
+                        include: q => q.Include(i => i.BuyXGetYPromotion),
+                        disableTracking: false);
+                    var parent = promos.FirstOrDefault() ?? cartItem;
+                    var buyPerSet = parent.BuyXGetYPromotion?.BuyQuantity ?? 1;
+                    var giftPerSet = parent.BuyXGetYPromotion?.GiftQuantity ?? 0;
+                    var sets = Math.Max(1, (int)Math.Ceiling(request.Quantity / (double)Math.Max(1, buyPerSet)));
+                    parent.Quantity = buyPerSet * sets;
+                    _cartItemRepository.Update(parent);
+
+                    var gifts = await _cartItemRepository.GetAsync(
+                        predicate: i => i.ParentCartItemId == parent.Id && i.IsGift,
+                        disableTracking: false);
+                    var giftItem = gifts.FirstOrDefault();
+                    if (giftItem != null)
+                    {
+                        giftItem.Quantity = giftPerSet * sets;
+                        giftItem.PriceAtAdded = 0;
+                        _cartItemRepository.Update(giftItem);
+                    }
+                }
+                else if (cartItem.IsGift)
+                {
+                    // Không cho sửa riêng món tặng — giữ nguyên
                 }
                 else
                 {
                     var fspPrice = await _flashSalePricingService.GetActiveFlashSalePriceAsync(request.ProductId);
                     cartItem.Quantity = request.Quantity;
-                    cartItem.PriceAtAdded = fspPrice ?? cartItem.Product?.Price ?? cartItem.PriceAtAdded; // keep if product is null, but we can query it
-                    
+                    cartItem.PriceAtAdded = fspPrice ?? cartItem.Product?.Price ?? cartItem.PriceAtAdded;
                     _cartItemRepository.Update(cartItem);
                 }
 
@@ -80,17 +115,20 @@ namespace ShoppingFood.Application.Features.Carts.Commands
         {
             var existingCartItem = await _cartItemRepository.GetAsync(
                 predicate: i => i.CartId == cartId && i.ProductId == productId,
-                include: q => q.Include(i => i.Product),
+                include: q => q.Include(i => i.Product).Include(i => i.BuyXGetYPromotion),
                 disableTracking: false
             );
-            return existingCartItem.FirstOrDefault();
+            // Ưu tiên dòng món mua (không phải gift) khi cùng productId
+            return existingCartItem.FirstOrDefault(i => !i.IsGift) ?? existingCartItem.FirstOrDefault();
         }
 
         private async Task<CartDto?> GetCartDtoAsync(Guid cartId)
         {
             var updatedCarts = await _cartRepository.GetAsync(
                 predicate: c => c.Id == cartId,
-                include: q => q.Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Images),
+                include: q => q
+                    .Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Images)
+                    .Include(c => c.Items).ThenInclude(i => i.BuyXGetYPromotion),
                 disableTracking: true
             );
             var updatedCart = updatedCarts.FirstOrDefault();

@@ -13,6 +13,8 @@ namespace ShoppingFood.Domain.Models
         public decimal TotalPrice { get; set; }
         public string? SelectedSize { get; set; }
         public string? SelectedToppings { get; set; }
+        public bool IsGift { get; set; }
+        public Guid? BuyXGetYPromotionId { get; set; }
 
         // Navigation properties
         public virtual Order Order { get; set; } = null!;

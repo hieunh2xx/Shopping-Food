@@ -1,8 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Button, Loading, Input, Card } from '../../components/common';
-import { Save, Settings, Truck, Clock, Store, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { Save, Settings, Truck, Clock, Store, ChevronLeft, ChevronRight, Search, CheckCircle2 } from 'lucide-react';
 import { adminService } from '../../services';
 import toast from 'react-hot-toast';
+import { formatCurrency } from '../../utils/formatters';
+
+function formatVnd(n: number | '' | null | undefined) {
+  const v = typeof n === 'number' ? n : Number(n);
+  if (!Number.isFinite(v)) return '—';
+  return formatCurrency(v);
+}
 
 export function AdminFinanceOperationsPage() {
   const [isLoading, setIsLoading] = useState(true);
@@ -52,15 +59,18 @@ export function AdminFinanceOperationsPage() {
       const res = await adminService.getPlatformFinanceConfig();
       if (!res.error && res.data) {
         setFullConfig(res.data);
-        setCommissionRate(res.data.commissionRate === 0.1 ? '' : (res.data.commissionRate ? res.data.commissionRate * 100 : ''));
-        setBaseDeliveryFee(res.data.baseDeliveryFee === 15000 ? '' : (res.data.baseDeliveryFee || ''));
-        setFeePerKm(res.data.feePerKm === 5000 ? '' : (res.data.feePerKm || ''));
-        setShipperBaseFee(res.data.shipperBaseFee === 12000 ? '' : (res.data.shipperBaseFee || ''));
-        setShipperFeePerKm(res.data.shipperFeePerKm === 4000 ? '' : (res.data.shipperFeePerKm || ''));
-        setRushHourMultiplier(res.data.rushHourMultiplier === 1.2 ? '' : (res.data.rushHourMultiplier || ''));
-        setShipperRushHourBonus(res.data.shipperRushHourBonus === 5000 || res.data.shipperRushHourBonus === 10 ? '' : (res.data.shipperRushHourBonus || ''));
-        setRushHourStartTime(res.data.rushHourStartTime);
-        setRushHourEndTime(res.data.rushHourEndTime);
+        // Always show actual saved values (never blank "default" placeholders)
+        setCommissionRate(
+          res.data.commissionRate != null ? Number((res.data.commissionRate * 100).toFixed(2)) : ''
+        );
+        setBaseDeliveryFee(res.data.baseDeliveryFee ?? '');
+        setFeePerKm(res.data.feePerKm ?? '');
+        setShipperBaseFee(res.data.shipperBaseFee ?? '');
+        setShipperFeePerKm(res.data.shipperFeePerKm ?? '');
+        setRushHourMultiplier(res.data.rushHourMultiplier ?? '');
+        setShipperRushHourBonus(res.data.shipperRushHourBonus ?? '');
+        setRushHourStartTime(res.data.rushHourStartTime || '');
+        setRushHourEndTime(res.data.rushHourEndTime || '');
       }
     } catch {
       toast.error('Lỗi tải cấu hình tài chính');
@@ -153,7 +163,8 @@ export function AdminFinanceOperationsPage() {
       };
       const res = await adminService.updateDeliverySettings(payload);
       if (!res.error) {
-        toast.success(res.message);
+        toast.success(res.message || 'Đã lưu cấu hình giao hàng');
+        await fetchDeliverySettings();
       } else {
         toast.error(res.message);
       }
@@ -188,6 +199,45 @@ export function AdminFinanceOperationsPage() {
           <p className="text-sm text-gray-500 mt-1">Quản lý phí giao hàng, thu nhập Shipper, và chiết khấu nhà hàng</p>
         </div>
       </div>
+
+      {/* Live summary of what is currently applied */}
+      <Card className="p-5 mb-6 border border-emerald-100 bg-emerald-50/60">
+        <div className="flex items-start gap-3">
+          <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-sm font-bold text-emerald-900">Đang áp dụng trên hệ thống</h2>
+            <p className="text-xs text-emerald-700/80 mt-0.5 mb-3">
+              Đây là giá trị đã lưu — khách/checkout &amp; shipper dùng các số này.
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+              <div className="bg-white/80 rounded-xl px-3 py-2 border border-emerald-100">
+                <p className="text-[11px] text-gray-500">Phí ship khách (Platform)</p>
+                <p className="font-bold text-gray-900">{formatVnd(shippingFee)}</p>
+              </div>
+              <div className="bg-white/80 rounded-xl px-3 py-2 border border-emerald-100">
+                <p className="text-[11px] text-gray-500">Freeship trong bán kính</p>
+                <p className="font-bold text-gray-900">
+                  {freeDeliveryRadiusKm === '' || freeDeliveryRadiusKm == null
+                    ? '—'
+                    : `${freeDeliveryRadiusKm} km`}
+                </p>
+              </div>
+              <div className="bg-white/80 rounded-xl px-3 py-2 border border-emerald-100">
+                <p className="text-[11px] text-gray-500">Đơn tối thiểu freeship</p>
+                <p className="font-bold text-gray-900">{formatVnd(freeShippingMinimumOrder)}</p>
+              </div>
+              <div className="bg-white/80 rounded-xl px-3 py-2 border border-emerald-100">
+                <p className="text-[11px] text-gray-500">Shipper base / km</p>
+                <p className="font-bold text-gray-900">
+                  {formatVnd(shipperBaseFee)} · {formatVnd(shipperFeePerKm)}/km
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Card>
 
       {/* Tabs */}
       <div className="flex border-b border-gray-200 mb-8 bg-gray-50 p-1.5 rounded-2xl w-fit">

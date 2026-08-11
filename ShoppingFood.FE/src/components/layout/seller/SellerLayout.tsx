@@ -14,7 +14,8 @@ import {
   Zap,
   Star,
   MessageSquare,
-  FileText
+  FileText,
+  Truck
 } from 'lucide-react';
 import { useAuth } from '../../../hooks';
 import { ROUTES } from '../../../routes/routeConfig';
@@ -36,6 +37,7 @@ export function SellerLayout() {
   const navItems = [
     { name: 'Tổng quan', path: ROUTES.SELLER_DASHBOARD, icon: LayoutDashboard },
     { name: 'Quản lý đơn hàng', path: '/seller/orders', icon: ShoppingBag },
+    { name: 'Hủy bởi tài xế', path: ROUTES.SELLER_SHIPPER_CANCELS, icon: Truck },
     { name: 'Thực đơn', path: ROUTES.SELLER_PRODUCTS, icon: Package },
     { name: 'Danh mục thực đơn', path: '/seller/categories', icon: Layers },
     { name: 'Tùy chọn Topping', path: '/seller/toppings', icon: ListPlus },

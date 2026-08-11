@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Package, MapPin, Store, DollarSign, Clock, X, CheckCircle } from 'lucide-react';
+import { Package, MapPin, Store, DollarSign, X, CheckCircle } from 'lucide-react';
 import type { IProposedDeliveryOfferDto } from '../../../interfaces/IShipper';
 
 interface OrderProposalPopupProps {
@@ -88,7 +88,39 @@ export function OrderProposalPopup({ offer, onAccept, onReject, onTimeout }: Ord
                 <MapPin className="w-4 h-4" />
                 <span className="text-xs font-bold uppercase">Khoảng cách</span>
               </div>
-              <p className="text-xl font-extrabold text-blue-700">{offer.distanceInKm.toFixed(1)} km</p>
+              {(() => {
+                // Ưu tiên quãng đường quán → khách (cùng cơ sở tính phí km)
+                const deliveryKm =
+                  typeof offer.deliveryDistanceInKm === 'number' && !Number.isNaN(offer.deliveryDistanceInKm)
+                    ? offer.deliveryDistanceInKm
+                    : null;
+                const toRestaurantKm =
+                  typeof offer.distanceInKm === 'number' && !Number.isNaN(offer.distanceInKm)
+                    ? offer.distanceInKm
+                    : null;
+                const primaryKm = deliveryKm ?? toRestaurantKm;
+                return (
+                  <>
+                    <p className="text-xl font-extrabold text-blue-700">
+                      {primaryKm != null ? `${primaryKm.toFixed(1)} km` : '—'}
+                    </p>
+                    <div className="flex flex-col gap-0.5 mt-2 pt-2 border-t border-blue-200/50">
+                      {toRestaurantKm != null && (
+                        <div className="flex justify-between text-[11px] text-blue-800">
+                          <span>Đến quán:</span>
+                          <span className="font-bold">{toRestaurantKm.toFixed(1)} km</span>
+                        </div>
+                      )}
+                      {deliveryKm != null && (
+                        <div className="flex justify-between text-[11px] text-blue-800">
+                          <span>Giao khách:</span>
+                          <span className="font-bold">{deliveryKm.toFixed(1)} km</span>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           </div>
 

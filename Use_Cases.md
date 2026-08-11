@@ -1,6 +1,6 @@
-# System Use Cases - Shopping Food
+# System Use Cases - UniEats
 
-Tài liệu này đặc tả chi tiết các Use Cases (Trường hợp sử dụng) của hệ thống **Shopping Food**, phân loại theo tác nhân (Actors) và mối tương quan giữa các hành vi trong hệ thống.
+Tài liệu này đặc tả chi tiết các Use Cases (Trường hợp sử dụng) của hệ thống **UniEats**, phân loại theo tác nhân (Actors) và mối tương quan giữa các hành vi trong hệ thống.
 
 ---
 
@@ -18,7 +18,7 @@ graph LR
     end
 
     %% System Boundary
-    subgraph ShoppingFoodSystem ["Hệ thống Shopping Food"]
+    subgraph UniEatsSystem ["Hệ thống UniEats"]
         %% Use Cases
         UC1(["UC-1: Đăng ký tài khoản"])
         UC2(["UC-2: Đăng ký đối tác Seller"])
@@ -70,7 +70,7 @@ graph LR
 | **Guest** (Khách) | Con người (Chưa định danh) | Người truy cập ứng dụng/website nhưng chưa đăng nhập. Có quyền xem menu, thêm vào giỏ hàng, đăng ký tài khoản mới hoặc thanh toán trực tiếp không cần tài khoản (Guest Checkout). |
 | **Customer** (Khách hàng) | Con người (Đã định danh) | Khách hàng đã đăng ký tài khoản thành công và đăng nhập. Có đầy đủ quyền của Guest nhưng có thêm các đặc quyền tích điểm, theo dõi lịch sử đơn hàng dài hạn. |
 | **Seller** (Đối tác bán hàng) | Con người (Đã định danh) | Nhà hàng, quán ăn đăng ký hợp tác. Sau khi được duyệt hồ sơ, họ quản lý thực đơn (món ăn, giá cả, trạng thái) và xử lý các đơn đặt hàng. |
-| **Admin** (Quản trị viên) | Con người (Đã định danh) | Nhân viên vận hành của hệ thống Shopping Food. Có nhiệm vụ phê duyệt hồ sơ đối tác Seller, kiểm tra tính pháp lý của giấy phép kinh doanh, giám sát an toàn thông tin và giải quyết tranh chấp. |
+| **Admin** (Quản trị viên) | Con người (Đã định danh) | Nhân viên vận hành của hệ thống UniEats. Có nhiệm vụ phê duyệt hồ sơ đối tác Seller, kiểm tra tính pháp lý của giấy phép kinh doanh, giám sát an toàn thông tin và giải quyết tranh chấp. |
 
 ---
 

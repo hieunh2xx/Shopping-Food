@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Gift, Tag } from 'lucide-react';
 import { promotionService } from '../../services/PromotionService';
 import { productService } from '../../services/ProductService';
@@ -10,10 +10,11 @@ import { SectionHeader } from '../ui/SectionHeader';
 import { CarouselSlider } from '../ui/CarouselSlider';
 import { useCart } from '../../hooks';
 import { ROUTES } from '../../routes/routeConfig';
+import toast from 'react-hot-toast';
 
 export function BuyXGetYSection() {
   const navigate = useNavigate();
-  const { addItem } = useCart();
+  const { addBuyXGetY } = useCart();
   const [promotions, setPromotions] = useState<Array<{ promo: IBuyXGetYPromotionDto, p: IProductDto | null, r: IRestaurantDto | null }>>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -116,20 +117,38 @@ export function BuyXGetYSection() {
                 <p className="text-xs text-orange-500 font-medium truncate">{item.r?.restaurantName || 'Nhà hàng'}</p>
                 <p className="font-bold text-gray-800 text-sm mt-0.5 line-clamp-1">{item.promo.triggerProductName}</p>
                 <p className="text-xs text-gray-500 mt-1.5 leading-relaxed line-clamp-2">Mua {item.promo.buyQuantity} {item.promo.triggerProductName} tặng ngay {item.promo.giftQuantity} {item.promo.giftProductName}</p>
-                <div className="flex items-center justify-between mt-auto pt-4">
-                  <span className="text-orange-500 font-bold">{item.p?.price ? formatCurrency(item.p.price) : 'Liên hệ'}</span>
+                <div className="flex items-center justify-between mt-auto pt-4 gap-2">
+                  <div className="min-w-0">
+                    {item.p?.price ? (
+                      <>
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Giá combo</p>
+                        <span className="text-orange-500 font-bold block leading-tight">
+                          {formatCurrency(item.p.price * item.promo.buyQuantity)}
+                        </span>
+                        <p className="text-[10px] text-gray-400 mt-0.5 truncate">
+                          {item.promo.buyQuantity}× {formatCurrency(item.p.price)}
+                        </p>
+                      </>
+                    ) : (
+                      <span className="text-orange-500 font-bold">Liên hệ</span>
+                    )}
+                  </div>
                   <button
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
                       if (item.p) {
-                        addItem(item.p, item.promo.buyQuantity);
+                        void addBuyXGetY({
+                          promotionId: item.promo.id,
+                          triggerProduct: item.p,
+                          sets: 1,
+                        });
                       } else {
                         console.warn("Product not found", item);
-                        alert("Không tìm thấy thông tin sản phẩm");
+                        toast.error('Không tìm thấy thông tin sản phẩm');
                       }
                     }}
-                    className={`text-xs font-semibold px-4 py-2 rounded-full ${btnColor} text-white hover:opacity-90 transition-opacity shadow-sm`}
+                    className={`text-xs font-semibold px-4 py-2 rounded-full ${btnColor} text-white hover:opacity-90 transition-opacity shadow-sm shrink-0`}
                   >
                     Thêm vào giỏ
                   </button>

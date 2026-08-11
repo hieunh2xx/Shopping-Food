@@ -8,6 +8,7 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore.Query;
 using Moq;
 using ShoppingFood.Application.Features.Orders.Commands;
+using ShoppingFood.Application.Interfaces;
 using ShoppingFood.Core.Interfaces;
 using ShoppingFood.Domain.Enums;
 using ShoppingFood.Domain.Models;
@@ -28,6 +29,7 @@ namespace ShoppingFood.Tests.Features.Orders
         private readonly Mock<INotificationRepository> _notificationRepoMock;
         private readonly Mock<IOrderDeliveryProposalRepository> _proposalRepoMock;
         private readonly Mock<IOrderDispatchHistoryRepository> _historyRepoMock;
+        private readonly Mock<IOrderShipperClaimService> _claimServiceMock;
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
         private readonly AcceptDeliveryOfferHandler _handler;
 
@@ -39,7 +41,23 @@ namespace ShoppingFood.Tests.Features.Orders
             _notificationRepoMock = new Mock<INotificationRepository>();
             _proposalRepoMock = new Mock<IOrderDeliveryProposalRepository>();
             _historyRepoMock = new Mock<IOrderDispatchHistoryRepository>();
+            _claimServiceMock = new Mock<IOrderShipperClaimService>();
             _unitOfWorkMock = new Mock<IUnitOfWork>();
+
+            _claimServiceMock
+                .Setup(c => c.TryClaimAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
+            _proposalRepoMock
+                .Setup(r => r.GetAsync(
+                    It.IsAny<Expression<Func<OrderDeliveryProposal, bool>>>(),
+                    It.IsAny<Func<IQueryable<OrderDeliveryProposal>, IOrderedQueryable<OrderDeliveryProposal>>>(),
+                    It.IsAny<Func<IQueryable<OrderDeliveryProposal>, IIncludableQueryable<OrderDeliveryProposal, object>>>(),
+                    It.IsAny<int>(), It.IsAny<int>(), It.IsAny<bool>()))
+                .ReturnsAsync(new List<OrderDeliveryProposal>().AsReadOnly());
+            _proposalRepoMock
+                .Setup(r => r.GetAsync(It.IsAny<Expression<Func<OrderDeliveryProposal, bool>>>()))
+                .ReturnsAsync(new List<OrderDeliveryProposal>().AsReadOnly());
 
             _handler = new AcceptDeliveryOfferHandler(
                 _orderRepoMock.Object,
@@ -48,6 +66,7 @@ namespace ShoppingFood.Tests.Features.Orders
                 _notificationRepoMock.Object,
                 _proposalRepoMock.Object,
                 _historyRepoMock.Object,
+                _claimServiceMock.Object,
                 _unitOfWorkMock.Object
             );
         }

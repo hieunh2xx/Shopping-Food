@@ -67,9 +67,18 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                 _shipperProfileRepository.Update(shipperProfile);
 
                 double distance = CalculateDistanceBetweenShipperAndRestaurant(shipperProfile, restaurant);
+                double? deliveryDistance = CalculateDeliveryDistance(restaurant, order);
+                // Fallback: suy ra quãng đường giao từ phí km đã lưu (công thức checkout: max(0, km - 5) * feePerKm)
+                if (!deliveryDistance.HasValue && order.ShipperDistanceFeeAmount > 0)
+                {
+                    const decimal defaultFeePerKm = 4000m;
+                    var feePerKm = defaultFeePerKm;
+                    deliveryDistance = Math.Round(5.0 + (double)(order.ShipperDistanceFeeAmount / feePerKm), 2);
+                }
 
                 var dto = _mapper.Map<ProposedDeliveryOfferDto>(order);
                 dto.DistanceInKm = distance;
+                dto.DeliveryDistanceInKm = deliveryDistance;
                 dto.TotalIncome = order.ShipperIncome;
                 dto.BaseFee = order.ShipperBaseFeeAmount;
                 dto.DistanceFee = order.ShipperDistanceFeeAmount;
@@ -120,27 +129,38 @@ namespace ShoppingFood.Application.Features.Orders.Queries
             if (!shipper.Latitude.HasValue || !shipper.Longitude.HasValue || !restaurant.Latitude.HasValue || !restaurant.Longitude.HasValue)
                 return DefaultDistanceKm;
 
-            double shipperLatitude = shipper.Latitude.Value;
-            double shipperLongitude = shipper.Longitude.Value;
-            double restaurantLatitude = restaurant.Latitude.Value;
-            double restaurantLongitude = restaurant.Longitude.Value;
+            return HaversineKm(
+                shipper.Latitude.Value, shipper.Longitude.Value,
+                restaurant.Latitude.Value, restaurant.Longitude.Value);
+        }
 
-            var shipperLatitudeRad = shipperLatitude * (Math.PI / 180.0);
-            var shipperLongitudeRad = shipperLongitude * (Math.PI / 180.0);
-            var restaurantLatitudeRad = restaurantLatitude * (Math.PI / 180.0);
-            var restaurantLongitudeRad = restaurantLongitude * (Math.PI / 180.0);
+        private double? CalculateDeliveryDistance(RestaurantProfile restaurant, Order order)
+        {
+            if (!restaurant.Latitude.HasValue || !restaurant.Longitude.HasValue
+                || !order.DeliveryLatitude.HasValue || !order.DeliveryLongitude.HasValue)
+                return null;
 
-            double distanceLat = restaurantLatitudeRad - shipperLatitudeRad;
-            double distanceLon = restaurantLongitudeRad - shipperLongitudeRad;
+            return HaversineKm(
+                restaurant.Latitude.Value, restaurant.Longitude.Value,
+                order.DeliveryLatitude.Value, order.DeliveryLongitude.Value);
+        }
 
-            double haversineValue = Math.Pow(Math.Sin(distanceLat / 2.0), 2.0) +
-                                     Math.Cos(shipperLatitudeRad) * Math.Cos(restaurantLatitudeRad) *
-                                     Math.Pow(Math.Sin(distanceLon / 2.0), 2.0);
+        private static double HaversineKm(double lat1, double lon1, double lat2, double lon2)
+        {
+            var lat1Rad = lat1 * (Math.PI / 180.0);
+            var lon1Rad = lon1 * (Math.PI / 180.0);
+            var lat2Rad = lat2 * (Math.PI / 180.0);
+            var lon2Rad = lon2 * (Math.PI / 180.0);
+
+            double dLat = lat2Rad - lat1Rad;
+            double dLon = lon2Rad - lon1Rad;
+
+            double haversineValue = Math.Pow(Math.Sin(dLat / 2.0), 2.0) +
+                                     Math.Cos(lat1Rad) * Math.Cos(lat2Rad) *
+                                     Math.Pow(Math.Sin(dLon / 2.0), 2.0);
 
             double angularDistance = 2.0 * Math.Atan2(Math.Sqrt(haversineValue), Math.Sqrt(1.0 - haversineValue));
-
-            double calculatedDistance = EarthRadiusKm * angularDistance;
-            return Math.Round(calculatedDistance, 2);
+            return Math.Round(EarthRadiusKm * angularDistance, 2);
         }
     }
 }

@@ -125,9 +125,22 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             if (!order.UserAccountId.HasValue) return;
 
             var userId = order.UserAccountId.Value;
-            var pointEarned = (int)(order.TotalAmount / 10000); // 10k = 1 point
-
+            var basisAmount = order.TotalAmount > 0
+                ? order.TotalAmount
+                : order.ItemsSubtotal + order.ShippingFee;
+            var pointEarned = (int)(basisAmount / 10000m);
+            if (pointEarned <= 0 && basisAmount > 0) pointEarned = 1;
             if (pointEarned <= 0) return;
+
+            var orderIdToken = order.Id.ToString();
+            var alreadyEarned = (await _loyaltyPointHistoryRepository.GetAsync(
+                predicate: h =>
+                    h.UserAccountId == userId
+                    && h.TransactionType == PointTransactionType.EarnFromOrder
+                    && h.Description.Contains(orderIdToken),
+                disableTracking: true
+            )).Any();
+            if (alreadyEarned) return;
 
             var loyaltyPoints = (await _loyaltyPointRepository.GetAsync(
                 predicate: lp => lp.UserAccountId == userId,
@@ -152,8 +165,9 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             loyaltyPoints.TotalEarnedPoints += pointEarned;
             loyaltyPoints.UpdatedAt = DateTime.UtcNow;
 
-            var tierConfigs = await _memberTierConfigRepository.GetAllAsync();
-            loyaltyPoints.Tier = DetermineMemberTier(loyaltyPoints.TotalEarnedPoints, tierConfigs.ToList());
+            var tierConfigs = (await _memberTierConfigRepository.GetAllAsync())?.ToList()
+                ?? new List<MemberTierConfig>();
+            loyaltyPoints.Tier = DetermineMemberTier(loyaltyPoints.TotalEarnedPoints, tierConfigs);
 
             if (isNew)
             {

@@ -1,172 +1,172 @@
-﻿# Tài liệu Quy trình: Điều phối đơn (Coordinator Dispatch)
+# T�i li?u Quy tr�nh: �i?u ph?i don (Coordinator Dispatch)
 
-Tài liệu mô tả luồng **điều phối viên** gán / broadcast / thu hồi shipper, giám sát và xử lý sự cố trên **Shopping Food**.
+T�i li?u m� t? lu?ng **di?u ph?i vi�n** g�n / broadcast / thu h?i shipper, gi�m s�t v� x? l� s? c? tr�n **UniEats**.
 
-> Đơn nền: Seller đã chuyển sang `WaitingForShipper` (hoặc escalate).  
-> Shipper side: [Shipper_Delivery_Workflow.md](./Shipper_Delivery_Workflow.md) · Đặt hàng: [Checkout_Order_Workflow.md](./Checkout_Order_Workflow.md).
-
----
-
+> �on n?n: Seller d� chuy?n sang `WaitingForShipper` (ho?c escalate).  
+> Shipper side: [Shipper_Delivery_Workflow.md](./Shipper_Delivery_Workflow.md) � �?t h�ng: [Checkout_Order_Workflow.md](./Checkout_Order_Workflow.md).
 
 ---
-
-## Phần A — UI Interaction Trace (Nút bấm → Code → Data → Hiển thị)
-
-> UI Trace — Coordinator  
-> Mỗi thao tác trả lời: **nút ở đâu** · **bấm chạy file/hàm nào** · **API/BE đâu** · **data trả về** · **hiển thị thế nào**.
 
 
 ---
 
-### UT-COO-01 — Mở gợi ý shipper + Gửi đề xuất
+## Ph?n A � UI Interaction Trace (N�t b?m ? Code ? Data ? Hi?n th?)
 
-#### 1. Giao diện
+> UI Trace � Coordinator  
+> M?i thao t�c tr? l?i: **n�t ? d�u** � **b?m ch?y file/h�m n�o** � **API/BE d�u** � **data tr? v?** � **hi?n th? th? n�o**.
 
-| Mục | Giá trị |
+
+---
+
+### UT-COO-01 � M? g?i � shipper + G?i d? xu?t
+
+#### 1. Giao di?n
+
+| M?c | Gi� tr? |
 |-----|---------|
 | **Route** | `/coordinator` / dispatch |
 | **Page** | `pages/coordinator/DispatchBoardPage.tsx` |
-| **Nút trên order** | Mở suggest → `handleOpenSuggestModal(order)` |
-| **Trong modal** | `"Gửi đề xuất"` → `handleSendProposal(shipperId)` |
+| **N�t tr�n order** | M? suggest ? `handleOpenSuggestModal(order)` |
+| **Trong modal** | `"G?i d? xu?t"` ? `handleSendProposal(shipperId)` |
 
 #### 2. Frontend
 
 ```text
 handleOpenSuggestModal
-  → GET /Coordinator/orders/{orderId}/suggested-shippers
-  → set list vào modal
+  ? GET /Coordinator/orders/{orderId}/suggested-shippers
+  ? set list v�o modal
 handleSendProposal
-  → POST /Coordinator/proposals { orderId, shipperId }
+  ? POST /Coordinator/proposals { orderId, shipperId }
 ```
 
-#### 5. Hiển thị
+#### 5. Hi?n th?
 
-toast `Đã gửi đề xuất đến shipper thành công!`; lỗi toast API/mạng; Shipper nhận popup/noti.
+toast `�� g?i d? xu?t d?n shipper th�nh c�ng!`; l?i toast API/m?ng; Shipper nh?n popup/noti.
 
 ---
 
-### UT-COO-02 — Force-assign (`window.confirm`)
+### UT-COO-02 � Force-assign (`window.confirm`)
 
-#### 1. Giao diện
+#### 1. Giao di?n
 
-Nút gán bắt buộc trong suggest modal → `handleForceAssign(shipperId)`.
+N�t g�n b?t bu?c trong suggest modal ? `handleForceAssign(shipperId)`.
 
 #### 2. Frontend
 
 ```text
-window.confirm('Bạn có chắc chắn muốn gán bắt buộc...')
-  → nếu OK: POST /Coordinator/orders/force-assign
-  → toast success / error
+window.confirm('B?n c� ch?c ch?n mu?n g�n b?t bu?c...')
+  ? n?u OK: POST /Coordinator/orders/force-assign
+  ? toast success / error
 ```
 
-#### 5. Hiển thị
+#### 5. Hi?n th?
 
-| Confirm Cancel | Không gọi API |
-| Success | toast `Đã gán đơn hàng thành công!` + đóng modal + refresh board |
+| Confirm Cancel | Kh�ng g?i API |
+| Success | toast `�� g�n don h�ng th�nh c�ng!` + d�ng modal + refresh board |
 | Shipper side | SignalR/notification force-assign (xem UT-SHP-02) |
 
 ---
 
-### UT-COO-03 — Broadcast gần khu vực
+### UT-COO-03 � Broadcast g?n khu v?c
 
-#### 1. Giao diện
+#### 1. Giao di?n
 
-Nút broadcast trên order → `handleBroadcastOrder(order)`.
-
-#### 2. Frontend
-
-```text
-window.confirm(`Bạn có muốn gửi thông báo cho tất cả tài xế gần đơn...`)
-  → POST /Coordinator/orders/{orderId}/broadcast
-  → toast.success(res.message)  // có thể "Đã gửi... N tài xế" hoặc "Không có tài xế..."
-```
-
----
-
-### UT-COO-04 — Thu hồi / Release đơn
-
-#### 1. Giao diện
-
-`handleOpenReleaseModal` → modal nhập lý do (+ optional reassign) → `handleReleaseOrder`.
+N�t broadcast tr�n order ? `handleBroadcastOrder(order)`.
 
 #### 2. Frontend
 
 ```text
-validate reason không rỗng
-  → POST /Coordinator/orders/{orderId}/release
-  → toast thu hồi / gán shipper mới
+window.confirm(`B?n c� mu?n g?i th�ng b�o cho t?t c? t�i x? g?n don...`)
+  ? POST /Coordinator/orders/{orderId}/broadcast
+  ? toast.success(res.message)  // c� th? "�� g?i... N t�i x?" ho?c "Kh�ng c� t�i x?..."
 ```
-
-Validate fail: toast `Vui lòng nhập lý do giải phóng đơn`.
 
 ---
 
-### UT-COO-05 — Resolve incident
+### UT-COO-04 � Thu h?i / Release don
 
-#### 1. Giao diện
+#### 1. Giao di?n
 
-`handleOpenIncidentModal` → nhập chi tiết → `handleResolveIncident`.
+`handleOpenReleaseModal` ? modal nh?p l� do (+ optional reassign) ? `handleReleaseOrder`.
 
-#### 2–3.
+#### 2. Frontend
+
+```text
+validate reason kh�ng r?ng
+  ? POST /Coordinator/orders/{orderId}/release
+  ? toast thu h?i / g�n shipper m?i
+```
+
+Validate fail: toast `Vui l�ng nh?p l� do gi?i ph�ng don`.
+
+---
+
+### UT-COO-05 � Resolve incident
+
+#### 1. Giao di?n
+
+`handleOpenIncidentModal` ? nh?p chi ti?t ? `handleResolveIncident`.
+
+#### 2�3.
 
 ```text
 POST /Coordinator/orders/{orderId}/resolve-incident
-(hoặc complaint resolve tùy flow)
+(ho?c complaint resolve t�y flow)
 ```
 
-#### 5. Hiển thị
+#### 5. Hi?n th?
 
-toast `Đã giải quyết sự cố đơn hàng thành công!`; validate chi tiết bắt buộc.
+toast `�� gi?i quy?t s? c? don h�ng th�nh c�ng!`; validate chi ti?t b?t bu?c.
 
 ---
 
-### UT-COO-06 — Monitor: Suspend shipper
+### UT-COO-06 � Monitor: Suspend shipper
 
-#### 1. Giao diện
+#### 1. Giao di?n
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
 | **Page** | `MonitorShippersPage.tsx` |
-| **Confirm** | `window.confirm` khóa vô thời hạn / mở khóa |
+| **Confirm** | `window.confirm` kh�a v� th?i h?n / m? kh�a |
 
-#### 2–3.
+#### 2�3.
 
 ```text
 POST /Coordinator/shippers/{shipperId}/suspend
 ```
 
-#### 5. Hiển thị
+#### 5. Hi?n th?
 
-toast tạm khóa X phút / khóa-mở tài khoản.
+toast t?m kh�a X ph�t / kh�a-m? t�i kho?n.
 
 ---
 
-### UT-COO-07 — AdjustReputationModal
+### UT-COO-07 � AdjustReputationModal
 
-#### 1. Giao diện
+#### 1. Giao di?n
 
-Modal chỉnh điểm → submit.
+Modal ch?nh di?m ? submit.
 
-#### 2–3.
+#### 2�3.
 
 ```text
 POST /Coordinator/shippers/{id}/adjust-reputation
-  → ShipperReputationHistory
+  ? ShipperReputationHistory
 ```
 
-#### 5. Hiển thị
+#### 5. Hi?n th?
 
-toast `Đã thay đổi điểm uy tín thành công`.
-
----
-
-### UT-COO-08 — Tabs board
-
-Click tab WaitingForShipper / Shipping / incident / … → `setActiveTab` + `setPage(1)` → re-fetch `GET /Coordinator/orders`.
+toast `�� thay d?i di?m uy t�n th�nh c�ng`.
 
 ---
 
-## Sơ đồ Force-assign
+### UT-COO-08 � Tabs board
+
+Click tab WaitingForShipper / Shipping / incident / � ? `setActiveTab` + `setPage(1)` ? re-fetch `GET /Coordinator/orders`.
+
+---
+
+## So d? Force-assign
 
 ```mermaid
 sequenceDiagram
@@ -183,18 +183,18 @@ sequenceDiagram
 
 ---
 
-## Phần B — Workflow nghiệp vụ & Backend (chi tiết luồng)
-## 1. Luồng Tổng Quan (Workflow)
+## Ph?n B � Workflow nghi?p v? & Backend (chi ti?t lu?ng)
+## 1. Lu?ng T?ng Quan (Workflow)
 
-1. **Mở board:** Coordinator vào `/coordinator` hoặc `/coordinator/dispatch` → `GET /api/Coordinator/orders`.
-2. **Chọn đơn:** Xem đơn chờ shipper / escalated.
-3. **Gợi ý shipper:** `GET /api/Coordinator/orders/{orderId}/suggested-shippers`.
-4. **Gửi đề xuất 1 shipper:** `POST /api/Coordinator/proposals` → tạo/cập nhật `OrderDeliveryProposal` + noti.
-5. **Broadcast gần:** `POST .../broadcast` → thông báo nhiều shipper online gần đơn.
-6. **Force-assign:** Confirm UI → `POST /api/Coordinator/orders/force-assign` → gán bắt buộc, `Shipping`, history `ManualAssigned`.
-7. **Release / reassign:** `POST .../release` kèm lý do (+ optional shipper mới).
-8. **Resolve incident:** `POST .../resolve-incident` khi đơn sự cố.
-9. **Monitor shippers:** `GET /shippers/monitoring` → suspend / adjust reputation.
+1. **M? board:** Coordinator v�o `/coordinator` ho?c `/coordinator/dispatch` ? `GET /api/Coordinator/orders`.
+2. **Ch?n don:** Xem don ch? shipper / escalated.
+3. **G?i � shipper:** `GET /api/Coordinator/orders/{orderId}/suggested-shippers`.
+4. **G?i d? xu?t 1 shipper:** `POST /api/Coordinator/proposals` ? t?o/c?p nh?t `OrderDeliveryProposal` + noti.
+5. **Broadcast g?n:** `POST .../broadcast` ? th�ng b�o nhi?u shipper online g?n don.
+6. **Force-assign:** Confirm UI ? `POST /api/Coordinator/orders/force-assign` ? g�n b?t bu?c, `Shipping`, history `ManualAssigned`.
+7. **Release / reassign:** `POST .../release` k�m l� do (+ optional shipper m?i).
+8. **Resolve incident:** `POST .../resolve-incident` khi don s? c?.
+9. **Monitor shippers:** `GET /shippers/monitoring` ? suspend / adjust reputation.
 10. **Audit:** `dispatch-history`, `incidents`, `complaints/orders`.
 
 ```mermaid
@@ -206,9 +206,9 @@ sequenceDiagram
     participant DB as SQL Server
     participant S as Shipper FE/Noti
 
-    C->>FE: Mở Dispatch Board
+    C->>FE: M? Dispatch Board
     FE->>API: GET /api/Coordinator/orders
-    C->>FE: Chọn đơn → suggested shippers
+    C->>FE: Ch?n don ? suggested shippers
     FE->>API: GET .../suggested-shippers
     alt Proposal
         FE->>API: POST /proposals
@@ -230,13 +230,13 @@ sequenceDiagram
 
 ---
 
-## Bước 1: Dispatch Board (danh sách đơn)
+## Bu?c 1: Dispatch Board (danh s�ch don)
 
-**Thông tin:**
+**Th�ng tin:**
 - **URL (FE):** `/coordinator` / dispatch route trong `routeConfig`
 - **Page:** `ShoppingFood.FE/src/pages/coordinator/DispatchBoardPage.tsx`
 - **API:** `GET /api/Coordinator/orders?status=&skip=&take=&isEscalated=`
-- **Auth:** Role **Coordinator** hoặc **Admin**
+- **Auth:** Role **Coordinator** ho?c **Admin**
 
 ### 1.1. Frontend
 
@@ -251,11 +251,11 @@ async getDispatchBoard(status?: string, skip = 0, take = 50, isEscalated?: boole
 }
 ```
 
-**Toast lỗi tải board:** `Tải danh sách đơn hàng điều phối thất bại do lỗi kết nối mạng.`
+**Toast l?i t?i board:** `T?i danh s�ch don h�ng di?u ph?i th?t b?i do l?i k?t n?i m?ng.`
 
 ### 1.2. Controller
 
-**File:** `src/ShoppingFood.API/Controllers/CoordinatorController.cs` — Lines 15–33
+**File:** `src/ShoppingFood.API/Controllers/CoordinatorController.cs` � Lines 15�33
 
 ```csharp
 [HttpGet("orders")]
@@ -272,28 +272,28 @@ public async Task<ActionResult> GetDispatchBoardOrder(
 ### 1.3. Handler
 
 **File:** `src/ShoppingFood.Application/Features/Coordinator/Queries/GetDispatchBoardHandler.cs`  
-Lọc đơn cần điều phối (thường `WaitingForShipper`, flag escalate, phân trang).
+L?c don c?n di?u ph?i (thu?ng `WaitingForShipper`, flag escalate, ph�n trang).
 
 ---
 
-## Bước 2: Suggested shippers
+## Bu?c 2: Suggested shippers
 
 **API:** `GET /api/Coordinator/orders/{orderId}/suggested-shippers`  
-**Controller:** L35–50  
+**Controller:** L35�50  
 **Query handler:** `GetSuggestedShippersHandler.cs`  
 **FE:** `coordinatorService.getSuggestedShippers(orderId)`
 
-**Toast lỗi:** `Tải danh sách shipper gợi ý thất bại do lỗi kết nối mạng.`
+**Toast l?i:** `T?i danh s�ch shipper g?i � th?t b?i do l?i k?t n?i m?ng.`
 
-Gợi ý dựa trên online, khoảng cách, reputation, trạng thái Active (chi tiết trong handler).
+G?i � d?a tr�n online, kho?ng c�ch, reputation, tr?ng th�i Active (chi ti?t trong handler).
 
 ---
 
-## Bước 3: Gửi đề xuất (Proposal) tới 1 shipper
+## Bu?c 3: G?i d? xu?t (Proposal) t?i 1 shipper
 
 **API:** `POST /api/Coordinator/proposals`  
-**Body:** `SendProposalCommand` (orderId, shipperId, …)  
-**Controller:** L65–75  
+**Body:** `SendProposalCommand` (orderId, shipperId, �)  
+**Controller:** L65�75  
 **Handler:** `SendProposalHandler.cs`
 
 **FE:**
@@ -304,36 +304,36 @@ async sendProposal(data: ISendProposalRequest) {
 }
 ```
 
-**Toast:** `Đã gửi đề xuất đến shipper thành công!` / `Lỗi gửi đề xuất`
+**Toast:** `�� g?i d? xu?t d?n shipper th�nh c�ng!` / `L?i g?i d? xu?t`
 
-**DB:** `ORDER_DELIVERY_PROPOSAL` Status `Pending` + Notification tới shipper.
+**DB:** `ORDER_DELIVERY_PROPOSAL` Status `Pending` + Notification t?i shipper.
 
 ---
 
-## Bước 4: Broadcast gần
+## Bu?c 4: Broadcast g?n
 
 **API:** `POST /api/Coordinator/orders/{orderId}/broadcast`  
-**Controller:** L52–63  
+**Controller:** L52�63  
 **Handler:** `BroadcastOrderToNearbyShippersHandler.cs`
 
 **FE (`DispatchBoardPage`):**
 
 ```typescript
-if (!window.confirm(`Bạn có muốn gửi thông báo cho tất cả tài xế gần đơn hàng ${order.id.substring(0, 8)}?`)) return;
+if (!window.confirm(`B?n c� mu?n g?i th�ng b�o cho t?t c? t�i x? g?n don h�ng ${order.id.substring(0, 8)}?`)) return;
 const res = await coordinatorService.broadcastOrder(orderId);
-toast.success(res.message || 'Đã gửi thông báo đến các tài xế thành công!');
+toast.success(res.message || '�� g?i th�ng b�o d?n c�c t�i x? th�nh c�ng!');
 ```
 
-Shipper online trong bán kính nhận notification → mở proposed offer.
+Shipper online trong b�n k�nh nh?n notification ? m? proposed offer.
 
 ---
 
-## Bước 5: Force Assign (gán bắt buộc)
+## Bu?c 5: Force Assign (g�n b?t bu?c)
 
-**Thông tin:**
+**Th�ng tin:**
 - **URL:** `/api/Coordinator/orders/force-assign`
 - **HTTP Method:** POST
-- **Confirm UI:** `window.confirm('Bạn có chắc chắn muốn gán bắt buộc...')`
+- **Confirm UI:** `window.confirm('B?n c� ch?c ch?n mu?n g�n b?t bu?c...')`
 
 ### 5.1. Frontend
 
@@ -341,12 +341,12 @@ Shipper online trong bán kính nhận notification → mở proposed offer.
 async forceAssign(data: IForceAssignRequest) {
   return httpClient.post(API_ENDPOINTS.COORDINATOR.FORCE_ASSIGN, data);
 }
-// toast.success('Đã gán đơn hàng thành công!');
+// toast.success('�� g�n don h�ng th�nh c�ng!');
 ```
 
 ### 5.2. Controller
 
-**File:** `CoordinatorController.cs` — Lines 77–87
+**File:** `CoordinatorController.cs` � Lines 77�87
 
 ```csharp
 [HttpPost("orders/force-assign")]
@@ -369,59 +369,59 @@ if (order.ShipperId.HasValue || order.Status != OrderStatus.WaitingForShipper)
     return ApiResponse.Failure(400, $"Order is not eligible for assignment...");
 
 if (!shipper.IsOnline || shipper.Status != UserStatus.Active)
-    return ApiResponse.Failure(400, "Shipper ís offline or inactive.");
+    return ApiResponse.Failure(400, "Shipper �s offline or inactive.");
 
 await InvalidatePendingProposalAsync(request.OrderId);
 AssignOrder(order, shipper.Id);
 await UpdateOrCreateProposalAsync(request.OrderId, request.ShipperId);
 
-// OrderDispatchHistory: ActionType = ManualAssigned, Note = "Bắt buộc gán đơn (Force Assign)"
-// + Notification tới shipper (FE toast Force Assign)
+// OrderDispatchHistory: ActionType = ManualAssigned, Note = "B?t bu?c g�n don (Force Assign)"
+// + Notification t?i shipper (FE toast Force Assign)
 ```
 
-**DB:** `ORDER` (ShipperId, Status→Shipping), `ORDER_DELIVERY_PROPOSAL`, `ORDER_DISPATCH_HISTORY`, `NOTIFICATION`.
+**DB:** `ORDER` (ShipperId, Status?Shipping), `ORDER_DELIVERY_PROPOSAL`, `ORDER_DISPATCH_HISTORY`, `NOTIFICATION`.
 
 ---
 
-## Bước 6: Release (thu hồi / gán lại)
+## Bu?c 6: Release (thu h?i / g�n l?i)
 
 **API:** `POST /api/Coordinator/orders/{orderId}/release`  
-**Body:** `ReleaseOrderCommand` (lý do, optional `reassignShipperId`)  
+**Body:** `ReleaseOrderCommand` (l� do, optional `reassignShipperId`)  
 **Handler:** `ReleaseOrderHandler.cs`
 
 **FE:**
 
 ```typescript
-if (!reason) { toast.error('Vui lòng nhập lý do giải phóng đơn'); return; }
+if (!reason) { toast.error('Vui l�ng nh?p l� do gi?i ph�ng don'); return; }
 const res = await coordinatorService.releaseOrder(orderId, data);
-toast.success(reassignShipperId ? 'Đã gán shipper mới thành công!' : 'Đã thu hồi đơn hàng thành công!');
+toast.success(reassignShipperId ? '�� g�n shipper m?i th�nh c�ng!' : '�� thu h?i don h�ng th�nh c�ng!');
 ```
 
-**Hiệu ứng:** Gỡ shipper hiện tại / trả về chờ gán; shipper nhận noti thu hồi (`Đơn hàng đã bị thu hồi!` trên ShipperDashboard).
+**Hi?u ?ng:** G? shipper hi?n t?i / tr? v? ch? g�n; shipper nh?n noti thu h?i (`�on h�ng d� b? thu h?i!` tr�n ShipperDashboard).
 
 ---
 
-## Bước 7: Resolve incident
+## Bu?c 7: Resolve incident
 
 **API:** `POST /api/Coordinator/orders/{orderId}/resolve-incident`  
 **Handler:** `ResolveIncidentHandler.cs`  
-**FE:** bắt buộc nhập chi tiết xử lý
+**FE:** b?t bu?c nh?p chi ti?t x? l�
 
 ```typescript
-toast.error('Vui lòng nhập chi tiết xử lý sự cố'); // validate
-toast.success('Đã giải quyết sự cố đơn hàng thành công!');
+toast.error('Vui l�ng nh?p chi ti?t x? l� s? c?'); // validate
+toast.success('�� gi?i quy?t s? c? don h�ng th�nh c�ng!');
 ```
 
-**Danh sách sự cố:** `GET /api/Coordinator/incidents` — page `CoordinatorIncidentsPage.tsx`  
-**Khiếu nại đơn:** `GET /complaints/orders` + `POST /complaint/{reportId}/resolve` (`ResolveComplaintHandler`).
+**Danh s�ch s? c?:** `GET /api/Coordinator/incidents` � page `CoordinatorIncidentsPage.tsx`  
+**Khi?u n?i don:** `GET /complaints/orders` + `POST /complaint/{reportId}/resolve` (`ResolveComplaintHandler`).
 
 ---
 
-## Bước 8: Monitor / Suspend / Adjust reputation
+## Bu?c 8: Monitor / Suspend / Adjust reputation
 
 ### 8.1. Monitoring
 
-| Mục | Chi tiết |
+| M?c | Chi ti?t |
 |-----|----------|
 | **FE** | `MonitorShippersPage.tsx` |
 | **API** | `GET /api/Coordinator/shippers/monitoring?isOnline=&searchName=` |
@@ -429,54 +429,54 @@ toast.success('Đã giải quyết sự cố đơn hàng thành công!');
 
 ### 8.2. Suspend shipper
 
-| Mục | Chi tiết |
+| M?c | Chi ti?t |
 |-----|----------|
 | **API** | `POST /api/Coordinator/shippers/{shipperId}/suspend` |
 | **Handler** | `SuspendShipperHandler.cs` |
-| **FE** | `window.confirm` khóa/mở |
-| **DB** | `SHIPPER_PROFILE.SuspendedUntil`, `SuspendedReason` → chặn toggle-online |
+| **FE** | `window.confirm` kh�a/m? |
+| **DB** | `SHIPPER_PROFILE.SuspendedUntil`, `SuspendedReason` ? ch?n toggle-online |
 
 ### 8.3. Adjust reputation
 
-| Mục | Chi tiết |
+| M?c | Chi ti?t |
 |-----|----------|
 | **API** | `POST /api/Coordinator/shippers/{shipperId}/adjust-reputation` |
 | **Body** | `{ points, reason }` |
 | **Handler** | `AdjustShipperReputationHandler.cs` |
 | **FE** | `AdjustReputationModal.tsx` |
-| **DB** | `SHIPPER_REPUTATION_HISTORY` + cập nhật điểm profile |
+| **DB** | `SHIPPER_REPUTATION_HISTORY` + c?p nh?t di?m profile |
 
 ### 8.4. Dispatch history
 
 | API | Handler | FE |
 |-----|---------|-----|
-| `GET /orders/{orderId}/dispatch-history` | `GetOrderDispatchHistoryHandler` | Chi tiết 1 đơn |
+| `GET /orders/{orderId}/dispatch-history` | `GetOrderDispatchHistoryHandler` | Chi ti?t 1 don |
 | `GET /orders/dispatch-history` | `GetAllDispatchHistoryHandler` | `DispatchHistoryPage` |
 
 ---
 
-## Sơ đồ file đi qua (Call chain)
+## So d? file di qua (Call chain)
 
 ```text
 DispatchBoardPage.tsx / MonitorShippersPage.tsx / CoordinatorIncidentsPage.tsx
-  ↓
+  ?
 CoordinatorService.ts
-  ↓
+  ?
 CoordinatorController.cs
-  ↓
+  ?
 GetDispatchBoardHandler
 GetSuggestedShippersHandler
 SendProposalHandler / BroadcastOrderToNearbyShippersHandler
 ForceAssignHandler / ReleaseOrderHandler / ResolveIncidentHandler
 GetMonitorShipperHandler / SuspendShipperHandler / AdjustShipperReputationHandler
-  ↓
+  ?
 ORDER, ORDER_DELIVERY_PROPOSAL, ORDER_DISPATCH_HISTORY,
 SHIPPER_PROFILE, SHIPPER_REPUTATION_HISTORY, NOTIFICATION, SYSTEM_REPORT
-  ↓
+  ?
 ShipperDashboard (SignalR / Notification bell)
 ```
 
-| Vai trò | Đường dẫn |
+| Vai tr� | �u?ng d?n |
 |---------|-----------|
 | FE Board | `ShoppingFood.FE/src/pages/coordinator/DispatchBoardPage.tsx` |
 | FE Monitor | `.../coordinator/MonitorShippersPage.tsx` |
@@ -488,52 +488,52 @@ ShipperDashboard (SignalR / Notification bell)
 
 ---
 
-## Các thông báo (Toast / Confirm)
+## C�c th�ng b�o (Toast / Confirm)
 
 | Message / UI | Trigger |
 |--------------|---------|
-| Đã gửi đề xuất đến shipper thành công! | proposals OK |
-| window.confirm broadcast | Trước broadcast |
-| Đã gửi thông báo đến các tài xế thành công! | broadcast OK |
-| window.confirm force-assign | Trước gán bắt buộc |
-| Đã gán đơn hàng thành công! | force-assign OK |
-| Vui lòng nhập lý do giải phóng đơn | release validate |
-| Đã thu hồi / Đã gán shipper mới… | release OK |
-| Vui lòng nhập chi tiết xử lý sự cố | resolve validate |
-| Đã giải quyết sự cố đơn hàng thành công! | resolve OK |
-| (Shipper) Force Assign / thu hồi | Notification realtime |
+| �� g?i d? xu?t d?n shipper th�nh c�ng! | proposals OK |
+| window.confirm broadcast | Tru?c broadcast |
+| �� g?i th�ng b�o d?n c�c t�i x? th�nh c�ng! | broadcast OK |
+| window.confirm force-assign | Tru?c g�n b?t bu?c |
+| �� g�n don h�ng th�nh c�ng! | force-assign OK |
+| Vui l�ng nh?p l� do gi?i ph�ng don | release validate |
+| �� thu h?i / �� g�n shipper m?i� | release OK |
+| Vui l�ng nh?p chi ti?t x? l� s? c? | resolve validate |
+| �� gi?i quy?t s? c? don h�ng th�nh c�ng! | resolve OK |
+| (Shipper) Force Assign / thu h?i | Notification realtime |
 
 ---
 
-## Các cơ chế bảo mật / ràng buộc
+## C�c co ch? b?o m?t / r�ng bu?c
 
-1. Chỉ **Coordinator / Admin** (RBAC `ApiEndpoint` + FE `PrivateRoute`).
-2. Force-assign chỉ khi đơn `WaitingForShipper` và **chưa** có shipper; shipper phải **online + Active**.
-3. Mọi gán thủ công ghi **`ORDER_DISPATCH_HISTORY`** (`ManualAssigned`, Actor = coordinator).
-4. Invalidate proposal pending cũ trước khi force-assign.
-5. Suspend ngăn shipper online/nhận đơn (xem ToggleShipperOnlineHandler).
-6. Release yêu cầu **lý do** (audit / tranh chấp).
-7. Confirm native (`window.confirm`) trên hành động phá hủy trạng thái (force/broadcast) — tránh click nhầm.
+1. Ch? **Coordinator / Admin** (RBAC `ApiEndpoint` + FE `PrivateRoute`).
+2. Force-assign ch? khi don `WaitingForShipper` v� **chua** c� shipper; shipper ph?i **online + Active**.
+3. M?i g�n th? c�ng ghi **`ORDER_DISPATCH_HISTORY`** (`ManualAssigned`, Actor = coordinator).
+4. Invalidate proposal pending cu tru?c khi force-assign.
+5. Suspend ngan shipper online/nh?n don (xem ToggleShipperOnlineHandler).
+6. Release y�u c?u **l� do** (audit / tranh ch?p).
+7. Confirm native (`window.confirm`) tr�n h�nh d?ng ph� h?y tr?ng th�i (force/broadcast) � tr�nh click nh?m.
 
 ---
 
-## Checklist tự test
+## Checklist t? test
 
-- [ ] Board load đơn WaitingForShipper
-- [ ] Suggested shippers hiện shipper online gần
-- [ ] Send proposal → shipper nhận noti / popup
-- [ ] Broadcast → nhiều shipper được báo
-- [ ] Force-assign → đơn Shipping trên shipper; history ManualAssigned
-- [ ] Force-assign shipper offline → lỗi
-- [ ] Release → shipper mất đơn + toast thu hồi
+- [ ] Board load don WaitingForShipper
+- [ ] Suggested shippers hi?n shipper online g?n
+- [ ] Send proposal ? shipper nh?n noti / popup
+- [ ] Broadcast ? nhi?u shipper du?c b�o
+- [ ] Force-assign ? don Shipping tr�n shipper; history ManualAssigned
+- [ ] Force-assign shipper offline ? l?i
+- [ ] Release ? shipper m?t don + toast thu h?i
 - [ ] Resolve incident + xem GET incidents
-- [ ] Suspend shipper → không toggle online
-- [ ] Adjust reputation → hiện ReputationHistory
+- [ ] Suspend shipper ? kh�ng toggle online
+- [ ] Adjust reputation ? hi?n ReputationHistory
 
 ---
 
-## Tóm tắt
+## T�m t?t
 
-Coordinator điều khiển “khớp” đơn–shipper trên **DispatchBoard**: proposal / broadcast / **force-assign**, thu hồi, xử lý sự cố, giám sát uy tín. Mọi thao tác gán thủ công được audit qua `ORDER_DISPATCH_HISTORY` và đẩy realtime tới Shipper.
+Coordinator di?u khi?n �kh?p� don�shipper tr�n **DispatchBoard**: proposal / broadcast / **force-assign**, thu h?i, x? l� s? c?, gi�m s�t uy t�n. M?i thao t�c g�n th? c�ng du?c audit qua `ORDER_DISPATCH_HISTORY` v� d?y realtime t?i Shipper.
 
-> [Shipper_Delivery](./Shipper_Delivery_Workflow.md) · [Checkout_Order](./Checkout_Order_Workflow.md) · [Payment_Requirements](./Payment_Requirements.md) · [INDEX](../ONBOARDING_INDEX.md)
+> [Shipper_Delivery](./Shipper_Delivery_Workflow.md) � [Checkout_Order](./Checkout_Order_Workflow.md) � [Payment_Requirements](./Payment_Requirements.md) � [INDEX](../ONBOARDING_INDEX.md)

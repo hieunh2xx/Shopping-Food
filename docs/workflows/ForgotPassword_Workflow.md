@@ -1,8 +1,8 @@
 # Tài liệu Quy trình: Quên mật khẩu (Forgot Password)
 
-Tài liệu này mô tả chi tiết luồng hoạt động của tính năng khôi phục mật khẩu khi người dùng quên thông tin đăng nhập trong hệ thống **Shopping Food**.
+Tài liệu này mô tả chi tiết luồng hoạt động của tính năng khôi phục mật khẩu khi người dùng quên thông tin đăng nhập trong hệ thống **UniEats**.
 
-> Khác với một số hệ thống gửi **Reset Link** qua email, Shopping Food dùng **OTP 6 số** gửi email (hết hạn 5 phút), xác minh OTP, rồi đặt mật khẩu mới trong cùng một Modal 3 bước trên Frontend.
+> Khác với một số hệ thống gửi **Reset Link** qua email, UniEats dùng **OTP 6 số** gửi email (hết hạn 5 phút), xác minh OTP, rồi đặt mật khẩu mới trong cùng một Modal 3 bước trên Frontend.
 
 ---
 
@@ -462,7 +462,7 @@ ShoppingFoodContext  →  USER_ACCOUNT + OTP_RECORD
 
 ## Tóm tắt
 
-Shopping Food khôi phục mật khẩu theo mô hình **Email → OTP → Đặt lại MK** (không dùng Reset Link).  
+UniEats khôi phục mật khẩu theo mô hình **Email → OTP → Đặt lại MK** (không dùng Reset Link).  
 Luồng đi qua **Modal 3 bước (FE)** → **3 API public** → **3 MediatR Handlers** → bảng **`OTP_RECORD` + `USER_ACCOUNT`**.
 
 > Liên kết onboarding: [Part 2 Features](../ONBOARDING_PART2_FEATURES_FLOWS.md) · [Part 5 Auth](../ONBOARDING_PART5_AUTH_DI_ALERTS.md) · [INDEX](../ONBOARDING_INDEX.md)

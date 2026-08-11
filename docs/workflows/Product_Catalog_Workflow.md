@@ -1,207 +1,207 @@
-﻿# Tài liệu Quy trình: Catalog sản phẩm (Product Catalog)
+# T�i li?u Quy tr�nh: Catalog s?n ph?m (Product Catalog)
 
-Tài liệu mô tả luồng **khách duyệt / tìm / xem / đánh giá món** và **Seller CRUD món** (stock, visibility, khung giờ), kèm **Admin duyệt sản phẩm** trong hệ thống **Shopping Food**.
-
----
-
+T�i li?u m� t? lu?ng **kh�ch duy?t / t�m / xem / d�nh gi� m�n** v� **Seller CRUD m�n** (stock, visibility, khung gi?), k�m **Admin duy?t s?n ph?m** trong h? th?ng **UniEats**.
 
 ---
-
-## Phần A — UI Interaction Trace (Nút bấm → Code → Data → Hiển thị)
-
-> UI Trace — Product  
-> Mỗi thao tác trả lời: **nút ở đâu** · **bấm chạy file/hàm nào** · **API/BE đâu** · **data trả về** · **hiển thị thế nào**.
 
 
 ---
 
-### UT-PRD-01 — Tìm kiếm / lọc trên ProductsPage
+## Ph?n A � UI Interaction Trace (N�t b?m ? Code ? Data ? Hi?n th?)
 
-#### 1. Giao diện
+> UI Trace � Product  
+> M?i thao t�c tr? l?i: **n�t ? d�u** � **b?m ch?y file/h�m n�o** � **API/BE d�u** � **data tr? v?** � **hi?n th? th? n�o**.
 
-| Mục | Giá trị |
+
+---
+
+### UT-PRD-01 � T�m ki?m / l?c tr�n ProductsPage
+
+#### 1. Giao di?n
+
+| M?c | Gi� tr? |
 |-----|---------|
 | **Route** | `/products` |
 | **Page** | `pages/ProductsPage.tsx` |
-| **Control** | Ô search, filter category, nút lấy vị trí |
+| **Control** | � search, filter category, n�t l?y v? tr� |
 
 #### 2. Frontend
 
 ```text
 Search / filter change
-  → productService.search / get list (query params)
-  → GET /Product/Search hoặc GET /Product
-GPS filter → toast loading/success vị trí → gửi lat/lng query
+  ? productService.search / get list (query params)
+  ? GET /Product/Search ho?c GET /Product
+GPS filter ? toast loading/success v? tr� ? g?i lat/lng query
 ```
 
-#### 5. Hiển thị
+#### 5. Hi?n th?
 
-Grid/list `ProductCard` từ `res.data`; toast lỗi mạng; toast vị trí.
+Grid/list `ProductCard` t? `res.data`; toast l?i m?ng; toast v? tr�.
 
 ---
 
-### UT-PRD-02 — Chi tiết SP: Thêm vào giỏ
+### UT-PRD-02 � Chi ti?t SP: Th�m v�o gi?
 
-#### 1. Giao diện
+#### 1. Giao di?n
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
 | **Route** | `/products/:id` |
 | **Page** | `ProductDetailPage.tsx` |
-| **Nhãn** | `"Thêm vào giỏ"` (hoặc tương đương) |
+| **Nh�n** | `"Th�m v�o gi?"` (ho?c tuong duong) |
 
 #### 2. Frontend
 
 ```text
 onClick add
-  → useCart() / CartContext.addItem({ productId, quantity, size, toppings })
-  → cartService.add → POST /Cart
-  (+ guestUserId nếu chưa login)
+  ? useCart() / CartContext.addItem({ productId, quantity, size, toppings })
+  ? cartService.add ? POST /Cart
+  (+ guestUserId n?u chua login)
 ```
 
 #### 3. Backend
 
 ```text
-CartController POST → AddCartItemHandler → CART / CART_ITEM
+CartController POST ? AddCartItemHandler ? CART / CART_ITEM
 ```
 
-#### 5. Hiển thị
+#### 5. Hi?n th?
 
-`toast.success('Đã thêm vào giỏ: {name}')` (CartContext); lỗi conflict 1 quán → toast error API.
+`toast.success('�� th�m v�o gi?: {name}')` (CartContext); l?i conflict 1 qu�n ? toast error API.
 
-**Chi tiết cart:** [04_Cart_UI_Trace.md](./04_Cart_UI_Trace.md) (nếu có) / workflow Cart.
+**Chi ti?t cart:** [04_Cart_UI_Trace.md](./04_Cart_UI_Trace.md) (n?u c�) / workflow Cart.
 
 ---
 
-### UT-PRD-03 — Báo cáo sản phẩm / Viết đánh giá
+### UT-PRD-03 � B�o c�o s?n ph?m / Vi?t d�nh gi�
 
-#### 1. Giao diện
+#### 1. Giao di?n
 
-`ProductDetailPage` / `ProductReviews.tsx` — nút Báo cáo, form đánh giá.
+`ProductDetailPage` / `ProductReviews.tsx` � n�t B�o c�o, form d�nh gi�.
 
-#### 2–3.
+#### 2�3.
 
 ```text
-Report  → POST /Product/Report → SystemReport
-Review  → POST /Product/review → ProductReview
-Reply   → POST /Product/review/{id}/reply (Seller)
-Report review → POST /Product/review/{id}/report
+Report  ? POST /Product/Report ? SystemReport
+Review  ? POST /Product/review ? ProductReview
+Reply   ? POST /Product/review/{id}/reply (Seller)
+Report review ? POST /Product/review/{id}/report
 ```
 
-#### 5. Hiển thị
+#### 5. Hi?n th?
 
-toast success từng action; list reviews re-fetch `GET /Product/{id}/reviews`.
+toast success t?ng action; list reviews re-fetch `GET /Product/{id}/reviews`.
 
 ---
 
-### UT-PRD-04 — Seller: Thêm sản phẩm (`"Thêm sản phẩm"`)
+### UT-PRD-04 � Seller: Th�m s?n ph?m (`"Th�m s?n ph?m"`)
 
-#### 1. Giao diện
+#### 1. Giao di?n
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
 | **Route** | `/seller/products` |
 | **Page** | `pages/seller/SellerProductsPage.tsx` |
-| **Mở form** | `handleAdd` → modal form |
+| **M? form** | `handleAdd` ? modal form |
 | **Submit** | `ProductForm` `onSubmit={handleSubmit}` |
 
 #### 2. Frontend
 
 ```text
-handleUploadImage → authService.uploadImage → POST /User/UploadImage → imageUrls[]
+handleUploadImage ? authService.uploadImage ? POST /User/UploadImage ? imageUrls[]
 handleSubmit
-  → validate name, price>0, category
-  → productService.create(...) → POST /Product
-  → (edit) productService.update → PUT /Product/{id}
+  ? validate name, price>0, category
+  ? productService.create(...) ? POST /Product
+  ? (edit) productService.update ? PUT /Product/{id}
 ```
 
-Có thể qua `useProducts` hook (toast chuẩn).
+C� th? qua `useProducts` hook (toast chu?n).
 
 #### 3. Backend
 
 ```text
 AddProductHandler
-  → Product Status=Pending, gắn Restaurant của seller
-  → Images / Sizes / Toppings
+  ? Product Status=Pending, g?n Restaurant c?a seller
+  ? Images / Sizes / Toppings
 ```
 
-#### 4–5. Hiển thị
+#### 4�5. Hi?n th?
 
-| Create OK | toast `Thêm sản phẩm thành công!` + đóng modal + reload list |
-| Update OK | toast `Cập nhật sản phẩm thành công!` |
-| Validate | toast tên/giá/danh mục |
-| Upload | toast.loading → success/error |
+| Create OK | toast `Th�m s?n ph?m th�nh c�ng!` + d�ng modal + reload list |
+| Update OK | toast `C?p nh?t s?n ph?m th�nh c�ng!` |
+| Validate | toast t�n/gi�/danh m?c |
+| Upload | toast.loading ? success/error |
 
 ---
 
-### UT-PRD-05 — Seller: Ẩn/hiện & Còn/hết hàng
+### UT-PRD-05 � Seller: ?n/hi?n & C�n/h?t h�ng
 
-#### 1. Giao diện
+#### 1. Giao di?n
 
-Icon/button trên từng row product: `handleToggleVisibility` / `handleToggleStock`.
+Icon/button tr�n t?ng row product: `handleToggleVisibility` / `handleToggleStock`.
 
-#### 2–3.
+#### 2�3.
 
 ```text
 PATCH /Product/Visibility/{id}
 PATCH /Product/StockStatus/{id}
 ```
 
-#### 5. Hiển thị
+#### 5. Hi?n th?
 
-toast `Đã hiện/ẩn sản phẩm` / `Đã mở bán lại` / `Đã đánh dấu hết hàng`; cập nhật state row.
+toast `�� hi?n/?n s?n ph?m` / `�� m? b�n l?i` / `�� d�nh d?u h?t h�ng`; c?p nh?t state row.
 
 ---
 
-### UT-PRD-06 — Seller: Xóa sản phẩm
+### UT-PRD-06 � Seller: X�a s?n ph?m
 
-#### 1. Giao diện
+#### 1. Giao di?n
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
-| **Mở** | `handleDeleteClick` → `DeleteConfirmModal` |
-| **Nhãn confirm** | `"Xóa"` `onClick={onConfirm}` → `handleDeleteConfirm` |
+| **M?** | `handleDeleteClick` ? `DeleteConfirmModal` |
+| **Nh�n confirm** | `"X�a"` `onClick={onConfirm}` ? `handleDeleteConfirm` |
 
-#### 2–3.
+#### 2�3.
 
 ```text
-DELETE /Product/{id} → soft-delete IsDeleted
+DELETE /Product/{id} ? soft-delete IsDeleted
 ```
 
-#### 5. Hiển thị
+#### 5. Hi?n th?
 
-toast xóa thành công; đóng modal; remove khỏi list.
+toast x�a th�nh c�ng; d�ng modal; remove kh?i list.
 
 ---
 
-### UT-PRD-07 — Admin: Duyệt / Từ chối sản phẩm
+### UT-PRD-07 � Admin: Duy?t / T? ch?i s?n ph?m
 
-#### 1. Giao diện
+#### 1. Giao di?n
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
 | **Route** | `/admin/approvals` tab products |
 | **Page** | `AdminApprovalsPage.tsx` |
-| **Nút** | Duyệt / Từ chối → `openActionModal` → Modal confirm `handleActionSubmit` |
+| **N�t** | Duy?t / T? ch?i ? `openActionModal` ? Modal confirm `handleActionSubmit` |
 
-#### 2–3.
+#### 2�3.
 
 ```text
 adminService.approveProduct({ productId, isApproved, rejectionReason? })
-  → POST /Admin/ApproveProduct
+  ? POST /Admin/ApproveProduct
 ```
 
-#### 5. Hiển thị
+#### 5. Hi?n th?
 
-toast `Đã phê duyệt thành công!` / `Đã từ chối...`; bắt buộc lý do khi reject; reload danh sách Pending.
+toast `�� ph� duy?t th�nh c�ng!` / `�� t? ch?i...`; b?t bu?c l� do khi reject; reload danh s�ch Pending.
 
 ---
 
-## Sơ đồ Seller CRUD
+## So d? Seller CRUD
 
 ```mermaid
 sequenceDiagram
-    participant Btn as Thêm/Sửa/Xóa
+    participant Btn as Th�m/S?a/X�a
     participant FE as SellerProductsPage
     participant API as ProductController
     participant UI as Toast+Table
@@ -214,23 +214,23 @@ sequenceDiagram
 
 ---
 
-## Phần B — Workflow nghiệp vụ & Backend (chi tiết luồng)
-## 1. Luồng Tổng Quan (Workflow)
+## Ph?n B � Workflow nghi?p v? & Backend (chi ti?t lu?ng)
+## 1. Lu?ng T?ng Quan (Workflow)
 
 ### A. Customer browse
 
-1. **Yêu cầu:** Khách mở `/products` hoặc Home → xem list / best sellers / recommendations.
-2. **Tìm kiếm:** Gọi `GET /api/Product/Search` với filter.
-3. **Chi tiết:** Mở `/products/:id` → `GET /api/Product/{id}`.
-4. **Đánh giá:** Xem `GET /api/Product/{productId}/reviews`; viết review `POST /api/Product/review` (đã login).
-5. **Báo cáo:** `POST /api/Product/Report` hoặc report review.
+1. **Y�u c?u:** Kh�ch m? `/products` ho?c Home ? xem list / best sellers / recommendations.
+2. **T�m ki?m:** G?i `GET /api/Product/Search` v?i filter.
+3. **Chi ti?t:** M? `/products/:id` ? `GET /api/Product/{id}`.
+4. **��nh gi�:** Xem `GET /api/Product/{productId}/reviews`; vi?t review `POST /api/Product/review` (d� login).
+5. **B�o c�o:** `POST /api/Product/Report` ho?c report review.
 
-### B. Seller quản lý món
+### B. Seller qu?n l� m�n
 
-1. Seller vào `/seller/products` → list món quán (`GET /api/Product` với user seller).
-2. Tạo món → `POST /api/Product` → Status = **Pending**.
-3. Sửa / xóa / đổi stock / ẩn hiện / khung giờ bán qua các PATCH/PUT/DELETE.
-4. Admin duyệt → `POST /api/Admin/ApproveProduct` → Status **Approved** (món mới hiện public đúng rule).
+1. Seller v�o `/seller/products` ? list m�n qu�n (`GET /api/Product` v?i user seller).
+2. T?o m�n ? `POST /api/Product` ? Status = **Pending**.
+3. S?a / x�a / d?i stock / ?n hi?n / khung gi? b�n qua c�c PATCH/PUT/DELETE.
+4. Admin duy?t ? `POST /api/Admin/ApproveProduct` ? Status **Approved** (m�n m?i hi?n public d�ng rule).
 
 ```mermaid
 sequenceDiagram
@@ -243,7 +243,7 @@ sequenceDiagram
     participant ADM as AdminController
     participant DB as PRODUCT
 
-    S->>FE: Tạo món
+    S->>FE: T?o m�n
     FE->>API: POST /api/Product
     API->>H: AddProductCommand
     H->>DB: Insert Status=Pending
@@ -258,9 +258,9 @@ sequenceDiagram
 
 ---
 
-## Bước 1: Customer — List / Search / Detail
+## Bu?c 1: Customer � List / Search / Detail
 
-**Thông tin FE:**
+**Th�ng tin FE:**
 - **URL:** `/products`, `/products/:id`, Home
 - **Pages:** `ShoppingFood.FE/src/pages/ProductsPage.tsx`, `ProductDetailPage.tsx`
 - **Service:** `ShoppingFood.FE/src/services/ProductService.ts`
@@ -269,14 +269,14 @@ sequenceDiagram
 
 | Method | Route | Auth | Business |
 |--------|-------|------|----------|
-| GET | `/api/Product` | Public / Auth | List (seller thấy món quán mình) |
-| GET | `/api/Product/{id}` | Public | Chi tiết |
-| GET | `/api/Product/Search` | Public | Tìm kiếm |
-| GET | `/api/Product/BestSellers` | Public | Bán chạy |
-| GET | `/api/Product/recommendations` | Public/Auth | Gợi ý |
+| GET | `/api/Product` | Public / Auth | List (seller th?y m�n qu�n m�nh) |
+| GET | `/api/Product/{id}` | Public | Chi ti?t |
+| GET | `/api/Product/Search` | Public | T�m ki?m |
+| GET | `/api/Product/BestSellers` | Public | B�n ch?y |
+| GET | `/api/Product/recommendations` | Public/Auth | G?i � |
 | GET | `/api/Product/Categories` | Public | Categories |
 
-**Controller** — `src/ShoppingFood.API/Controllers/ProductController.cs`:
+**Controller** � `src/ShoppingFood.API/Controllers/ProductController.cs`:
 
 ```csharp
 [HttpGet("Search")]
@@ -305,13 +305,13 @@ async search(query: ISearchProductQuery): Promise<IApiResponse<IProductDto[]>> {
 }
 ```
 
-**Handlers:** `Application/Features/Products/Queries/` — `SearchProductQuery`, `GetProductDetailQuery`, `GetBestSellersQuery`, `GetRecommendationsQuery`.
+**Handlers:** `Application/Features/Products/Queries/` � `SearchProductQuery`, `GetProductDetailQuery`, `GetBestSellersQuery`, `GetRecommendationsQuery`.
 
 **DB:** `PRODUCT`, `PRODUCT_IMAGE`, `PRODUCT_SIZE`, `PRODUCT_TOPPING`, `MENU_CATEGORY` (query filter `!IsDeleted`).
 
 ---
 
-## Bước 2: Customer — Reviews
+## Bu?c 2: Customer � Reviews
 
 | Method | Route | Auth |
 |--------|-------|------|
@@ -328,12 +328,12 @@ async search(query: ISearchProductQuery): Promise<IApiResponse<IProductDto[]>> {
 
 ---
 
-## Bước 3: Seller — Tạo món (Pending)
+## Bu?c 3: Seller � T?o m�n (Pending)
 
-**Thông tin:**
+**Th�ng tin:**
 - **URL (FE):** `/seller/products`
 - **Page:** `SellerProductsPage.tsx`
-- **Hook (thường):** `hooks/useProducts.ts` + toast
+- **Hook (thu?ng):** `hooks/useProducts.ts` + toast
 - **API:** `POST /api/Product`
 - **Auth:** Seller / Mall + RBAC
 
@@ -349,7 +349,7 @@ public async Task<ActionResult<ApiResponse>> Create([FromBody] AddProductCommand
 }
 ```
 
-**Handler** — `AddProductHandler.cs`:
+**Handler** � `AddProductHandler.cs`:
 
 ```csharp
 private void InitializeProduct(Product product)
@@ -357,7 +357,7 @@ private void InitializeProduct(Product product)
     if(product.Id == Guid.Empty) product.Id = Guid.NewGuid();
     product.CreatedAt = DateTime.UtcNow;
     product.UpdatedAt = DateTime.UtcNow;
-    product.Status = ProductStatus.Pending; // Chờ Admin duyệt
+    product.Status = ProductStatus.Pending; // Ch? Admin duy?t
 }
 ```
 
@@ -365,17 +365,17 @@ private void InitializeProduct(Product product)
 
 ---
 
-## Bước 4: Seller — Cập nhật vận hành món
+## Bu?c 4: Seller � C?p nh?t v?n h�nh m�n
 
-| Method | Route | Command | Việc |
+| Method | Route | Command | Vi?c |
 |--------|-------|---------|------|
-| PUT | `/api/Product/{id}` | `UpdateProductCommand` | Sửa thông tin |
+| PUT | `/api/Product/{id}` | `UpdateProductCommand` | S?a th�ng tin |
 | DELETE | `/api/Product/{id}` | `DeleteProductCommand` | Soft-delete |
-| PATCH | `/api/Product/StockStatus/{id}` | `UpdateProductStockCommand` | Còn/hết hàng |
-| PATCH | `/api/Product/Visibility/{id}` | `ToggleProductVisibilityCommand` | Ẩn/hiện |
-| PATCH | `/api/Product/TimeAvailability/{id}` | `UpdateProductAvailabilityCommand` | Khung giờ bán |
+| PATCH | `/api/Product/StockStatus/{id}` | `UpdateProductStockCommand` | C�n/h?t h�ng |
+| PATCH | `/api/Product/Visibility/{id}` | `ToggleProductVisibilityCommand` | ?n/hi?n |
+| PATCH | `/api/Product/TimeAvailability/{id}` | `UpdateProductAvailabilityCommand` | Khung gi? b�n |
 
-**Controller ví dụ:**
+**Controller v� d?:**
 
 ```csharp
 [HttpPatch("StockStatus/{id}")]
@@ -395,18 +395,18 @@ async updateStockStatus(data: IUpdateStockStatusRequest): Promise<IApiResponse<I
 async updateAvailability(data: IUpdateAvailabilityRequest): Promise<IApiResponse<IProductDto>> { ... }
 ```
 
-> Seller bị **Suspended** → `CheckSellerSuspensionAttribute` chặn mutating verbs.
+> Seller b? **Suspended** ? `CheckSellerSuspensionAttribute` ch?n mutating verbs.
 
 ---
 
-## Bước 5: Admin — Duyệt sản phẩm
+## Bu?c 5: Admin � Duy?t s?n ph?m
 
-**Thông tin:**
-- **URL (FE):** `/admin/approvals` (hoặc trang approvals sản phẩm)
+**Th�ng tin:**
+- **URL (FE):** `/admin/approvals` (ho?c trang approvals s?n ph?m)
 - **API:** `POST /api/Admin/ApproveProduct`
 - **Auth:** Admin
 
-**Controller** — `AdminController.cs`:
+**Controller** � `AdminController.cs`:
 
 ```csharp
 [HttpPost("ApproveProduct")]
@@ -417,31 +417,31 @@ public async Task<ActionResult<ApiResponse>> ApproveProduct([FromBody] ApprovePr
 }
 ```
 
-**FE:** `AdminService.approveProduct` → `POST /Admin/ApproveProduct`.
+**FE:** `AdminService.approveProduct` ? `POST /Admin/ApproveProduct`.
 
-**Enum:** `ProductStatus`: Pending → Approved | Rejected.
+**Enum:** `ProductStatus`: Pending ? Approved | Rejected.
 
 ---
 
-## Sơ đồ file đi qua (Call chain)
+## So d? file di qua (Call chain)
 
 ```text
 ProductsPage / ProductDetailPage / SellerProductsPage
-  ↓
+  ?
 ProductService.ts / useProducts.ts
-  ↓
+  ?
 HttpClient + Bearer
-  ↓
+  ?
 ProductController / AdminController.ApproveProduct
-  ↓
-MediatR → Features/Products/(Commands|Queries) / Admin ApproveProduct
-  ↓
+  ?
+MediatR ? Features/Products/(Commands|Queries) / Admin ApproveProduct
+  ?
 ProductRepository / ShoppingFoodContext
-  ↓
+  ?
 PRODUCT (+ Images, Sizes, Toppings, Reviews)
 ```
 
-| Vai trò | Đường dẫn |
+| Vai tr� | �u?ng d?n |
 |---------|-----------|
 | Controller | `src/ShoppingFood.API/Controllers/ProductController.cs` |
 | Approve | `src/ShoppingFood.API/Controllers/AdminController.cs` |
@@ -453,41 +453,41 @@ PRODUCT (+ Images, Sizes, Toppings, Reviews)
 
 ---
 
-## Các thông báo (Toast / Message)
+## C�c th�ng b�o (Toast / Message)
 
-| Message / hành vi | Nơi | Trigger |
+| Message / h�nh vi | Noi | Trigger |
 |-------------------|-----|---------|
-| Toast tạo/sửa/xóa món | `useProducts.ts` / SellerProductsPage | CRUD OK/fail |
-| Toast duyệt món | `useAdmin.ts` / AdminApprovals | ApproveProduct |
-| ApiResponse.Message | Mọi API | Error từ handler |
-| Confirm xóa | `DeleteConfirmModal` trên SellerProductsPage | Trước DELETE |
+| Toast t?o/s?a/x�a m�n | `useProducts.ts` / SellerProductsPage | CRUD OK/fail |
+| Toast duy?t m�n | `useAdmin.ts` / AdminApprovals | ApproveProduct |
+| ApiResponse.Message | M?i API | Error t? handler |
+| Confirm x�a | `DeleteConfirmModal` tr�n SellerProductsPage | Tru?c DELETE |
 
 ---
 
-## Các cơ chế bảo mật / nghiệp vụ quan trọng
+## C�c co ch? b?o m?t / nghi?p v? quan tr?ng
 
-1. **Pending trước khi public:** món mới `ProductStatus.Pending` — Admin duyệt mới Approved.
-2. **Soft-delete:** `IsDeleted` + global query filter trên Product và quan hệ.
-3. **Seller ownership:** Handler gắn `CurrentUserId` → chỉ sửa món quán mình.
-4. **Seller suspension filter:** chặn write khi quán Suspended.
+1. **Pending tru?c khi public:** m�n m?i `ProductStatus.Pending` � Admin duy?t m?i Approved.
+2. **Soft-delete:** `IsDeleted` + global query filter tr�n Product v� quan h?.
+3. **Seller ownership:** Handler g?n `CurrentUserId` ? ch? s?a m�n qu�n m�nh.
+4. **Seller suspension filter:** ch?n write khi qu�n Suspended.
 5. **RBAC:** endpoint Product/Admin qua `AuthenticationFilter` + RolePermission.
 
 ---
 
-## Checklist tự test
+## Checklist t? test
 
 - [ ] Guest xem list + search + detail
-- [ ] Seller tạo món → Status Pending, khách chưa thấy như Approved
-- [ ] Admin ApproveProduct → món hiện đúng
-- [ ] StockStatus / Visibility / TimeAvailability cập nhật OK
-- [ ] Soft-delete không còn trong list public
-- [ ] Review + seller reply hoạt động
-- [ ] Seller Suspended không POST/PUT được
+- [ ] Seller t?o m�n ? Status Pending, kh�ch chua th?y nhu Approved
+- [ ] Admin ApproveProduct ? m�n hi?n d�ng
+- [ ] StockStatus / Visibility / TimeAvailability c?p nh?t OK
+- [ ] Soft-delete kh�ng c�n trong list public
+- [ ] Review + seller reply ho?t d?ng
+- [ ] Seller Suspended kh�ng POST/PUT du?c
 
 ---
 
-## Tóm tắt
+## T�m t?t
 
-Catalog = **browse public** + **Seller CRUD với Pending** + **Admin Approve**. Entry API: `ProductController` + `Admin/ApproveProduct`.
+Catalog = **browse public** + **Seller CRUD v?i Pending** + **Admin Approve**. Entry API: `ProductController` + `Admin/ApproveProduct`.
 
-> Liên kết: [Restaurant_Seller_Workflow.md](./Restaurant_Seller_Workflow.md) · [README](./README.md)
+> Li�n k?t: [Restaurant_Seller_Workflow.md](./Restaurant_Seller_Workflow.md) � [README](./README.md)

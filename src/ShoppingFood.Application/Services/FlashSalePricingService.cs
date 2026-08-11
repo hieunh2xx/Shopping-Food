@@ -84,6 +84,17 @@ namespace ShoppingFood.Application.Services
             foreach (var item in cart.Items)
             {
                 if (item.Product == null) continue;
+                // Món tặng Mua X Tặng Y luôn giữ giá 0
+                if (item.IsGift)
+                {
+                    if (item.PriceAtAdded != 0)
+                    {
+                        item.PriceAtAdded = 0;
+                        _cartItemRepository.Update(item);
+                        needsUpdate = true;
+                    }
+                    continue;
+                }
 
                 decimal baseExpectedPrice = flashSalePrices.TryGetValue(item.ProductId, out var fsp)
                                             ? fsp : item.Product.Price;

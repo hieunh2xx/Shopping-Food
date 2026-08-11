@@ -35,6 +35,9 @@ export interface IRestaurantProfileDto {
   products: IProductDto[];
 }
 
+/** Alias used by promo/home sections that only need restaurant identity + name. */
+export type IRestaurantDto = Pick<IRestaurantProfileDto, 'id' | 'restaurantName' | 'logoUrl' | 'address'>;
+
 export interface INearbyRestaurantDto {
   id: string;
   restaurantName: string;

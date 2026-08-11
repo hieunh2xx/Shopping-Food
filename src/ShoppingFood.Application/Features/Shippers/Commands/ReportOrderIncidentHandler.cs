@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using ShoppingFood.Application.Interfaces;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
 using ShoppingFood.Domain.Enums;
@@ -18,6 +19,7 @@ namespace ShoppingFood.Application.Features.Shippers.Commands
         private readonly IOrderRepository _orderRepository;
         private readonly ISystemReportRepository _systemReportRepository;
         private readonly INotificationRepository _notificationRepository;
+        private readonly IPaymentSettlementService _paymentSettlementService;
         private readonly IUnitOfWork _unitOfWork;
 
         public ReportOrderIncidentHandler(
@@ -25,12 +27,14 @@ namespace ShoppingFood.Application.Features.Shippers.Commands
             IOrderRepository orderRepository,
             ISystemReportRepository systemReportRepository,
             INotificationRepository notificationRepository,
+            IPaymentSettlementService paymentSettlementService,
             IUnitOfWork unitOfWork)
         {
             _userRepository = userRepository;
             _orderRepository = orderRepository;
             _systemReportRepository = systemReportRepository;
             _notificationRepository = notificationRepository;
+            _paymentSettlementService = paymentSettlementService;
             _unitOfWork = unitOfWork;
         }
 
@@ -50,8 +54,10 @@ namespace ShoppingFood.Application.Features.Shippers.Commands
 
             var orders = await _orderRepository.GetAsync(
                 predicate: o => o.Id == request.OrderId && o.Shipper.UserProfileId == userProfile.Id,
-                include: q => q.Include(o => o.Shipper),
-                disableTracking: true
+                include: q => q
+                    .Include(o => o.Shipper)
+                    .Include(o => o.Items).ThenInclude(i => i.Product).ThenInclude(p => p!.Restaurant).ThenInclude(r => r.Owner),
+                disableTracking: false
             );
             var order = orders.FirstOrDefault();
             if (order == null)
@@ -59,6 +65,12 @@ namespace ShoppingFood.Application.Features.Shippers.Commands
 
             if (order.Status != OrderStatus.Shipping && order.Status != OrderStatus.WaitingForShipper)
                 return ApiResponse.Failure(400, "You can only report incidents for active orders.");
+
+            var reasonText = string.IsNullOrWhiteSpace(request.Content)
+                ? request.Title
+                : $"{request.Title}: {request.Content}".Trim();
+            if (reasonText.Length > 480)
+                reasonText = reasonText[..480];
 
             var report = new SystemReport
             {
@@ -74,23 +86,36 @@ namespace ShoppingFood.Application.Features.Shippers.Commands
             };
 
             _systemReportRepository.Add(report);
-            
-            // Notify Coordinators
-            var coordinators = await _userRepository.GetAsync(
-                predicate: u => u.Profile != null && u.Profile.Role == UserRole.Coordinator,
+
+            // Hủy đơn + lưu lý do để nhà hàng / khách xem trong chi tiết đơn
+            order.Status = OrderStatus.Cancelled;
+            order.RejectReason = $"[Delivery Failed] {reasonText}";
+            order.UpdatedAt = DateTime.UtcNow;
+            _orderRepository.Update(order);
+
+            await _paymentSettlementService.ProcessRefundAsync(order);
+
+            NotifyCustomer(order, userProfile.FullName, reasonText);
+            NotifyRestaurant(order, userProfile.FullName, reasonText);
+
+            var staffUsers = await _userRepository.GetAsync(
+                predicate: u => u.Profile != null &&
+                    (u.Profile.Role == UserRole.Coordinator || u.Profile.Role == UserRole.Admin),
                 include: q => q.Include(u => u.Profile),
                 disableTracking: true
             );
 
-            foreach (var coordinator in coordinators)
+            var shortOrderId = order.Id.ToString()[..8].ToUpperInvariant();
+            foreach (var staff in staffUsers)
             {
                 _notificationRepository.Add(new Notification
                 {
                     Id = Guid.NewGuid(),
-                    UserId = coordinator.Id,
+                    UserId = staff.Id,
                     Title = "Báo cáo sự cố từ Shipper",
-                    Message = $"Shipper {userProfile.FullName} vừa báo cáo sự cố liên quan đến đơn hàng. Mã báo cáo: {report.Id}",
+                    Message = $"Shipper {userProfile.FullName} báo cáo và hủy đơn #{shortOrderId}. Lý do: {reasonText}",
                     NotificationType = NotificationType.System,
+                    TargetId = order.Id,
                     IsRead = false,
                     CreateAt = DateTime.UtcNow
                 });
@@ -98,7 +123,45 @@ namespace ShoppingFood.Application.Features.Shippers.Commands
 
             await _unitOfWork.SaveChangesAsync();
 
-            return ApiResponse.Success(new { IncidentId = report.Id }, "Report submitted successfully.");
+            return ApiResponse.Success(
+                new { IncidentId = report.Id, Status = order.Status.ToString(), RejectReason = order.RejectReason },
+                "Đã hủy đơn và gửi báo cáo sự cố.");
+        }
+
+        private void NotifyCustomer(Order order, string shipperName, string reason)
+        {
+            if (!order.UserAccountId.HasValue) return;
+            _notificationRepository.Add(new Notification
+            {
+                Id = Guid.NewGuid(),
+                UserId = order.UserAccountId.Value,
+                Title = "Đơn hàng đã bị hủy",
+                Message = "Đơn hàng của bạn đã bị hủy. Bạn có thể xem chi tiết trong mục đơn hàng.",
+                NotificationType = NotificationType.Delivery,
+                TargetId = order.Id,
+                IsRead = false,
+                CreateAt = DateTime.UtcNow
+            });
+        }
+
+        private void NotifyRestaurant(Order order, string shipperName, string reason)
+        {
+            var restaurant = order.Items?.FirstOrDefault()?.Product?.Restaurant;
+            var ownerUserId = restaurant?.Owner?.UserAccountId;
+            if (!ownerUserId.HasValue) return;
+
+            var shortId = order.Id.ToString()[..8].ToUpperInvariant();
+            _notificationRepository.Add(new Notification
+            {
+                Id = Guid.NewGuid(),
+                UserId = ownerUserId.Value,
+                Title = "Tài xế hủy giao đơn hàng",
+                Message = $"Đơn #{shortId} đã bị tài xế '{shipperName}' báo sự cố / hủy. Lý do: {reason}.",
+                NotificationType = NotificationType.Order,
+                TargetId = order.Id,
+                IsRead = false,
+                CreateAt = DateTime.UtcNow
+            });
         }
     }
 }

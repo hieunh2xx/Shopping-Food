@@ -1,6 +1,6 @@
 # Tài liệu Quy trình: SePay VietQR (QR / Webhook / IPN / Reconcile / Expiry)
 
-Tài liệu mô tả chi tiết luồng thanh toán **SePay** trong hệ thống **Shopping Food**: tạo QR, nhận webhook/IPN, đối soát, hết hạn phiên — gồm **Phần A (UI Trace)** và **Phần B (nghiệp vụ/backend)**.
+Tài liệu mô tả chi tiết luồng thanh toán **SePay** trong hệ thống **UniEats**: tạo QR, nhận webhook/IPN, đối soát, hết hạn phiên — gồm **Phần A (UI Trace)** và **Phần B (nghiệp vụ/backend)**.
 
 > **Requirements:** [Payment_Requirements.md](./Payment_Requirements.md)  
 > Gắn session từ checkout/top-up: [Payment_Checkout_Workflow.md](./Payment_Checkout_Workflow.md), [Payment_Wallet_Withdraw_Workflow.md](./Payment_Wallet_Withdraw_Workflow.md)

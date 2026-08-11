@@ -1,6 +1,6 @@
 # Nhật Ký Unit Test Toàn Bộ Hệ Thống (Test Log)
 
-Đây là tài liệu theo dõi tiến trình viết Unit Test cho dự án **Shopping Food**, bao gồm cả Backend (API, Logic Functions) và Frontend (UI Components, Hooks).
+Đây là tài liệu theo dõi tiến trình viết Unit Test cho dự án **UniEats**, bao gồm cả Backend (API, Logic Functions) và Frontend (UI Components, Hooks).
 
 Quy ước trạng thái:
 - ⬜ Chưa làm (Pending)

@@ -209,6 +209,26 @@ namespace ShoppingFood.API.Controllers
             return StatusCode(response.Code, response);
         }
 
+        [HttpPost("orders/{orderId}/request-explanation")]
+        public async Task<ActionResult<ApiResponse>> RequestExplanation(Guid orderId, [FromBody] RequestOrderExplanationCommand command)
+        {
+            command.OrderId = orderId;
+            if (userDto != null)
+                command.CurrentUserId = userDto.Id;
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpGet("orders/{orderId}/explanation")]
+        public async Task<ActionResult<ApiResponse>> GetOrderExplanation(Guid orderId)
+        {
+            var query = new GetOrderExplanationQuery { OrderId = orderId };
+            if (userDto != null)
+                query.CurrentUserId = userDto.Id;
+            var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
+        }
+
         [HttpGet("complaints/orders")]
         public async Task<ActionResult<ApiResponse>> GetOrderComplaints([FromQuery] string? status, [FromQuery] int skip = 0, [FromQuery] int take = 20)
         {

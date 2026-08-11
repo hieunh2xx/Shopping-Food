@@ -308,7 +308,7 @@ export function ShipperApplyPage() {
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-xl shadow-orange-500/20">
               <ChefHat className="w-7 h-7 text-gray-900" />
             </div>
-            <span className="text-2xl font-bold text-gray-900 group-hover:text-orange-600 transition-colors">Shopping Food</span>
+            <span className="text-2xl font-bold text-gray-900 group-hover:text-orange-600 transition-colors">UniEats</span>
           </Link>
 
           <h2 className="text-4xl font-bold text-gray-900 leading-tight mb-4">
@@ -319,7 +319,7 @@ export function ShipperApplyPage() {
             </span>
           </h2>
           <p className="text-gray-600 text-lg max-w-md leading-relaxed">
-            Tự do thời gian, thu nhập hấp dẫn. Đăng ký ngay để trở thành tài xế Shopping Food.
+            Tự do thời gian, thu nhập hấp dẫn. Đăng ký ngay để trở thành tài xế UniEats.
           </p>
         </div>
       </div>
@@ -333,7 +333,7 @@ export function ShipperApplyPage() {
               <ChefHat className="w-6 h-6 text-gray-900" />
             </div>
             <span className="text-xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
-              Shopping Food
+              UniEats
             </span>
           </div>
 
@@ -497,7 +497,7 @@ export function ShipperApplyPage() {
                   <label className="flex items-start gap-3 cursor-pointer group">
                     <input type="checkbox" required className="mt-1 w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500 transition-colors cursor-pointer" />
                     <span className="text-sm text-gray-600 leading-relaxed">
-                      Tôi xác nhận các thông tin trên là chính xác và đồng ý với <a href="#" onClick={(e) => handleOpenLegalModal(e, 'terms')} className="text-orange-500 font-medium hover:underline">Điều khoản dịch vụ</a> và <a href="#" onClick={(e) => handleOpenLegalModal(e, 'privacy')} className="text-orange-500 font-medium hover:underline">Chính sách bảo mật</a> của ShoppingFood dành cho Đối tác Giao hàng.
+                      Tôi xác nhận các thông tin trên là chính xác và đồng ý với <a href="#" onClick={(e) => handleOpenLegalModal(e, 'terms')} className="text-orange-500 font-medium hover:underline">Điều khoản dịch vụ</a> và <a href="#" onClick={(e) => handleOpenLegalModal(e, 'privacy')} className="text-orange-500 font-medium hover:underline">Chính sách bảo mật</a> của UniEats dành cho Đối tác Giao hàng.
                     </span>
                   </label>
                 </div>

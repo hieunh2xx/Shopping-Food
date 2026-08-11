@@ -62,8 +62,13 @@ namespace ShoppingFood.Application.Features.Support.Commands
             if (!order.ShipperId.HasValue)
                 return ApiResponse.Failure(400, "This order has no assigned shipper.");
 
-            if (order.Status != Domain.Enums.OrderStatus.Delivered)
-                return ApiResponse.Failure(400, "Ypu can only submit a shipper complaint after the order hss been marked as delivered.");
+            if (order.Status != Domain.Enums.OrderStatus.Delivered && order.Status != Domain.Enums.OrderStatus.Cancelled)
+                return ApiResponse.Failure(400, "Chỉ có thể báo cáo tài xế khi đơn đã giao hoặc đã hủy.");
+
+            if (order.Status == Domain.Enums.OrderStatus.Cancelled
+                && (order.RejectReason == null || !order.RejectReason.StartsWith("[Delivery Failed]"))
+                && !order.ShipperId.HasValue)
+                return ApiResponse.Failure(400, "Đơn hủy này không liên quan đến tài xế.");
 
             if (DateTime.UtcNow > order.UpdatedAt.AddHours(24))
                 return ApiResponse.Failure(400, "Shipper complaint must be submitted within 24 hours. The deadline has passed.");

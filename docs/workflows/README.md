@@ -1,4 +1,4 @@
-# Shopping Food — Mục lục Workflow (đủ luồng chính)
+# UniEats — Mục lục Workflow (đủ luồng chính)
 
 Mỗi file = **Phần A (UI nút → code → data → hiển thị)** + **Phần B (nghiệp vụ/backend)**.
 

@@ -177,7 +177,7 @@ export function SellerSettingsPage() {
       const data = await res.json();
       if (data && data.address) {
         const ignoreKeys = ['postcode', 'country', 'country_code', 'ISO3166-2-lvl4'];
-        const addressParts = [];
+        const addressParts: string[] = [];
         for (const key in data.address) {
           if (!ignoreKeys.includes(key) && data.address[key]) {
             // Check if it's not already in the array to prevent duplication

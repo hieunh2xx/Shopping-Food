@@ -20,8 +20,6 @@ const HeatmapLayer = ({ points }: { points: IHeatmapPoint[] }) => {
   useEffect(() => {
     if (!map || points.length === 0) return;
 
-    console.log("Heatmap points:", points);
-
     const heatPoints = points.map(p => [p.latitude, p.longitude, p.weight * 5] as L.HeatLatLngTuple);
     const heatLayer = (L as any).heatLayer(heatPoints, {
       radius: 40,

@@ -1,18 +1,27 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Shield, Star, History, RotateCcw, MapPin, TrendingUp, Flame, Bike, UtensilsCrossed, Crown } from 'lucide-react';
-import { useProducts, useCart, useAuth } from '../hooks';
+import { useProducts, useCart, useAuth, useUserLocation } from '../hooks';
 import { FlashSaleSection } from '../components/promotions/FlashSaleSection';
 import { BuyXGetYSection } from '../components/promotions/BuyXGetYSection';
 import { RecommendationSection } from '../components/recommendations/RecommendationSection';
 import { restaurantService } from '../services/RestaurantService';
 import { orderService } from '../services/OrderService';
 import { adminService } from '../services';
+import { supportService } from '../services/SupportService';
 import type { INearbyRestaurantDto } from '../interfaces';
 import { ROUTES } from '../routes/routeConfig';
 import { formatCurrency } from '../utils/formatters';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { CarouselSlider } from '../components/ui/CarouselSlider';
+import { ProductLocationMeta } from '../components/product/ProductLocationMeta';
+
+function formatStatCount(n: number): string {
+  if (!Number.isFinite(n) || n < 0) return '0';
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M+`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(n % 1_000 === 0 ? 0 : 1)}K+`;
+  return n.toLocaleString('vi-VN');
+}
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -20,6 +29,15 @@ export function HomePage() {
   const [globalCategories, setGlobalCategories] = useState<any[]>([]);
   const { addItem } = useCart();
   const { isAuthenticated, user } = useAuth();
+  const { hasGps, latitude: userLat, longitude: userLng } = useUserLocation();
+
+  const [platformStats, setPlatformStats] = useState<{
+    restaurantCount: number;
+    customerCount: number;
+    averageRating: number;
+    shippingFee: number;
+    freeShippingMinimumOrder: number;
+  } | null>(null);
 
 
 
@@ -38,7 +56,25 @@ export function HomePage() {
 
   useEffect(() => {
     fetchGlobalCategories();
+    fetchPlatformStats();
   }, []);
+
+  const fetchPlatformStats = async () => {
+    try {
+      const res = await supportService.getPlatformStats();
+      if (!res.error && res.data) {
+        setPlatformStats({
+          restaurantCount: res.data.restaurantCount ?? 0,
+          customerCount: res.data.customerCount ?? 0,
+          averageRating: res.data.averageRating ?? 0,
+          shippingFee: res.data.shippingFee ?? 0,
+          freeShippingMinimumOrder: res.data.freeShippingMinimumOrder ?? 0,
+        });
+      }
+    } catch {
+      console.error('Lỗi tải thống kê nền tảng');
+    }
+  };
 
   const fetchGlobalCategories = async () => {
     try {
@@ -138,13 +174,19 @@ export function HomePage() {
           <div className="max-w-xl">
             <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1.5 rounded-full mb-5">
               <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-              Giao hàng trong 30 phút
+              {platformStats && platformStats.freeShippingMinimumOrder > 0
+                ? `Freeship đơn từ ${formatCurrency(platformStats.freeShippingMinimumOrder)}`
+                : platformStats && platformStats.shippingFee > 0
+                  ? `Phí ship ${formatCurrency(platformStats.shippingFee)}`
+                  : 'Giao hàng nhanh trong khu vực'}
             </div>
             <h1 className="text-4xl lg:text-5xl font-extrabold text-white leading-tight mb-3">
               Đặt món ngon<br /><span className="text-yellow-200">chỉ trong vài giây</span>
             </h1>
             <p className="text-white/80 text-base mb-8 leading-relaxed">
-              Hơn 5,000+ nhà hàng · Giao hàng nhanh · Ưu đãi mỗi ngày
+              {platformStats
+                ? `${formatStatCount(platformStats.restaurantCount)} nhà hàng · Giao hàng nhanh · Ưu đãi mỗi ngày`
+                : 'Giao hàng nhanh · Ưu đãi mỗi ngày'}
             </p>
 
             <Link
@@ -156,7 +198,24 @@ export function HomePage() {
             </Link>
 
             <div className="flex items-center gap-6 mt-6">
-              {[["5,000+", "Nhà hàng"], ["2M+", "Khách hàng"], ["4.9★", "Đánh giá"]].map(([v, l]) => (
+              {(
+                platformStats
+                  ? [
+                      [formatStatCount(platformStats.restaurantCount), 'Nhà hàng'],
+                      [formatStatCount(platformStats.customerCount), 'Khách hàng'],
+                      [
+                        platformStats.averageRating > 0
+                          ? `${platformStats.averageRating.toFixed(1)}★`
+                          : '—',
+                        'Đánh giá',
+                      ],
+                    ]
+                  : [
+                      ['…', 'Nhà hàng'],
+                      ['…', 'Khách hàng'],
+                      ['…', 'Đánh giá'],
+                    ]
+              ).map(([v, l]) => (
                 <div key={l} className="text-center">
                   <div className="text-white font-bold text-lg">{v}</div>
                   <div className="text-white/70 text-xs">{l}</div>
@@ -212,8 +271,8 @@ export function HomePage() {
         {/* Gợi ý cho bạn */}
         {isAuthenticated && (
           <RecommendationSection
-            latitude={locationStatus === 'success' ? 10.7769 : undefined}
-            longitude={locationStatus === 'success' ? 106.7009 : undefined}
+            latitude={hasGps && userLat != null ? userLat : undefined}
+            longitude={hasGps && userLng != null ? userLng : undefined}
           />
         )}
 
@@ -247,6 +306,12 @@ export function HomePage() {
                   </div>
                   <div className="p-3 flex flex-col flex-1">
                     <p className="text-[11px] text-gray-400 truncate">{item.restaurantName}</p>
+                    <ProductLocationMeta
+                      className="mt-0.5"
+                      restaurantAddress={item.restaurantAddress}
+                      restaurantLatitude={item.restaurantLatitude}
+                      restaurantLongitude={item.restaurantLongitude}
+                    />
                     <p className="text-sm font-semibold text-gray-800 line-clamp-2 mt-1 min-h-[40px] leading-tight">{item.itemName}</p>
                     <div className="flex items-center justify-between mt-auto pt-2">
                       <span className="text-orange-500 font-bold text-sm">{formatCurrency(item.price)}</span>

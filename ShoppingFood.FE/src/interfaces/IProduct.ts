@@ -26,6 +26,9 @@ export interface IProductDto {
   availableTo: string | null;
   isAvailableNow: boolean;
   status: string;
+  restaurantAddress?: string | null;
+  restaurantLatitude?: number | null;
+  restaurantLongitude?: number | null;
 }
 
 export interface IProductRecommendationDto extends IProductDto {
@@ -46,7 +49,7 @@ export interface IProductToppingDto {
  * Mirrors backend ProductSizeDto.cs
  */
 export interface IProductSizeDto {
-  id: string;
+  id?: string;
   sizeName: string;
   extraPrice: number;
   isDefault?: boolean;

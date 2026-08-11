@@ -62,7 +62,7 @@ export function RestaurantsPage() {
     r.restaurantAddress?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const totalPages = Math.ceil(filteredRestaurants.length / take);
+  // const totalPages = Math.ceil(filteredRestaurants.length / take);
   const paginatedRestaurants = filteredRestaurants.slice((page - 1) * take, page * take);
 
   // Reset page when search query changes

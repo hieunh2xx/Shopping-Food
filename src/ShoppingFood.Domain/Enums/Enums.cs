@@ -101,7 +101,9 @@ namespace ShoppingFood.Domain.Enums
         ShipperEarning,
         CodCollection,
         CodRemittance,
-        Adjustment
+        Adjustment,
+        /// <summary>Sàn bù phí giao (freeship / ShippingFee &lt; ShipperIncome).</summary>
+        ShippingSubsidy
     }
 
     public enum WithdrawalStatus
@@ -229,6 +231,12 @@ namespace ShoppingFood.Domain.Enums
         Review,
         Restaurant,
         SystemAppeal
+    }
+
+    public enum ExplanationRequestStatus
+    {
+        Pending,
+        Replied
     }
 
     public enum TargetAudience

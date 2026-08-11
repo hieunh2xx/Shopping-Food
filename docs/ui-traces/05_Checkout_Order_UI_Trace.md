@@ -148,7 +148,7 @@ handleGetLocation (~330–351)
 
 #### 3. Backend chạy đoạn nào?
 
-Không gọi API Shopping Food. Gọi ngoài: `nominatim.openstreetmap.org/reverse`.
+Không gọi API UniEats. Gọi ngoài: `nominatim.openstreetmap.org/reverse`.
 
 #### 4. Dữ liệu trả về ở đâu?
 

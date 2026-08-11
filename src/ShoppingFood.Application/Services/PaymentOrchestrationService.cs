@@ -15,6 +15,7 @@ namespace ShoppingFood.Application.Services
         private readonly IPaymentCacheService _cache;
         private readonly IPaymentMessageQueue _queue;
         private readonly IPaymentSessionRepository _sessionRepository;
+        private readonly IOrderRepository _orderRepository;
         private readonly ISepayWebhookLogRepository _webhookLogRepository;
         private readonly IPaymentSettlementService _paymentService;
         private readonly IUnitOfWork _unitOfWork;
@@ -27,6 +28,7 @@ namespace ShoppingFood.Application.Services
             IPaymentCacheService cache,
             IPaymentMessageQueue queue,
             IPaymentSessionRepository sessionRepository,
+            IOrderRepository orderRepository,
             ISepayWebhookLogRepository webhookLogRepository,
             IPaymentSettlementService paymentService,
             IUnitOfWork unitOfWork,
@@ -38,6 +40,7 @@ namespace ShoppingFood.Application.Services
             _cache = cache;
             _queue = queue;
             _sessionRepository = sessionRepository;
+            _orderRepository = orderRepository;
             _webhookLogRepository = webhookLogRepository;
             _paymentService = paymentService;
             _unitOfWork = unitOfWork;
@@ -286,10 +289,50 @@ namespace ShoppingFood.Application.Services
                 session.UpdatedAt = now;
                 _sessionRepository.Update(session);
                 _cache.UpdateStatus(session.Id, "Expired");
+
+                await CancelUnpaidSepayOrderIfNeededAsync(session, now, "[Payment Expired] Hết hạn thanh toán SePay (chưa nhận được chuyển khoản).");
             }
 
-            if (sessions.Any())
+            // Dọn zombie: session đã Expired trước đó nhưng đơn vẫn Pending chưa trả
+            var staleExpired = await _sessionRepository.GetAsync(
+                predicate: s => s.Status == PaymentSessionStatus.Expired
+                    && s.PaymentMethod == PaymentMethod.Sepay
+                    && s.OrderId.HasValue
+                    && s.ExpiresAt < now.AddMinutes(-1),
+                disableTracking: false);
+
+            foreach (var session in staleExpired)
+            {
+                if (PaymentSessionStatusHelper.IsWebhookConfirmed(session))
+                    continue;
+                await CancelUnpaidSepayOrderIfNeededAsync(session, now, "[Payment Expired] Hết hạn thanh toán SePay (chưa nhận được chuyển khoản).");
+            }
+
+            if (sessions.Any() || staleExpired.Any())
                 await _unitOfWork.SaveChangesAsync();
+        }
+
+        private async Task CancelUnpaidSepayOrderIfNeededAsync(PaymentSession session, DateTime now, string reason)
+        {
+            if (!session.OrderId.HasValue || session.PaymentMethod != PaymentMethod.Sepay)
+                return;
+
+            if (PaymentSessionStatusHelper.IsWebhookConfirmed(session))
+                return;
+
+            var orders = await _orderRepository.GetAsync(
+                predicate: o => o.Id == session.OrderId.Value
+                    && o.Status == OrderStatus.Pending
+                    && o.PaymentStatus == PaymentStatus.Pending,
+                disableTracking: false);
+            var order = orders.FirstOrDefault();
+            if (order == null) return;
+
+            order.Status = OrderStatus.Cancelled;
+            order.PaymentStatus = PaymentStatus.Failed;
+            order.RejectReason = reason;
+            order.UpdatedAt = now;
+            _orderRepository.Update(order);
         }
 
         public async Task ReplayUnprocessedWebhooksAsync()

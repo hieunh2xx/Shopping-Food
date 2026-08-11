@@ -75,16 +75,32 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                     var firstItem = order.Items?.FirstOrDefault();
                     var restaurant = firstItem?.Product?.Restaurant;
                     if (restaurant == null) continue;
+                    if (!restaurant.Latitude.HasValue || !restaurant.Longitude.HasValue)
+                        continue;
 
-                    double distance = CalculateDistance(request.Latitude, request.Longitude, restaurant.Latitude ?? 0, restaurant.Longitude ?? 0);
+                    double distance = CalculateDistance(request.Latitude, request.Longitude, restaurant.Latitude.Value, restaurant.Longitude.Value);
 
                     double limitRadius = shipperProfile.OperatingRadiusKm.HasValue && shipperProfile.OperatingRadiusKm.Value > 0 ? shipperProfile.OperatingRadiusKm.Value : 5.0;
 
                     if (distance > limitRadius)
                         continue;
 
+                    double? deliveryDistance = null;
+                    if (order.DeliveryLatitude.HasValue && order.DeliveryLongitude.HasValue)
+                    {
+                        deliveryDistance = CalculateDistance(
+                            restaurant.Latitude.Value, restaurant.Longitude.Value,
+                            order.DeliveryLatitude.Value, order.DeliveryLongitude.Value);
+                    }
+                    else if (order.ShipperDistanceFeeAmount > 0)
+                    {
+                        const decimal defaultFeePerKm = 4000m;
+                        deliveryDistance = Math.Round(5.0 + (double)(order.ShipperDistanceFeeAmount / defaultFeePerKm), 2);
+                    }
+
                     var dto = _mapper.Map<ProposedDeliveryOfferDto>(order);
                     dto.DistanceInKm = distance;
+                    dto.DeliveryDistanceInKm = deliveryDistance;
                     dto.TotalIncome = order.ShipperIncome;
                     dto.BaseFee = order.ShipperBaseFeeAmount;
                     dto.DistanceFee = order.ShipperDistanceFeeAmount;

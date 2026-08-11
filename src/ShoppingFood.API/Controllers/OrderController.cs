@@ -76,6 +76,17 @@ namespace ShoppingFood.API.Controllers
             return StatusCode(response.Code, response);
         }
 
+        [HttpGet("SellerShipperCancels")]
+        public async Task<IActionResult> GetSellerShipperCancels([FromQuery] GetSellerShipperCancelsQuery query)
+        {
+            if (userDto != null)
+            {
+                query.CurrentUserId = userDto.Id;
+            }
+            var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
+        }
+
         [HttpPost("checkout")]
         public async Task<IActionResult> Checkout([FromBody] CheckoutCommand command)
         {

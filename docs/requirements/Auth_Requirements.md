@@ -1,6 +1,6 @@
 # Requirements: Xác thực & Đăng ký (Authentication)
 
-Tài liệu yêu cầu nghiệp vụ cho đăng nhập, đăng ký, refresh token, quên mật khẩu trong hệ thống **Shopping Food**.
+Tài liệu yêu cầu nghiệp vụ cho đăng nhập, đăng ký, refresh token, quên mật khẩu trong hệ thống **UniEats**.
 
 > Workflow liên quan:
 > - [../workflows/Login_Workflow.md](../workflows/Login_Workflow.md)

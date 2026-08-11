@@ -21,17 +21,20 @@ namespace ShoppingFood.Application.Features.Carts.Queries
         private readonly IMapper _mapper;
         private readonly IFlashSalePricingService _flashSalePricingService;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ICartMergeService _cartMergeService;
 
         public GetCartHandler(
             ICartRepository cartRepository,
             IMapper mapper,
             IFlashSalePricingService flashSalePricingService,
-            IUnitOfWork unitOfWork) 
+            IUnitOfWork unitOfWork,
+            ICartMergeService cartMergeService) 
         {
             _cartRepository = cartRepository;
             _mapper = mapper;
             _flashSalePricingService = flashSalePricingService;
             _unitOfWork = unitOfWork;
+            _cartMergeService = cartMergeService;
         }
         public async Task<ApiResponse> Handle(GetCartQuery request, CancellationToken cancellationToken)
         {
@@ -40,12 +43,20 @@ namespace ShoppingFood.Application.Features.Carts.Queries
                 if(!request.CurrentUserId.HasValue && !request.GuestUserId.HasValue)
                     return ApiResponse.Failure(401, "Unauthorized. Neither logged-in user nor guest ID was provided.");
 
+                if (request.CurrentUserId.HasValue && request.GuestUserId.HasValue)
+                    await _cartMergeService.MergeGuestCartIntoUserAsync(request.CurrentUserId.Value, request.GuestUserId.Value, cancellationToken);
+
                 IReadOnlyList<Cart> carts;
                 if (request.CurrentUserId.HasValue)
                 {
                     carts = await _cartRepository.GetAsync(
                         predicate: c => c.UserAccountId == request.CurrentUserId.Value,
-                        include: q => q.IgnoreQueryFilters().Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Images).Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Restaurant).Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.ProductSizes).Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.ProductToppings).ThenInclude(pt => pt.Topping),
+                        include: q => q.IgnoreQueryFilters()
+                            .Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Images)
+                            .Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Restaurant)
+                            .Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.ProductSizes)
+                            .Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.ProductToppings).ThenInclude(pt => pt.Topping)
+                            .Include(c => c.Items).ThenInclude(i => i.BuyXGetYPromotion),
                         disableTracking: false
                         );
                 }
@@ -53,7 +64,12 @@ namespace ShoppingFood.Application.Features.Carts.Queries
                 {
                     carts = await _cartRepository.GetAsync(
                         predicate: c => c.GuestUserId == request.GuestUserId.Value,
-                        include: q => q.IgnoreQueryFilters().Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Images).Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Restaurant).Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.ProductSizes).Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.ProductToppings).ThenInclude(pt => pt.Topping),
+                        include: q => q.IgnoreQueryFilters()
+                            .Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Images)
+                            .Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Restaurant)
+                            .Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.ProductSizes)
+                            .Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.ProductToppings).ThenInclude(pt => pt.Topping)
+                            .Include(c => c.Items).ThenInclude(i => i.BuyXGetYPromotion),
                         disableTracking: false
                         );
                 }

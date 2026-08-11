@@ -8,10 +8,12 @@ import {
   ShieldAlert
 } from 'lucide-react';
 import { Button, Input, Modal } from '../../components/common';
+import { useConfirm } from '../../hooks';
 import { coordinatorService } from '../../services';
 import toast from 'react-hot-toast';
 
 export default function DispatchBoardPage() {
+  const { confirm } = useConfirm();
   const [orders, setOrders] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'all' | 'WaitingForShipper' | 'Preparing' | 'Shipping' | 'incident' | 'escalated'>('WaitingForShipper');
@@ -153,7 +155,13 @@ export default function DispatchBoardPage() {
   // Force Assign
   const handleForceAssign = async (shipperId: string) => {
     if (!selectedOrder) return;
-    if (!window.confirm('Bạn có chắc chắn muốn gán bắt buộc đơn hàng này cho tài xế?')) return;
+    const isConfirmed = await confirm({
+      title: 'Gán bắt buộc',
+      message: 'Bạn có chắc chắn muốn gán bắt buộc đơn hàng này cho tài xế?',
+      confirmText: 'Gán đơn',
+      isDanger: true,
+    });
+    if (!isConfirmed) return;
     try {
       const res = await coordinatorService.forceAssign({
         orderId: selectedOrder.id,
@@ -173,7 +181,12 @@ export default function DispatchBoardPage() {
 
   // Broadcast Order
   const handleBroadcastOrder = async (order: any) => {
-    if (!window.confirm(`Bạn có muốn gửi thông báo cho tất cả tài xế gần đơn hàng ${order.id.substring(0, 8)}?`)) return;
+    const isConfirmed = await confirm({
+      title: 'Gửi thông báo Broadcast',
+      message: `Bạn có muốn gửi thông báo cho tất cả tài xế gần đơn hàng ${order.id.substring(0, 8)}?`,
+      confirmText: 'Gửi thông báo',
+    });
+    if (!isConfirmed) return;
     try {
       const res = await coordinatorService.broadcastOrder(order.id);
       if (!res.error) {

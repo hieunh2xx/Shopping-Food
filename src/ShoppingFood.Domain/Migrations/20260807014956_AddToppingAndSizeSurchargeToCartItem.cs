@@ -10,12 +10,10 @@ namespace ShoppingFood.Domain.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<decimal>(
-                name: "ToppingAndSizeSurcharge",
-                table: "CART_ITEM",
-                type: "decimal(12,2)",
-                nullable: false,
-                defaultValue: 0m);
+            migrationBuilder.Sql("""
+                IF COL_LENGTH('dbo.CART_ITEM', 'ToppingAndSizeSurcharge') IS NULL
+                    ALTER TABLE dbo.CART_ITEM ADD ToppingAndSizeSurcharge decimal(12,2) NOT NULL CONSTRAINT DF_CART_ITEM_ToppingAndSizeSurcharge DEFAULT(0);
+                """);
         }
 
         /// <inheritdoc />

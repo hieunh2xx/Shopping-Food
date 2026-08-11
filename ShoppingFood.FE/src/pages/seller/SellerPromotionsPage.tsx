@@ -5,10 +5,11 @@ import toast from 'react-hot-toast';
 import { promotionService } from '../../services/PromotionService';
 import { productService } from '../../services/ProductService';
 import type { IBuyXGetYPromotionDto, ICreatePromotionRequest, IProductDto, IUpdatePromotionRequest } from '../../interfaces';
-import { useAuth } from '../../hooks';
+import { useAuth, useConfirm } from '../../hooks';
 
 export function SellerPromotionsPage() {
   const { user } = useAuth();
+  const { confirm } = useConfirm();
   const restaurantId = user?.sellerInfo?.restaurantId;
 
   const [promotions, setPromotions] = useState<IBuyXGetYPromotionDto[]>([]);
@@ -137,7 +138,13 @@ export function SellerPromotionsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa khuyến mãi này?')) return;
+    const confirmed = await confirm({
+      title: 'Xóa khuyến mãi',
+      message: 'Bạn có chắc chắn muốn xóa khuyến mãi này?',
+      confirmText: 'Xóa',
+      isDanger: true,
+    });
+    if (!confirmed) return;
     try {
       const res = await promotionService.deletePromotion(id);
       if (!res.error) {

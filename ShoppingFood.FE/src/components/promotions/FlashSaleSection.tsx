@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { Zap, ChevronRight, Heart } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Zap, ChevronRight } from 'lucide-react';
 import { flashSaleService } from '../../services/FlashSaleService';
 import { productService } from '../../services/ProductService';
 import type { IFlashSale, IFlashSaleProduct, IProductDto } from '../../interfaces';
 import { formatCurrency } from '../../utils/formatters';
+import { ProductLocationMeta } from '../product/ProductLocationMeta';
 import { Link, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../routes/routeConfig';
 import { CarouselSlider } from '../ui/CarouselSlider';
@@ -133,6 +134,12 @@ export function FlashSaleSection() {
               </div>
               <div className="p-3 flex flex-col flex-1">
                 <p className="text-[11px] text-gray-400 truncate">{item.fs.restaurantName}</p>
+                <ProductLocationMeta
+                  className="mt-0.5 mb-1"
+                  restaurantAddress={item.p.restaurantAddress}
+                  restaurantLatitude={item.p.restaurantLatitude}
+                  restaurantLongitude={item.p.restaurantLongitude}
+                />
                 <p className="text-sm font-semibold text-gray-800 line-clamp-2 mt-0.5 mb-2 leading-tight min-h-[40px]">{item.fs.productName}</p>
                 
                 <div className="mt-auto">

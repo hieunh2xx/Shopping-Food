@@ -27,6 +27,7 @@ namespace ShoppingFood.Domain.Context
         public DbSet<CartItem> CartItems { get; set; } = null!;
         public DbSet<Order> Orders { get; set; } = null!;
         public DbSet<OrderItem> OrderItems { get; set; } = null!;
+        public DbSet<OrderExplanationRequest> OrderExplanationRequests { get; set; } = null!;
         public DbSet<OtpRecord> OtpRecords { get; set; } = null!;
         public DbSet<ApiEndpoint> ApiEndpoints { get; set; } = null!;
         public DbSet<RolePermission> RolePermissions { get; set; } = null!;
@@ -305,6 +306,16 @@ namespace ShoppingFood.Domain.Context
                     .WithMany()
                     .HasForeignKey(d => d.ProductId)
                     .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(d => d.BuyXGetYPromotion)
+                    .WithMany()
+                    .HasForeignKey(d => d.BuyXGetYPromotionId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasOne(d => d.ParentCartItem)
+                    .WithMany()
+                    .HasForeignKey(d => d.ParentCartItemId)
+                    .OnDelete(DeleteBehavior.NoAction);
             });
 
             // Order Entity
@@ -484,6 +495,26 @@ namespace ShoppingFood.Domain.Context
                 .WithMany()
                 .HasForeignKey(d => d.ReporterId)
                 .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<OrderExplanationRequest>(entity =>
+            {
+                entity.ToTable("ORDER_EXPLANATION_REQUEST");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.RequestMessage).IsRequired().HasMaxLength(1000);
+                entity.Property(e => e.ShipperReply).HasMaxLength(2000);
+                entity.Property(e => e.Status).HasConversion<string>().IsRequired();
+                entity.HasIndex(e => e.OrderId);
+
+                entity.HasOne(d => d.Order)
+                    .WithMany()
+                    .HasForeignKey(d => d.OrderId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(d => d.RequestedBy)
+                    .WithMany()
+                    .HasForeignKey(d => d.RequestedByProfileId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             modelBuilder.Entity<Notification>(entity =>

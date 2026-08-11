@@ -3,6 +3,7 @@ import { Loader2, Clock, Copy, AlertCircle, CheckCircle } from 'lucide-react';
 import { Modal } from '../common/Modal';
 import { paymentService } from '../../services/PaymentService';
 import { formatCurrency, getPaymentDisplayStatusColor, getPaymentDisplayStatusLabel } from '../../utils/formatters';
+import { useConfirm } from '../../hooks';
 import toast from 'react-hot-toast';
 
 export interface SepayQrPaymentModalProps {
@@ -10,6 +11,8 @@ export interface SepayQrPaymentModalProps {
   sessionId: string;
   onClose: () => void;
   onPaid: (invoiceNumber: string) => void;
+  /** Gọi sau khi hủy đơn chưa thanh toán (đóng X / hết hạn). */
+  onAbandoned?: (orderId?: string) => void;
 }
 
 type QrData = {
@@ -42,12 +45,15 @@ function StatusBadge({ displayStatus, statusLabel }: { displayStatus: string; st
   );
 }
 
-export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid }: SepayQrPaymentModalProps) {
+export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid, onAbandoned }: SepayQrPaymentModalProps) {
+  const { confirm } = useConfirm();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [qrData, setQrData] = useState<QrData | null>(null);
+  const [abandoning, setAbandoning] = useState(false);
 
   const paidNotifiedRef = useRef(false);
+  const abandonedRef = useRef(false);
 
   const markPaid = useCallback(() => {
     setQrData(prev => prev ? {
@@ -65,6 +71,36 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid }: Sepa
     toast.success('SePay đã xác nhận thanh toán qua webhook!');
     onPaid(invoiceNumber);
   }, [onPaid, markPaid]);
+
+  const abandonUnpaid = useCallback(async (opts?: { silent?: boolean }) => {
+    if (!sessionId || abandonedRef.current || paidNotifiedRef.current) return { abandoned: false, alreadyPaid: false };
+    abandonedRef.current = true;
+    setAbandoning(true);
+    try {
+      const res = await paymentService.abandonUnpaidSepay(sessionId);
+      if (!res.error && res.data) {
+        if (res.data.alreadyPaid) {
+          paidNotifiedRef.current = true;
+          markPaid();
+          if (!opts?.silent) toast.success('Thanh toán đã được xác nhận — đơn vẫn còn hiệu lực.');
+          return { abandoned: false, alreadyPaid: true, orderId: res.data.orderId };
+        }
+        if (res.data.abandoned) {
+          if (!opts?.silent) toast.success('Đã hủy đơn vì chưa thanh toán.');
+          onAbandoned?.(res.data.orderId);
+          return { abandoned: true, alreadyPaid: false, orderId: res.data.orderId };
+        }
+      }
+      if (!opts?.silent && res.error) toast.error(res.message || 'Không hủy được đơn chưa thanh toán.');
+      return { abandoned: false, alreadyPaid: false };
+    } catch {
+      if (!opts?.silent) toast.error('Không kết nối được máy chủ để hủy đơn.');
+      abandonedRef.current = false;
+      return { abandoned: false, alreadyPaid: false };
+    } finally {
+      setAbandoning(false);
+    }
+  }, [sessionId, markPaid, onAbandoned]);
 
   const applySessionStatus = useCallback((data: {
     isPaid: boolean;
@@ -106,6 +142,8 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid }: Sepa
     if (res.code === 410) {
       setError('Mã QR đã hết hạn (10 phút). Vui lòng tạo đơn mới.');
       setLoading(false);
+      // Hết hạn phía server — hủy đơn treo
+      void abandonUnpaid({ silent: true });
       return;
     }
 
@@ -133,13 +171,15 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid }: Sepa
 
       if (res.data.isPaid) {
         notifyPaid(res.data.invoiceNumber);
+      } else if (res.data.isExpired || displayStatus === 'expired') {
+        void abandonUnpaid({ silent: true });
       }
       return;
     }
 
     setError(res.message);
     setLoading(false);
-  }, [sessionId, notifyPaid]);
+  }, [sessionId, notifyPaid, abandonUnpaid]);
 
   useEffect(() => {
     if (!isOpen || !sessionId) return;
@@ -153,7 +193,8 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid }: Sepa
         if (!prev || prev.remainingSeconds <= 0) return prev;
         const next = prev.remainingSeconds - 1;
         if (next <= 0) {
-          toast.error('Mã QR đã hết hạn');
+          toast.error('Mã QR đã hết hạn — đơn sẽ bị hủy nếu chưa thanh toán.');
+          void abandonUnpaid({ silent: true });
           return {
             ...prev,
             remainingSeconds: 0,
@@ -166,7 +207,7 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid }: Sepa
       });
     }, 1000);
     return () => clearInterval(t);
-  }, [isOpen, qrData?.isPaid, qrData?.isExpired]);
+  }, [isOpen, qrData?.isPaid, qrData?.isExpired, abandonUnpaid]);
 
   useEffect(() => {
     if (!isOpen || !sessionId || !qrData || qrData.isPaid || qrData.isExpired) return;
@@ -199,6 +240,7 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid }: Sepa
       setError(null);
       setLoading(true);
       paidNotifiedRef.current = false;
+      abandonedRef.current = false;
     }
   }, [isOpen]);
 
@@ -229,6 +271,35 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid }: Sepa
     toast.error(res.data?.message || res.message);
   };
 
+  const handleRequestClose = async () => {
+    if (abandoning) return;
+
+    // Đã thanh toán hoặc đang ở màn hình thành công → đóng bình thường
+    if (paidNotifiedRef.current || qrData?.isPaid) {
+      onClose();
+      return;
+    }
+
+    // Hết hạn / lỗi tải QR → hủy đơn treo rồi đóng
+    if (qrData?.isExpired || error) {
+      await abandonUnpaid({ silent: true });
+      onClose();
+      return;
+    }
+
+    const confirmed = await confirm({
+      title: 'Đóng thanh toán?',
+      message:
+        'Bạn chưa hoàn tất chuyển khoản.\n\nĐóng cửa sổ sẽ GIỮ đơn ở trạng thái chờ thanh toán — bạn có thể thanh toán lại trong tab Đơn hàng.\n\nNếu đã chuyển khoản, bấm Hủy rồi chọn "Đã chuyển khoản? Kiểm tra lại từ SePay".',
+      confirmText: 'Đóng & giữ đơn',
+      cancelText: 'Tiếp tục thanh toán',
+    });
+    if (!confirmed) return;
+
+    // Không abandon — đơn Pending unpaid vẫn còn để thanh toán lại
+    onClose();
+  };
+
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60);
     const sec = s % 60;
@@ -238,7 +309,7 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid }: Sepa
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleRequestClose}
       title="Thanh toán chuyển khoản ngân hàng"
       size="lg"
       closeOnBackdrop={false}
@@ -257,6 +328,16 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid }: Sepa
           <button type="button" onClick={loadQr} className="text-orange-600 text-sm font-medium hover:underline">
             Thử lại
           </button>
+          <div>
+            <button
+              type="button"
+              onClick={handleRequestClose}
+              disabled={abandoning}
+              className="mt-2 px-6 py-2 text-sm border border-gray-200 rounded-xl hover:bg-gray-50"
+            >
+              {abandoning ? 'Đang hủy đơn...' : 'Đóng & hủy đơn'}
+            </button>
+          </div>
         </div>
       )}
 
@@ -267,7 +348,17 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid }: Sepa
           </div>
 
           {qrData.isExpired ? (
-            <p className="text-center text-red-600 font-medium py-6">Mã QR đã hết hạn. Vui lòng tạo đơn mới.</p>
+            <div className="text-center space-y-4 py-6">
+              <p className="text-red-600 font-medium">Mã QR đã hết hạn. Đơn chưa thanh toán sẽ bị hủy.</p>
+              <button
+                type="button"
+                onClick={handleRequestClose}
+                disabled={abandoning}
+                className="px-8 py-2.5 bg-gray-800 text-white rounded-xl font-semibold"
+              >
+                {abandoning ? 'Đang xử lý...' : 'Đóng'}
+              </button>
+            </div>
           ) : qrData.isPaid ? (
             <div className="flex flex-col items-center justify-center text-center py-8">
               <CheckCircle className="w-16 h-16 text-green-500 mb-4" />
@@ -309,6 +400,10 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid }: Sepa
             </div>
           ) : (
             <>
+              <p className="text-center text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
+                Đóng cửa sổ (X) khi chưa chuyển khoản sẽ <strong>hủy đơn hàng</strong>.
+              </p>
+
               <p className="text-center text-sm text-gray-500 border-b pb-2">
                 Hướng dẫn thanh toán qua chuyển khoản ngân hàng (theo chuẩn SePay VietQR)
               </p>
@@ -403,13 +498,21 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid }: Sepa
                   : 'Quét QR hoặc chuyển khoản — hệ thống tự cập nhật khi SePay gửi webhook'}
               </p>
 
-              <div className="flex justify-center pt-1">
+              <div className="flex justify-center pt-1 gap-4">
                 <button
                   type="button"
                   onClick={handleManualReconcile}
                   className="text-sm text-orange-600 hover:text-orange-700 font-medium hover:underline"
                 >
                   Đã chuyển khoản? Kiểm tra lại từ SePay
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRequestClose}
+                  disabled={abandoning}
+                  className="text-sm text-gray-500 hover:text-red-600 font-medium hover:underline"
+                >
+                  {abandoning ? 'Đang hủy...' : 'Hủy đơn & đóng'}
                 </button>
               </div>
             </>

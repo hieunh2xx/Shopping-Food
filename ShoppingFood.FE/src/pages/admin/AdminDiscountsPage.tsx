@@ -222,7 +222,7 @@ export function AdminDiscountsPage() {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Mã giảm giá hệ thống</h1>
-          <p className="text-sm text-gray-500 mt-1">Quản lý các chương trình khuyến mãi chung của ShoppingFood</p>
+          <p className="text-sm text-gray-500 mt-1">Quản lý các chương trình khuyến mãi chung của UniEats</p>
         </div>
         <Button onClick={() => handleOpenModal()} className="flex items-center gap-2">
           <Plus className="w-4 h-4" /> Tạo mã giảm giá

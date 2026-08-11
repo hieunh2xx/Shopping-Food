@@ -1,6 +1,6 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { User, LogOut, ChefHat, Search, MapPin, ChevronDown } from 'lucide-react';
-import { useAuth, useUserLocation } from '../../hooks';
+import { User, LogOut, ChefHat, Search, MapPin, ChevronDown, MessageSquare } from 'lucide-react';
+import { useAuth, useUserLocation, useCustomerChatWatcher } from '../../hooks';
 import { ShoppingDrawer } from './ShoppingDrawer';
 import { NotificationBell } from './NotificationBell';
 import { ROUTES } from '../../routes/routeConfig';
@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react';
 export function Header() {
   const { user, isAuthenticated, logout } = useAuth();
   const { address, fullAddress, isLoading: isLocationLoading } = useUserLocation();
+  const { unreadCount: unreadChatCount } = useCustomerChatWatcher();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
@@ -40,7 +41,7 @@ export function Header() {
                 <ChefHat className="w-6 h-6 text-gray-900" />
               </div>
               <span className="hidden sm:block text-xl font-bold bg-gradient-to-r from-orange-400 to-orange-500 bg-clip-text text-transparent">
-                Shopping Food
+                UniEats
               </span>
             </Link>
 
@@ -93,6 +94,22 @@ export function Header() {
                   <>
                     {/* Shopping (Cart & Orders) */}
                     <ShoppingDrawer />
+
+                    {/* Messages (Customer) */}
+                    {user?.role === 'Customer' && (
+                      <Link
+                        to={ROUTES.MESSAGES}
+                        className="relative p-2.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
+                        title="Tin nhắn"
+                      >
+                        <MessageSquare className="w-5 h-5" />
+                        {unreadChatCount > 0 && (
+                          <span className="absolute top-1 right-1 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-white ring-2 ring-white">
+                            {unreadChatCount > 99 ? '99+' : unreadChatCount}
+                          </span>
+                        )}
+                      </Link>
+                    )}
 
                     {/* Notifications */}
                     <NotificationBell />
@@ -160,6 +177,12 @@ export function Header() {
                         )}
                         {user?.role === 'Customer' && (
                           <>
+                            <Link
+                              to={ROUTES.MESSAGES}
+                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600"
+                            >
+                              Tin nhắn
+                            </Link>
                             <Link
                               to="/profile"
                               className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600"

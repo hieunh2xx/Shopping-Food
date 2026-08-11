@@ -62,9 +62,12 @@ namespace ShoppingFood.Application.Features.Shippers.Commands
             if (order.UserAccountId != request.CurrentUserId.Value)
                 return ApiResponse.Failure(403, "You can only review shippers for your own orders.");
 
-            // Guard: đơn phải đã giao thành công
-            if (order.Status != OrderStatus.Delivered)
-                return ApiResponse.Failure(400, "You can only review the shipper after the order has been delivered.");
+            // Guard: đơn đã giao hoặc bị hủy khi đang giao (có tài xế)
+            if (order.Status != OrderStatus.Delivered && order.Status != OrderStatus.Cancelled)
+                return ApiResponse.Failure(400, "Chỉ có thể đánh giá tài xế khi đơn đã giao hoặc đã hủy.");
+
+            if (order.Status == OrderStatus.Cancelled && !order.ShipperId.HasValue)
+                return ApiResponse.Failure(400, "Đơn hủy này không có tài xế để đánh giá.");
 
             // Guard: đơn phải có tài xế
             if (!order.ShipperId.HasValue)

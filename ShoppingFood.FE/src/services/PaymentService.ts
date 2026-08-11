@@ -119,6 +119,16 @@ class PaymentService {
     return httpClient.post(API_ENDPOINTS.PAYMENT.SEPAY_RECONCILE, null, { params });
   }
 
+  async abandonUnpaidSepay(sessionId: string): Promise<IApiResponse<{
+    abandoned: boolean;
+    alreadyPaid: boolean;
+    sessionId: string;
+    orderId?: string;
+    status?: string;
+  }>> {
+    return httpClient.post(API_ENDPOINTS.PAYMENT.SEPAY_ABANDON, { sessionId });
+  }
+
   async getPaymentHistory(params?: { skip?: number; take?: number }): Promise<IApiResponse<{ total: number; items: IPaymentHistoryItem[] }>> {
     return httpClient.get(API_ENDPOINTS.PAYMENT.HISTORY, { params });
   }

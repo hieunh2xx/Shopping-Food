@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { toast } from 'react-hot-toast';
-import { ShoppingCart, X, Plus, Minus, Trash2, Store, Package, CheckCircle2, Truck, Clock, XCircle, ShoppingBag, ClipboardList } from 'lucide-react';
+import { ShoppingCart, X, Plus, Minus, Trash2, Store, Package, CheckCircle2, Truck, Clock, XCircle, ShoppingBag, ClipboardList, MessageCircle } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useCart, useAuth } from '../../hooks';
 import { Button, Input, ConfirmModal } from '../common';
@@ -53,6 +53,10 @@ export function ShoppingDrawer() {
   const selectedTotal = useMemo(() => {
     if (!selectedProvider || !groupedItems[selectedProvider]) return 0;
     return groupedItems[selectedProvider].items.reduce((sum, item) => {
+      if (item.isGift) return sum;
+      if (typeof item.priceAtAdded === 'number') {
+        return sum + item.priceAtAdded * item.quantity;
+      }
       let itemPrice = item.product.flashSalePrice ?? item.product.price;
       if (item.selectedSize) {
         const sizeOpt = item.product.sizes?.find(s => s.sizeName === item.selectedSize);
@@ -88,7 +92,7 @@ export function ShoppingDrawer() {
   const [orders, setOrders] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [detailModal, setDetailModal] = useState({ isOpen: false, orderId: '' });
+  const [detailModal, setDetailModal] = useState({ isOpen: false, orderId: '', openChat: false });
   
   const [skip, setSkip] = useState(0);
   const take = 10;
@@ -97,11 +101,26 @@ export function ShoppingDrawer() {
   // Auto open orders tab if query param has track=true or orderId
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
-    if (searchParams.get('track') === 'true' || searchParams.get('orderId')) {
+    const orderId = searchParams.get('orderId');
+    const openChat = searchParams.get('openChat') === '1';
+    if (searchParams.get('track') === 'true' || orderId) {
       setIsOpen(true);
       setActiveTab('orders');
+      if (orderId) {
+        if (openChat) {
+          sessionStorage.setItem(`sf_open_chat_${orderId}`, '1');
+        }
+        setDetailModal({ isOpen: true, orderId, openChat });
+        // Xóa query để không mở lại khi refresh / back
+        const next = new URLSearchParams(location.search);
+        next.delete('orderId');
+        next.delete('openChat');
+        next.delete('track');
+        const qs = next.toString();
+        window.history.replaceState({}, '', `${location.pathname}${qs ? `?${qs}` : ''}`);
+      }
     }
-  }, [location.search]);
+  }, [location.search, location.pathname]);
 
   // Listen for custom event to switch to cart tab
   useEffect(() => {
@@ -110,13 +129,22 @@ export function ShoppingDrawer() {
     return () => window.removeEventListener('openCartTab', handleOpenCartTab);
   }, []);
 
-  // Listen for custom event to open order detail directly
+  // Listen for custom event to open order detail directly (optional openChat from notification)
   useEffect(() => {
-    const handleOpenOrderDetail = (e: CustomEvent<string>) => {
+    const handleOpenOrderDetail = (e: CustomEvent<string | { orderId?: string; openChat?: boolean }>) => {
       setIsOpen(true);
       setActiveTab('orders');
-      if (e.detail) {
-        setDetailModal({ isOpen: true, orderId: e.detail });
+      const detail = e.detail;
+      if (typeof detail === 'string' && detail) {
+        setDetailModal({ isOpen: true, orderId: detail, openChat: false });
+        return;
+      }
+      if (detail && typeof detail === 'object' && detail.orderId) {
+        setDetailModal({
+          isOpen: true,
+          orderId: detail.orderId,
+          openChat: !!detail.openChat,
+        });
       }
     };
     window.addEventListener('openOrdersTabWithDetail', handleOpenOrderDetail as EventListener);
@@ -338,20 +366,37 @@ export function ShoppingDrawer() {
                           </label>
 
                           <ul className="p-2 space-y-2">
-                            {group.items.map((item) => {
-                              let itemUnitPrice = item.product.flashSalePrice ?? item.product.price;
-                              if (item.selectedSize) {
-                                const sizeOpt = item.product.sizes?.find(s => s.sizeName === item.selectedSize);
-                                if (sizeOpt) itemUnitPrice += sizeOpt.extraPrice;
-                              }
-                              if (item.selectedToppings && item.selectedToppings.length > 0) {
-                                item.selectedToppings.forEach(topName => {
-                                  const topOpt = item.product.toppings?.find(t => t.name === topName || (t as any).toppingName === topName);
-                                  if (topOpt) itemUnitPrice += topOpt.price;
-                                });
+                            {(() => {
+                              const renderItems = group.items.filter((i) => !i.isGift);
+                              return renderItems.map((item, idx) => {
+                              const giftChildren = item.buyXGetYPromotionId
+                                ? group.items.filter(
+                                    (g) =>
+                                      g.isGift &&
+                                      (g.parentCartItemId === item.id ||
+                                        g.buyXGetYPromotionId === item.buyXGetYPromotionId)
+                                  )
+                                : [];
+
+                              let itemUnitPrice =
+                                typeof item.priceAtAdded === 'number'
+                                  ? item.priceAtAdded
+                                  : (item.product.flashSalePrice ?? item.product.price);
+                              if (typeof item.priceAtAdded !== 'number') {
+                                if (item.selectedSize) {
+                                  const sizeOpt = item.product.sizes?.find(s => s.sizeName === item.selectedSize);
+                                  if (sizeOpt) itemUnitPrice += sizeOpt.extraPrice;
+                                }
+                                if (item.selectedToppings && item.selectedToppings.length > 0) {
+                                  item.selectedToppings.forEach(topName => {
+                                    const topOpt = item.product.toppings?.find(t => t.name === topName || (t as any).toppingName === topName);
+                                    if (topOpt) itemUnitPrice += topOpt.price;
+                                  });
+                                }
                               }
 
-                              const itemKey = `${item.product.id}-${item.selectedSize || 'default'}-${item.selectedToppings?.sort().join(',') || ''}`;
+                              const itemKey = item.id || `${item.product.id}-${item.selectedSize || 'default'}-${idx}`;
+                              const bundleTotalQty = item.quantity + giftChildren.reduce((s, g) => s + g.quantity, 0);
 
                               return (
                                 <li key={itemKey} className="flex gap-4 p-3 rounded-2xl hover:bg-gray-50 transition-colors group/item">
@@ -369,7 +414,14 @@ export function ShoppingDrawer() {
                                   </div>
                                   <div className="flex-1 flex flex-col py-1">
                                     <div className="flex justify-between items-start gap-2 mb-1">
-                                      <h4 className={`font-semibold text-sm line-clamp-2 leading-tight ${item.isProductDeleted ? 'text-gray-400 line-through' : 'text-gray-800'}`}>{item.product.itemName}</h4>
+                                      <div className="min-w-0">
+                                        <h4 className={`font-semibold text-sm line-clamp-2 leading-tight ${item.isProductDeleted ? 'text-gray-400 line-through' : 'text-gray-800'}`}>{item.product.itemName}</h4>
+                                        {item.promotionLabel && (
+                                          <span className="inline-block mt-1 text-[10px] font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded">
+                                            {item.promotionLabel}
+                                          </span>
+                                        )}
+                                      </div>
                                       <button
                                         onClick={() => removeItem(item.product.id, item.selectedSize, item.selectedToppings)}
                                         className="text-gray-300 hover:text-rose-500 transition-colors mt-0.5"
@@ -378,18 +430,22 @@ export function ShoppingDrawer() {
                                       </button>
                                     </div>
 
-                                    {(item.selectedSize || (item.selectedToppings && item.selectedToppings.length > 0)) && (
-                                      <div>
-                                        <p className="text-sm font-medium text-gray-900 mt-1">
-                                          {(item.product.flashSalePrice ?? item.product.price).toLocaleString()} đ
+                                    {giftChildren.length > 0 && (
+                                      <div className="mb-2 mt-1 rounded-xl bg-orange-50/70 border border-orange-100 px-2.5 py-2 space-y-1">
+                                        <p className="text-[11px] font-semibold text-orange-700">
+                                          Combo {bundleTotalQty} xuất · trả {item.quantity} món
                                         </p>
-                                        {(item.product.flashSalePrice) && (
-                                          <p className="text-xs text-gray-400 line-through">
-                                            {item.product.price.toLocaleString()} đ
+                                        <p className="text-[11px] text-gray-600">
+                                          {item.quantity}× {item.product.itemName}
+                                        </p>
+                                        {giftChildren.map((g) => (
+                                          <p key={g.id || g.product.id} className="text-[11px] text-emerald-700 font-medium">
+                                            Tặng {g.quantity}× {g.product.itemName}
                                           </p>
-                                        )}
+                                        ))}
                                       </div>
                                     )}
+
                                     {(item.selectedSize || (item.selectedToppings && item.selectedToppings.length > 0)) && (
                                       <div className="flex flex-wrap gap-1 mb-2">
                                         {item.selectedSize && (
@@ -397,8 +453,8 @@ export function ShoppingDrawer() {
                                             Size: {item.selectedSize}
                                           </span>
                                         )}
-                                        {item.selectedToppings?.map((topping, idx) => (
-                                          <span key={idx} className="text-[10px] font-medium bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                                        {item.selectedToppings?.map((topping, tIdx) => (
+                                          <span key={tIdx} className="text-[10px] font-medium bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
                                             +{topping}
                                           </span>
                                         ))}
@@ -412,6 +468,30 @@ export function ShoppingDrawer() {
                                       {item.isProductDeleted ? (
                                         <div className="flex items-center">
                                           <span className="text-xs text-red-500 font-medium">Vui lòng xóa món</span>
+                                        </div>
+                                      ) : item.buyXGetYPromotionId ? (
+                                        <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-full p-1 shadow-sm">
+                                          <button
+                                            onClick={() => {
+                                              const step = Math.max(1, Number(item.promoBuyQuantity) || 1);
+                                              updateQuantity(item.product.id, item.quantity - step, item.selectedSize, item.selectedToppings);
+                                            }}
+                                            className="w-7 h-7 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                                          >
+                                            <Minus className="w-3 h-3" />
+                                          </button>
+                                          <span className="text-sm font-semibold w-6 text-center text-gray-900">
+                                            {Math.max(1, Math.round(item.quantity / Math.max(1, Number(item.promoBuyQuantity) || 1)))}
+                                          </span>
+                                          <button
+                                            onClick={() => {
+                                              const step = Math.max(1, Number(item.promoBuyQuantity) || 1);
+                                              updateQuantity(item.product.id, item.quantity + step, item.selectedSize, item.selectedToppings);
+                                            }}
+                                            className="w-7 h-7 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                                          >
+                                            <Plus className="w-3 h-3" />
+                                          </button>
                                         </div>
                                       ) : (
                                         <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-full p-1 shadow-sm">
@@ -434,7 +514,8 @@ export function ShoppingDrawer() {
                                   </div>
                                 </li>
                               );
-                            })}
+                            });
+                            })()}
                           </ul>
                         </div>
                       );
@@ -517,7 +598,7 @@ export function ShoppingDrawer() {
                             {filtered.map(order => (
                               <div 
                                 key={order.id} 
-                                onClick={() => setDetailModal({ isOpen: true, orderId: order.id })}
+                                onClick={() => setDetailModal({ isOpen: true, orderId: order.id, openChat: false })}
                                 className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:border-orange-200 cursor-pointer transition-colors"
                               >
                                 <div className="flex justify-between items-start mb-2">
@@ -530,10 +611,23 @@ export function ShoppingDrawer() {
                                     <span>{getStatusText(order.status)}</span>
                                   </div>
                                 </div>
-                                <div className="flex justify-between items-end mt-4 pt-3 border-t border-gray-50">
+                                <div className="flex justify-between items-end mt-4 pt-3 border-t border-gray-50 gap-2">
                                   <p className="text-sm text-gray-600 truncate flex-1 pr-2">{order.restaurantName}</p>
-                                  <p className="font-bold text-orange-600">{formatCurrency(order.totalAmount)}</p>
+                                  <p className="font-bold text-orange-600 shrink-0">{formatCurrency(order.totalAmount)}</p>
                                 </div>
+                                {(order.canMessageSeller || order.orderChatSessionId) && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setDetailModal({ isOpen: true, orderId: order.id, openChat: true });
+                                    }}
+                                    className="mt-3 w-full flex items-center justify-center gap-1.5 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-100 rounded-lg py-2 transition-colors"
+                                  >
+                                    <MessageCircle className="w-4 h-4" />
+                                    {order.orderChatSessionId ? 'Mở chat với người bán' : 'Nhắn người bán'}
+                                  </button>
+                                )}
                               </div>
                             ))}
                             
@@ -565,11 +659,12 @@ export function ShoppingDrawer() {
       <CustomerOrderDetailModal
         isOpen={detailModal.isOpen}
         onClose={() => {
-          setDetailModal({ isOpen: false, orderId: '' });
+          setDetailModal({ isOpen: false, orderId: '', openChat: false });
           if (activeTab === 'orders') fetchOrders(); // refresh after modal close
         }}
         onNavigateAction={() => setIsOpen(false)}
         orderId={detailModal.orderId}
+        autoOpenChat={detailModal.openChat}
       />
 
       <ConfirmModal

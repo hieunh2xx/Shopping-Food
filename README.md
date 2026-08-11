@@ -1,5 +1,5 @@
-# Project: Shopping food
-**Description:** Hệ thống đặt và giao nhận đồ ăn trực tuyến (Shopping Food).
+# Project: UniEats
+**Description:** Hệ thống đặt và giao nhận đồ ăn trực tuyến (UniEats).
 
 ## 📊 System Architecture & Design Documents
 - **[Entity-Relationship Diagram (ERD)](./ERD.md)** - Sơ đồ thực thể mối quan hệ chi tiết và đặc tả cơ sở dữ liệu.

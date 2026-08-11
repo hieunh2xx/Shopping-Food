@@ -1,7 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
-using ShoppingFood.Core.Interfaces;
 using ShoppingFood.Domain.Enums;
 using ShoppingFood.Domain.Models;
 using ShoppingFood.Repository.Interfaces;
@@ -18,7 +17,7 @@ namespace ShoppingFood.Application.Features.Chat.Queries
         public GetChatHistoryHandler(
             IChatMessageRepository chatMessageRepository,
             IChatSessionRepository chatSessionRepository,
-            IUserRepository userRepository, 
+            IUserRepository userRepository,
             IRestaurantProfileRepository restaurantProfileRepository)
         {
             _chatMessageRepository = chatMessageRepository;
@@ -42,13 +41,36 @@ namespace ShoppingFood.Application.Features.Chat.Queries
             if (!await CanAccessSessionAsync(session, request.CurrentUserId.Value))
                 return ApiResponse.Failure(403, "Forbidden.");
 
-            var messages = await _chatMessageRepository.GetAsync(
-                predicate: m => m.SessionId == request.SessionId,
-                orderBy: q => q.OrderBy(m => m.CreatedAt),
-                take: int.MaxValue,
+            var take = request.Take <= 0 ? 20 : Math.Min(request.Take, 100);
+            var before = request.Before;
+
+            List<Guid> sessionIds;
+            if (session.RestaurantId.HasValue)
+            {
+                var relatedSessions = await _chatSessionRepository.GetAsync(
+                    predicate: s => s.UserId == session.UserId && s.RestaurantId == session.RestaurantId,
+                    disableTracking: true);
+                sessionIds = relatedSessions.Select(s => s.Id).ToList();
+            }
+            else
+            {
+                sessionIds = new List<Guid> { request.SessionId };
+            }
+
+            // Lấy take+1 tin mới nhất (hoặc cũ hơn Before), sắp xếp giảm dần
+            var batch = await _chatMessageRepository.GetAsync(
+                predicate: m => sessionIds.Contains(m.SessionId)
+                    && (!before.HasValue || m.CreatedAt < before.Value),
+                orderBy: q => q.OrderByDescending(m => m.CreatedAt).ThenByDescending(m => m.Id),
+                take: take + 1,
                 disableTracking: true);
 
-            var dtos = messages.Select(m => new
+            var hasMore = batch.Count > take;
+            var pageDesc = batch.Take(take).ToList();
+            // Trả về tăng dần theo thời gian để FE append/prepend dễ
+            var page = pageDesc.OrderBy(m => m.CreatedAt).ThenBy(m => m.Id).ToList();
+
+            var items = page.Select(m => new
             {
                 id = m.Id,
                 sessionId = m.SessionId,
@@ -58,7 +80,14 @@ namespace ShoppingFood.Application.Features.Chat.Queries
                 createdAt = m.CreatedAt
             }).ToList();
 
-            return ApiResponse.Success(dtos, "Chat history retrieved.");
+            DateTime? nextBefore = page.Count > 0 ? page[0].CreatedAt : null;
+
+            return ApiResponse.Success(new
+            {
+                items,
+                hasMore,
+                nextBefore
+            }, "Chat history retrieved.");
         }
 
         private async Task<bool> CanAccessSessionAsync(ChatSession session, Guid userId)
@@ -80,7 +109,6 @@ namespace ShoppingFood.Application.Features.Chat.Queries
                     return true;
             }
 
-            // Check if user is Admin or Coordinator
             var usersList = await _userRepository.GetAsync(
                 predicate: u => u.Id == userId,
                 include: q => q.Include(u => u.Profile),
@@ -89,9 +117,9 @@ namespace ShoppingFood.Application.Features.Chat.Queries
 
             if (userProfile != null)
             {
-                if (userProfile.Role == Domain.Enums.UserRole.Coordinator && session.Topic == ChatTopic.OrderIssue)
+                if (userProfile.Role == UserRole.Coordinator && session.Topic == ChatTopic.OrderIssue)
                     return true;
-                if (userProfile.Role == Domain.Enums.UserRole.Admin && (session.Topic == ChatTopic.SystemIssue || session.Topic == ChatTopic.General))
+                if (userProfile.Role == UserRole.Admin && (session.Topic == ChatTopic.SystemIssue || session.Topic == ChatTopic.General))
                     return true;
             }
 

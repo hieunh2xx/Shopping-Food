@@ -1,4 +1,4 @@
-# 📚 Shopping Food — Hướng Dẫn Kiến Trúc & Nghiệp Vụ
+# 📚 UniEats — Hướng Dẫn Kiến Trúc & Nghiệp Vụ
 
 > Tài liệu này mô tả **từng nghiệp vụ** của hệ thống và **vai trò cụ thể** của từng project con (Solution) trong kiến trúc Clean Architecture .NET 8.
 

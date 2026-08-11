@@ -15,7 +15,7 @@ const MS_REDIRECT_URI = window.location.origin;
 
 export function LoginForm() {
   const navigate = useNavigate();
-  const { login, sendLoginOtp, verifyLoginOtp, verifyUnlockAccount, loginGoogle, loginMicrosoft, loginFirebasePhone, isLoading, error: authError } = useAuth();
+  const { login, sendLoginOtp, verifyLoginOtp, verifyUnlockAccount, loginGoogle, loginMicrosoft, loginFirebasePhone, isLoading } = useAuth();
 
   // Step 1: Login
   const [loginMethod] = useState<'standard' | 'phone'>('standard');

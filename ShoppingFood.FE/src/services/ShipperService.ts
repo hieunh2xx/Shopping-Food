@@ -86,6 +86,14 @@ class ShipperService {
   async reportOrderIncident(orderId: string, data: { targetType: number, title: string, content: string }): Promise<IApiResponse<any>> {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.SHIPPER.REPORT_INCIDENT(orderId), data);
   }
+
+  async submitExplanation(orderId: string, reply: string): Promise<IApiResponse<any>> {
+    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.SHIPPER.SUBMIT_EXPLANATION(orderId), { reply });
+  }
+
+  async getExplanation(orderId: string): Promise<IApiResponse<any[]>> {
+    return httpClient.get<IApiResponse<any[]>>(API_ENDPOINTS.SHIPPER.GET_EXPLANATION(orderId));
+  }
 }
 
 export const shipperService = new ShipperService();

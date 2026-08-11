@@ -6,7 +6,7 @@ import { useAuth } from '../../hooks';
 import { ROUTES } from '../../routes/routeConfig';
 import toast from 'react-hot-toast';
 import { auth } from '../../config/firebase';
-import { RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult } from 'firebase/auth';
+import { RecaptchaVerifier } from 'firebase/auth';
 import { supportService } from '../../services/SupportService';
 interface RegisterFormProps {
   isSeller?: boolean;
@@ -18,7 +18,6 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
 
   // Multi-step State
   const [step, setStep] = useState(1);
-  const [isOtpSent, setIsOtpSent] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({
     userName: '',
@@ -40,7 +39,6 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
   // File Upload State
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedShopFile, setSelectedShopFile] = useState<File | null>(null);
-  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [legalModalState, setLegalModalState] = useState({
     isOpen: false,
@@ -202,13 +200,6 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
   };
 
   const handleBack = () => setStep(1);
-
-  useEffect(() => {
-    if (isOtpSent && form.otpCode.length === 6 && !isLoading) {
-      handleSubmit();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.otpCode]);
 
   const handleSubmit = async (e?: FormEvent) => {
     if (e) e.preventDefault();

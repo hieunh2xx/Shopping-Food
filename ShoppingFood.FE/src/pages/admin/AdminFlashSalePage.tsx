@@ -5,8 +5,10 @@ import { flashSaleService } from '../../services/FlashSaleService';
 import type { IFlashSale, ICreateFlashSaleRequest, IFlashSaleProduct } from '../../interfaces';
 import { Button, Input, Modal, PromptModal } from '../../components/common';
 import { formatDate, toLocalDatetimeLocal } from '../../utils/formatters';
+import { useConfirm } from '../../hooks';
 
 export function AdminFlashSalePage() {
+  const { confirm } = useConfirm();
   const [flashSales, setFlashSales] = useState<IFlashSale[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -102,7 +104,13 @@ export function AdminFlashSalePage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa chương trình này?')) return;
+    const confirmed = await confirm({
+      title: 'Xóa Flash Sale',
+      message: 'Bạn có chắc chắn muốn xóa chương trình này?',
+      confirmText: 'Xóa',
+      isDanger: true,
+    });
+    if (!confirmed) return;
     
     try {
       const res = await flashSaleService.deleteFlashSale(id);

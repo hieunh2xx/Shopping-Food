@@ -6,8 +6,10 @@ import { pointGiftConfigService } from '../../services/PointGiftConfigService';
 import { loyaltyPointService } from '../../services/LoyaltyPointService';
 import { discountService } from '../../services/DiscountService';
 import type { IPointGiftConfigDto, IMemberTierConfig, IDiscountDto } from '../../interfaces';
+import { useConfirm } from '../../hooks';
 
 export function AdminLoyaltyConfigPage() {
+  const { confirm } = useConfirm();
   const [activeTab, setActiveTab] = useState<'gifts' | 'tiers'>('gifts');
   
   // Point Gift State
@@ -24,7 +26,7 @@ export function AdminLoyaltyConfigPage() {
 
   // Tier State
   const [tiers, setTiers] = useState<IMemberTierConfig[]>([]);
-  const [isLoadingTiers, setIsLoadingTiers] = useState(true);
+  const [, setIsLoadingTiers] = useState(true);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [isTierModalOpen, setIsTierModalOpen] = useState(false);
   const [editingTier, setEditingTier] = useState<IMemberTierConfig | null>(null);
@@ -125,7 +127,13 @@ export function AdminLoyaltyConfigPage() {
   };
 
   const handleDeleteGift = async (id: string) => {
-    if (!confirm('Chắc chắn muốn xóa quà tặng này?')) return;
+    const confirmed = await confirm({
+      title: 'Xóa quà tặng',
+      message: 'Chắc chắn muốn xóa quà tặng này?',
+      confirmText: 'Xóa',
+      isDanger: true,
+    });
+    if (!confirmed) return;
     try {
       const res = await pointGiftConfigService.deleteConfig(id);
       if (!res.error) {
@@ -139,7 +147,12 @@ export function AdminLoyaltyConfigPage() {
 
   // --- Tier Handlers ---
   const handleEvaluateTiers = async () => {
-    if (!confirm('Tiến hành chạy trình đánh giá hạng cho toàn bộ thành viên? Thao tác này có thể mất nhiều thời gian.')) return;
+    const confirmed = await confirm({
+      title: 'Đánh giá hạng thành viên',
+      message: 'Tiến hành chạy trình đánh giá hạng cho toàn bộ thành viên? Thao tác này có thể mất nhiều thời gian.',
+      confirmText: 'Chạy đánh giá',
+    });
+    if (!confirmed) return;
     setIsEvaluating(true);
     try {
       const res = await loyaltyPointService.evaluateTiers();

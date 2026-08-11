@@ -49,7 +49,8 @@ namespace ShoppingFood.Application.Features.Chat.Commands
             var existingSessions = await _chatSessionRepository.GetAsync(
                 predicate: s => s.UserId == request.CurrentUserId.Value
                     && s.Status == Domain.Enums.ChatSessionStatus.Open
-                    && s.OrderId == null,
+                    && s.OrderId == null
+                    && s.Topic == request.Topic,
                 include: q => q.Include(s => s.Messages)
             );
             var existingSession = existingSessions.FirstOrDefault();

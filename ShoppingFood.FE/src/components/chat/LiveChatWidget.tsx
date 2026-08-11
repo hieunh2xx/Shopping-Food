@@ -131,8 +131,8 @@ export function LiveChatWidget() {
       setSupportJoined(!!s.supportId);
       setUnreadCounts(prev => ({ ...prev, [s.id]: 0 }));
       
-      const history = await chatService.getHistory(s.id);
-      if (history.data) setMessages(history.data);
+      const history = await chatService.getHistory(s.id, { take: 50 });
+      if (history.data?.items) setMessages(history.data.items);
       
       setView('chat');
     } catch {
@@ -154,8 +154,8 @@ export function LiveChatWidget() {
       setSession(res.data);
       sessionIdRef.current = res.data.id;
       setSupportJoined(!!res.data.supportId);
-      const history = await chatService.getHistory(res.data.id);
-      if (history.data) setMessages(history.data);
+      const history = await chatService.getHistory(res.data.id, { take: 50 });
+      if (history.data?.items) setMessages(history.data.items);
       setView('chat');
     } catch {
       toast.error('Bắt đầu chat thất bại do lỗi kết nối mạng.');
@@ -217,10 +217,15 @@ export function LiveChatWidget() {
                 <h3 className="font-semibold text-lg">Hỗ trợ trực tuyến</h3>
                 {view === 'chat' && session && (
                   <p className="text-xs text-orange-100">
+                    {topicLabels[session.topic as ChatTopic] || 'Chat'}
+                    {' · '}
                     {session.status === 'Closed' 
                       ? 'Phiên đã đóng' 
                       : supportJoined ? 'Nhân viên đang hỗ trợ' : 'Đang chờ nhân viên...'}
                   </p>
+                )}
+                {view === 'create' && (
+                  <p className="text-xs text-orange-100">Chọn đúng chủ đề để được hỗ trợ phù hợp</p>
                 )}
               </div>
             </div>
@@ -279,8 +284,15 @@ export function LiveChatWidget() {
 
             {view === 'create' && (
               <div className="p-4 flex flex-col gap-3 h-full">
-                <p className="text-sm text-gray-500 text-center mb-2">Chọn chủ đề cần hỗ trợ:</p>
-                {(['OrderIssue', 'SystemIssue', 'General'] as ChatTopic[]).map((topic, i) => {
+                <p className="text-sm text-gray-500 text-center mb-1">Chọn chủ đề cần hỗ trợ:</p>
+                <p className="text-[11px] text-gray-400 text-center mb-2">
+                  Đơn hàng → Điều phối viên · Hệ thống / Chung → Admin
+                </p>
+                {([
+                  { topic: 'OrderIssue' as ChatTopic, desc: 'Theo dõi đơn, giao hàng, khiếu nại đơn' },
+                  { topic: 'SystemIssue' as ChatTopic, desc: 'Lỗi app, thanh toán, tài khoản' },
+                  { topic: 'General' as ChatTopic, desc: 'Câu hỏi chung về UniEats' },
+                ]).map(({ topic, desc }, i) => {
                   const colors = ['border-orange-200 text-orange-600 hover:bg-orange-50', 'border-blue-200 text-blue-600 hover:bg-blue-50', 'border-gray-200 text-gray-700 hover:bg-gray-100'];
                   return (
                     <button
@@ -290,7 +302,8 @@ export function LiveChatWidget() {
                       disabled={isConnecting}
                       className={`w-full bg-white border font-medium py-3 px-4 rounded-xl shadow-sm text-left ${colors[i]}`}
                     >
-                      {topicLabels[topic]}
+                      <span className="block">{topicLabels[topic]}</span>
+                      <span className="block text-[11px] font-normal opacity-70 mt-0.5">{desc}</span>
                     </button>
                   );
                 })}
@@ -301,7 +314,9 @@ export function LiveChatWidget() {
               <div className="p-4 flex flex-col gap-4 flex-1">
                 {messages.length === 0 && (
                   <p className="text-center text-gray-400 text-sm py-8">
-                    Gửi tin nhắn — nhân viên sẽ phản hồi realtime
+                    {session
+                      ? `Chủ đề: ${topicLabels[session.topic as ChatTopic] || session.topic}. Gửi tin nhắn — nhân viên sẽ phản hồi realtime.`
+                      : 'Gửi tin nhắn — nhân viên sẽ phản hồi realtime'}
                   </p>
                 )}
                 {messages.map(msg => {

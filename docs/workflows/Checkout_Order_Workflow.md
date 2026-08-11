@@ -1,115 +1,115 @@
-﻿# Tài liệu Quy trình: Đặt hàng & Vòng đời đơn (Checkout / Order Lifecycle)
+# T�i li?u Quy tr�nh: �?t h�ng & V�ng d?i don (Checkout / Order Lifecycle)
 
-Tài liệu này mô tả chi tiết luồng **đặt hàng** từ trang Checkout đến `CheckoutHandler`, kèm **OTP guest checkout**, và các hành động vòng đời đơn (Seller / Customer).
+T�i li?u n�y m� t? chi ti?t lu?ng **d?t h�ng** t? trang Checkout d?n `CheckoutHandler`, k�m **OTP guest checkout**, v� c�c h�nh d?ng v�ng d?i don (Seller / Customer).
 
-> **Thanh toán:** Chi tiết COD / Ví / SePay / session / webhook **không lặp lại tại đây**. Đọc:
-> - [Payment_Requirements.md](./Payment_Requirements.md) — yêu cầu nghiệp vụ thanh toán
-> - [Payment_Checkout_Workflow.md](./Payment_Checkout_Workflow.md) — xử lý thanh toán lúc checkout
-> - [Payment_Sepay_Workflow.md](./Payment_Sepay_Workflow.md) — QR / webhook / reconcile (nếu có)
+> **Thanh to�n:** Chi ti?t COD / V� / SePay / session / webhook **kh�ng l?p l?i t?i d�y**. �?c:
+> - [Payment_Requirements.md](./Payment_Requirements.md) � y�u c?u nghi?p v? thanh to�n
+> - [Payment_Checkout_Workflow.md](./Payment_Checkout_Workflow.md) � x? l� thanh to�n l�c checkout
+> - [Payment_Sepay_Workflow.md](./Payment_Sepay_Workflow.md) � QR / webhook / reconcile (n?u c�)
 
-Giao hàng sau `WaitingForShipper`: xem [Shipper_Delivery_Workflow.md](./Shipper_Delivery_Workflow.md) và [Coordinator_Dispatch_Workflow.md](./Coordinator_Dispatch_Workflow.md).
-
----
-
+Giao h�ng sau `WaitingForShipper`: xem [Shipper_Delivery_Workflow.md](./Shipper_Delivery_Workflow.md) v� [Coordinator_Dispatch_Workflow.md](./Coordinator_Dispatch_Workflow.md).
 
 ---
-
-## Phần A — UI Interaction Trace (Nút bấm → Code → Data → Hiển thị)
-
-> UI Trace — Checkout & Order  
-> Mỗi thao tác trả lời: **nút ở đâu** · **bấm chạy file/hàm nào** · **API/BE đâu** · **data trả về** · **hiển thị thế nào**.
 
 
 ---
 
-## UT-ORD-01 — Load trang Checkout
+## Ph?n A � UI Interaction Trace (N�t b?m ? Code ? Data ? Hi?n th?)
 
-#### 1. Giao diện nút bấm ở đâu?
+> UI Trace � Checkout & Order  
+> M?i thao t�c tr? l?i: **n�t ? d�u** � **b?m ch?y file/h�m n�o** � **API/BE d�u** � **data tr? v?** � **hi?n th? th? n�o**.
 
-| Mục | Giá trị |
+
+---
+
+## UT-ORD-01 � Load trang Checkout
+
+#### 1. Giao di?n n�t b?m ? d�u?
+
+| M?c | Gi� tr? |
 |-----|---------|
 | **Route** | `/checkout?restaurantId={id}` |
 | **Page** | `pages/CheckoutPage.tsx` |
-| **Component** | Page mount (`useEffect`) — không phải nút, là entry |
-| **Nhãn** | — |
-| **Điều kiện** | Có `items` từ `useCart()`; nếu trống → toast + về home |
+| **Component** | Page mount (`useEffect`) � kh�ng ph?i n�t, l� entry |
+| **Nh�n** | � |
+| **�i?u ki?n** | C� `items` t? `useCart()`; n?u tr?ng ? toast + v? home |
 
-#### 2. Bấm xong chạy đến đâu? (Frontend)
+#### 2. B?m xong ch?y d?n d�u? (Frontend)
 
 ```text
 CheckoutPage mount
-  → useCart(): items, clearCart
-  → useAuth(): isAuthenticated, user
-  → useEffect: nếu items.length===0 → toast('Giỏ hàng trống...') → navigate HOME
-  → Lọc items theo restaurantId query
-  → paymentService.getPaymentMethods() → setPaymentMethods
-  → (auth) paymentService.getWallet() → setWalletBalance
-  → (auth) userAddressService.list → setSavedAddresses
+  ? useCart(): items, clearCart
+  ? useAuth(): isAuthenticated, user
+  ? useEffect: n?u items.length===0 ? toast('Gi? h�ng tr?ng...') ? navigate HOME
+  ? L?c items theo restaurantId query
+  ? paymentService.getPaymentMethods() ? setPaymentMethods
+  ? (auth) paymentService.getWallet() ? setWalletBalance
+  ? (auth) userAddressService.list ? setSavedAddresses
 ```
 
-#### 3. Backend chạy đoạn nào?
+#### 3. Backend ch?y do?n n�o?
 
 ```text
-GET /api/Payment/methods → GetPaymentMethodsHandler
-GET /api/Payment/wallet → wallet handler
-GET /api/UserAddress → address query
+GET /api/Payment/methods ? GetPaymentMethodsHandler
+GET /api/Payment/wallet ? wallet handler
+GET /api/UserAddress ? address query
 ```
 
-#### 4. Dữ liệu trả về ở đâu?
+#### 4. D? li?u tr? v? ? d�u?
 
-| API | `data` dùng để |
+| API | `data` d�ng d? |
 |-----|----------------|
-| methods | Render radio COD / SystemWallet / Sepay / … |
-| wallet | Text "Số dư ví: …" khi chọn SystemWallet |
-| addresses | `<select>` địa chỉ đã lưu |
+| methods | Render radio COD / SystemWallet / Sepay / � |
+| wallet | Text "S? du v�: �" khi ch?n SystemWallet |
+| addresses | `<select>` d?a ch? d� luu |
 
-#### 5. Làm sao hiển thị ra?
+#### 5. L�m sao hi?n th? ra?
 
-Form step 1: thông tin giao hàng + map + payment methods + summary tổng tiền (`finalTotal` useMemo).
+Form step 1: th�ng tin giao h�ng + map + payment methods + summary t?ng ti?n (`finalTotal` useMemo).
 
-#### 6. Sơ đồ nhanh
+#### 6. So d? nhanh
 
 ```mermaid
 sequenceDiagram
     participant Page as CheckoutPage
     participant Pay as GET /Payment/methods
     participant Cart as CartContext items
-    Page->>Cart: đọc items
+    Page->>Cart: d?c items
     Page->>Pay: getPaymentMethods
-    Pay-->>Page: setPaymentMethods → radio UI
+    Pay-->>Page: setPaymentMethods ? radio UI
 ```
 
 ---
 
-## UT-ORD-02 — Nút "Áp dụng" mã giảm giá
+## UT-ORD-02 � N�t "�p d?ng" m� gi?m gi�
 
-#### 1. Giao diện nút bấm ở đâu?
+#### 1. Giao di?n n�t b?m ? d�u?
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
 | **Route** | `/checkout` |
 | **Page** | `CheckoutPage.tsx` |
-| **Nhãn nút** | `"Áp dụng"` trong modal mã giảm giá (~807) |
-| **Loại control** | `<Button onClick={handleApplyCode}>` |
-| **Điều kiện** | Modal mở; có `formData.discountCode` |
+| **Nh�n n�t** | `"�p d?ng"` trong modal m� gi?m gi� (~807) |
+| **Lo?i control** | `<Button onClick={handleApplyCode}>` |
+| **�i?u ki?n** | Modal m?; c� `formData.discountCode` |
 
-#### 2. Bấm xong chạy đến đâu? (Frontend)
+#### 2. B?m xong ch?y d?n d�u? (Frontend)
 
 ```text
-handleApplyCode (L262–285)
-  → discountService.applyDiscount({ code, restaurantId, cartAmount: checkoutTotal })
-  → httpClient.post('/Discount/apply', ...)
+handleApplyCode (L262�285)
+  ? discountService.applyDiscount({ code, restaurantId, cartAmount: checkoutTotal })
+  ? httpClient.post('/Discount/apply', ...)
 ```
 
-#### 3. Backend chạy đoạn nào?
+#### 3. Backend ch?y do?n n�o?
 
 ```text
 POST /api/Discount/apply
-  → DiscountController → ApplyDiscountHandler
-  → Check active/expiry/usage/min order
+  ? DiscountController ? ApplyDiscountHandler
+  ? Check active/expiry/usage/min order
 ```
 
-#### 4. Dữ liệu trả về ở đâu?
+#### 4. D? li?u tr? v? ? d�u?
 
 ```json
 {
@@ -122,19 +122,19 @@ POST /api/Discount/apply
 }
 ```
 
-#### 5. Làm sao hiển thị ra?
+#### 5. L�m sao hi?n th? ra?
 
-| Nhánh | Hành vi UI |
+| Nh�nh | H�nh vi UI |
 |-------|------------|
-| OK | `toast.success('Áp dụng mã giảm giá thành công')`; `setSelectedDiscount(...)`; đóng modal; `finalTotal` giảm |
-| Fail | `toast.error(res.message \|\| 'Mã giảm giá không hợp lệ')` |
-| Gỡ mã | Nút gỡ → `toast.success('Đã gỡ mã giảm giá')`; clear selectedDiscount |
+| OK | `toast.success('�p d?ng m� gi?m gi� th�nh c�ng')`; `setSelectedDiscount(...)`; d�ng modal; `finalTotal` gi?m |
+| Fail | `toast.error(res.message \|\| 'M� gi?m gi� kh�ng h?p l?')` |
+| G? m� | N�t g? ? `toast.success('�� g? m� gi?m gi�')`; clear selectedDiscount |
 
-#### 6. Sơ đồ nhanh
+#### 6. So d? nhanh
 
 ```mermaid
 sequenceDiagram
-    participant Btn as "Áp dụng"
+    participant Btn as "�p d?ng"
     participant API as POST /Discount/apply
     participant UI as finalTotal + toast
     Btn->>API: applyDiscount
@@ -143,47 +143,47 @@ sequenceDiagram
 
 ---
 
-## UT-ORD-03 — Nút "Vị trí hiện tại" (GPS)
+## UT-ORD-03 � N�t "V? tr� hi?n t?i" (GPS)
 
-#### 1. Giao diện nút bấm ở đâu?
+#### 1. Giao di?n n�t b?m ? d�u?
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
-| **Page** | `CheckoutPage.tsx` map panel (~515–517) |
-| **Nhãn nút** | `"Vị trí hiện tại"` + icon MapPin |
-| **Loại control** | `<Button type="button" onClick={handleGetLocation}>` |
+| **Page** | `CheckoutPage.tsx` map panel (~515�517) |
+| **Nh�n n�t** | `"V? tr� hi?n t?i"` + icon MapPin |
+| **Lo?i control** | `<Button type="button" onClick={handleGetLocation}>` |
 
-#### 2. Bấm xong chạy đến đâu? (Frontend)
+#### 2. B?m xong ch?y d?n d�u? (Frontend)
 
 ```text
-handleGetLocation (~330–351)
-  → navigator.geolocation.getCurrentPosition
-  → setFormData({ deliveryLatitude, deliveryLongitude })
-  → fetchAddressFromCoordinates (Nominatim OpenStreetMap — không qua ShoppingFood API)
-  → toast.success('Đã lấy vị trí hiện tại')
+handleGetLocation (~330�351)
+  ? navigator.geolocation.getCurrentPosition
+  ? setFormData({ deliveryLatitude, deliveryLongitude })
+  ? fetchAddressFromCoordinates (Nominatim OpenStreetMap � kh�ng qua ShoppingFood API)
+  ? toast.success('�� l?y v? tr� hi?n t?i')
 ```
 
-#### 3. Backend chạy đoạn nào?
+#### 3. Backend ch?y do?n n�o?
 
-Không gọi API Shopping Food. Gọi ngoài: `nominatim.openstreetmap.org/reverse`.
+Kh�ng g?i API UniEats. G?i ngo�i: `nominatim.openstreetmap.org/reverse`.
 
-#### 4. Dữ liệu trả về ở đâu?
+#### 4. D? li?u tr? v? ? d�u?
 
-Nominatim `display_name` → ghi vào `formData.deliveryAddress`.
+Nominatim `display_name` ? ghi v�o `formData.deliveryAddress`.
 
-#### 5. Làm sao hiển thị ra?
+#### 5. L�m sao hi?n th? ra?
 
-| Nhánh | Hành vi UI |
+| Nh�nh | H�nh vi UI |
 |-------|------------|
-| OK | Marker map cập nhật; ô địa chỉ fill; toast success |
-| Deny GPS | `toast.error('Không thể lấy vị trí...')` |
-| No API | `toast.error('Trình duyệt... không hỗ trợ định vị.')` |
+| OK | Marker map c?p nh?t; � d?a ch? fill; toast success |
+| Deny GPS | `toast.error('Kh�ng th? l?y v? tr�...')` |
+| No API | `toast.error('Tr�nh duy?t... kh�ng h? tr? d?nh v?.')` |
 
-#### 6. Sơ đồ nhanh
+#### 6. So d? nhanh
 
 ```mermaid
 sequenceDiagram
-    participant Btn as "Vị trí hiện tại"
+    participant Btn as "V? tr� hi?n t?i"
     participant Geo as browser geolocation
     participant OSM as Nominatim
     Btn->>Geo: getCurrentPosition
@@ -193,57 +193,57 @@ sequenceDiagram
 
 ---
 
-## UT-ORD-04 — "Tiếp tục" / "Đặt hàng ngay" (step 1)
+## UT-ORD-04 � "Ti?p t?c" / "�?t h�ng ngay" (step 1)
 
-#### 1. Giao diện nút bấm ở đâu?
+#### 1. Giao di?n n�t b?m ? d�u?
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
-| **Page** | `CheckoutPage.tsx` ~630–634 |
-| **Nhãn nút** | Guest: `"Tiếp tục"` · Auth: `"Đặt hàng ngay"` |
-| **Loại control** | `onClick={handleNextStep}` |
-| **Điều kiện** | `step === 1` |
+| **Page** | `CheckoutPage.tsx` ~630�634 |
+| **Nh�n n�t** | Guest: `"Ti?p t?c"` � Auth: `"�?t h�ng ngay"` |
+| **Lo?i control** | `onClick={handleNextStep}` |
+| **�i?u ki?n** | `step === 1` |
 
-#### 2. Bấm xong chạy đến đâu? (Frontend)
+#### 2. B?m xong ch?y d?n d�u? (Frontend)
 
 ```text
-handleNextStep (L233–260)
-  → Validate contactName/phone/deliveryAddress/contactEmail
-       fail → toast.error('Vui lòng điền đầy đủ thông tin giao hàng')
-  → Guest:
+handleNextStep (L233�260)
+  ? Validate contactName/phone/deliveryAddress/contactEmail
+       fail ? toast.error('Vui l�ng di?n d?y d? th�ng tin giao h�ng')
+  ? Guest:
        orderService.sendCheckoutOtp({ fullName, phone, email, deliveryAddress, guestUserId })
-       → POST /Order/checkout/sent-otp
-       toast.success OTP gửi email → setStep(2)
-  → Auth:
+       ? POST /Order/checkout/sent-otp
+       toast.success OTP g?i email ? setStep(2)
+  ? Auth:
        handleCheckout()  // UT-ORD-06
 ```
 
-#### 3. Backend chạy đoạn nào? (Guest)
+#### 3. Backend ch?y do?n n�o? (Guest)
 
 ```text
 POST /api/Order/checkout/sent-otp
-  → OrderController.SendCheckoutOtp
-  → SendCheckoutOtpCommand handler
-  → Tạo/gửi OTP email (OtpRecord)
+  ? OrderController.SendCheckoutOtp
+  ? SendCheckoutOtpCommand handler
+  ? T?o/g?i OTP email (OtpRecord)
 ```
 
-#### 4. Dữ liệu trả về ở đâu?
+#### 4. D? li?u tr? v? ? d�u?
 
-Success message OTP đã gửi; error trong `error.response.data.message`.
+Success message OTP d� g?i; error trong `error.response.data.message`.
 
-#### 5. Làm sao hiển thị ra?
+#### 5. L�m sao hi?n th? ra?
 
-| Nhánh | Hành vi UI |
+| Nh�nh | H�nh vi UI |
 |-------|------------|
-| Guest OK | `setStep(2)` hiện ô OTP + nút "Xác nhận Đặt hàng" |
-| Auth | Nhảy thẳng checkout |
-| Validate | Toast đỏ, ở step 1 |
+| Guest OK | `setStep(2)` hi?n � OTP + n�t "X�c nh?n �?t h�ng" |
+| Auth | Nh?y th?ng checkout |
+| Validate | Toast d?, ? step 1 |
 
-#### 6. Sơ đồ nhanh
+#### 6. So d? nhanh
 
 ```mermaid
 sequenceDiagram
-    participant Btn as Tiếp tục / Đặt hàng ngay
+    participant Btn as Ti?p t?c / �?t h�ng ngay
     participant FE as handleNextStep
     participant OTP as POST checkout/sent-otp
     Btn->>FE: click
@@ -257,64 +257,64 @@ sequenceDiagram
 
 ---
 
-## UT-ORD-05 — Guest: "Xác nhận Đặt hàng" (nhập OTP step 2)
+## UT-ORD-05 � Guest: "X�c nh?n �?t h�ng" (nh?p OTP step 2)
 
-#### 1. Giao diện nút bấm ở đâu?
+#### 1. Giao di?n n�t b?m ? d�u?
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
-| **Nhãn nút** | `"Xác nhận Đặt hàng"` (~670–674) |
-| **Điều kiện** | `step === 2` (guest) |
-| **Input kèm** | `otpCode` state |
+| **Nh�n n�t** | `"X�c nh?n �?t h�ng"` (~670�674) |
+| **�i?u ki?n** | `step === 2` (guest) |
+| **Input k�m** | `otpCode` state |
 
-#### 2. Bấm xong chạy đến đâu? (Frontend)
+#### 2. B?m xong ch?y d?n d�u? (Frontend)
 
 ```text
 onClick={handleCheckout}
-  → if !isAuthenticated && !otpCode → toast.error('Vui lòng nhập mã OTP')
-  → tiếp UT-ORD-06
+  ? if !isAuthenticated && !otpCode ? toast.error('Vui l�ng nh?p m� OTP')
+  ? ti?p UT-ORD-06
 ```
 
-#### 3–6. Xem UT-ORD-06
+#### 3�6. Xem UT-ORD-06
 
 ---
 
-## UT-ORD-06 — Đặt hàng (checkout API) — nhánh COD / Wallet / SePay / stub
+## UT-ORD-06 � �?t h�ng (checkout API) � nh�nh COD / Wallet / SePay / stub
 
-#### 1. Giao diện nút bấm ở đâu?
+#### 1. Giao di?n n�t b?m ? d�u?
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
-| **Nhãn** | Auth step1: `"Đặt hàng ngay"` · Guest step2: `"Xác nhận Đặt hàng"` |
-| **Hàm** | `handleCheckout` (CheckoutPage L365–417) |
+| **Nh�n** | Auth step1: `"�?t h�ng ngay"` � Guest step2: `"X�c nh?n �?t h�ng"` |
+| **H�m** | `handleCheckout` (CheckoutPage L365�417) |
 
-#### 2. Bấm xong chạy đến đâu? (Frontend)
+#### 2. B?m xong ch?y d?n d�u? (Frontend)
 
 ```text
 handleCheckout
-  → setIsSubmitting(true)
-  → orderService.checkout(checkoutPayload)
+  ? setIsSubmitting(true)
+  ? orderService.checkout(checkoutPayload)
        payload: formData + otpCode + guestUserId + discountCode + paymentMethod + card/eWallet fields
-  → POST /api/Order/checkout
-  → Đọc res.data:
+  ? POST /api/Order/checkout
+  ? �?c res.data:
        orderId, paymentSessionId
        requiresSepayRedirect, requiresPaymentConfirmation
 ```
 
-#### 3. Backend chạy đoạn nào?
+#### 3. Backend ch?y do?n n�o?
 
 ```text
 POST /api/Order/checkout
-  → OrderController.Checkout (L79–85)
-  → CheckoutHandler
+  ? OrderController.Checkout (L79�85)
+  ? CheckoutHandler
        CalculateTotalAmountAsync (ship + shipper income)
-       Tạo Order + OrderItems
+       T?o Order + OrderItems
        PaymentSettlementService.ProcessCheckoutPaymentAsync
-       Clear cart phía BE (theo handler)
-  → Response flags requiresSepayRedirect / requiresPaymentConfirmation
+       Clear cart ph�a BE (theo handler)
+  ? Response flags requiresSepayRedirect / requiresPaymentConfirmation
 ```
 
-#### 4. Dữ liệu trả về ở đâu?
+#### 4. D? li?u tr? v? ? d�u?
 
 ```json
 {
@@ -330,23 +330,23 @@ POST /api/Order/checkout
 }
 ```
 
-(Tên field có thể PascalCase — FE đọc cả hai.)
+(T�n field c� th? PascalCase � FE d?c c? hai.)
 
-#### 5. Làm sao hiển thị ra?
+#### 5. L�m sao hi?n th? ra?
 
-| Nhánh | Hành vi UI |
+| Nh�nh | H�nh vi UI |
 |-------|------------|
-| **SePay** | `setSepaySessionId` + `setIsSepayModalOpen(true)`; toast `"Đơn hàng đã tạo. Quét mã QR..."`; **chưa** clearCart / navigate (đợi paid) |
-| **requiresConfirm** (Card/EWallet stub) | `paymentService.confirmPayment(sessionId)` rồi clearCart + toast success + navigate `/?track=true&orderId=` |
-| **COD / SystemWallet** | `clearCart()`; toast mã đơn; `navigate(HOME?track=true&orderId=)` |
-| **onPaid SePay modal** | `clearCart()`; đóng modal; navigate track (xem CheckoutPage ~861–870) |
-| Error | `toast.error(error.response?.data?.message \|\| 'Lỗi khi đặt hàng')` |
+| **SePay** | `setSepaySessionId` + `setIsSepayModalOpen(true)`; toast `"�on h�ng d� t?o. Qu�t m� QR..."`; **chua** clearCart / navigate (d?i paid) |
+| **requiresConfirm** (Card/EWallet stub) | `paymentService.confirmPayment(sessionId)` r?i clearCart + toast success + navigate `/?track=true&orderId=` |
+| **COD / SystemWallet** | `clearCart()`; toast m� don; `navigate(HOME?track=true&orderId=)` |
+| **onPaid SePay modal** | `clearCart()`; d�ng modal; navigate track (xem CheckoutPage ~861�870) |
+| Error | `toast.error(error.response?.data?.message \|\| 'L?i khi d?t h�ng')` |
 
-#### 6. Sơ đồ nhanh
+#### 6. So d? nhanh
 
 ```mermaid
 sequenceDiagram
-    participant Btn as Đặt hàng
+    participant Btn as �?t h�ng
     participant FE as handleCheckout
     participant API as POST /Order/checkout
     participant QR as SepayQrPaymentModal
@@ -365,53 +365,53 @@ sequenceDiagram
 
 ---
 
-## UT-ORD-07 — Customer: Hủy đơn (ConfirmModal)
+## UT-ORD-07 � Customer: H?y don (ConfirmModal)
 
-#### 1. Giao diện nút bấm ở đâu?
+#### 1. Giao di?n n�t b?m ? d�u?
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
 | **Component** | `components/order/CustomerOrderDetailModal.tsx` |
-| **Mở modal từ** | `ShoppingDrawer` tab Đơn hàng → click đơn → `detailModal` |
-| **Nhãn** | Nút hủy → mở `ConfirmModal` (`cancelConfirmModal`) |
-| **Confirm title** | Hủy đơn hàng (ConfirmModal common) |
+| **M? modal t?** | `ShoppingDrawer` tab �on h�ng ? click don ? `detailModal` |
+| **Nh�n** | N�t h?y ? m? `ConfirmModal` (`cancelConfirmModal`) |
+| **Confirm title** | H?y don h�ng (ConfirmModal common) |
 
-#### 2. Bấm xong chạy đến đâu? (Frontend)
+#### 2. B?m xong ch?y d?n d�u? (Frontend)
 
 ```text
-confirmCancelOrder (L81–91)
-  → orderService.cancelOrder({ orderId })
-  → PUT /api/Order/cancel
-  → toast.success('Hủy đơn hàng thành công')
-  → setCancelConfirmModal(false)
-  → loadOrderDetails()  // GET details/{id}
+confirmCancelOrder (L81�91)
+  ? orderService.cancelOrder({ orderId })
+  ? PUT /api/Order/cancel
+  ? toast.success('H?y don h�ng th�nh c�ng')
+  ? setCancelConfirmModal(false)
+  ? loadOrderDetails()  // GET details/{id}
 ```
 
-#### 3. Backend chạy đoạn nào?
+#### 3. Backend ch?y do?n n�o?
 
 ```text
 PUT /api/Order/cancel
-  → OrderController → CancelOrderHandler
-  → (Refund ví nếu đã Paid online)
+  ? OrderController ? CancelOrderHandler
+  ? (Refund v� n?u d� Paid online)
 ```
 
-#### 4. Dữ liệu trả về ở đâu?
+#### 4. D? li?u tr? v? ? d�u?
 
 ApiResponse success/error message.
 
-#### 5. Làm sao hiển thị ra?
+#### 5. L�m sao hi?n th? ra?
 
-| Nhánh | Hành vi UI |
+| Nh�nh | H�nh vi UI |
 |-------|------------|
-| OK | Toast; `setOrderData` status mới (Cancelled); badge màu đổi |
+| OK | Toast; `setOrderData` status m?i (Cancelled); badge m�u d?i |
 | Fail | `toast.error(msg)` |
-| Realtime | SignalR notification `targetId===orderId` → `loadOrderDetails` lại |
+| Realtime | SignalR notification `targetId===orderId` ? `loadOrderDetails` l?i |
 
-#### 6. Sơ đồ nhanh
+#### 6. So d? nhanh
 
 ```mermaid
 sequenceDiagram
-    participant C as Confirm hủy
+    participant C as Confirm h?y
     participant API as PUT /Order/cancel
     participant UI as orderData status
     C->>API: cancelOrder
@@ -420,47 +420,47 @@ sequenceDiagram
 
 ---
 
-## UT-ORD-08 — Customer: Đặt lại (Reorder)
+## UT-ORD-08 � Customer: �?t l?i (Reorder)
 
-#### 1. Giao diện nút bấm ở đâu?
+#### 1. Giao di?n n�t b?m ? d�u?
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
 | **Component** | `CustomerOrderDetailModal.tsx` |
-| **Nhãn** | Nút đặt lại / reorder (gọi `handleReorder`) |
+| **Nh�n** | N�t d?t l?i / reorder (g?i `handleReorder`) |
 | **Icon** | `RefreshCw` trong imports |
 
-#### 2. Bấm xong chạy đến đâu? (Frontend)
+#### 2. B?m xong ch?y d?n d�u? (Frontend)
 
 ```text
-handleReorder (L93–104)
-  → orderService.reorder({ orderId })
-  → POST /api/Order/reorder
-  → refreshCart()  // CartContext.fetchCart → GET /Cart
-  → window.dispatchEvent('openCartTab')
-  → toast.success('Đã thêm lại các món vào giỏ hàng')
-  → onClose()
+handleReorder (L93�104)
+  ? orderService.reorder({ orderId })
+  ? POST /api/Order/reorder
+  ? refreshCart()  // CartContext.fetchCart ? GET /Cart
+  ? window.dispatchEvent('openCartTab')
+  ? toast.success('�� th�m l?i c�c m�n v�o gi? h�ng')
+  ? onClose()
 ```
 
-#### 3. Backend chạy đoạn nào?
+#### 3. Backend ch?y do?n n�o?
 
 ```text
-POST /api/Order/reorder → ReorderHandler
-  (fail nếu không còn món available)
+POST /api/Order/reorder ? ReorderHandler
+  (fail n?u kh�ng c�n m�n available)
 ```
 
-#### 4. Dữ liệu trả về ở đâu?
+#### 4. D? li?u tr? v? ? d�u?
 
-Success hoặc `"None of the items... available for reorder"`.
+Success ho?c `"None of the items... available for reorder"`.
 
-#### 5. Làm sao hiển thị ra?
+#### 5. L�m sao hi?n th? ra?
 
-| Nhánh | Hành vi UI |
+| Nh�nh | H�nh vi UI |
 |-------|------------|
-| OK | Modal đóng; Drawer mở tab giỏ (`openCartTab` listener trong ShoppingDrawer L112–114); items mới trong Context |
+| OK | Modal d�ng; Drawer m? tab gi? (`openCartTab` listener trong ShoppingDrawer L112�114); items m?i trong Context |
 | Fail | toast.error |
 
-#### 6. Sơ đồ nhanh
+#### 6. So d? nhanh
 
 ```mermaid
 sequenceDiagram
@@ -475,44 +475,44 @@ sequenceDiagram
 
 ---
 
-## UT-ORD-09 — Seller: Chấp nhận đơn
+## UT-ORD-09 � Seller: Ch?p nh?n don
 
-#### 1. Giao diện nút bấm ở đâu?
+#### 1. Giao di?n n�t b?m ? d�u?
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
 | **Route** | `/seller/orders` |
 | **Page** | `pages/seller/SellerOrdersPage.tsx` |
-| **Nhãn** | Nút chấp nhận (gọi `handleAccept(orderId)`) — status Pending |
-| **Loading toast** | `'Đang chấp nhận đơn hàng...'` |
+| **Nh�n** | N�t ch?p nh?n (g?i `handleAccept(orderId)`) � status Pending |
+| **Loading toast** | `'�ang ch?p nh?n don h�ng...'` |
 
-#### 2. Bấm xong chạy đến đâu? (Frontend)
-
-```text
-handleAccept (L145–161)
-  → orderService.acceptOrder({ orderId })
-  → POST /api/Order/accept
-  → toast.success('Đã chấp nhận đơn hàng!')
-  → fetchOrders()  // GET RestaurantOrders
-  → setSelectedOrder status 'Confirmed' nếu đang mở
-```
-
-#### 3. Backend chạy đoạn nào?
+#### 2. B?m xong ch?y d?n d�u? (Frontend)
 
 ```text
-POST /api/Order/accept → AcceptOrderHandler
-  Pending → Confirmed (chỉ owner restaurant)
+handleAccept (L145�161)
+  ? orderService.acceptOrder({ orderId })
+  ? POST /api/Order/accept
+  ? toast.success('�� ch?p nh?n don h�ng!')
+  ? fetchOrders()  // GET RestaurantOrders
+  ? setSelectedOrder status 'Confirmed' n?u dang m?
 ```
 
-#### 4. Dữ liệu trả về ở đâu?
+#### 3. Backend ch?y do?n n�o?
+
+```text
+POST /api/Order/accept ? AcceptOrderHandler
+  Pending ? Confirmed (ch? owner restaurant)
+```
+
+#### 4. D? li?u tr? v? ? d�u?
 
 ApiResponse; list orders refresh.
 
-#### 5. Làm sao hiển thị ra?
+#### 5. L�m sao hi?n th? ra?
 
-Badge status → `"Đã xác nhận"` (blue); list re-fetch; toast thay loading.
+Badge status ? `"�� x�c nh?n"` (blue); list re-fetch; toast thay loading.
 
-#### 6. Sơ đồ nhanh
+#### 6. So d? nhanh
 
 ```mermaid
 sequenceDiagram
@@ -525,27 +525,27 @@ sequenceDiagram
 
 ---
 
-## UT-ORD-10 — Seller: Chuẩn bị (Prepare)
+## UT-ORD-10 � Seller: Chu?n b? (Prepare)
 
-#### 1. Giao diện
+#### 1. Giao di?n
 
-`SellerOrdersPage` — khi status Confirmed → `handlePrepare`.
+`SellerOrdersPage` � khi status Confirmed ? `handlePrepare`.
 
 #### 2. Frontend
 
 ```text
-handlePrepare → orderService.prepareOrder → POST /Order/prepare
-toast: 'Đang thực hiện nấu món!'
+handlePrepare ? orderService.prepareOrder ? POST /Order/prepare
+toast: '�ang th?c hi?n n?u m�n!'
 setSelectedOrder status Preparing
 ```
 
 #### 3. Backend
 
-`PrepareOrderHandler` — Confirmed → Preparing.
+`PrepareOrderHandler` � Confirmed ? Preparing.
 
-#### 4–5. Response + UI
+#### 4�5. Response + UI
 
-Badge `"Đang chuẩn bị"` (yellow); `fetchOrders()`.
+Badge `"�ang chu?n b?"` (yellow); `fetchOrders()`.
 
 #### 6. Mermaid
 
@@ -559,27 +559,27 @@ sequenceDiagram
 
 ---
 
-## UT-ORD-11 — Seller: Chờ tài xế (WaitingForShipper)
+## UT-ORD-11 � Seller: Ch? t�i x? (WaitingForShipper)
 
-#### 1. Giao diện
+#### 1. Giao di?n
 
-Nút chờ shipper khi Preparing (platform delivery).
+N�t ch? shipper khi Preparing (platform delivery).
 
 #### 2. Frontend
 
 ```text
-handleWaitingForShipper → POST /Order/waiting-for-shipper
-toast: 'Chuẩn bị xong! Đang chờ tài xế đến lấy...'
-status → WaitingForShipper
+handleWaitingForShipper ? POST /Order/waiting-for-shipper
+toast: 'Chu?n b? xong! �ang ch? t�i x? d?n l?y...'
+status ? WaitingForShipper
 ```
 
 #### 3. Backend
 
-Handler chuyển WaitingForShipper — sẵn sàng dispatch.
+Handler chuy?n WaitingForShipper � s?n s�ng dispatch.
 
-#### 4–5. UI
+#### 4�5. UI
 
-Badge purple `"Chờ tài xế"`; coordinator board có thể thấy đơn.
+Badge purple `"Ch? t�i x?"`; coordinator board c� th? th?y don.
 
 #### 6. Mermaid
 
@@ -592,34 +592,34 @@ sequenceDiagram
 
 ---
 
-## UT-ORD-12 — Seller: Từ chối đơn (PromptModal lý do)
+## UT-ORD-12 � Seller: T? ch?i don (PromptModal l� do)
 
-#### 1. Giao diện nút bấm ở đâu?
+#### 1. Giao di?n n�t b?m ? d�u?
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
 | **Page** | `SellerOrdersPage.tsx` |
-| **Modal** | Reject modal / Prompt — state `isRejectModalOpen`, `rejectReason` |
+| **Modal** | Reject modal / Prompt � state `isRejectModalOpen`, `rejectReason` |
 | **Confirm action** | `handleReject` |
 
-#### 2. Bấm xong chạy đến đâu? (Frontend)
+#### 2. B?m xong ch?y d?n d�u? (Frontend)
 
 ```text
-handleReject (L199–222)
-  → if !rejectReason.trim() → toast.error('Vui lòng nhập lý do từ chối')
-  → orderService.rejectOrder({ orderId, rejectReason })
-  → POST /api/Order/reject
-  → đóng modal, clear selectedOrder, fetchOrders
-  → toast.success('Đã từ chối đơn hàng thành công')
+handleReject (L199�222)
+  ? if !rejectReason.trim() ? toast.error('Vui l�ng nh?p l� do t? ch?i')
+  ? orderService.rejectOrder({ orderId, rejectReason })
+  ? POST /api/Order/reject
+  ? d�ng modal, clear selectedOrder, fetchOrders
+  ? toast.success('�� t? ch?i don h�ng th�nh c�ng')
 ```
 
 #### 3. Backend
 
-`RejectOrderHandler` — chỉ Pending; ghi lý do.
+`RejectOrderHandler` � ch? Pending; ghi l� do.
 
-#### 4–5. Response + UI
+#### 4�5. Response + UI
 
-Đơn biến mất khỏi Pending list / status Cancelled-Rejected; toast.
+�on bi?n m?t kh?i Pending list / status Cancelled-Rejected; toast.
 
 #### 6. Mermaid
 
@@ -633,25 +633,25 @@ sequenceDiagram
 
 ---
 
-## UT-ORD-13 — Seller: Hủy đơn (PromptModal)
+## UT-ORD-13 � Seller: H?y don (PromptModal)
 
-#### 1. Giao diện
+#### 1. Giao di?n
 
-`handleSellerCancelClick` → `PromptModal` (`isCancelModalOpen`) nhập lý do → `handleSellerCancelConfirm(reason)`.
+`handleSellerCancelClick` ? `PromptModal` (`isCancelModalOpen`) nh?p l� do ? `handleSellerCancelConfirm(reason)`.
 
 #### 2. Frontend
 
 ```text
 orderService.sellerCancelOrder({ orderId, reason })
-→ POST /api/Order/seller-cancel
-toast success 'Đã hủy đơn hàng thành công'
+? POST /api/Order/seller-cancel
+toast success '�� h?y don h�ng th�nh c�ng'
 ```
 
 #### 3. Backend
 
-Seller-cancel handler + refund rules nếu cần.
+Seller-cancel handler + refund rules n?u c?n.
 
-#### 4–5. UI
+#### 4�5. UI
 
 List refresh; selectedOrder null.
 
@@ -666,30 +666,30 @@ sequenceDiagram
 
 ---
 
-## UT-ORD-14 — Seller: Xác nhận tự giao thành công
+## UT-ORD-14 � Seller: X�c nh?n t? giao th�nh c�ng
 
-#### 1. Giao diện
+#### 1. Giao di?n
 
-Khi đơn self-delivery ở trạng thái phù hợp — `handleConfirmSelfDelivery(orderId)`.
+Khi don self-delivery ? tr?ng th�i ph� h?p � `handleConfirmSelfDelivery(orderId)`.
 
 #### 2. Frontend
 
 ```text
 orderService.confirmSelfDelivery(orderId)
-→ POST /api/Order/{id}/self-delivery/confirm-success
-toast: 'Xác nhận giao hàng thành công!'
-status → Delivered
+? POST /api/Order/{id}/self-delivery/confirm-success
+toast: 'X�c nh?n giao h�ng th�nh c�ng!'
+status ? Delivered
 ```
 
 #### 3. Backend
 
 ```text
-→ SettleSelfDeliveryOrderAsync (chia tiền Seller + Commission)
+? SettleSelfDeliveryOrderAsync (chia ti?n Seller + Commission)
 ```
 
-#### 4–5. UI
+#### 4�5. UI
 
-Badge Delivered; ví seller cập nhật (không hiện ngay trên page orders — xem wallet).
+Badge Delivered; v� seller c?p nh?t (kh�ng hi?n ngay tr�n page orders � xem wallet).
 
 #### 6. Mermaid
 
@@ -704,35 +704,35 @@ sequenceDiagram
 
 ---
 
-## Tóm tắt Order UI files
+## T�m t?t Order UI files
 
-| File | Vai trò |
+| File | Vai tr� |
 |------|---------|
-| `CheckoutPage.tsx` | UT-ORD-01…06 |
-| `CustomerOrderDetailModal.tsx` | UT-ORD-07…08 |
-| `SellerOrdersPage.tsx` | UT-ORD-09…14 |
+| `CheckoutPage.tsx` | UT-ORD-01�06 |
+| `CustomerOrderDetailModal.tsx` | UT-ORD-07�08 |
+| `SellerOrdersPage.tsx` | UT-ORD-09�14 |
 | `OrderService.ts` | HTTP wrapper |
 | `OrderController.cs` + `Features/Orders/**` | BE |
-| `ShoppingDrawer.tsx` | Mở detail / track tab |
+| `ShoppingDrawer.tsx` | M? detail / track tab |
 
-**Payment chi tiết sau checkout SePay:** [06_Payment_UI_Trace.md](./06_Payment_UI_Trace.md).
+**Payment chi ti?t sau checkout SePay:** [06_Payment_UI_Trace.md](./06_Payment_UI_Trace.md).
 
 
 ---
 
-## Phần B — Workflow nghiệp vụ & Backend (chi tiết luồng)
-## 1. Luồng Tổng Quan (Checkout)
+## Ph?n B � Workflow nghi?p v? & Backend (chi ti?t lu?ng)
+## 1. Lu?ng T?ng Quan (Checkout)
 
-1. **Yêu cầu:** User (đã login hoặc Guest) mở `/checkout` với món trong giỏ cùng một quán.
-2. **Nhập thông tin:** Điền địa chỉ giao, liên hệ, chọn phương thức TT, (tuỳ chọn) mã giảm giá / GPS.
-3. **Guest OTP (nếu chưa login):** Bấm tiếp → `POST /api/Order/checkout/sent-otp` → nhập OTP (Bước 2 UI).
-4. **Gửi checkout:** `POST /api/Order/checkout` với payload giao hàng + `paymentMethod` (+ OTP/guestUserId nếu guest).
-5. **Backend:** `OrderController.Checkout` → MediatR `CheckoutHandler`.
-6. **Validate:** User/Guest, OTP (guest), giỏ không rỗng, tồn kho, giảm giá, tính phí ship.
-7. **Tạo Order:** `Status = Pending`, insert `ORDER` + `ORDER_ITEM`, gọi `PaymentSettlementService.ProcessCheckoutPaymentAsync`.
-8. **Xóa giỏ:** Clear cart items, commit transaction; COD → notify Seller.
-9. **Response flags:** `requiresSepayRedirect` / `requiresPaymentConfirmation` / thành công ngay (COD, SystemWallet).
-10. **FE:** Toast + mở QR SePay / confirm payment / clear cart — theo flags (chi tiết Payment docs).
+1. **Y�u c?u:** User (d� login ho?c Guest) m? `/checkout` v?i m�n trong gi? c�ng m?t qu�n.
+2. **Nh?p th�ng tin:** �i?n d?a ch? giao, li�n h?, ch?n phuong th?c TT, (tu? ch?n) m� gi?m gi� / GPS.
+3. **Guest OTP (n?u chua login):** B?m ti?p ? `POST /api/Order/checkout/sent-otp` ? nh?p OTP (Bu?c 2 UI).
+4. **G?i checkout:** `POST /api/Order/checkout` v?i payload giao h�ng + `paymentMethod` (+ OTP/guestUserId n?u guest).
+5. **Backend:** `OrderController.Checkout` ? MediatR `CheckoutHandler`.
+6. **Validate:** User/Guest, OTP (guest), gi? kh�ng r?ng, t?n kho, gi?m gi�, t�nh ph� ship.
+7. **T?o Order:** `Status = Pending`, insert `ORDER` + `ORDER_ITEM`, g?i `PaymentSettlementService.ProcessCheckoutPaymentAsync`.
+8. **X�a gi?:** Clear cart items, commit transaction; COD ? notify Seller.
+9. **Response flags:** `requiresSepayRedirect` / `requiresPaymentConfirmation` / th�nh c�ng ngay (COD, SystemWallet).
+10. **FE:** Toast + m? QR SePay / confirm payment / clear cart � theo flags (chi ti?t Payment docs).
 
 ```mermaid
 sequenceDiagram
@@ -744,13 +744,13 @@ sequenceDiagram
     participant Pay as PaymentSettlementService
     participant DB as SQL Server
 
-    U->>FE: /checkout điền form
+    U->>FE: /checkout di?n form
     alt Guest
         FE->>OS: sendCheckoutOtp
         OS->>API: POST checkout/sent-otp
         API->>H: SendCheckoutOtpHandler
         H->>DB: OtpRecord + Email
-        U->>FE: Nhập OTP
+        U->>FE: Nh?p OTP
     end
     FE->>OS: checkout(payload)
     OS->>API: POST /api/Order/checkout
@@ -764,39 +764,39 @@ sequenceDiagram
     FE-->>U: Toast / SePay modal / success
 ```
 
-### OrderStatus (vòng đời)
+### OrderStatus (v�ng d?i)
 
 ```text
-Pending → Confirmed → Preparing → WaitingForShipper → Shipping → Delivered
-                ↘ Cancelled (mọi nhánh hủy hợp lệ)
+Pending ? Confirmed ? Preparing ? WaitingForShipper ? Shipping ? Delivered
+                ? Cancelled (m?i nh�nh h?y h?p l?)
 ```
 
-Enum: `src/ShoppingFood.Domain/Enums/Enums.cs` — `OrderStatus` (lines 56–65).
+Enum: `src/ShoppingFood.Domain/Enums/Enums.cs` � `OrderStatus` (lines 56�65).
 
 ---
 
-## Bước 1: Mở trang Checkout (Frontend)
+## Bu?c 1: M? trang Checkout (Frontend)
 
-**Thông tin:**
+**Th�ng tin:**
 - **URL (FE):** `/checkout`
 - **Page:** `ShoppingFood.FE/src/pages/CheckoutPage.tsx`
-- **Guest ID:** `localStorage` key `sf_guest_id` nếu chưa authenticated
+- **Guest ID:** `localStorage` key `sf_guest_id` n?u chua authenticated
 
-**Logic chính (`CheckoutPage.tsx`):**
-- Lọc `checkoutItems` theo `restaurantId`
-- Form: địa chỉ, tên, SĐT, email, `paymentMethod` (mặc định `COD`)
+**Logic ch�nh (`CheckoutPage.tsx`):**
+- L?c `checkoutItems` theo `restaurantId`
+- Form: d?a ch?, t�n, S�T, email, `paymentMethod` (m?c d?nh `COD`)
 - `step`: `1` (info) | `2` (OTP guest)
-- Load `paymentService.getPaymentMethods()`, phí ship theo GPS / freeship / min order
+- Load `paymentService.getPaymentMethods()`, ph� ship theo GPS / freeship / min order
 
 **Toast validate:**
-- `Vui lòng điền đầy đủ thông tin giao hàng`
-- `Vui lòng nhập mã OTP`
+- `Vui l�ng di?n d?y d? th�ng tin giao h�ng`
+- `Vui l�ng nh?p m� OTP`
 
 ---
 
-## Bước 2: Gửi OTP checkout (Guest)
+## Bu?c 2: G?i OTP checkout (Guest)
 
-**Thông tin:**
+**Th�ng tin:**
 - **URL:** `/api/Order/checkout/sent-otp`
 - **HTTP Method:** POST
 - **Auth:** Public / guest-friendly
@@ -815,13 +815,13 @@ public async sendCheckoutOtp(data: ISendCheckoutOtpRequest): Promise<IApiRespons
 
 ```typescript
 await orderService.sendCheckoutOtp({ /* contact + guestUserId */ });
-toast.success('Mã OTP đã được gửi đến email của bạn');
+toast.success('M� OTP d� du?c g?i d?n email c?a b?n');
 setStep(2);
 ```
 
 ### 2.2. Controller
 
-**File:** `src/ShoppingFood.API/Controllers/OrderController.cs` — Lines 87–92
+**File:** `src/ShoppingFood.API/Controllers/OrderController.cs` � Lines 87�92
 
 ```csharp
 [HttpPost("checkout/sent-otp")]
@@ -838,20 +838,20 @@ public async Task<IActionResult> SendCheckoutOtp([FromBody] SendCheckoutOtpComma
 **Class:** `SendCheckoutOtpHandler`  
 **Method:** `Handle`
 
-- Khóa theo IP nếu `RetriesCount >= 3` trong 15 phút
-- Rate limit guest orders (cùng logic checkout)
-- Tạo `OtpRecord` + gửi email qua `IEmailService`
+- Kh�a theo IP n?u `RetriesCount >= 3` trong 15 ph�t
+- Rate limit guest orders (c�ng logic checkout)
+- T?o `OtpRecord` + g?i email qua `IEmailService`
 
 ---
 
-## Bước 3: Checkout API
+## Bu?c 3: Checkout API
 
-**Thông tin:**
+**Th�ng tin:**
 - **URL:** `/api/Order/checkout`
 - **HTTP Method:** POST
-- **Auth:** JWT **hoặc** Guest (`guestUserId` + OTP)
+- **Auth:** JWT **ho?c** Guest (`guestUserId` + OTP)
 
-**Request (chính)** — `CheckoutCommand`:
+**Request (ch�nh)** � `CheckoutCommand`:
 
 ```csharp
 // src/.../Orders/Commands/CheckoutCommand.cs
@@ -867,7 +867,7 @@ public double? DeliveryLatitude { get; set; }
 public double? DeliveryLongitude { get; set; }
 ```
 
-### 3.1. Frontend gọi API
+### 3.1. Frontend g?i API
 
 **File:** `OrderService.ts`
 
@@ -877,21 +877,21 @@ public async checkout(data: ICheckoutRequest): Promise<IApiResponse<any>> {
 }
 ```
 
-**CheckoutPage** — sau response:
+**CheckoutPage** � sau response:
 
 ```typescript
 const requiresSepay = res.data?.requiresSepayRedirect === true;
 if (requiresSepay && sessionId) {
-  toast.success('Đơn hàng đã tạo. Quét mã QR bên dưới để thanh toán.');
-  // mở SepayQrPaymentModal — xem Payment_Checkout_Workflow / Payment_Sepay_Workflow
+  toast.success('�on h�ng d� t?o. Qu�t m� QR b�n du?i d? thanh to�n.');
+  // m? SepayQrPaymentModal � xem Payment_Checkout_Workflow / Payment_Sepay_Workflow
 } else {
-  toast.success(`Đặt hàng thành công! Mã đơn hàng của bạn là: ...`);
+  toast.success(`�?t h�ng th�nh c�ng! M� don h�ng c?a b?n l�: ...`);
 }
 ```
 
 ### 3.2. Controller
 
-**File:** `OrderController.cs` — Lines 79–85
+**File:** `OrderController.cs` � Lines 79�85
 
 ```csharp
 [HttpPost("checkout")]
@@ -902,28 +902,28 @@ public async Task<IActionResult> Checkout([FromBody] CheckoutCommand command)
 }
 ```
 
-### 3.3. Handler — lõi nghiệp vụ
+### 3.3. Handler � l�i nghi?p v?
 
 **File:** `src/ShoppingFood.Application/Features/Orders/Commands/CheckoutHandler.cs`  
 **Class:** `CheckoutHandler`  
-**Method:** `Handle` (từ line ~81)
+**Method:** `Handle` (t? line ~81)
 
-**Tóm tắt xử lý:**
+**T�m t?t x? l�:**
 
-| # | Việc | Ghi chú |
+| # | Vi?c | Ghi ch� |
 |---|------|---------|
-| 1 | Bắt buộc `CurrentUserId` **hoặc** `GuestUserId` | 401 nếu thiếu |
-| 2 | Guest: lock OTP / max **3 đơn/24h** theo IP | 403 / 429 |
-| 3 | Guest: validate OTP email, max 3 retries | Đánh `IsUsed` khi đúng |
-| 4 | Load cart + sync flash sale price | Giỏ rỗng → 400 |
-| 5 | Validate stock | Out of stock → 400 |
-| 6 | Tính total + shipping + shipper income | Theo lat/lng |
-| 7 | Apply voucher + member tier discount | Tier bỏ qua nếu có flash sale item |
-| 8 | `CreateOrderEntity` → `Status = Pending` | + OrderItems |
-| 9 | `ProcessCheckoutPaymentAsync` | **→ Payment docs** |
+| 1 | B?t bu?c `CurrentUserId` **ho?c** `GuestUserId` | 401 n?u thi?u |
+| 2 | Guest: lock OTP / max **3 don/24h** theo IP | 403 / 429 |
+| 3 | Guest: validate OTP email, max 3 retries | ��nh `IsUsed` khi d�ng |
+| 4 | Load cart + sync flash sale price | Gi? r?ng ? 400 |
+| 5 | Validate stock | Out of stock ? 400 |
+| 6 | T�nh total + shipping + shipper income | Theo lat/lng |
+| 7 | Apply voucher + member tier discount | Tier b? qua n?u c� flash sale item |
+| 8 | `CreateOrderEntity` ? `Status = Pending` | + OrderItems |
+| 9 | `ProcessCheckoutPaymentAsync` | **? Payment docs** |
 | 10 | Clear cart, commit; COD notify seller | Notification |
 
-**Đoạn payment + response flags** (lines ~183–232):
+**�o?n payment + response flags** (lines ~183�232):
 
 ```csharp
 var paymentError = await _paymentSettlementService.ProcessCheckoutPaymentAsync(
@@ -948,43 +948,43 @@ var responseData = new
 return ApiResponse.Success(responseData, "Checkout successful.");
 ```
 
-### 3.4. Database lúc checkout
+### 3.4. Database l�c checkout
 
-| Bảng | Việc |
+| B?ng | Vi?c |
 |------|------|
-| `CART` / `CART_ITEM` | Đọc + xóa items |
+| `CART` / `CART_ITEM` | �?c + x�a items |
 | `ORDER` / `ORDER_ITEM` | Insert |
-| `OTP_RECORD` | Guest: đánh dấu dùng |
-| `GUEST_USER` | Cập nhật contact |
+| `OTP_RECORD` | Guest: d�nh d?u d�ng |
+| `GUEST_USER` | C?p nh?t contact |
 | `DISCOUNT` / `CUSTOMER_DISCOUNT` | Apply usage |
-| `PAYMENT_SESSION` / `WALLET` / … | Theo payment method — xem Payment docs |
-| `NOTIFICATION` | COD → Seller |
+| `PAYMENT_SESSION` / `WALLET` / � | Theo payment method � xem Payment docs |
+| `NOTIFICATION` | COD ? Seller |
 
 ---
 
-## Bước 4: Nhánh thanh toán (tóm tắt + link)
+## Bu?c 4: Nh�nh thanh to�n (t�m t?t + link)
 
-| Method | Sau checkout | Đọc tiếp |
+| Method | Sau checkout | �?c ti?p |
 |--------|--------------|----------|
-| **COD** | `PaymentStatus=Pending`, toast thành công | [Payment_Requirements.md](./Payment_Requirements.md) § COD settle khi giao |
-| **SystemWallet** | Trừ ví ngay → `Paid` | Payment_Checkout_Workflow |
-| **Sepay** | Tạo session 10 phút → QR modal | Payment_Sepay_Workflow |
-| **CreditCard / EWallet** | Session stub → FE `POST /Payment/confirm` | Payment_Checkout_Workflow (fallback) |
+| **COD** | `PaymentStatus=Pending`, toast th�nh c�ng | [Payment_Requirements.md](./Payment_Requirements.md) � COD settle khi giao |
+| **SystemWallet** | Tr? v� ngay ? `Paid` | Payment_Checkout_Workflow |
+| **Sepay** | T?o session 10 ph�t ? QR modal | Payment_Sepay_Workflow |
+| **CreditCard / EWallet** | Session stub ? FE `POST /Payment/confirm` | Payment_Checkout_Workflow (fallback) |
 
 ---
 
-## Phụ lục A — Vòng đời đơn (Seller / Customer)
+## Ph? l?c A � V�ng d?i don (Seller / Customer)
 
 ### A.1. Seller Accept
 
-| Mục | Chi tiết |
+| M?c | Chi ti?t |
 |-----|----------|
 | **API** | `POST /api/Order/accept` |
-| **Controller** | `OrderController.AcceptOrder` (L126–135) |
+| **Controller** | `OrderController.AcceptOrder` (L126�135) |
 | **Handler** | `AcceptOrderHandler.cs` |
-| **Rule** | Chỉ `Pending` → `Confirmed`; verify ownership quán |
-| **FE** | `SellerOrdersPage.tsx` → `orderService.acceptOrder` |
-| **Noti** | Customer: *"Đơn hàng đã được xác nhận"* |
+| **Rule** | Ch? `Pending` ? `Confirmed`; verify ownership qu�n |
+| **FE** | `SellerOrdersPage.tsx` ? `orderService.acceptOrder` |
+| **Noti** | Customer: *"�on h�ng d� du?c x�c nh?n"* |
 
 ```csharp
 if(order.Status != OrderStatus.Pending) return ApiResponse.Failure(400, "Only pending orders can be accepted.");
@@ -993,41 +993,41 @@ order.Status = OrderStatus.Confirmed;
 
 ### A.2. Seller Reject
 
-| Mục | Chi tiết |
+| M?c | Chi ti?t |
 |-----|----------|
 | **API** | `POST /api/Order/reject` |
 | **Handler** | `RejectOrderHandler.cs` |
-| **FE** | Prompt lý do → `orderService.rejectOrder` |
-| **Kết quả** | Thường → `Cancelled` + refund nếu đã Paid (Payment) |
+| **FE** | Prompt l� do ? `orderService.rejectOrder` |
+| **K?t qu?** | Thu?ng ? `Cancelled` + refund n?u d� Paid (Payment) |
 
 ### A.3. Seller Prepare
 
-| Mục | Chi tiết |
+| M?c | Chi ti?t |
 |-----|----------|
 | **API** | `POST /api/Order/prepare` |
 | **Handler** | `PrepareOrderHandler.cs` |
-| **Rule** | `Confirmed` → `Preparing` |
+| **Rule** | `Confirmed` ? `Preparing` |
 
-### A.4. Waiting for Shipper (hoặc Self-delivery)
+### A.4. Waiting for Shipper (ho?c Self-delivery)
 
-| Mục | Chi tiết |
+| M?c | Chi ti?t |
 |-----|----------|
 | **API** | `POST /api/Order/waiting-for-shipper` |
 | **Handler** | `WaitingShipperOrderHandler.cs` |
-| **Rule** | Từ `Preparing`: Platform delivery → `WaitingForShipper`; Self-delivery có thể gán thẳng `Shipping` |
+| **Rule** | T? `Preparing`: Platform delivery ? `WaitingForShipper`; Self-delivery c� th? g�n th?ng `Shipping` |
 
 ### A.5. Customer Cancel
 
-| Mục | Chi tiết |
+| M?c | Chi ti?t |
 |-----|----------|
 | **API** | `PUT /api/Order/cancel` |
 | **Handler** | `CancelOrderHandler.cs` |
 | **FE** | `CustomerOrderDetailModal` + `ConfirmModal` |
-| **Rule** | Thường chỉ hủy khi còn `Pending` (sau Confirm bị hạn chế — xem message noti accept) |
+| **Rule** | Thu?ng ch? h?y khi c�n `Pending` (sau Confirm b? h?n ch? � xem message noti accept) |
 
 ### A.6. Seller Cancel
 
-| Mục | Chi tiết |
+| M?c | Chi ti?t |
 |-----|----------|
 | **API** | `POST /api/Order/seller-cancel` |
 | **Handler** | `SellerCancelOrderHandler.cs` |
@@ -1035,52 +1035,52 @@ order.Status = OrderStatus.Confirmed;
 
 ### A.7. Reorder
 
-| Mục | Chi tiết |
+| M?c | Chi ti?t |
 |-----|----------|
 | **API** | `POST /api/Order/reorder` |
 | **Handler** | `ReorderHandler` / `ReorderCommand` |
-| **FE** | Order history → thêm lại món vào cart |
+| **FE** | Order history ? th�m l?i m�n v�o cart |
 
 ### A.8. Self-delivery confirm success
 
-| Mục | Chi tiết |
+| M?c | Chi ti?t |
 |-----|----------|
 | **API** | `POST /api/Order/{id}/self-delivery/confirm-success` |
 | **Handler** | `ConfirmSelfDeliverySuccessHandler.cs` |
 | **FE** | `orderService.confirmSelfDelivery(orderId)` |
-| **Finance** | `SettleSelfDeliveryOrderAsync` — xem Payment_Requirements |
+| **Finance** | `SettleSelfDeliveryOrderAsync` � xem Payment_Requirements |
 
-### A.9. Query đơn
+### A.9. Query don
 
-| API | Mục đích | FE |
+| API | M?c d�ch | FE |
 |-----|----------|-----|
-| `GET /api/Order/MyOrders` | Đơn user | Profile / order list |
-| `GET /api/Order/GuestOrders/{guestUserId}` | Đơn guest | Guest history |
-| `GET /api/Order/details/{idOrCode}` | Chi tiết | Modal detail |
-| `GET /api/Order/RestaurantOrders` | Đơn quán | SellerOrdersPage |
-| `GET /api/Order/recent-items` | Món gần đây | Home / Profile |
+| `GET /api/Order/MyOrders` | �on user | Profile / order list |
+| `GET /api/Order/GuestOrders/{guestUserId}` | �on guest | Guest history |
+| `GET /api/Order/details/{idOrCode}` | Chi ti?t | Modal detail |
+| `GET /api/Order/RestaurantOrders` | �on qu�n | SellerOrdersPage |
+| `GET /api/Order/recent-items` | M�n g?n d�y | Home / Profile |
 
 ---
 
-## Sơ đồ file đi qua (Checkout call chain)
+## So d? file di qua (Checkout call chain)
 
 ```text
 CheckoutPage.tsx
-  ↓
+  ?
 OrderService.ts  (sendCheckoutOtp / checkout)
-  ↓
+  ?
 HttpClient.ts
-  ↓
+  ?
 OrderController.cs  (checkout / checkout/sent-otp)
-  ↓
+  ?
 SendCheckoutOtpHandler.cs  |  CheckoutHandler.cs
-  ↓
-PaymentSettlementService.ProcessCheckoutPaymentAsync  →  [Payment_* docs]
-  ↓
-ShoppingFoodContext → ORDER, ORDER_ITEM, CART_ITEM, OTP_RECORD, NOTIFICATION, …
+  ?
+PaymentSettlementService.ProcessCheckoutPaymentAsync  ?  [Payment_* docs]
+  ?
+ShoppingFoodContext ? ORDER, ORDER_ITEM, CART_ITEM, OTP_RECORD, NOTIFICATION, �
 ```
 
-| Vai trò | Đường dẫn |
+| Vai tr� | �u?ng d?n |
 |---------|-----------|
 | FE Page | `ShoppingFood.FE/src/pages/CheckoutPage.tsx` |
 | FE Service | `ShoppingFood.FE/src/services/OrderService.ts` |
@@ -1093,46 +1093,46 @@ ShoppingFoodContext → ORDER, ORDER_ITEM, CART_ITEM, OTP_RECORD, NOTIFICATION, 
 
 ---
 
-## Các thông báo (Toast / Message)
+## C�c th�ng b�o (Toast / Message)
 
-| Message | Nơi | Trigger |
+| Message | Noi | Trigger |
 |---------|-----|---------|
-| Mã OTP đã được gửi đến email của bạn | CheckoutPage | sendCheckoutOtp OK |
-| Đơn hàng đã tạo. Quét mã QR… | CheckoutPage | Sepay redirect |
-| Đặt hàng thành công! Mã đơn… | CheckoutPage | COD/Wallet/after confirm |
-| Lỗi khi đặt hàng / Invalid OTP… | CheckoutPage | API error |
-| Áp dụng mã giảm giá thành công | CheckoutPage | apply discount |
-| (Seller) toast nhận/từ chối/chuẩn bị | SellerOrdersPage | lifecycle APIs |
+| M� OTP d� du?c g?i d?n email c?a b?n | CheckoutPage | sendCheckoutOtp OK |
+| �on h�ng d� t?o. Qu�t m� QR� | CheckoutPage | Sepay redirect |
+| �?t h�ng th�nh c�ng! M� don� | CheckoutPage | COD/Wallet/after confirm |
+| L?i khi d?t h�ng / Invalid OTP� | CheckoutPage | API error |
+| �p d?ng m� gi?m gi� th�nh c�ng | CheckoutPage | apply discount |
+| (Seller) toast nh?n/t? ch?i/chu?n b? | SellerOrdersPage | lifecycle APIs |
 
 ---
 
-## Các cơ chế bảo mật / ràng buộc quan trọng
+## C�c co ch? b?o m?t / r�ng bu?c quan tr?ng
 
-1. **Guest OTP bắt buộc** trước khi tạo đơn; OTP one-time; max **3 retries** → lock 15 phút theo IP.
-2. **Rate limit guest:** tối đa **3 đơn / 24 giờ / IP**.
-3. **Giỏ phải cùng quán** (FE filter `restaurantId`); stock check trước khi tạo order.
-4. **Transaction DB** bọc checkout; payment fail → rollback.
-5. **Seller ownership** verify trên mọi action accept/reject/prepare…
-6. **Payment online** yêu cầu login (Guest thực tế chỉ COD) — chi tiết Payment_Requirements.
-7. Sau **Confirmed**, customer bị hạn chế tự hủy (noti hướng dẫn chat seller).
+1. **Guest OTP b?t bu?c** tru?c khi t?o don; OTP one-time; max **3 retries** ? lock 15 ph�t theo IP.
+2. **Rate limit guest:** t?i da **3 don / 24 gi? / IP**.
+3. **Gi? ph?i c�ng qu�n** (FE filter `restaurantId`); stock check tru?c khi t?o order.
+4. **Transaction DB** b?c checkout; payment fail ? rollback.
+5. **Seller ownership** verify tr�n m?i action accept/reject/prepare�
+6. **Payment online** y�u c?u login (Guest th?c t? ch? COD) � chi ti?t Payment_Requirements.
+7. Sau **Confirmed**, customer b? h?n ch? t? h?y (noti hu?ng d?n chat seller).
 
 ---
 
-## Checklist tự test (Screen Run)
+## Checklist t? test (Screen Run)
 
-- [ ] Login Customer: thêm giỏ → `/checkout` → COD → đơn `Pending`, seller nhận noti
-- [ ] Guest: OTP email → checkout COD thành công; sai OTP 3 lần → bị khóa
-- [ ] Guest quá 3 đơn/ngày → 429
-- [ ] SystemWallet đủ/thiếu số dư
+- [ ] Login Customer: th�m gi? ? `/checkout` ? COD ? don `Pending`, seller nh?n noti
+- [ ] Guest: OTP email ? checkout COD th�nh c�ng; sai OTP 3 l?n ? b? kh�a
+- [ ] Guest qu� 3 don/ng�y ? 429
+- [ ] SystemWallet d?/thi?u s? du
 - [ ] Sepay: flags `requiresSepayRedirect` + modal QR (theo Payment docs)
-- [ ] Seller: Accept → Prepare → WaitingForShipper
+- [ ] Seller: Accept ? Prepare ? WaitingForShipper
 - [ ] Customer cancel khi Pending; seller-cancel; reorder
 - [ ] Self-delivery confirm-success
 
 ---
 
-## Tóm tắt
+## T�m t?t
 
-Checkout tạo đơn `Pending` qua `CheckoutHandler`, gắn payment qua `PaymentSettlementService`, rồi Seller đẩy trạng thái tới `WaitingForShipper` / self-delivery. **Chi tiết tiền** → bộ tài liệu Payment; **giao hàng** → Shipper / Coordinator workflows.
+Checkout t?o don `Pending` qua `CheckoutHandler`, g?n payment qua `PaymentSettlementService`, r?i Seller d?y tr?ng th�i t?i `WaitingForShipper` / self-delivery. **Chi ti?t ti?n** ? b? t�i li?u Payment; **giao h�ng** ? Shipper / Coordinator workflows.
 
-> [INDEX](../ONBOARDING_INDEX.md) · [Payment_Requirements](./Payment_Requirements.md) · [Shipper_Delivery](./Shipper_Delivery_Workflow.md) · [Coordinator_Dispatch](./Coordinator_Dispatch_Workflow.md)
+> [INDEX](../ONBOARDING_INDEX.md) � [Payment_Requirements](./Payment_Requirements.md) � [Shipper_Delivery](./Shipper_Delivery_Workflow.md) � [Coordinator_Dispatch](./Coordinator_Dispatch_Workflow.md)

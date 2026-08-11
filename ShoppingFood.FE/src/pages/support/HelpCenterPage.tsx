@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
-import { FileText, Settings, ShieldAlert, Phone, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Settings, ShieldAlert, Phone, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { ROUTES } from '../../routes/routeConfig';
 import { faqService } from '../../services';
 import type { IFaqDto } from '../../interfaces';
 import { Loading } from '../../components/common';
 
 export function HelpCenterPage() {
-  const navigate = useNavigate();
   const [faqs, setFaqs] = useState<IFaqDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());

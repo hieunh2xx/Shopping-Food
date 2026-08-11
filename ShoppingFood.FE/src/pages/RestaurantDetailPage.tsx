@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { Heart, MapPin, Clock, Star, Phone, ShieldCheck, Crown } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Heart, MapPin, Clock, Star, Phone, ShieldCheck, Crown, MessageCircle, Copy, Check } from 'lucide-react';
 import { restaurantService } from '../services/RestaurantService';
 import { productService } from '../services/ProductService';
 import { menuCategoryService } from '../services/MenuCategoryService';
 import type { IRestaurantProfileDto, IProductDto, IMenuCategoryDto } from '../interfaces';
 import { ProductList } from '../components/product/ProductList';
+import { RestaurantChatModal } from '../components/chat/RestaurantChatModal';
+import { useAuth } from '../hooks';
+import { ROUTES } from '../routes/routeConfig';
 import toast from 'react-hot-toast';
 
 const isRestaurantOpen = (openTime?: string, closeTime?: string) => {
@@ -28,6 +31,8 @@ const isRestaurantOpen = (openTime?: string, closeTime?: string) => {
 };
 export function RestaurantDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [restaurant, setRestaurant] = useState<IRestaurantProfileDto | null>(null);
   const [products, setProducts] = useState<IProductDto[]>([]);
   const [categories, setCategories] = useState<IMenuCategoryDto[]>([]);
@@ -35,6 +40,8 @@ export function RestaurantDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isProductsLoading, setIsProductsLoading] = useState(true);
   const [isFavoriting, setIsFavoriting] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [phoneCopied, setPhoneCopied] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -111,6 +118,33 @@ export function RestaurantDetailPage() {
     } finally {
       setIsFavoriting(false);
     }
+  };
+
+  const normalizePhone = (phone?: string | null) => (phone || '').replace(/[^\d+]/g, '');
+
+  const handleCopyPhone = async () => {
+    const phone = restaurant?.phone;
+    if (!phone) {
+      toast.error('Cửa hàng chưa cập nhật số điện thoại');
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(normalizePhone(phone) || phone);
+      setPhoneCopied(true);
+      toast.success('Đã sao chép số điện thoại');
+      setTimeout(() => setPhoneCopied(false), 2000);
+    } catch {
+      toast.error('Không sao chép được số điện thoại');
+    }
+  };
+
+  const handleOpenChat = () => {
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để nhắn tin với cửa hàng');
+      navigate(ROUTES.LOGIN);
+      return;
+    }
+    setIsChatOpen(true);
   };
 
   if (isLoading) {
@@ -204,7 +238,15 @@ export function RestaurantDetailPage() {
                 </div>
               </div>
 
-              <div className="shrink-0 flex items-center gap-3">
+              <div className="shrink-0 flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleOpenChat}
+                  className="flex items-center gap-2 px-5 py-3 rounded-xl font-medium transition-colors border bg-orange-500 text-white border-orange-400 hover:bg-orange-600 shadow-lg shadow-orange-500/20"
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  Nhắn tin với quán
+                </button>
                 <button
                   onClick={handleToggleFavorite}
                   disabled={isFavoriting}
@@ -244,9 +286,27 @@ export function RestaurantDetailPage() {
 
               <div className="flex items-start gap-3 text-gray-600">
                 <Phone className="w-5 h-5 text-gray-400 shrink-0 mt-0.5" />
-                <div>
+                <div className="flex-1 min-w-0">
                   <p className="font-medium text-gray-900 mb-1">Liên hệ</p>
-                  <p className="text-sm">{restaurant.phone}</p>
+                  <p className="text-sm break-all">{restaurant.phone || 'Chưa cập nhật'}</p>
+                  {restaurant.phone ? (
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      <a
+                        href={`tel:${normalizePhone(restaurant.phone)}`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-green-50 text-green-700 border border-green-200 hover:bg-green-100"
+                      >
+                        <Phone className="w-3.5 h-3.5" /> Gọi quán
+                      </a>
+                      <button
+                        type="button"
+                        onClick={handleCopyPhone}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100"
+                      >
+                        {phoneCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                        {phoneCopied ? 'Đã chép' : 'Sao chép'}
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -288,6 +348,13 @@ export function RestaurantDetailPage() {
 
         </div>
       </div>
+
+      <RestaurantChatModal
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        restaurantId={restaurant.id}
+        restaurantName={restaurant.restaurantName}
+      />
     </div>
   );
 }

@@ -3,11 +3,13 @@ import { Search, ShieldAlert, CheckCircle2, AlertOctagon, UserMinus, ShieldCheck
 import { Button, Input, Modal } from '../../components/common';
 import { coordinatorService } from '../../services';
 import { adminService } from '../../services/AdminService';
-import { useAuth } from '../../hooks';
+import { useAuth, useConfirm } from '../../hooks';
 import toast from 'react-hot-toast';
 import { AdjustReputationModal } from './components/AdjustReputationModal';
 
 export default function MonitorShippersPage() {
+  const { user } = useAuth();
+  const { confirm } = useConfirm();
   const [shippers, setShippers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -92,10 +94,16 @@ export default function MonitorShippersPage() {
     }
   };
 
-  const { user } = useAuth();
-  
   const handleToggleAdminLock = async (shipper: any, isLocked: boolean) => {
-    if (!window.confirm(isLocked ? `Bạn có chắc chắn muốn khóa tài khoản tài xế ${shipper.fullName} vô thời hạn?` : `Bạn có chắc chắn muốn mở khóa cho tài xế ${shipper.fullName}?`)) return;
+    const confirmed = await confirm({
+      title: isLocked ? 'Khóa tài xế' : 'Mở khóa tài xế',
+      message: isLocked
+        ? `Bạn có chắc chắn muốn khóa tài khoản tài xế ${shipper.fullName} vô thời hạn?`
+        : `Bạn có chắc chắn muốn mở khóa cho tài xế ${shipper.fullName}?`,
+      confirmText: isLocked ? 'Khóa' : 'Mở khóa',
+      isDanger: isLocked,
+    });
+    if (!confirmed) return;
     
     setIsSubmitting(true);
     try {

@@ -1,79 +1,79 @@
-﻿# Tài liệu Quy trình: Đăng ký tài khoản (Register)
+# T�i li?u Quy tr�nh: �ang k� t�i kho?n (Register)
 
-Tài liệu này mô tả chi tiết luồng **đăng ký Customer** trong hệ thống **Shopping Food**, kèm biến thể **RegisterSeller** và **register-shipper**.
+T�i li?u n�y m� t? chi ti?t lu?ng **dang k� Customer** trong h? th?ng **UniEats**, k�m bi?n th? **RegisterSeller** v� **register-shipper**.
 
-> Customer/Seller đăng ký yêu cầu xác minh số điện thoại qua **Firebase ID Token** (trừ khi `OtpCode`/`IdToken` = `"bypass"` — dùng cho test). Shipper public tạo User Role=Customer + `ShipperApplication` Pending.
-
----
-
+> Customer/Seller dang k� y�u c?u x�c minh s? di?n tho?i qua **Firebase ID Token** (tr? khi `OtpCode`/`IdToken` = `"bypass"` � d�ng cho test). Shipper public t?o User Role=Customer + `ShipperApplication` Pending.
 
 ---
-
-## Phần A — UI Interaction Trace (Nút bấm → Code → Data → Hiển thị)
-
-> UI Trace — Register / Apply  
-> Mỗi thao tác trả lời: **nút ở đâu** · **bấm chạy file/hàm nào** · **API/BE đâu** · **data trả về** · **hiển thị thế nào**.
 
 
 ---
 
-### UT-REG-01 — Đăng ký Customer (`"Đăng ký"`)
+## Ph?n A � UI Interaction Trace (N�t b?m ? Code ? Data ? Hi?n th?)
 
-#### 1. Giao diện nút bấm ở đâu?
+> UI Trace � Register / Apply  
+> M?i thao t�c tr? l?i: **n�t ? d�u** � **b?m ch?y file/h�m n�o** � **API/BE d�u** � **data tr? v?** � **hi?n th? th? n�o**.
 
-| Mục | Giá trị |
+
+---
+
+### UT-REG-01 � �ang k� Customer (`"�ang k�"`)
+
+#### 1. Giao di?n n�t b?m ? d�u?
+
+| M?c | Gi� tr? |
 |-----|---------|
 | **Route** | `/register` |
-| **Page** | `pages/RegisterPage.tsx` → render `RegisterForm` |
+| **Page** | `pages/RegisterPage.tsx` ? render `RegisterForm` |
 | **Component** | `components/auth/RegisterForm.tsx` |
-| **Nhãn nút** | `"Đăng ký"` (submit) |
-| **Loại control** | `<Button type="submit">` trong `<form onSubmit={handleSubmit}>` |
-| **Điều kiện hiện** | `!isSeller` (Customer) |
+| **Nh�n n�t** | `"�ang k�"` (submit) |
+| **Lo?i control** | `<Button type="submit">` trong `<form onSubmit={handleSubmit}>` |
+| **�i?u ki?n hi?n** | `!isSeller` (Customer) |
 
-#### 2. Bấm xong chạy đến đâu? (Frontend)
+#### 2. B?m xong ch?y d?n d�u? (Frontend)
 
 ```text
 form onSubmit
-  → RegisterForm.handleSubmit (RegisterForm.tsx)
-  → validateStep1()
-  → useAuth().register({ userName, password, fullName, email, phone, role:'Customer', idToken:'bypass' })
+  ? RegisterForm.handleSubmit (RegisterForm.tsx)
+  ? validateStep1()
+  ? useAuth().register({ userName, password, fullName, email, phone, role:'Customer', idToken:'bypass' })
        (hooks/useAuth.ts)
-  → authService.register(data) (services/AuthService.ts)
-  → httpClient.post(API_ENDPOINTS.AUTH.REGISTER, data)
+  ? authService.register(data) (services/AuthService.ts)
+  ? httpClient.post(API_ENDPOINTS.AUTH.REGISTER, data)
 ```
 
-#### 3. Backend chạy đoạn nào?
+#### 3. Backend ch?y do?n n�o?
 
 ```text
 POST /api/User/Register
-  → AuthenticationFilter (bypass)
-  → UserController.Register
-  → MediatR → AddUserHandler / RegisterCommand
-  → Hash password, tạo USER_ACCOUNT + USER_PROFILE (Role=Customer)
-  → return ApiResponse
+  ? AuthenticationFilter (bypass)
+  ? UserController.Register
+  ? MediatR ? AddUserHandler / RegisterCommand
+  ? Hash password, t?o USER_ACCOUNT + USER_PROFILE (Role=Customer)
+  ? return ApiResponse
 ```
 
-#### 4. Dữ liệu trả về ở đâu?
+#### 4. D? li?u tr? v? ? d�u?
 
 ```json
 { "code": 200, "error": false, "message": "...", "data": { /* user dto */ } }
 ```
 
-Lỗi validation thường trả `errors` dictionary theo field.
+L?i validation thu?ng tr? `errors` dictionary theo field.
 
-#### 5. Làm sao hiển thị ra?
+#### 5. L�m sao hi?n th? ra?
 
-| Nhánh | Hành vi UI |
+| Nh�nh | H�nh vi UI |
 |-------|------------|
-| Success | `toast.success('Đăng ký thành công! Vui lòng đăng nhập.')` → `navigate(ROUTES.LOGIN)` |
-| Error field | `setErrors(mappedErrors)` hiện dưới Input |
-| Error chung | toast từ `useAuth.register` |
+| Success | `toast.success('�ang k� th�nh c�ng! Vui l�ng dang nh?p.')` ? `navigate(ROUTES.LOGIN)` |
+| Error field | `setErrors(mappedErrors)` hi?n du?i Input |
+| Error chung | toast t? `useAuth.register` |
 
-#### 6. Sơ đồ nhanh
+#### 6. So d? nhanh
 
 ```mermaid
 sequenceDiagram
-    participant Btn as Nút Đăng ký
+    participant Btn as N�t �ang k�
     participant FE as RegisterForm/useAuth
     participant API as UserController.Register
     participant UI as Toast+Navigate
@@ -85,155 +85,155 @@ sequenceDiagram
 
 ---
 
-### UT-REG-02 — Đăng ký Seller (2 bước, `"Hoàn tất đăng ký"`)
+### UT-REG-02 � �ang k� Seller (2 bu?c, `"Ho�n t?t dang k�"`)
 
-#### 1. Giao diện nút bấm ở đâu?
+#### 1. Giao di?n n�t b?m ? d�u?
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
 | **Route** | `/register/seller` |
-| **Page** | `RegisterPage` với `isSeller` |
+| **Page** | `RegisterPage` v?i `isSeller` |
 | **Component** | `RegisterForm.tsx` step 2 |
-| **Nhãn nút** | Submit bước 2 (sau `"Tiếp tục"` ở step 1) |
-| **Điều kiện hiện** | `isSeller && step === 2` |
+| **Nh�n n�t** | Submit bu?c 2 (sau `"Ti?p t?c"` ? step 1) |
+| **�i?u ki?n hi?n** | `isSeller && step === 2` |
 
 #### 2. Frontend
 
 ```text
-Step1: Button onClick={handleNext} → validateStep1 → setStep(2)
-Step2: form submit → handleSubmit
-  → useAuth().registerSeller({ ...account, businessName, businessAddress, businessLicenseUrl, shopImageUrl, contactInfo, idToken })
-  → authService.registerSeller → POST /User/RegisterSeller
+Step1: Button onClick={handleNext} ? validateStep1 ? setStep(2)
+Step2: form submit ? handleSubmit
+  ? useAuth().registerSeller({ ...account, businessName, businessAddress, businessLicenseUrl, shopImageUrl, contactInfo, idToken })
+  ? authService.registerSeller ? POST /User/RegisterSeller
 ```
 
-Upload giấy phép / ảnh quán: `handleFileChange` / `handleShopFileChange` → `authService.uploadImage` → `POST /User/UploadImage` → gán URL vào form.
+Upload gi?y ph�p / ?nh qu�n: `handleFileChange` / `handleShopFileChange` ? `authService.uploadImage` ? `POST /User/UploadImage` ? g�n URL v�o form.
 
 #### 3. Backend
 
 ```text
 POST /api/User/RegisterSeller
-  → RegisterSellerCommand / Handler
-  → Tạo User (Seller pending) + SellerApplication + (Restaurant khi duyệt)
+  ? RegisterSellerCommand / Handler
+  ? T?o User (Seller pending) + SellerApplication + (Restaurant khi duy?t)
 ```
 
-#### 4–5. Response & hiển thị
+#### 4�5. Response & hi?n th?
 
-| Success | `toast.success('Đăng ký cửa hàng thành công! Đang chờ duyệt.')` → `navigate(/login)` |
-| Error | `setErrors` + có thể `setStep(1)` nếu lỗi userName/email/phone |
+| Success | `toast.success('�ang k� c?a h�ng th�nh c�ng! �ang ch? duy?t.')` ? `navigate(/login)` |
+| Error | `setErrors` + c� th? `setStep(1)` n?u l?i userName/email/phone |
 
-Validate file: toast `File không được vượt quá 5MB` / sai định dạng.
+Validate file: toast `File kh�ng du?c vu?t qu� 5MB` / sai d?nh d?ng.
 
 ---
 
-### UT-REG-03 — Apply Seller khi đã login (`"Gửi đăng ký"`)
+### UT-REG-03 � Apply Seller khi d� login (`"G?i dang k�"`)
 
-#### 1. Giao diện
+#### 1. Giao di?n
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
 | **Route** | `/seller/apply` (PrivateRoute Customer) |
 | **Page** | `pages/SellerApplyPage.tsx` |
-| **Nhãn nút** | Submit form `"Đăng ký trở thành Người Bán"` |
+| **Nh�n n�t** | Submit form `"�ang k� tr? th�nh Ngu?i B�n"` |
 
 #### 2. Frontend
 
 ```text
 handleSubmit
-  → validate files (license + shop image, size/type)
-  → authService.uploadImage(license) → imageUrl
-  → authService.uploadImage(shop) → imageUrl
-  → authService.applySeller({ businessName, businessAddress, contactInfo, businessLicenseUrl, shopImageUrl })
-  → POST /User/ApplySeller
+  ? validate files (license + shop image, size/type)
+  ? authService.uploadImage(license) ? imageUrl
+  ? authService.uploadImage(shop) ? imageUrl
+  ? authService.applySeller({ businessName, businessAddress, contactInfo, businessLicenseUrl, shopImageUrl })
+  ? POST /User/ApplySeller
 ```
 
 #### 3. Backend
 
 ```text
 POST /api/User/ApplySeller (Auth)
-  → ApplySellerHandler
-  → Insert SELLER_APPLICATION Status=Pending
+  ? ApplySellerHandler
+  ? Insert SELLER_APPLICATION Status=Pending
 ```
 
-#### 4–5. Hiển thị
+#### 4�5. Hi?n th?
 
-| Success | toast `Đăng ký thành công! Vui lòng chờ phê duyệt.` → `navigate(PROFILE)` |
-| Already seller | toast `Bạn đã là Người Bán hoặc Mall.` |
-| Pending exists | toast `Bạn đang có một yêu cầu... chờ duyệt.` |
-| Missing file | toast validate trước khi gọi API |
+| Success | toast `�ang k� th�nh c�ng! Vui l�ng ch? ph� duy?t.` ? `navigate(PROFILE)` |
+| Already seller | toast `B?n d� l� Ngu?i B�n ho?c Mall.` |
+| Pending exists | toast `B?n dang c� m?t y�u c?u... ch? duy?t.` |
+| Missing file | toast validate tru?c khi g?i API |
 
 ---
 
-### UT-REG-04 — Đăng ký Shipper public (`ShipperApplyPage`)
+### UT-REG-04 � �ang k� Shipper public (`ShipperApplyPage`)
 
-#### 1. Giao diện
+#### 1. Giao di?n
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
 | **Route** | `/register/shipper` |
 | **Page** | `pages/ShipperApplyPage.tsx` |
-| **Nhãn** | Multi-step; cuối form `onSubmit={handleSubmit}` nút gửi đăng ký |
+| **Nh�n** | Multi-step; cu?i form `onSubmit={handleSubmit}` n�t g?i dang k� |
 
 #### 2. Frontend
 
 ```text
 handleNext / handleBack (steps)
-handleFileSelect → validate → set file state
+handleFileSelect ? validate ? set file state
 handleSubmit
-  → upload lần lượt CMND/GPLX/cavet/avatar qua authService.uploadImage
-  → authService.registerShipper({ ...account, vehicle, urls })
-  → POST /User/register-shipper
+  ? upload l?n lu?t CMND/GPLX/cavet/avatar qua authService.uploadImage
+  ? authService.registerShipper({ ...account, vehicle, urls })
+  ? POST /User/register-shipper
 ```
 
 #### 3. Backend
 
 ```text
 POST /api/User/register-shipper (Public)
-  → tạo User + ShipperApplication Pending
+  ? t?o User + ShipperApplication Pending
 ```
 
-#### 4–5. Hiển thị
+#### 4�5. Hi?n th?
 
-| Success | toast `Đăng ký tài xế thành công! Vui lòng chờ phê duyệt.` → `navigate(HOME)` |
-| Upload fail | toast `Lỗi tải lên {name}: ...` dừng submit |
-| Validation | toast / `errors` trên field |
+| Success | toast `�ang k� t�i x? th�nh c�ng! Vui l�ng ch? ph� duy?t.` ? `navigate(HOME)` |
+| Upload fail | toast `L?i t?i l�n {name}: ...` d?ng submit |
+| Validation | toast / `errors` tr�n field |
 
 ---
 
-### UT-REG-05 — Apply Shipper khi đã login (`"Gửi yêu cầu"`)
+### UT-REG-05 � Apply Shipper khi d� login (`"G?i y�u c?u"`)
 
-#### 1. Giao diện
+#### 1. Giao di?n
 
-| Mục | Giá trị |
+| M?c | Gi� tr? |
 |-----|---------|
 | **Route** | `/shipper/apply` (auth Customer/Seller/Mall) |
 | **Page** | `pages/shipper/AuthShipperApplyPage.tsx` |
-| **Nhãn nút** | `"Gửi yêu cầu"` / `"Đang gửi..."` |
-| **Nút phụ** | `"Hủy bỏ"` → `navigate(-1)` |
+| **Nh�n n�t** | `"G?i y�u c?u"` / `"�ang g?i..."` |
+| **N�t ph?** | `"H?y b?"` ? `navigate(-1)` |
 
 #### 2. Frontend
 
 ```text
 handleSubmit
-  → validate identityCardNumber, plate, 4 files bắt buộc
-  → upload 4 ảnh tuần tự (uploadImage)
-  → authService.applyShipper({ identityCardNumber, vehicleType, vehiclePlateNumber, urls... })
-  → POST /User/apply-shipper
+  ? validate identityCardNumber, plate, 4 files b?t bu?c
+  ? upload 4 ?nh tu?n t? (uploadImage)
+  ? authService.applyShipper({ identityCardNumber, vehicleType, vehiclePlateNumber, urls... })
+  ? POST /User/apply-shipper
 ```
 
 #### 3. Backend
 
 ```text
 POST /api/User/apply-shipper (Auth)
-  → ApplyShipperHandler → SHIPPER_APPLICATION Pending
+  ? ApplyShipperHandler ? SHIPPER_APPLICATION Pending
 ```
 
-#### 4–5. Hiển thị
+#### 4�5. Hi?n th?
 
-| Success | toast `Gửi yêu cầu đăng ký tài xế thành công!...` → `navigate(PROFILE)` |
-| Missing fields | toast `Vui lòng điền đủ thông tin và tải lên các tệp tin bắt buộc` |
+| Success | toast `G?i y�u c?u dang k� t�i x? th�nh c�ng!...` ? `navigate(PROFILE)` |
+| Missing fields | toast `Vui l�ng di?n d? th�ng tin v� t?i l�n c�c t?p tin b?t bu?c` |
 | Error API | `toast.error(res.message)` |
 
-#### 6. Sơ đồ Apply (Seller/Shipper auth)
+#### 6. So d? Apply (Seller/Shipper auth)
 
 ```mermaid
 sequenceDiagram
@@ -249,7 +249,7 @@ sequenceDiagram
 
 ---
 
-## Call chain tóm tắt
+## Call chain t�m t?t
 
 | UT | FE entry | Service | API |
 |----|----------|---------|-----|
@@ -259,25 +259,25 @@ sequenceDiagram
 | REG-04 | `ShipperApplyPage.handleSubmit` | `registerShipper` | `POST /User/register-shipper` |
 | REG-05 | `AuthShipperApplyPage.handleSubmit` | `applyShipper` | `POST /User/apply-shipper` |
 
-**Duyệt hồ sơ:** xem [13_Admin_Support_UI_Trace.md](./13_Admin_Support_UI_Trace.md) UT-ADM-01.
+**Duy?t h? so:** xem [13_Admin_Support_UI_Trace.md](./13_Admin_Support_UI_Trace.md) UT-ADM-01.
 
 
 ---
 
-## Phần B — Workflow nghiệp vụ & Backend (chi tiết luồng)
-## 1. Luồng Tổng Quan (Workflow) — Customer
+## Ph?n B � Workflow nghi?p v? & Backend (chi ti?t lu?ng)
+## 1. Lu?ng T?ng Quan (Workflow) � Customer
 
-1. **Yêu cầu:** Người dùng mở `/register` → điền UserName, Password, FullName, Email, Phone.
-2. **Xác minh SĐT (FE):** Firebase Recaptcha + `signInWithPhoneNumber` → lấy `idToken`.
-3. **Gửi đăng ký:** `useAuth.register` → `POST /api/User/Register` với body + `idToken` / `otpCode`.
-4. **Validation:** `AddUserCommandValidator` (FluentValidation) — unique UserName/Email/Phone, password ≥ 6.
-5. **Verify Firebase:** `AddUserHandler` verify ID token, khớp `phone_number` với `request.Phone`.
-6. **Tạo tài khoản:** Hash password SHA256, tạo `USER_ACCOUNT` (Active) + `USER_PROFILE` (Role = Customer).
-7. **Hoàn tất:** API success → toast `'Đăng ký thành công! Vui lòng đăng nhập.'` → chuyển `/login`.
+1. **Y�u c?u:** Ngu?i d�ng m? `/register` ? di?n UserName, Password, FullName, Email, Phone.
+2. **X�c minh S�T (FE):** Firebase Recaptcha + `signInWithPhoneNumber` ? l?y `idToken`.
+3. **G?i dang k�:** `useAuth.register` ? `POST /api/User/Register` v?i body + `idToken` / `otpCode`.
+4. **Validation:** `AddUserCommandValidator` (FluentValidation) � unique UserName/Email/Phone, password = 6.
+5. **Verify Firebase:** `AddUserHandler` verify ID token, kh?p `phone_number` v?i `request.Phone`.
+6. **T?o t�i kho?n:** Hash password SHA256, t?o `USER_ACCOUNT` (Active) + `USER_PROFILE` (Role = Customer).
+7. **Ho�n t?t:** API success ? toast `'�ang k� th�nh c�ng! Vui l�ng dang nh?p.'` ? chuy?n `/login`.
 
 ```mermaid
 sequenceDiagram
-    actor U as Người dùng
+    actor U as Ngu?i d�ng
     participant FE as RegisterForm / useAuth
     participant FB as Firebase Auth
     participant API as UserController
@@ -285,8 +285,8 @@ sequenceDiagram
     participant H as AddUserHandler
     participant DB as SQL Server
 
-    U->>FE: Điền form đăng ký
-    FE->>FB: signInWithPhoneNumber → idToken
+    U->>FE: �i?n form dang k�
+    FE->>FB: signInWithPhoneNumber ? idToken
     FE->>API: POST /api/User/Register
     API->>V: FluentValidation
     V-->>API: OK / 400
@@ -294,21 +294,21 @@ sequenceDiagram
     H->>FB: VerifyIdTokenAsync
     H->>DB: Insert User + UserProfile
     H-->>FE: Success
-    FE-->>U: Toast → /login
+    FE-->>U: Toast ? /login
 ```
 
 ---
 
-## Bước 1: Mở trang Đăng ký (Frontend)
+## Bu?c 1: M? trang �ang k� (Frontend)
 
-**Thông tin:**
-- **URL (FE):** `/register` (Customer) · `/register/seller` (Seller variant)
+**Th�ng tin:**
+- **URL (FE):** `/register` (Customer) � `/register/seller` (Seller variant)
 - **Page:** `ShoppingFood.FE/src/pages/RegisterPage.tsx`
-- **Form:** `ShoppingFood.FE/src/components/auth/RegisterForm.tsx` — prop `isSeller?: boolean`
-- **Hook:** `ShoppingFood.FE/src/hooks/useAuth.ts` → `register` / `registerSeller`
+- **Form:** `ShoppingFood.FE/src/components/auth/RegisterForm.tsx` � prop `isSeller?: boolean`
+- **Hook:** `ShoppingFood.FE/src/hooks/useAuth.ts` ? `register` / `registerSeller`
 - **Firebase:** `ShoppingFood.FE/src/config/firebase.ts` + Recaptcha container `recaptcha-register-container`
 
-**Gọi API:**
+**G?i API:**
 
 ```typescript
 // AuthService.ts
@@ -317,22 +317,22 @@ async register(data: IRegisterRequest): Promise<IApiResponse<IUserDto>> {
 }
 ```
 
-**Toast khi thành công** (`useAuth.register`):
+**Toast khi th�nh c�ng** (`useAuth.register`):
 
 ```typescript
-toast.success('Đăng ký thành công! Vui lòng đăng nhập.');
+toast.success('�ang k� th�nh c�ng! Vui l�ng dang nh?p.');
 ```
 
 ---
 
-## Bước 2: API Register Customer
+## Bu?c 2: API Register Customer
 
-**Thông tin:**
+**Th�ng tin:**
 - **URL:** `/api/User/Register`
 - **HTTP Method:** POST
-- **Auth:** Public (bypass `AuthenticationFilter` — path starts with `/api/User/Register`)
+- **Auth:** Public (bypass `AuthenticationFilter` � path starts with `/api/User/Register`)
 
-**Controller:** `src/ShoppingFood.API/Controllers/UserController.cs` — Lines **33–38**
+**Controller:** `src/ShoppingFood.API/Controllers/UserController.cs` � Lines **33�38**
 
 ```csharp
 [HttpPost("Register")]
@@ -362,11 +362,11 @@ public class AddUserCommand : BaseCommand, IRequest<ApiResponse>
 
 ---
 
-## Bước 3: Validation (FluentValidation)
+## Bu?c 3: Validation (FluentValidation)
 
 **File:** `src/ShoppingFood.Application/Features/Users/Commands/AddUserCommandValidator.cs`
 
-| Rule | Điều kiện |
+| Rule | �i?u ki?n |
 |------|-----------|
 | UserName | Required, max 50, **unique** |
 | Password | Required, **min 6** |
@@ -374,11 +374,11 @@ public class AddUserCommand : BaseCommand, IRequest<ApiResponse>
 | Email | Required, email format, **unique** |
 | Phone | Required, regex `^\d{9,15}$`, **unique** |
 
-Chạy qua MediatR `ValidationBehaviour` trước Handler — lỗi → HTTP 400.
+Ch?y qua MediatR `ValidationBehaviour` tru?c Handler � l?i ? HTTP 400.
 
 ---
 
-## Bước 4: Handler — Firebase + tạo User
+## Bu?c 4: Handler � Firebase + t?o User
 
 **File:** `src/ShoppingFood.Application/Features/Users/Commands/AddUserHandler.cs`  
 **Class:** `AddUserHandler`  
@@ -388,16 +388,16 @@ Chạy qua MediatR `ValidationBehaviour` trước Handler — lỗi → HTTP 400
 var otpToken = !string.IsNullOrEmpty(request.OtpCode) ? request.OtpCode : request.IdToken;
 if (otpToken != "bypass")
 {
-    // Bắt buộc Firebase ID Token
+    // B?t bu?c Firebase ID Token
     decodedToken = await FirebaseAuth.DefaultInstance.VerifyIdTokenAsync(otpToken, cancellationToken);
-    // Lấy phone_number từ claims, chuẩn hóa +84 → 0...
+    // L?y phone_number t? claims, chu?n h�a +84 ? 0...
     if (phone != request.Phone)
         return ApiResponse.Failure(400, "Phone number in token does not match requested phone.");
 }
 
 var user = _mapper.Map<User>(request);
 user.Id = Guid.NewGuid();
-user.PasswordHash = HashPassword(request.Password); // SHA256 → Base64
+user.PasswordHash = HashPassword(request.Password); // SHA256 ? Base64
 user.Status = UserStatus.Active;
 
 var profile = new UserProfile
@@ -405,7 +405,7 @@ var profile = new UserProfile
     Id = Guid.NewGuid(),
     UserAccountId = user.Id,
     FullName = request.FullName,
-    Role = request.Role, // mặc định Customer
+    Role = request.Role, // m?c d?nh Customer
     ...
 };
 user.Profile = profile;
@@ -416,25 +416,25 @@ return ApiResponse.Success(userDto, "User registered successfully");
 
 **Database:**
 
-| Bảng | Việc |
+| B?ng | Vi?c |
 |------|------|
 | `USER_ACCOUNT` | Insert UserName, PasswordHash, Email, Phone, Status=Active |
 | `USER_PROFILE` | Insert FullName, Role=Customer, AvatarUrl |
 
 ---
 
-## Biến thể A: RegisterSeller
+## Bi?n th? A: RegisterSeller
 
-**Mục đích:** Đăng ký đồng thời tài khoản + nộp **SellerApplication** (chờ Admin duyệt).
+**M?c d�ch:** �ang k� d?ng th?i t�i kho?n + n?p **SellerApplication** (ch? Admin duy?t).
 
-| Mục | Chi tiết |
+| M?c | Chi ti?t |
 |-----|----------|
-| FE URL | `/register/seller` — `RegisterForm isSeller={true}` |
+| FE URL | `/register/seller` � `RegisterForm isSeller={true}` |
 | API | `POST /api/User/RegisterSeller` |
-| Controller | `UserController.RegisterSeller` Lines **40–45** |
-| Command | `AddSellerCommand.cs` — thêm BusinessName, BusinessAddress, BusinessLicenseUrl, ShopImageUrl, ContactInfo |
-| Handler | `AddSellerHandler.cs` — Firebase verify giống Customer; Role mặc định **Seller**; tạo `SellerApplication` Pending |
-| Toast FE | `'Đăng ký cửa hàng thành công! Đang chờ duyệt.'` |
+| Controller | `UserController.RegisterSeller` Lines **40�45** |
+| Command | `AddSellerCommand.cs` � th�m BusinessName, BusinessAddress, BusinessLicenseUrl, ShopImageUrl, ContactInfo |
+| Handler | `AddSellerHandler.cs` � Firebase verify gi?ng Customer; Role m?c d?nh **Seller**; t?o `SellerApplication` Pending |
+| Toast FE | `'�ang k� c?a h�ng th�nh c�ng! �ang ch? duy?t.'` |
 
 ```csharp
 [HttpPost("RegisterSeller")]
@@ -445,19 +445,19 @@ public async Task<ActionResult<ApiResponse>> RegisterSeller([FromBody] AddSeller
 }
 ```
 
-**DB thêm:** `SELLER_APPLICATION` (Status = Pending).
+**DB th�m:** `SELLER_APPLICATION` (Status = Pending).
 
 ---
 
-## Biến thể B: Register Shipper (public)
+## Bi?n th? B: Register Shipper (public)
 
-**Mục đích:** Form công khai đăng ký làm shipper — tạo User (Profile Role vẫn **Customer** lúc đầu) + `ShipperApplication` Pending; Admin duyệt mới lên Role Shipper / tạo ShipperProfile.
+**M?c d�ch:** Form c�ng khai dang k� l�m shipper � t?o User (Profile Role v?n **Customer** l�c d?u) + `ShipperApplication` Pending; Admin duy?t m?i l�n Role Shipper / t?o ShipperProfile.
 
-| Mục | Chi tiết |
+| M?c | Chi ti?t |
 |-----|----------|
-| FE URL | `/register/shipper` — `ShipperApplyPage.tsx` |
+| FE URL | `/register/shipper` � `ShipperApplyPage.tsx` |
 | API | `POST /api/User/register-shipper` |
-| Controller | `UserController.RegisterShipper` Lines **47–52** |
+| Controller | `UserController.RegisterShipper` Lines **47�52** |
 | Command/Handler | `RegisterShipperCommand.cs` / `RegisterShipperHandler.cs` |
 | Message | `"Shipper registration submitted successfully. Application is pending review."` |
 
@@ -471,41 +471,41 @@ public async Task<ActionResult<ApiResponse>> RegisterShipper([FromBody] Register
 ```
 
 ```csharp
-// RegisterShipperHandler — Profile.Role = UserRole.Customer
+// RegisterShipperHandler � Profile.Role = UserRole.Customer
 // + ShipperApplication Pending
 ```
 
-**DB thêm:** `SHIPPER_APPLICATION`.
+**DB th�m:** `SHIPPER_APPLICATION`.
 
-> **Lưu ý bypass:** Filter bypass `/api/User/Register*` — `register-shipper` (có dấu gạch) có thể **không** match `RegisterShipper`; nếu gặp 401, kiểm tra `AuthenticationFilter` / seed RBAC endpoint public.
+> **Luu � bypass:** Filter bypass `/api/User/Register*` � `register-shipper` (c� d?u g?ch) c� th? **kh�ng** match `RegisterShipper`; n?u g?p 401, ki?m tra `AuthenticationFilter` / seed RBAC endpoint public.
 
-**Đường đăng ký shipper khi đã login:** `POST /api/User/apply-shipper` (Auth) — xem Profile / Apply flows.
+**�u?ng dang k� shipper khi d� login:** `POST /api/User/apply-shipper` (Auth) � xem Profile / Apply flows.
 
 ---
 
-## Sơ đồ file đi qua (Call chain)
+## So d? file di qua (Call chain)
 
 ```text
 RegisterPage.tsx
-  ↓
+  ?
 RegisterForm.tsx  (+ Firebase Recaptcha)
-  ↓
+  ?
 useAuth.register / registerSeller
-  ↓
+  ?
 AuthService.register / registerSeller
-  ↓
+  ?
 UserController.Register / RegisterSeller / register-shipper
-  ↓
-ValidationBehaviour → AddUserCommandValidator (Customer)
-  ↓
+  ?
+ValidationBehaviour ? AddUserCommandValidator (Customer)
+  ?
 AddUserHandler / AddSellerHandler / RegisterShipperHandler
-  ↓
+  ?
 FirebaseAdmin VerifyIdToken (Customer/Seller)
-  ↓
+  ?
 USER_ACCOUNT + USER_PROFILE (+ SELLER_APPLICATION / SHIPPER_APPLICATION)
 ```
 
-| Vai trò | Đường dẫn đầy đủ |
+| Vai tr� | �u?ng d?n d?y d? |
 |---------|------------------|
 | UI | `ShoppingFood.FE/src/components/auth/RegisterForm.tsx` |
 | Hook | `ShoppingFood.FE/src/hooks/useAuth.ts` |
@@ -517,44 +517,44 @@ USER_ACCOUNT + USER_PROFILE (+ SELLER_APPLICATION / SHIPPER_APPLICATION)
 
 ---
 
-## Các thông báo (Toast / Message)
+## C�c th�ng b�o (Toast / Message)
 
-| Message | Nơi | Trigger |
+| Message | Noi | Trigger |
 |---------|-----|---------|
-| `Đăng ký thành công! Vui lòng đăng nhập.` | `useAuth.register` | Customer OK |
-| `Đăng ký cửa hàng thành công! Đang chờ duyệt.` | `useAuth.registerSeller` | Seller OK |
+| `�ang k� th�nh c�ng! Vui l�ng dang nh?p.` | `useAuth.register` | Customer OK |
+| `�ang k� c?a h�ng th�nh c�ng! �ang ch? duy?t.` | `useAuth.registerSeller` | Seller OK |
 | `User registered successfully` | API message | Handler success |
-| `UserName already exists.` / Email / Phone | Validation | Trùng dữ liệu |
-| `Firebase ID Token is required for registration.` | Handler | Thiếu token |
+| `UserName already exists.` / Email / Phone | Validation | Tr�ng d? li?u |
+| `Firebase ID Token is required for registration.` | Handler | Thi?u token |
 | `Invalid Firebase ID Token: ...` | Handler | Token sai |
-| `Phone number in token does not match...` | Handler | SĐT không khớp |
-| `Dữ liệu không hợp lệ hoặc đã tồn tại` | FE catch fallback | 400 generic |
+| `Phone number in token does not match...` | Handler | S�T kh�ng kh?p |
+| `D? li?u kh�ng h?p l? ho?c d� t?n t?i` | FE catch fallback | 400 generic |
 
 ---
 
-## Các cơ chế bảo mật quan trọng
+## C�c co ch? b?o m?t quan tr?ng
 
-1. **Xác minh SĐT Firebase** trước khi tạo Customer/Seller (chống đăng ký spam số ảo nếu Firebase cấu hình đúng).
-2. **Unique constraints** UserName / Email / Phone ở validator + DB filtered unique indexes.
+1. **X�c minh S�T Firebase** tru?c khi t?o Customer/Seller (ch?ng dang k� spam s? ?o n?u Firebase c?u h�nh d�ng).
+2. **Unique constraints** UserName / Email / Phone ? validator + DB filtered unique indexes.
 3. **Password min 6 + SHA256 hash.**
-4. **Bypass `"bypass"`** chỉ nên dùng môi trường test — không bật trên production.
-5. Seller/Shipper application **Pending** — chưa có quyền bán/giao cho đến khi Admin approve.
+4. **Bypass `"bypass"`** ch? n�n d�ng m�i tru?ng test � kh�ng b?t tr�n production.
+5. Seller/Shipper application **Pending** � chua c� quy?n b�n/giao cho d?n khi Admin approve.
 
 ---
 
-## Checklist tự test
+## Checklist t? test
 
-- [ ] `/register` — thiếu Firebase token → lỗi
-- [ ] Đăng ký trùng UserName/Email/Phone → validation error
-- [ ] Đăng ký Customer thành công → login được bằng mật khẩu
-- [ ] `/register/seller` — tạo được SellerApplication Pending
-- [ ] `/register/shipper` — tạo được ShipperApplication Pending
-- [ ] Password < 6 ký tự → bị chặn
+- [ ] `/register` � thi?u Firebase token ? l?i
+- [ ] �ang k� tr�ng UserName/Email/Phone ? validation error
+- [ ] �ang k� Customer th�nh c�ng ? login du?c b?ng m?t kh?u
+- [ ] `/register/seller` � t?o du?c SellerApplication Pending
+- [ ] `/register/shipper` � t?o du?c ShipperApplication Pending
+- [ ] Password < 6 k� t? ? b? ch?n
 
 ---
 
-## Tóm tắt
+## T�m t?t
 
-Đăng ký Customer = **form FE + Firebase phone verify + `POST /Register` + AddUserHandler**. Seller/Shipper là biến thể tạo thêm đơn ứng tuyển chờ duyệt.
+�ang k� Customer = **form FE + Firebase phone verify + `POST /Register` + AddUserHandler**. Seller/Shipper l� bi?n th? t?o th�m don ?ng tuy?n ch? duy?t.
 
-> Liên kết: [Login_Workflow.md](./Login_Workflow.md) · [ForgotPassword_Workflow.md](./ForgotPassword_Workflow.md) · [INDEX](../ONBOARDING_INDEX.md)
+> Li�n k?t: [Login_Workflow.md](./Login_Workflow.md) � [ForgotPassword_Workflow.md](./ForgotPassword_Workflow.md) � [INDEX](../ONBOARDING_INDEX.md)

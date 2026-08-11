@@ -2,7 +2,9 @@ import { HubConnection, HubConnectionBuilder, LogLevel } from '@microsoft/signal
 import { httpClient } from './base/HttpClient';
 import { ENV } from '../config/env';
 import { API_ENDPOINTS } from '../config/endpoints';
-import type { IApiResponse, IChatSession, IChatMessage, ICreateChatSessionRequest, ISellerOrderChatSummary } from '../interfaces';
+import type { IApiResponse, IChatSession, IChatMessage, ICreateChatSessionRequest, ISellerOrderChatSummary, ICustomerChatSummary } from '../interfaces';
+
+export type { ISellerOrderChatSummary, ICustomerChatSummary };
 
 function normalizeMessage(raw: Record<string, unknown>): IChatMessage {
   return {
@@ -43,12 +45,12 @@ class ChatService {
   private hubConnection: HubConnection | null = null;
   private handlersRegistered = false;
   private isStarting = false;
-  private endpoint = '/Chat';
   private messageCallbacks = new Set<(message: IChatMessage) => void>();
   private newSessionCallbacks = new Set<(session: IChatSession) => void>();
   private supportJoinedCallbacks = new Set<(sessionId: string, supportId: string) => void>();
   private sessionClosedCallbacks = new Set<(sessionId: string) => void>();
   private orderChatCallbacks = new Set<(message: IChatMessage) => void>();
+  private newOrderChatCallbacks = new Set<(session: IChatSession) => void>();
 
   private getHubBaseUrl(): string {
     return ENV.API_BASE_URL.replace(/\/api\/?$/i, '');
@@ -62,11 +64,37 @@ class ChatService {
     return res;
   }
 
-  async getHistory(sessionId: string): Promise<IApiResponse<IChatMessage[]>> {
-    const res = await httpClient.get<IApiResponse<IChatMessage[]>>(`${API_ENDPOINTS.CHAT.GET_MESSAGES(sessionId)}?t=${Date.now()}`);
-    if (res.data) {
-      res.data = res.data.map(m => normalizeMessage(m as unknown as Record<string, unknown>));
+  async getHistory(
+    sessionId: string,
+    opts?: { take?: number; before?: string }
+  ): Promise<IApiResponse<{ items: IChatMessage[]; hasMore: boolean; nextBefore?: string | null }>> {
+    const params: Record<string, string | number> = { t: Date.now() };
+    if (opts?.take != null) params.take = opts.take;
+    if (opts?.before) params.before = opts.before;
+
+    const res = await httpClient.get<IApiResponse<any>>(API_ENDPOINTS.CHAT.GET_MESSAGES(sessionId), {
+      params,
+    });
+
+    // Backward compat: old API returned a bare array
+    if (Array.isArray(res.data)) {
+      const items = res.data.map((m: unknown) => normalizeMessage(m as Record<string, unknown>));
+      return {
+        ...res,
+        data: { items, hasMore: false, nextBefore: items[0]?.createdAt ?? null },
+      };
     }
+
+    if (res.data?.items && Array.isArray(res.data.items)) {
+      res.data = {
+        items: res.data.items.map((m: unknown) => normalizeMessage(m as Record<string, unknown>)),
+        hasMore: !!res.data.hasMore,
+        nextBefore: res.data.nextBefore ?? null,
+      };
+    } else if (res.data) {
+      res.data = { items: [], hasMore: false, nextBefore: null };
+    }
+
     return res;
   }
 
@@ -103,8 +131,23 @@ class ChatService {
     return res;
   }
 
+  async createRestaurantSession(restaurantId: string): Promise<IApiResponse<IChatSession>> {
+    const res = await httpClient.post<IApiResponse<IChatSession>>(
+      API_ENDPOINTS.CHAT.CREATE_RESTAURANT_SESSION(restaurantId),
+      {}
+    );
+    if (res.data) {
+      res.data = normalizeSession(res.data as unknown as Record<string, unknown>);
+    }
+    return res;
+  }
+
   async getSellerOrderChats(): Promise<IApiResponse<ISellerOrderChatSummary[]>> {
     return httpClient.get(API_ENDPOINTS.CHAT.GET_SELLER_ORDERS);
+  }
+
+  async getCustomerChats(): Promise<IApiResponse<ICustomerChatSummary[]>> {
+    return httpClient.get(API_ENDPOINTS.CHAT.GET_CUSTOMER_CHATS);
   }
 
   async joinSellerInbox(restaurantId: string): Promise<void> {
@@ -120,7 +163,6 @@ class ChatService {
     }
 
     const hubUrl = `${this.getHubBaseUrl()}/hubs/chat`;
-    console.log('[ChatService] Connecting to hub:', hubUrl);
 
     this.isStarting = true;
     // Stop any stale connection first to avoid "stopped during negotiation" on re-mount
@@ -140,7 +182,6 @@ class ChatService {
 
     try {
       await this.hubConnection.start();
-      console.log('[ChatService] Connected successfully. State:', this.hubConnection.state);
     } catch (err) {
       console.error('[ChatService] startConnection FAILED:', err);
       this.hubConnection = null;
@@ -176,6 +217,11 @@ class ChatService {
       const message = normalizeMessage(raw);
       this.orderChatCallbacks.forEach(cb => cb(message));
       this.messageCallbacks.forEach(cb => cb(message));
+    });
+
+    this.hubConnection.on('NewOrderChat', (raw: Record<string, unknown>) => {
+      const session = normalizeSession(raw);
+      this.newOrderChatCallbacks.forEach(cb => cb(session));
     });
 
     this.handlersRegistered = true;
@@ -292,19 +338,14 @@ class ChatService {
   offOrderChatMessage(callback: (message: IChatMessage) => void): void {
     this.orderChatCallbacks.delete(callback);
   }
-}
 
-export interface ISellerOrderChatSummary {
-  id: string;
-  userId: string;
-  customerName?: string;
-  orderId?: string;
-  restaurantId?: string;
-  topic: string;
-  status: string;
-  createdAt: string;
-  lastMessage?: string;
-  lastMessageAt?: string;
+  onNewOrderChat(callback: (session: IChatSession) => void): void {
+    this.newOrderChatCallbacks.add(callback);
+  }
+
+  offNewOrderChat(callback: (session: IChatSession) => void): void {
+    this.newOrderChatCallbacks.delete(callback);
+  }
 }
 
 export const chatService = new ChatService();

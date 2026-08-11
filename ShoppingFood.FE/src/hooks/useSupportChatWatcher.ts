@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
 import { chatService } from '../services';
 import { useAuth } from './useAuth';
-import type { IChatMessage, IChatSession } from '../interfaces';
+import type { IChatMessage } from '../interfaces';
 
 export function useSupportChatWatcher(role: string | null) {
   const [hasUnread, setHasUnread] = useState(false);
@@ -49,7 +48,7 @@ export function useSupportChatWatcher(role: string | null) {
       }
     };
 
-    const handleNewSession = (session: IChatSession) => {
+    const handleNewSession = () => {
       setHasUnread(true);
     };
 

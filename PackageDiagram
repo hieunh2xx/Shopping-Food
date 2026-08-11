@@ -1,4 +1,4 @@
-# Shopping Food — Package Diagrams
+# UniEats — Package Diagrams
 
 Tài liệu mô tả cấu trúc package của toàn hệ thống, backend (.NET 8) và frontend (React).
 
@@ -8,7 +8,7 @@ Tài liệu mô tả cấu trúc package của toàn hệ thống, backend (.NET
 
 ```mermaid
 packageDiagram
-    package "Shopping Food" {
+    package "UniEats" {
         package "ShoppingFood.FE\n(React 19 + Vite)" {
             [Pages / Routes]
             [Services (API client)]

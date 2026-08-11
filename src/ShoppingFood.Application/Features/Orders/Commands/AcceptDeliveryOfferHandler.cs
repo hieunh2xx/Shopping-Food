@@ -1,15 +1,14 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using ShoppingFood.Application.Interfaces;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
 using ShoppingFood.Domain.Enums;
 using ShoppingFood.Domain.Models;
-using ShoppingFood.Dto.Order;
 using ShoppingFood.Repository.Interfaces;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ShoppingFood.Application.Features.Orders.Commands
@@ -22,15 +21,17 @@ namespace ShoppingFood.Application.Features.Orders.Commands
         private readonly INotificationRepository _notificationRepository;
         private readonly IOrderDeliveryProposalRepository _orderDeliveryProposalRepository;
         private readonly IOrderDispatchHistoryRepository _orderDispatchHistoryRepository;
+        private readonly IOrderShipperClaimService _claimService;
         private readonly IUnitOfWork _unitOfWork;
 
         public AcceptDeliveryOfferHandler(
-            IOrderRepository orderRepository, 
+            IOrderRepository orderRepository,
             IShipperProfileRepository shipperProfileRepository,
             IUserRepository userRepository,
             INotificationRepository notificationRepository,
             IOrderDeliveryProposalRepository orderDeliveryProposalRepository,
             IOrderDispatchHistoryRepository orderDispatchHistoryRepository,
+            IOrderShipperClaimService claimService,
             IUnitOfWork unitOfWork)
         {
             _orderRepository = orderRepository;
@@ -39,6 +40,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             _notificationRepository = notificationRepository;
             _orderDeliveryProposalRepository = orderDeliveryProposalRepository;
             _orderDispatchHistoryRepository = orderDispatchHistoryRepository;
+            _claimService = claimService;
             _unitOfWork = unitOfWork;
         }
 
@@ -62,12 +64,20 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     return ApiResponse.Failure(404, "Order not found.");
 
                 if (order.ShipperId.HasValue)
-                    return ApiResponse.Failure(400, "This order has been accepted by another driver.");
+                    return ApiResponse.Failure(409, "Đơn hàng đã được tài xế khác nhận.");
 
                 if (order.Status != OrderStatus.WaitingForShipper)
-                    return ApiResponse.Failure(400, $"The order is not in waiting for shipper status. Current status: {order.Status}");
+                    return ApiResponse.Failure(400, $"Đơn không còn ở trạng thái chờ tài xế. Hiện tại: {order.Status}");
 
-                AssignOrderToShipper(order, shipperProfile.Id);
+                // Claim nguyên tử — chống 2 shipper nhận cùng lúc
+                var claimed = await _claimService.TryClaimAsync(order.Id, shipperProfile.Id, cancellationToken);
+                if (!claimed)
+                    return ApiResponse.Failure(409, "Đơn hàng đã được tài xế khác nhận. Vui lòng chọn đơn khác.");
+
+                // Đồng bộ entity trong memory với DB (tránh SaveChanges ghi đè)
+                order.ShipperId = shipperProfile.Id;
+                order.Status = OrderStatus.Shipping;
+                order.UpdatedAt = DateTime.UtcNow;
 
                 shipperProfile.Latitude = request.Latitude;
                 shipperProfile.Longitude = request.Longitude;
@@ -76,13 +86,16 @@ namespace ShoppingFood.Application.Features.Orders.Commands
 
                 AddNotificationForCustomer(order, shipperProfile.UserProfile.FullName);
 
+                // Hết hạn proposal Pending của shipper khác (nếu có)
+                await ExpireOtherPendingProposalsAsync(order.Id, shipperProfile.Id);
+
                 var existingProposal = (await _orderDeliveryProposalRepository.GetAsync(
                     predicate: p => p.ShipperId == shipperProfile.Id && p.OrderId == order.Id
-                    )).FirstOrDefault();
+                )).FirstOrDefault();
 
                 if (existingProposal == null)
                 {
-                    var proposal = new OrderDeliveryProposal
+                    _orderDeliveryProposalRepository.Add(new OrderDeliveryProposal
                     {
                         Id = Guid.NewGuid(),
                         ShipperId = shipperProfile.Id,
@@ -90,8 +103,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                         Status = ProposalStatus.Accepted,
                         CreatedAt = DateTime.UtcNow,
                         ExpiredAt = DateTime.UtcNow
-                    };
-                    _orderDeliveryProposalRepository.Add(proposal);
+                    });
                 }
                 else
                 {
@@ -99,7 +111,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     _orderDeliveryProposalRepository.Update(existingProposal);
                 }
 
-                var history = new OrderDispatchHistory
+                _orderDispatchHistoryRepository.Add(new OrderDispatchHistory
                 {
                     Id = Guid.NewGuid(),
                     OrderId = order.Id,
@@ -110,12 +122,11 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     TargetShipperId = shipperProfile.Id,
                     TargetShipperName = shipperProfile.UserProfile.FullName,
                     CreatedAt = DateTime.UtcNow
-                };
-                _orderDispatchHistoryRepository.Add(history);
+                });
 
                 await _unitOfWork.SaveChangesAsync();
 
-                return ApiResponse.Success(new { order.Id, Status = order.Status.ToString() }, "Successfully received the single delivery proposal.");
+                return ApiResponse.Success(new { order.Id, Status = order.Status.ToString() }, "Nhận đơn thành công.");
             }
             catch (Exception ex)
             {
@@ -124,12 +135,28 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             }
         }
 
+        private async Task ExpireOtherPendingProposalsAsync(Guid orderId, Guid winnerShipperId)
+        {
+            var pending = await _orderDeliveryProposalRepository.GetAsync(
+                predicate: p =>
+                    p.OrderId == orderId
+                    && p.ShipperId != winnerShipperId
+                    && p.Status == ProposalStatus.Pending
+            );
+            foreach (var proposal in pending)
+            {
+                proposal.Status = ProposalStatus.Expired;
+                proposal.ExpiredAt = DateTime.UtcNow;
+                _orderDeliveryProposalRepository.Update(proposal);
+            }
+        }
+
         private async Task<ShipperProfile?> GetActiveShipperProfileAsync(Guid userId)
         {
             var users = await _userRepository.GetAsync(
                 predicate: u => u.Id == userId,
                 include: q => q.Include(u => u.Profile)
-                );
+            );
             var userProfile = users.FirstOrDefault()?.Profile;
 
             if (userProfile == null || userProfile.Role != UserRole.Shipper)
@@ -139,7 +166,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 predicate: p => p.UserProfileId == userProfile.Id && p.Status == UserStatus.Active,
                 include: q => q.Include(p => p.UserProfile),
                 disableTracking: false
-                );
+            );
             return profiles.FirstOrDefault();
         }
 
@@ -148,23 +175,15 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             var orders = await _orderRepository.GetAsync(
                 predicate: o => o.Id == orderId,
                 disableTracking: false
-                );
+            );
             return orders.FirstOrDefault();
-        }
-
-        private void AssignOrderToShipper(Order order, Guid shipperProfileId)
-        {
-            order.ShipperId = shipperProfileId;
-            order.Status = OrderStatus.Shipping;
-            order.UpdatedAt = DateTime.UtcNow;
-            _orderRepository.Update(order);
         }
 
         private void AddNotificationForCustomer(Order order, string shipperName)
         {
             if (order.UserAccountId.HasValue)
             {
-                var notification = new Notification
+                _notificationRepository.Add(new Notification
                 {
                     Id = Guid.NewGuid(),
                     UserId = order.UserAccountId.Value,
@@ -174,8 +193,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     TargetId = order.Id,
                     IsRead = false,
                     CreateAt = DateTime.UtcNow,
-                };
-                _notificationRepository.Add(notification);
+                });
             }
         }
     }

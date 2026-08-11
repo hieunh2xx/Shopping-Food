@@ -17,6 +17,36 @@ export function CustomerLoyalty() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    const onFocus = () => fetchData();
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') fetchData();
+    };
+    const onNotif = (e: Event) => {
+      const detail = (e as CustomEvent)?.detail;
+      const type = detail?.notificationType || detail?.NotificationType || '';
+      const title = detail?.title || detail?.Title || '';
+      const message = detail?.message || detail?.Message || '';
+      if (
+        String(type).toLowerCase() === 'loyalty'
+        || String(type).toLowerCase().includes('loyalty')
+        || String(title).includes('điểm')
+        || String(message).includes('điểm thưởng')
+        || String(message).includes('tích lũy')
+      ) {
+        fetchData();
+      }
+    };
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('ON_REALTIME_NOTIFICATION', onNotif as EventListener);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('ON_REALTIME_NOTIFICATION', onNotif as EventListener);
+    };
+  }, []);
+
   const fetchData = async () => {
     setIsLoading(true);
     try {
@@ -27,12 +57,14 @@ export function CustomerLoyalty() {
 
       if (!loyaltyRes.error && loyaltyRes.data) {
         setLoyaltyData(loyaltyRes.data);
+      } else if (loyaltyRes.error) {
+        toast.error(loyaltyRes.message || 'Không tải được điểm thưởng');
       }
       if (!giftsRes.error && giftsRes.data) {
         setGifts(giftsRes.data);
       }
     } catch {
-      // Ignore
+      toast.error('Không tải được điểm thưởng');
     } finally {
       setIsLoading(false);
     }
@@ -151,8 +183,8 @@ export function CustomerLoyalty() {
                   </p>
                   <p className="text-xs text-gray-500 mt-1">{new Date(item.createdAt).toLocaleString('vi-VN')}</p>
                 </div>
-                <div className={`font-bold text-sm ${item.transactionType === 'Earned' ? 'text-green-600' : 'text-red-600'}`}>
-                  {item.transactionType === 'Earned' ? '+' : '-'}{item.points}
+                <div className={`font-bold text-sm ${['EarnFromOrder', 'Earned', 'AdminAdjustment'].includes(item.transactionType) && item.points >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {['EarnFromOrder', 'Earned', 'AdminAdjustment'].includes(item.transactionType) && item.points >= 0 ? '+' : '-'}{Math.abs(item.points)}
                 </div>
               </div>
             ))}

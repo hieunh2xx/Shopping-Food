@@ -50,7 +50,7 @@ export interface IForceAssignRequest{
 }
 
 export interface IResolveIncidentRequest {
-    resolutionType: 'CustomerFault' | 'ShipperFault' | 'ForceCancelNoPenalty' | 'CompensateCustomer' | 'Warning' | 'Dismiss';
+    resolutionType: 'CustomerFault' | 'ShipperFault' | 'ForceCancelNoPenalty' | 'CompensateCustomer' | 'Warning' | 'Dismiss' | 'EscalateToAdmin';
     notes: string;
     penaltyScore?: number;
 }

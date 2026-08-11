@@ -57,6 +57,9 @@ namespace ShoppingFood.Application.Mappings
 
             CreateMap<Product, ProductDto>()
                 .ForMember(dest => dest.RestaurantName, opt => opt.MapFrom(src => src.Restaurant != null ? src.Restaurant.RestaurantName : string.Empty))
+                .ForMember(dest => dest.RestaurantAddress, opt => opt.MapFrom(src => src.Restaurant != null ? src.Restaurant.Address : string.Empty))
+                .ForMember(dest => dest.RestaurantLatitude, opt => opt.MapFrom(src => src.Restaurant != null ? src.Restaurant.Latitude : null))
+                .ForMember(dest => dest.RestaurantLongitude, opt => opt.MapFrom(src => src.Restaurant != null ? src.Restaurant.Longitude : null))
                 .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category != null ? src.Category.Title : string.Empty))
                 .ForMember(dest => dest.GlobalCategoryName, opt => opt.MapFrom(src => src.GlobalCategory != null ? src.GlobalCategory.Name : null))
                 .ForMember(dest => dest.PrimaryImageUrl, opt => opt.MapFrom(src => src.Images != null && src.Images.Any() ? src.Images.First().ImageUrl : null))
@@ -74,6 +77,9 @@ namespace ShoppingFood.Application.Mappings
             CreateMap<Product, ProductRecommendationDto>()
                 .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category != null ? src.Category.Title : string.Empty))
                 .ForMember(dest => dest.RestaurantName, opt => opt.MapFrom(src => src.Restaurant != null ? src.Restaurant.RestaurantName : string.Empty))
+                .ForMember(dest => dest.RestaurantAddress, opt => opt.MapFrom(src => src.Restaurant != null ? src.Restaurant.Address : string.Empty))
+                .ForMember(dest => dest.RestaurantLatitude, opt => opt.MapFrom(src => src.Restaurant != null ? src.Restaurant.Latitude : null))
+                .ForMember(dest => dest.RestaurantLongitude, opt => opt.MapFrom(src => src.Restaurant != null ? src.Restaurant.Longitude : null))
                 .ForMember(dest => dest.GlobalCategoryName, opt => opt.MapFrom(src => src.GlobalCategory != null ? src.GlobalCategory.Name : null))
                 .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.Images != null ? src.Images.Select(i => i.ImageUrl) : null))
                 .ForMember(dest => dest.PrimaryImageUrl, opt => opt.MapFrom(src => src.Images != null && src.Images.Any(i => i.IsPrimary) ? src.Images.First(i => i.IsPrimary).ImageUrl : (src.Images != null && src.Images.Any() ? src.Images.First().ImageUrl : null)))
@@ -175,7 +181,15 @@ namespace ShoppingFood.Application.Mappings
                 .ForMember(dest => dest.RestaurantId, opt => opt.MapFrom(src => src.Product != null && src.Product.Restaurant != null ? src.Product.Restaurant.Id : Guid.Empty))
                 .ForMember(dest => dest.RestaurantName, opt => opt.MapFrom(src => src.Product != null && src.Product.Restaurant != null ? src.Product.Restaurant.RestaurantName : string.Empty))
                 .ForMember(dest => dest.Sizes, opt => opt.MapFrom(src => src.Product != null ? src.Product.ProductSizes : new List<ProductSize>()))
-                .ForMember(dest => dest.Toppings, opt => opt.MapFrom(src => src.Product != null ? src.Product.ProductToppings : new List<ProductTopping>()));
+                .ForMember(dest => dest.Toppings, opt => opt.MapFrom(src => src.Product != null ? src.Product.ProductToppings : new List<ProductTopping>()))
+                .ForMember(dest => dest.PromotionLabel, opt => opt.MapFrom(src =>
+                    src.BuyXGetYPromotion != null
+                        ? $"Mua {src.BuyXGetYPromotion.BuyQuantity} Tặng {src.BuyXGetYPromotion.GiftQuantity}"
+                        : null))
+                .ForMember(dest => dest.PromoBuyQuantity, opt => opt.MapFrom(src =>
+                    src.BuyXGetYPromotion != null ? (int?)src.BuyXGetYPromotion.BuyQuantity : null))
+                .ForMember(dest => dest.PromoGiftQuantity, opt => opt.MapFrom(src =>
+                    src.BuyXGetYPromotion != null ? (int?)src.BuyXGetYPromotion.GiftQuantity : null));
 
             //ShipperApplication mappings
             CreateMap<RegisterShipperCommand, User>()
@@ -195,6 +209,7 @@ namespace ShoppingFood.Application.Mappings
                 .ForMember(dest => dest.RestaurantLatitude, opt => opt.MapFrom(src => src.Items.FirstOrDefault() != null && src.Items.FirstOrDefault().Product != null && src.Items.FirstOrDefault().Product.Restaurant != null ? src.Items.FirstOrDefault().Product.Restaurant.Latitude : null))
                 .ForMember(dest => dest.RestaurantLongitude, opt => opt.MapFrom(src => src.Items.FirstOrDefault() != null && src.Items.FirstOrDefault().Product != null && src.Items.FirstOrDefault().Product.Restaurant != null ? src.Items.FirstOrDefault().Product.Restaurant.Longitude : null))
                 .ForMember(dest => dest.DistanceInKm, opt => opt.Ignore())
+                .ForMember(dest => dest.DeliveryDistanceInKm, opt => opt.Ignore())
                 .ForMember(dest => dest.TotalIncome, opt => opt.Ignore())
                 .ForMember(dest => dest.BaseFee, opt => opt.Ignore())
                 .ForMember(dest => dest.DistanceFee, opt => opt.Ignore())

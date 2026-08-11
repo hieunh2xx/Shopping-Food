@@ -61,7 +61,7 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                     PaymentStatus = o.PaymentStatus.ToString(),
                     CreatedAt = o.CreatedAt,
                     CanCancel = o.Status == OrderStatus.Pending,
-                    CanMessageSeller = MessageableStatuses.Contains(o.Status),
+                    CanMessageSeller = MessageableStatuses.Contains(o.Status) || chat != null,
                     RestaurantId = restaurant?.Id,
                     RestaurantName = restaurant?.RestaurantName,
                     OrderChatSessionId = chat?.Id,

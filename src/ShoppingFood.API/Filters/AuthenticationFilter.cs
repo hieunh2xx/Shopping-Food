@@ -63,6 +63,12 @@ namespace ShoppingFood.API.Filters
                                     path.StartsWith("/api/Product", StringComparison.OrdinalIgnoreCase)) ||
 
                                 (method == "GET" &&
+                                    path.StartsWith("/api/MenuCategory", StringComparison.OrdinalIgnoreCase)) ||
+
+                                (method == "GET" &&
+                                    path.StartsWith("/api/Topping", StringComparison.OrdinalIgnoreCase)) ||
+
+                                (method == "GET" &&
                                     path.StartsWith("/api/Restaurant", StringComparison.OrdinalIgnoreCase) &&
                                     !path.Equals("/api/Restaurant/favorites", StringComparison.OrdinalIgnoreCase) &&
                                     !path.Equals("/api/Restaurant/DashboardStats", StringComparison.OrdinalIgnoreCase)) ||
@@ -72,6 +78,9 @@ namespace ShoppingFood.API.Filters
 
                                 (method == "GET" &&
                                     path.StartsWith("/api/FlashSale", StringComparison.OrdinalIgnoreCase)) ||
+
+                                (method == "GET" &&
+                                    path.StartsWith("/api/Promotion", StringComparison.OrdinalIgnoreCase)) ||
 
                                 (method == "GET" &&
                                     path.Equals("/api/LoyaltyPoint/gifts", StringComparison.OrdinalIgnoreCase)) ||
@@ -102,8 +111,7 @@ namespace ShoppingFood.API.Filters
                                        path.StartsWith("/api/Order/details", StringComparison.OrdinalIgnoreCase) ||
                                        path.StartsWith("/api/Order/GuestOrders", StringComparison.OrdinalIgnoreCase) ||
                                        path.StartsWith("/api/Discount/apply", StringComparison.OrdinalIgnoreCase) ||
-                                       (method == "GET" && path.StartsWith("/api/Discount", StringComparison.OrdinalIgnoreCase)) ||
-                                       (method == "GET" && path.StartsWith("/api/Promotion", StringComparison.OrdinalIgnoreCase))) &&
+                                       (method == "GET" && path.StartsWith("/api/Discount", StringComparison.OrdinalIgnoreCase))) &&
                                       !context.HttpContext.Request.Headers.ContainsKey("Authorization");
 
             if (isBypassPath || isGuestCartRequest)
@@ -173,9 +181,20 @@ namespace ShoppingFood.API.Filters
             var userDto = _mapper.Map<UserDto>(user);
             context.HttpContext.User = new MyPrincipal(userDto);
 
-            var endpoint = await _dbContext.ApiEndpoints
-                .AsNoTracking()
-                .FirstOrDefaultAsync(e => e.Path.ToLower() == path.ToLower() && e.Method.ToUpper() == method.ToUpper());
+            // Match by route template (e.g. /api/Order/details/{id}) — request path has concrete ids
+            var routeTemplate = context.ActionDescriptor.AttributeRouteInfo?.Template;
+            if (!string.IsNullOrEmpty(routeTemplate) && !routeTemplate.StartsWith("/"))
+            {
+                routeTemplate = "/" + routeTemplate;
+            }
+
+            var endpoint = routeTemplate != null
+                ? await _dbContext.ApiEndpoints
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(e => e.Path.ToLower() == routeTemplate.ToLower() && e.Method.ToUpper() == method.ToUpper())
+                : await _dbContext.ApiEndpoints
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(e => e.Path.ToLower() == path.ToLower() && e.Method.ToUpper() == method.ToUpper());
 
             if (endpoint != null && user.Profile?.Role != UserRole.Admin)
             {

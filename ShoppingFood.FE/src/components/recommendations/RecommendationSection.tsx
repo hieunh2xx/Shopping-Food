@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Sparkles, Star, TrendingUp, Zap, Clock } from 'lucide-react';
 import { useAuth } from '../../hooks';
@@ -7,6 +7,7 @@ import type { IProductRecommendationDto } from '../../interfaces';
 import { SectionHeader } from '../ui/SectionHeader';
 import { CarouselSlider } from '../ui/CarouselSlider';
 import { formatCurrency } from '../../utils/formatters';
+import { ProductLocationMeta } from '../product/ProductLocationMeta';
 
 interface Props {
   latitude?: number;
@@ -106,7 +107,7 @@ export function RecommendationSection({ latitude, longitude }: Props) {
                 {item.primaryImageUrl ? (
                   <img
                     src={item.primaryImageUrl}
-                    alt={item.itemName || item.name}
+                    alt={item.itemName}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 ) : (
@@ -116,8 +117,14 @@ export function RecommendationSection({ latitude, longitude }: Props) {
               </div>
               <div className="p-3 flex flex-col flex-1">
                 <p className="text-[11px] text-gray-400 truncate">{item.restaurantName}</p>
+                <ProductLocationMeta
+                  className="mt-0.5"
+                  restaurantAddress={item.restaurantAddress}
+                  restaurantLatitude={item.restaurantLatitude}
+                  restaurantLongitude={item.restaurantLongitude}
+                />
                 <p className="text-sm font-semibold text-gray-800 line-clamp-2 mt-0.5 min-h-[40px] leading-tight">
-                  {item.itemName || item.name}
+                  {item.itemName}
                 </p>
                 <div className="flex items-center justify-between mt-auto pt-2">
                   <div className="flex flex-col">

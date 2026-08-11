@@ -10,7 +10,6 @@ export interface IOrderSummary {
   restaurantId?: string;
   restaurantName?: string;
   orderChatSessionId?: string;
-  paymentStatus?: string;
   paymentSessionId?: string;
 }
 

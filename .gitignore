@@ -4,7 +4,13 @@ obj/
 [Bb]in/
 [Oo]bj/
 TestResults/
-
+test-results/
+e2e-test-results/
+e2e/
+playwright-report/
+playwright-test-results/
+playwright-test-results-*/
+playwright-test-results-*/
 # Visual Studio & IDE files
 .vs/
 .vscode/

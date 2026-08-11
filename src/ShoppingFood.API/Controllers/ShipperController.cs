@@ -7,6 +7,7 @@ using ShoppingFood.Application.Features.Shippers.Queries;
 using System.Threading.Tasks;
 using ShoppingFood.Application.Features.Orders.Commands;
 using ShoppingFood.Application.Features.Orders.Queries;
+using ShoppingFood.Application.Features.Coordinator.Queries;
 using System;
 
 namespace ShoppingFood.API.Controllers
@@ -204,6 +205,26 @@ namespace ShoppingFood.API.Controllers
                 command.CurrentUserId = userDto.Id;
             
             var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpPost("orders/{orderId}/explanation")]
+        public async Task<ActionResult<ApiResponse>> SubmitExplanation(Guid orderId, [FromBody] SubmitOrderExplanationCommand command)
+        {
+            command.OrderId = orderId;
+            if (userDto != null)
+                command.CurrentUserId = userDto.Id;
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpGet("orders/{orderId}/explanation")]
+        public async Task<ActionResult<ApiResponse>> GetExplanation(Guid orderId)
+        {
+            var query = new GetOrderExplanationQuery { OrderId = orderId };
+            if (userDto != null)
+                query.CurrentUserId = userDto.Id;
+            var response = await _mediator.Send(query);
             return StatusCode(response.Code, response);
         }
     }

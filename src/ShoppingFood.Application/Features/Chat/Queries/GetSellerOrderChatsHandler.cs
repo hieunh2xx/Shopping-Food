@@ -1,7 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
-using ShoppingFood.Domain.Enums;
 using ShoppingFood.Repository.Interfaces;
 
 namespace ShoppingFood.Application.Features.Chat.Queries
@@ -33,29 +32,58 @@ namespace ShoppingFood.Application.Features.Chat.Queries
                 return ApiResponse.Failure(403, "Bạn chưa có nhà hàng.");
 
             var sessions = await _chatSessionRepository.GetAsync(
-                predicate: s => s.RestaurantId == restaurant.Id
-                    && s.OrderId != null,
-                include: q => q.Include(s => s.User).Include(s => s.Messages),
+                predicate: s => s.RestaurantId == restaurant.Id,
+                include: q => q
+                    .Include(s => s.User).ThenInclude(u => u.Profile)
+                    .Include(s => s.Messages),
                 orderBy: q => q.OrderByDescending(s => s.CreatedAt),
                 take: int.MaxValue,
                 disableTracking: true);
 
+            // 1 khách hàng = 1 hội thoại
             var result = sessions
-                .GroupBy(s => s.OrderId)
-                .Select(g => g.First())
-                .Select(s => new
-            {
-                id = s.Id,
-                userId = s.UserId,
-                customerName = s.User?.UserName,
-                orderId = s.OrderId,
-                restaurantId = s.RestaurantId,
-                topic = s.Topic.ToString(),
-                status = s.Status.ToString(),
-                createdAt = s.CreatedAt,
-                lastMessage = s.Messages.OrderByDescending(m => m.CreatedAt).FirstOrDefault()?.Content,
-                lastMessageAt = s.Messages.OrderByDescending(m => m.CreatedAt).FirstOrDefault()?.CreatedAt
-            }).ToList();
+                .GroupBy(s => s.UserId)
+                .Select(g =>
+                {
+                    var primary = g
+                        .OrderByDescending(s =>
+                            s.Messages.Count > 0
+                                ? s.Messages.Max(m => m.CreatedAt)
+                                : s.CreatedAt)
+                        .First();
+
+                    var lastMsg = g
+                        .SelectMany(s => s.Messages)
+                        .OrderByDescending(m => m.CreatedAt)
+                        .FirstOrDefault();
+
+                    var relatedOrderIds = g
+                        .Where(s => s.OrderId.HasValue)
+                        .Select(s => s.OrderId!.Value)
+                        .Distinct()
+                        .ToList();
+
+                    var customerName = primary.User?.Profile?.FullName
+                        ?? primary.User?.UserName
+                        ?? "Khách hàng";
+
+                    return new
+                    {
+                        id = primary.Id,
+                        userId = primary.UserId,
+                        customerName,
+                        orderId = primary.OrderId ?? (relatedOrderIds.Count > 0 ? relatedOrderIds[0] : (Guid?)null),
+                        relatedOrderIds,
+                        restaurantId = primary.RestaurantId,
+                        topic = primary.Topic.ToString(),
+                        status = primary.Status.ToString(),
+                        createdAt = primary.CreatedAt,
+                        lastMessage = lastMsg?.Content,
+                        lastMessageAt = lastMsg?.CreatedAt
+                    };
+                })
+                .OrderByDescending(s => s.lastMessageAt ?? s.createdAt)
+                .ToList();
 
             return ApiResponse.Success(result, "Seller order chats retrieved.");
         }

@@ -4,6 +4,8 @@ using ShoppingFood.Core.Interfaces;
 using ShoppingFood.Domain.Enums;
 using ShoppingFood.Domain.Models;
 using ShoppingFood.Repository.Interfaces;
+using System;
+using System.Linq;
 
 namespace ShoppingFood.Application.Services
 {
@@ -102,6 +104,7 @@ namespace ShoppingFood.Application.Services
         {
             wallet.Balance += amount;
             wallet.UpdatedAt = DateTime.UtcNow;
+            _walletRepository.Update(wallet);
 
             _transactionRepository.Add(new FinancialTransaction
             {
@@ -305,7 +308,17 @@ namespace ShoppingFood.Application.Services
             if (session.Status == PaymentSessionStatus.Completed)
                 return true;
 
-            if (!allowExpired)
+            if (allowExpired)
+            {
+                // Cho phép xác nhận muộn sau khi session Expired (khách đã CK nhưng đóng QR / hết hạn UI)
+                if (session.Status == PaymentSessionStatus.Failed)
+                    return false;
+                if (session.Status != PaymentSessionStatus.Pending
+                    && session.Status != PaymentSessionStatus.Expired
+                    && session.Status != PaymentSessionStatus.Completed)
+                    return false;
+            }
+            else
             {
                 if (session.Status != PaymentSessionStatus.Pending)
                     return false;
@@ -317,10 +330,6 @@ namespace ShoppingFood.Application.Services
                     _paymentSessionRepository.Update(session);
                     return false;
                 }
-            }
-            else if (session.Status == PaymentSessionStatus.Failed)
-            {
-                return false;
             }
 
             if (paidAmount.HasValue && Math.Abs(paidAmount.Value - session.Amount) > 1)
@@ -336,17 +345,32 @@ namespace ShoppingFood.Application.Services
             {
                 var orders = await _orderRepository.GetAsync(
                     predicate: o => o.Id == session.OrderId.Value,
-                    include: q => q.Include(o => o.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Restaurant).ThenInclude(r => r.Owner),
+                    include: q => q.Include(o => o.Items).ThenInclude(i => i.Product).ThenInclude(p => p!.Restaurant).ThenInclude(r => r.Owner),
                     disableTracking: false);
                 var order = orders.FirstOrDefault();
                 if (order != null)
                 {
                     order.PaymentStatus = PaymentStatus.Paid;
                     order.UpdatedAt = DateTime.UtcNow;
+
+                    // Tiền về muộn sau khi khách đóng QR / hết hạn → khôi phục đơn chờ nhà hàng nhận
+                    var abandonedOrExpired =
+                        order.Status == OrderStatus.Cancelled
+                        && order.PaymentMethod == PaymentMethod.Sepay
+                        && order.RejectReason != null
+                        && (order.RejectReason.StartsWith("[Payment Abandoned]", StringComparison.Ordinal)
+                            || order.RejectReason.StartsWith("[Payment Expired]", StringComparison.Ordinal));
+
+                    if (abandonedOrExpired)
+                    {
+                        order.Status = OrderStatus.Pending;
+                        order.RejectReason = null;
+                    }
+
                     _orderRepository.Update(order);
 
                     var restaurant = order.Items.FirstOrDefault()?.Product?.Restaurant;
-                    if (restaurant != null)
+                    if (restaurant != null && order.Status == OrderStatus.Pending)
                     {
                         var notification = new Notification
                         {
@@ -385,11 +409,9 @@ namespace ShoppingFood.Application.Services
             order.SellerPayout = split.SellerPayout;
 
             var restaurantId = await GetOrderRestaurantIdAsync(order);
-            if (restaurantId == null) return;
-
-            var sellerWallet = await GetOrCreateWalletAsync(WalletOwnerType.Seller, restaurantId.Value);
             var shipperWallet = await GetOrCreateWalletAsync(WalletOwnerType.Shipper, shipper.Id);
             var platformWallet = await GetOrCreateWalletAsync(WalletOwnerType.Platform, Guid.Empty);
+            var shipperWasPaid = false;
 
             if (order.PaymentMethod == PaymentMethod.COD)
             {
@@ -402,17 +424,27 @@ namespace ShoppingFood.Application.Services
                 await RecordTransactionAsync(shipperWallet, FinancialTransactionType.CodCollection, amountToRemit,
                     $"Thu hộ tiền hàng đơn #{order.Id} - cần nộp sàn", order.Id, "Order");
 
-                await RecordTransactionAsync(sellerWallet, FinancialTransactionType.SellerPayout, split.SellerPayout,
-                    $"Doanh thu đơn #{order.Id} (COD - chờ đối soát)", order.Id, "Order");
+                if (restaurantId.HasValue)
+                {
+                    var sellerWallet = await GetOrCreateWalletAsync(WalletOwnerType.Seller, restaurantId.Value);
+                    await RecordTransactionAsync(sellerWallet, FinancialTransactionType.SellerPayout, split.SellerPayout,
+                        $"Doanh thu đơn #{order.Id} (COD - chờ đối soát)", order.Id, "Order");
+                }
+
                 await RecordTransactionAsync(platformWallet, FinancialTransactionType.Commission, split.PlatformCommission,
                     $"Chiết khấu sàn đơn #{order.Id} (COD)", order.Id, "Order");
 
                 order.PaymentStatus = PaymentStatus.Settled;
+                shipperWasPaid = true;
             }
             else if (order.PaymentStatus == PaymentStatus.Paid)
             {
-                await RecordTransactionAsync(sellerWallet, FinancialTransactionType.SellerPayout, split.SellerPayout,
-                    $"Doanh thu đơn #{order.Id}", order.Id, "Order");
+                if (restaurantId.HasValue)
+                {
+                    var sellerWallet = await GetOrCreateWalletAsync(WalletOwnerType.Seller, restaurantId.Value);
+                    await RecordTransactionAsync(sellerWallet, FinancialTransactionType.SellerPayout, split.SellerPayout,
+                        $"Doanh thu đơn #{order.Id}", order.Id, "Order");
+                }
                 await RecordTransactionAsync(shipperWallet, FinancialTransactionType.ShipperEarning, split.ShipperEarning,
                     $"Thu nhập giao hàng đơn #{order.Id}", order.Id, "Order");
                 await RecordTransactionAsync(platformWallet, FinancialTransactionType.Commission, split.PlatformCommission,
@@ -420,12 +452,43 @@ namespace ShoppingFood.Application.Services
 
                 shipper.WalletBalance += split.ShipperEarning;
                 order.PaymentStatus = PaymentStatus.Settled;
+                shipperWasPaid = true;
+            }
+
+            // Freeship / phí khách < thu nhập shipper: sàn bù phần thiếu từ ví nền tảng.
+            if (shipperWasPaid)
+            {
+                await DebitPlatformShippingSubsidyAsync(
+                    platformWallet, split.ShipperEarning, order.ShippingFee, order.Id);
             }
 
             order.IsFinancialSettled = true;
             order.UpdatedAt = DateTime.UtcNow;
             _orderRepository.Update(order);
             _shipperProfileRepository.Update(shipper);
+        }
+
+        /// <summary>
+        /// Khi khách trả ShippingFee &lt; ShipperIncome (điển hình freeship = 0),
+        /// phần còn lại khấu trừ vào ví nền tảng.
+        /// </summary>
+        private async Task DebitPlatformShippingSubsidyAsync(
+            Wallet platformWallet, decimal shipperEarning, decimal shippingFee, Guid orderId)
+        {
+            var subsidy = Math.Max(0, Math.Round(shipperEarning - shippingFee, 0));
+            if (subsidy <= 0) return;
+
+            var description = shippingFee <= 0
+                ? $"Hỗ trợ freeship đơn #{orderId} — trả shipper"
+                : $"Bù phí ship đơn #{orderId} (shipper {shipperEarning:0} > phí khách {shippingFee:0})";
+
+            await RecordTransactionAsync(
+                platformWallet,
+                FinancialTransactionType.ShippingSubsidy,
+                -subsidy,
+                description,
+                orderId,
+                "Order");
         }
 
         public async Task SettleSelfDeliveryOrderAsync(Order order)
@@ -479,17 +542,74 @@ namespace ShoppingFood.Application.Services
 
         public async Task<string?> ProcessRefundAsync(Order order)
         {
-            if (order.PaymentMethod == PaymentMethod.COD || order.PaymentStatus != PaymentStatus.Paid)
+            // COD không hoàn ví
+            if (order.PaymentMethod == PaymentMethod.COD)
                 return null;
 
-            if (!order.UserAccountId.HasValue) return null;
+            if (order.PaymentStatus == PaymentStatus.Refunded)
+                return null;
 
+            // SePay / SystemWallet / CreditCard / EWallet: chỉ hoàn khi đã Paid
+            if (order.PaymentStatus != PaymentStatus.Paid)
+                return null;
+
+            if (!order.UserAccountId.HasValue)
+                return null;
+
+            var existingRefunds = await _transactionRepository.GetAsync(
+                predicate: t =>
+                    t.ReferenceId == order.Id
+                    && t.ReferenceType == "Order"
+                    && t.Type == FinancialTransactionType.Refund,
+                disableTracking: true);
+            if (existingRefunds.Any())
+            {
+                order.PaymentStatus = PaymentStatus.Refunded;
+                order.UpdatedAt = DateTime.UtcNow;
+                _orderRepository.Update(order);
+                return null;
+            }
+
+            var refundAmount = order.TotalAmount;
+            if (refundAmount <= 0)
+                return null;
+
+            // Hoàn về đúng ví khách (cùng OwnerId dùng khi trừ ví lúc checkout)
             var customerWallet = await GetOrCreateWalletAsync(WalletOwnerType.Customer, order.UserAccountId.Value);
-            await RecordTransactionAsync(customerWallet, FinancialTransactionType.Refund, order.TotalAmount,
-                $"Hoàn tiền đơn hàng #{order.Id}", order.Id, "Order");
+            var refundLabel = order.PaymentMethod == PaymentMethod.SystemWallet
+                ? $"Hoàn tiền ví — đơn hàng #{order.Id}"
+                : $"Hoàn tiền đơn hàng #{order.Id}";
+
+            await RecordTransactionAsync(
+                customerWallet,
+                FinancialTransactionType.Refund,
+                refundAmount,
+                refundLabel,
+                order.Id,
+                "Order");
+
             order.PaymentStatus = PaymentStatus.Refunded;
             order.UpdatedAt = DateTime.UtcNow;
             _orderRepository.Update(order);
+
+            var shortId = order.Id.ToString()[..8].ToUpperInvariant();
+            var amountText = refundAmount.ToString("N0");
+            var message = order.PaymentMethod == PaymentMethod.SystemWallet
+                ? $"Đơn #{shortId} đã hủy. {amountText}đ đã được hoàn lại vào ví tích lũy của bạn."
+                : $"Đơn #{shortId} đã được hoàn {amountText}đ vào ví ShoppingFood của bạn.";
+
+            _notificationRepository.Add(new Notification
+            {
+                Id = Guid.NewGuid(),
+                UserId = order.UserAccountId.Value,
+                Title = "Hoàn tiền vào ví",
+                Message = message,
+                NotificationType = NotificationType.Payment,
+                TargetId = order.Id,
+                IsRead = false,
+                CreateAt = DateTime.UtcNow
+            });
+
             return null;
         }
 
@@ -500,7 +620,7 @@ namespace ShoppingFood.Application.Services
                 include: q => q.Include(o => o.Items).ThenInclude(i => i.Product),
                 disableTracking: true);
             var fullOrder = orders.FirstOrDefault();
-            return fullOrder?.Items.FirstOrDefault()?.Product?.RestaurantId;
+            return fullOrder?.Items.FirstOrDefault(i => i.Product != null)?.Product?.RestaurantId;
         }
     }
 }

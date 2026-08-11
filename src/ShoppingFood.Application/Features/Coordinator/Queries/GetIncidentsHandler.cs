@@ -47,8 +47,9 @@ namespace ShoppingFood.Application.Features.Coordinator.Queries
                 return ApiResponse.Failure(401, "User profile not found.");
 
             var result = new List<IncidentItemDto>();
+            var deliveryFailedOrderIds = new HashSet<Guid>();
 
-            if(request.IncidentType == null || request.IncidentType == "DeliveryFailed")
+            if (request.IncidentType == null || request.IncidentType == "DeliveryFailed")
             {
                 var failedOrders = await _orderRepository.GetAsync(
                     predicate: o => o.Status == Domain.Enums.OrderStatus.Cancelled
@@ -56,22 +57,27 @@ namespace ShoppingFood.Application.Features.Coordinator.Queries
                                 && o.RejectReason.StartsWith("[Delivery Failed]")
                                 && !o.RejectReason.Contains("Resolved:"),
                     orderBy: q => q.OrderByDescending(o => o.UpdatedAt),
+                    include: q => q.Include(o => o.Shipper).ThenInclude(s => s!.UserProfile).ThenInclude(p => p.UserAccount),
                     disableTracking: true
                     );
 
-                result.AddRange(failedOrders.Select(o => new IncidentItemDto
+                foreach (var o in failedOrders)
                 {
-                    Id = o.Id,
-                    IncidentType = "DeliveryFailed",
-                    Title = "Giao hàng thất bại",
-                    Description = o.RejectReason,
-                    Status = "Pending",
-                    OrderId = o.Id,
-                    ShipperProfileId = o.ShipperId,
-                    ContactName = o.ContactName,
-                    ContactPhone = o.ContactPhone,
-                    CreatedAt = o.UpdatedAt
-                }));
+                    deliveryFailedOrderIds.Add(o.Id);
+                    result.Add(new IncidentItemDto
+                    {
+                        Id = o.Id,
+                        IncidentType = "DeliveryFailed",
+                        Title = "Báo cáo sự cố giao hàng (Shipper)",
+                        Description = o.RejectReason,
+                        Status = "Pending",
+                        OrderId = o.Id,
+                        ShipperProfileId = o.ShipperId,
+                        ContactName = o.Shipper?.UserProfile?.FullName ?? o.ContactName,
+                        ContactPhone = o.Shipper?.UserProfile?.UserAccount?.Phone ?? o.ContactPhone,
+                        CreatedAt = o.UpdatedAt
+                    });
+                }
             }
 
             var targetTypes = new List<ReportTargetType>();
@@ -87,19 +93,24 @@ namespace ShoppingFood.Application.Features.Coordinator.Queries
                 var reports = await _systemReportRepository.GetAsync(
                     predicate: r => targetTypes.Contains(r.TargetType) && r.Status == ReportStatus.Pending,
                     orderBy: q => q.OrderByDescending(r => r.CreatedAt),
-                    include: q => q.Include(r => r.Reporter),
+                    include: q => q.Include(r => r.Reporter).ThenInclude(p => p.UserAccount),
                     disableTracking: true
                     );
-                foreach(var r in reports)
+                foreach (var r in reports)
                 {
+                    // Đơn đã hiện ở tab DeliveryFailed (hủy do shipper báo sự cố) — tránh trùng
+                    if (r.TargetId.HasValue && deliveryFailedOrderIds.Contains(r.TargetId.Value))
+                        continue;
+
                     var dto = _mapper.Map<IncidentItemDto>(r);
 
                     dto.IncidentType = r.TargetType == ReportTargetType.Order
                         ? "OrderComplaint"
-                        : r.TargetType == ReportTargetType.Shipper 
-                            ? "ShipperComplaint" 
+                        : r.TargetType == ReportTargetType.Shipper
+                            ? "ShipperComplaint"
                             : "RestaurantComplaint";
                     dto.ContactName = r.Reporter?.FullName ?? string.Empty;
+                    dto.ContactPhone = r.Reporter?.UserAccount?.Phone ?? string.Empty;
                     dto.ShipperProfileId = r.TargetType == ReportTargetType.Shipper ? r.TargetId : null;
                     result.Add(dto);
                 }

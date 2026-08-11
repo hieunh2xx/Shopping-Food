@@ -1,14 +1,14 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using ShoppingFood.Application.Interfaces;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
 using ShoppingFood.Domain.Enums;
 using ShoppingFood.Domain.Models;
 using ShoppingFood.Repository.Interfaces;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ShoppingFood.Application.Features.Coordinator.Commands
@@ -21,6 +21,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
         private readonly IOrderDeliveryProposalRepository _orderDeliveryProposalRepository;
         private readonly INotificationRepository _notificationRepository;
         private readonly IOrderDispatchHistoryRepository _orderDispatchHistoryRepository;
+        private readonly IOrderShipperClaimService _claimService;
         private readonly IUnitOfWork _unitOfWork;
 
         public ForceAssignHandler(
@@ -30,6 +31,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
             IOrderDeliveryProposalRepository orderDeliveryProposalRepository,
             INotificationRepository notificationRepository,
             IOrderDispatchHistoryRepository orderDispatchHistoryRepository,
+            IOrderShipperClaimService claimService,
             IUnitOfWork unitOfWork)
         {
             _userRepository = userRepository;
@@ -38,6 +40,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
             _orderDeliveryProposalRepository = orderDeliveryProposalRepository;
             _notificationRepository = notificationRepository;
             _orderDispatchHistoryRepository = orderDispatchHistoryRepository;
+            _claimService = claimService;
             _unitOfWork = unitOfWork;
         }
 
@@ -62,10 +65,15 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
                 if (!shipper.IsOnline || shipper.Status != UserStatus.Active)
                     return ApiResponse.Failure(400, "Shipper ís offline or inactive.");
 
+                var claimed = await _claimService.TryClaimAsync(order.Id, shipper.Id, cancellationToken);
+                if (!claimed)
+                    return ApiResponse.Failure(409, "Đơn hàng đã được tài xế khác nhận.");
+
+                order.ShipperId = shipper.Id;
+                order.Status = OrderStatus.Shipping;
+                order.UpdatedAt = DateTime.UtcNow;
+
                 await InvalidatePendingProposalAsync(request.OrderId);
-
-                AssignOrder(order, shipper.Id);
-
                 await UpdateOrCreateProposalAsync(request.OrderId, request.ShipperId);
 
                 var coordinator = (await _userRepository.GetAsync(
@@ -74,7 +82,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
                     disableTracking: true
                 )).FirstOrDefault();
 
-                var history = new OrderDispatchHistory
+                _orderDispatchHistoryRepository.Add(new OrderDispatchHistory
                 {
                     Id = Guid.NewGuid(),
                     OrderId = request.OrderId,
@@ -86,11 +94,10 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
                     TargetShipperName = shipper.UserProfile?.FullName ?? "Shipper",
                     Note = "Bắt buộc gán đơn (Force Assign)",
                     CreatedAt = DateTime.UtcNow
-                };
-                _orderDispatchHistoryRepository.Add(history);
+                });
 
                 AddNotifications(order, shipper);
-                
+
                 await _unitOfWork.SaveChangesAsync();
                 return ApiResponse.Success(new { order.Id, Status = order.Status.ToString() }, "Order successfully force assigned to shipper.");
             }
@@ -110,7 +117,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
                 predicate: u => u.Id == currentUserId.Value,
                 include: q => q.Include(u => u.Profile),
                 disableTracking: true
-                );
+            );
             var user = users.FirstOrDefault();
             if (user == null)
                 return ApiResponse.Failure(401, "User not found.");
@@ -124,10 +131,9 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
                 predicate: o => o.Id == orderId,
                 include: q => q.Include(o => o.Items),
                 disableTracking: false
-                );
+            );
             return orders.FirstOrDefault();
         }
-
 
         private async Task<ShipperProfile?> GetShipperProfileAsync(Guid shipperId)
         {
@@ -135,7 +141,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
                 predicate: s => s.Id == shipperId,
                 include: q => q.Include(s => s.UserProfile),
                 disableTracking: false
-                );
+            );
             return shippers.FirstOrDefault();
         }
 
@@ -143,7 +149,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
         {
             var pendingProposal = await _orderDeliveryProposalRepository.GetAsync(
                 predicate: p => p.OrderId == orderId && p.Status == ProposalStatus.Pending
-                );
+            );
 
             foreach (var proposal in pendingProposal)
             {
@@ -153,26 +159,17 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
             }
         }
 
-        private void AssignOrder(Order order, Guid shipperId)
-        {
-            order.ShipperId = shipperId;
-            order.Status = OrderStatus.Shipping;
-            order.UpdatedAt = DateTime.UtcNow;
-            _orderRepository.Update(order);
-        }
-
         private async Task UpdateOrCreateProposalAsync(Guid orderId, Guid shipperId)
         {
             var existingProposal = (
                 await _orderDeliveryProposalRepository.GetAsync(
-                    predicate: p => p.OrderId == orderId &&
-                                    p.ShipperId == shipperId
+                    predicate: p => p.OrderId == orderId && p.ShipperId == shipperId
                 )
             ).FirstOrDefault();
 
             if (existingProposal == null)
             {
-                var proposal = new OrderDeliveryProposal
+                _orderDeliveryProposalRepository.Add(new OrderDeliveryProposal
                 {
                     Id = Guid.NewGuid(),
                     OrderId = orderId,
@@ -180,22 +177,19 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
                     Status = ProposalStatus.Accepted,
                     CreatedAt = DateTime.UtcNow,
                     ExpiredAt = DateTime.UtcNow
-                };
-
-                _orderDeliveryProposalRepository.Add(proposal);
+                });
             }
             else
             {
                 existingProposal.Status = ProposalStatus.Accepted;
                 existingProposal.ExpiredAt = DateTime.UtcNow;
-
                 _orderDeliveryProposalRepository.Update(existingProposal);
             }
         }
 
         private void AddNotifications(Order order, ShipperProfile shipper)
         {
-            var shipperNotification = new Notification
+            _notificationRepository.Add(new Notification
             {
                 Id = Guid.NewGuid(),
                 UserId = shipper.UserProfile.UserAccountId,
@@ -204,12 +198,11 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
                 NotificationType = NotificationType.Delivery,
                 IsRead = false,
                 CreateAt = DateTime.UtcNow,
-            };
-            _notificationRepository.Add(shipperNotification);
+            });
 
             if (order.UserAccountId.HasValue)
             {
-                var customerNotification = new Notification
+                _notificationRepository.Add(new Notification
                 {
                     Id = Guid.NewGuid(),
                     UserId = order.UserAccountId.Value,
@@ -218,11 +211,8 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
                     NotificationType = NotificationType.Delivery,
                     IsRead = false,
                     CreateAt = DateTime.UtcNow
-                };
-                _notificationRepository.Add(customerNotification);
+                });
             }
         }
-
-        
     }
 }

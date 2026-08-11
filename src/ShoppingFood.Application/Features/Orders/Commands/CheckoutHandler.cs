@@ -39,6 +39,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
         private readonly IPlatformFinanceConfigRepository _configRepository;
         private readonly IFlashSalePricingService _flashSalePricingService;
         private readonly INotificationRepository _notificationRepository;
+        private readonly ICartMergeService _cartMergeService;
 
         public CheckoutHandler(
             ICartRepository cartRepository,
@@ -57,7 +58,8 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             IHttpContextAccessor httpContextAccessor,
             IPlatformFinanceConfigRepository configRepository,
             IFlashSalePricingService flashSalePricingService,
-            INotificationRepository notificationRepository
+            INotificationRepository notificationRepository,
+            ICartMergeService cartMergeService
             )
         {
             _cartRepository = cartRepository;
@@ -77,6 +79,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             _configRepository = configRepository;
             _flashSalePricingService = flashSalePricingService;
             _notificationRepository = notificationRepository;
+            _cartMergeService = cartMergeService;
         }
         public async Task<ApiResponse> Handle(CheckoutCommand request, CancellationToken cancellationToken)
         {
@@ -145,8 +148,12 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     }
                 }
 
+                // Guest added items then logged in → cart still under GuestUserId; merge before checkout
+                if (request.CurrentUserId.HasValue && request.GuestUserId.HasValue)
+                    await _cartMergeService.MergeGuestCartIntoUserAsync(request.CurrentUserId.Value, request.GuestUserId.Value, cancellationToken);
+
                 var cart = await GetCartWithItemsAsync(request.CurrentUserId, request.GuestUserId);
-                if (cart == null || !cart.Items.Any())
+                if (cart == null || cart.Items == null || !cart.Items.Any())
                     return ApiResponse.Failure(400, "Your cart is empty.");
 
                 await _flashSalePricingService.SyncCartItemPricesAsync(cart);
@@ -156,7 +163,8 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     return stockValidationResult;
 
                 var (totalAmount, shippingFee, shipperIncome, shipperBaseFee, shipperDistanceFee, shipperPeakBonus) = await CalculateTotalAmountAsync(cart.Items, request.DeliveryLatitude, request.DeliveryLongitude);
-                decimal itemsTotal = cart.Items.Sum(i => i.PriceAtAdded * i.Quantity);
+                // Món tặng (IsGift) không tính vào tiền hàng
+                decimal itemsTotal = cart.Items.Where(i => !i.IsGift).Sum(i => i.PriceAtAdded * i.Quantity);
                 var (discountAmount, appliedDiscountId, error) = await ApplyDiscountAsync(request, cart, itemsTotal);
                 if (error != null)
                 {
@@ -325,24 +333,47 @@ namespace ShoppingFood.Application.Features.Orders.Commands
 
         private async Task<Cart?> GetCartWithItemsAsync(Guid? userId, Guid? guestUserId)
         {
-            IReadOnlyList<Cart> carts;
+            async Task<Cart?> LoadUserCartAsync(Guid uid)
+            {
+                var carts = await _cartRepository.GetAsync(
+                    predicate: c => c.UserAccountId == uid,
+                    include: q => q.Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Restaurant).ThenInclude(r => r.Owner),
+                    disableTracking: false
+                );
+                return carts.FirstOrDefault();
+            }
+
+            async Task<Cart?> LoadGuestCartAsync(Guid gid)
+            {
+                var carts = await _cartRepository.GetAsync(
+                    predicate: c => c.GuestUserId == gid,
+                    include: q => q.Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Restaurant).ThenInclude(r => r.Owner),
+                    disableTracking: false
+                );
+                return carts.FirstOrDefault();
+            }
+
             if (userId.HasValue)
             {
-                carts = await _cartRepository.GetAsync(
-                    predicate: c => c.UserAccountId == userId.Value,
-                    include: q => q.Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Restaurant).ThenInclude(r => r.Owner),
-                    disableTracking: false
-                    );
+                var userCart = await LoadUserCartAsync(userId.Value);
+                if (userCart != null && userCart.Items != null && userCart.Items.Any())
+                    return userCart;
+
+                // Logged-in but items still on guest cart (merge missed / guest id mismatch recovery)
+                if (guestUserId.HasValue)
+                {
+                    var guestCart = await LoadGuestCartAsync(guestUserId.Value);
+                    if (guestCart != null && guestCart.Items != null && guestCart.Items.Any())
+                        return guestCart;
+                }
+
+                return userCart;
             }
-            else
-            {
-                carts = await _cartRepository.GetAsync(
-                    predicate: c => c.GuestUserId == guestUserId.Value,
-                    include: q => q.Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Restaurant).ThenInclude(r => r.Owner),
-                    disableTracking: false
-                    );
-            }
-            return carts.FirstOrDefault();
+
+            if (guestUserId.HasValue)
+                return await LoadGuestCartAsync(guestUserId.Value);
+
+            return null;
         }
 
         private ApiResponse? ValidateCartStock(IEnumerable<CartItem> items)
@@ -364,7 +395,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
         private async Task<(decimal TotalAmount, decimal ShippingFee, decimal ShipperIncome, decimal ShipperBaseFee, decimal ShipperDistanceFee, decimal ShipperPeakBonus)> CalculateTotalAmountAsync(IEnumerable<CartItem> items, double? destLat, double? destLon)
         {
             var itemsList = items.ToList();
-            decimal itemsTotal = itemsList.Sum(i => i.PriceAtAdded * i.Quantity);
+            decimal itemsTotal = itemsList.Where(i => !i.IsGift).Sum(i => i.PriceAtAdded * i.Quantity);
             var restaurantIds = itemsList.Select(i => i.Product.RestaurantId).Distinct().ToList();
 
             decimal shippingFeeTotal = 0;
@@ -405,11 +436,13 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 decimal distanceFeeForShipper = 0;
                 decimal peakBonusForShipper = 0;
 
+                bool hasDestinationCoords = destLat.HasValue && destLon.HasValue
+                    && restaurant.Latitude.HasValue && restaurant.Longitude.HasValue;
                 double distanceKm = 0;
-                if (destLat.HasValue && destLon.HasValue && restaurant.Latitude.HasValue && restaurant.Longitude.HasValue)
+                if (hasDestinationCoords)
                 {
-                    double dLat = (destLat.Value - restaurant.Latitude.Value) * Math.PI / 180.0;
-                    double dLon = (destLon.Value - restaurant.Longitude.Value) * Math.PI / 180.0;
+                    double dLat = (destLat!.Value - restaurant.Latitude!.Value) * Math.PI / 180.0;
+                    double dLon = (destLon!.Value - restaurant.Longitude!.Value) * Math.PI / 180.0;
                     double a = Math.Pow(Math.Sin(dLat / 2.0), 2.0) + Math.Cos(restaurant.Latitude.Value * Math.PI / 180.0) * Math.Cos(destLat.Value * Math.PI / 180.0) * Math.Pow(Math.Sin(dLon / 2.0), 2.0);
                     double c = 2.0 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1.0 - a));
                     distanceKm = 6371.0 * c;
@@ -421,18 +454,33 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     double freeDeliveryRadiusKm = deliverySettings?.FreeDeliveryRadiusKm ?? 3.0;
                     decimal freeShippingMinimumOrder = deliverySettings?.FreeShippingMinimumOrder ?? 0m;
                     decimal shippingFee = deliverySettings?.ShippingFee ?? 15000m;
+                    decimal feePerKm = platformFinanceConfig?.FeePerKm > 0
+                        ? platformFinanceConfig.FeePerKm
+                        : platformFinanceConfig?.ShipperFeePerKm > 0
+                            ? platformFinanceConfig.ShipperFeePerKm
+                            : 3000m;
 
                     if (itemsTotal >= freeShippingMinimumOrder && freeShippingMinimumOrder > 0)
                         feeForRestaurant = 0;
+                    else if (!hasDestinationCoords)
+                        // Missing coords must NOT be treated as 0km (would always free-ship). Use flat fee like SePay QR amount.
+                        feeForRestaurant = shippingFee;
                     else if (distanceKm <= freeDeliveryRadiusKm)
                         feeForRestaurant = 0;
                     else
-                        feeForRestaurant = shippingFee;
+                    {
+                        // Graduated fee by excess km (capped at configured flat fee) so short trips aren't overcharged
+                        var excessKm = distanceKm - freeDeliveryRadiusKm;
+                        var distanceBased = Math.Max(feePerKm, (decimal)Math.Ceiling(excessKm) * feePerKm);
+                        feeForRestaurant = Math.Min(shippingFee, distanceBased);
+                    }
 
                     if (platformFinanceConfig != null)
                     {
                         baseFeeForShipper = platformFinanceConfig.ShipperBaseFee;
-                        distanceFeeForShipper = distanceKm > 5.0 ? (decimal)(distanceKm - 5.0) * platformFinanceConfig.ShipperFeePerKm : 0m;
+                        distanceFeeForShipper = hasDestinationCoords && distanceKm > 5.0
+                            ? (decimal)(distanceKm - 5.0) * platformFinanceConfig.ShipperFeePerKm
+                            : 0m;
                         decimal incomeBeforeBonus = baseFeeForShipper + distanceFeeForShipper;
                         peakBonusForShipper = isRushHour ? incomeBeforeBonus * (platformFinanceConfig.ShipperRushHourBonus / 100m) : 0m;
                         incomeForShipper = incomeBeforeBonus + peakBonusForShipper;
@@ -441,13 +489,15 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 else
                 {
                     // Self Delivery Logic
-                    if (restaurant.MaxDeliveryRadiusKm.HasValue && distanceKm > restaurant.MaxDeliveryRadiusKm.Value)
+                    if (hasDestinationCoords && restaurant.MaxDeliveryRadiusKm.HasValue && distanceKm > restaurant.MaxDeliveryRadiusKm.Value)
                     {
                         throw new Exception("Nhà hàng không hỗ trợ giao đến địa chỉ này.");
                     }
 
                     if (itemsTotal >= restaurant.FreeShippingMinimumOrder && restaurant.FreeShippingMinimumOrder > 0)
                         feeForRestaurant = 0;
+                    else if (!hasDestinationCoords)
+                        feeForRestaurant = restaurant.ShippingFee;
                     else if (distanceKm <= restaurant.FreeDeliveryRadiusKm)
                         feeForRestaurant = 0;
                     else
@@ -517,17 +567,22 @@ namespace ShoppingFood.Application.Features.Orders.Commands
         {
             foreach (var cartItem in cartItems)
             {
+                var unitPrice = cartItem.IsGift ? 0m : cartItem.PriceAtAdded;
                 var orderItem = new OrderItem
                 {
                     Id = Guid.NewGuid(),
                     OrderId = order.Id,
                     ProductId = cartItem.ProductId,
-                    ItemName = cartItem.Product!.ItemName,
+                    ItemName = cartItem.IsGift
+                        ? $"[Tặng] {cartItem.Product!.ItemName}"
+                        : cartItem.Product!.ItemName,
                     Quantity = cartItem.Quantity,
-                    UnitPrice = cartItem.PriceAtAdded,
-                    TotalPrice = cartItem.PriceAtAdded * cartItem.Quantity,
+                    UnitPrice = unitPrice,
+                    TotalPrice = unitPrice * cartItem.Quantity,
                     SelectedSize = cartItem.SelectedSize,
-                    SelectedToppings = cartItem.SelectedToppings
+                    SelectedToppings = cartItem.SelectedToppings,
+                    IsGift = cartItem.IsGift,
+                    BuyXGetYPromotionId = cartItem.BuyXGetYPromotionId
                 };
                 order.Items.Add(orderItem);
             }
@@ -544,7 +599,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
         private async Task<bool> HasFlashSaleProductAsync(IEnumerable<CartItem> cartItems)
         {
             var now = DateTime.UtcNow;
-            var productIds = cartItems.Select(i => i.ProductId).ToList();
+            var productIds = cartItems.Where(i => !i.IsGift).Select(i => i.ProductId).ToList();
 
             var flashSaleProducts = await _flashSaleProductRepository.GetAsync(
                 predicate: fsp => productIds.Contains(fsp.ProductId)

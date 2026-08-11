@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
 import { ConfirmProvider } from './contexts/ConfirmContext';
+import { UserLocationProvider } from './contexts/UserLocationContext';
 import { AppRoutes } from './routes/AppRoutes';
 import { ScrollToTop } from './components/common/ScrollToTop';
 
@@ -17,39 +18,41 @@ function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
-      <AuthProvider>
-        <Toaster
-          position="top-right"
-          containerStyle={{ zIndex: 99999 }}
-          toastOptions={{
-            duration: 3000,
-            style: {
-              background: '#1F2937',
-              color: '#F3F4F6',
-              border: '1px solid #374151',
-              borderRadius: '12px',
-              fontSize: '14px',
-            },
-            success: {
-              iconTheme: {
-                primary: '#FF6B35',
-                secondary: '#FFFFFF',
-              },
-            },
-            error: {
-              iconTheme: {
-                primary: '#EF4444',
-                secondary: '#FFFFFF',
-              },
-            },
-          }}
-        />
-        <CartProvider>
-          <ConfirmProvider>
-            <AppRoutes />
-          </ConfirmProvider>
-        </CartProvider>
-      </AuthProvider>
+      <ConfirmProvider>
+        <AuthProvider>
+          <UserLocationProvider>
+            <Toaster
+              position="top-right"
+              containerStyle={{ zIndex: 99999 }}
+              toastOptions={{
+                duration: 3000,
+                style: {
+                  background: '#1F2937',
+                  color: '#F3F4F6',
+                  border: '1px solid #374151',
+                  borderRadius: '12px',
+                  fontSize: '14px',
+                },
+                success: {
+                  iconTheme: {
+                    primary: '#FF6B35',
+                    secondary: '#FFFFFF',
+                  },
+                },
+                error: {
+                  iconTheme: {
+                    primary: '#EF4444',
+                    secondary: '#FFFFFF',
+                  },
+                },
+              }}
+            />
+            <CartProvider>
+              <AppRoutes />
+            </CartProvider>
+          </UserLocationProvider>
+        </AuthProvider>
+      </ConfirmProvider>
     </BrowserRouter>
   );
 }

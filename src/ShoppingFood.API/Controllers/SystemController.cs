@@ -31,6 +31,26 @@ namespace ShoppingFood.API.Controllers
             return StatusCode(result.Code, result);
         }
 
+        /// <summary>
+        /// Public delivery fee settings used by checkout (Platform Delivery).
+        /// </summary>
+        [HttpGet("delivery-settings")]
+        public async Task<ActionResult<ApiResponse>> GetDeliverySettings()
+        {
+            var settings = await _mediator.Send(new GetDeliverySettingsQuery());
+            return Ok(ApiResponse.Success(settings));
+        }
+
+        /// <summary>
+        /// Public marketplace counters for the home hero (restaurants, customers, rating, delivery fees).
+        /// </summary>
+        [HttpGet("platform-stats")]
+        public async Task<ActionResult<ApiResponse>> GetPlatformStats()
+        {
+            var result = await _mediator.Send(new GetPlatformStatsQuery());
+            return StatusCode(result.Code, result);
+        }
+
         [HttpGet("action-logs")]
         public async Task<ActionResult<ApiResponse>> GetActionLogs([FromQuery] GetSystemLogsQuery query)
         {

@@ -1,4 +1,4 @@
-# Shopping Food — Requirements Docs
+# UniEats — Requirements Docs
 
 Bộ **Functional Requirements (FR-ID)** cho toàn bộ Feature.  
 Bộ **Cảnh báo / Thông báo** nằm ở [ALERTS_INDEX.md](./ALERTS_INDEX.md) và thư mục [alerts/](./alerts/).
