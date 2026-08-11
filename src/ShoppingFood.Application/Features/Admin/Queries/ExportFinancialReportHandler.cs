@@ -19,14 +19,20 @@ namespace ShoppingFood.Application.Features.Admin.Queries
     {
         public Guid Id { get; set; }
         public DateTime CreatedAt { get; set; }
+        /// <summary>GMV — tổng tiền khách trả.</summary>
         public decimal TotalAmount { get; set; }
-        public decimal Tax { get; set; }
+        /// <summary>Doanh thu sàn (chiết khấu).</summary>
+        public decimal PlatformCommission { get; set; }
+        public decimal SellerPayout { get; set; }
         public decimal ShippingFee { get; set; }
+        /// <summary>VAT 8% tính trên doanh thu sàn, không trên GMV.</summary>
+        public decimal Tax { get; set; }
         public PaymentMethod PaymentMethod { get; set; }
     }
 
     public class ExportFinancialReportHandler : IRequestHandler<ExportFinancialReportQuery, ExportFinancialReportResult>
     {
+        private const decimal VatRate = 0.08m;
         private readonly IOrderRepository _orderRepository;
 
         public ExportFinancialReportHandler(IOrderRepository orderRepository)
@@ -45,13 +51,16 @@ namespace ShoppingFood.Application.Features.Admin.Queries
                 disableTracking: true
             );
 
-            // Calculate 8% VAT
+            // Thuế admin tính trên PlatformCommission (doanh thu thực của sàn),
+            // không tính trên TotalAmount vì phần đó đã trả lại seller/shipper.
             var reportData = orders.Select(o => new ReportItemDto
             {
                 Id = o.Id,
                 CreatedAt = o.CreatedAt,
                 TotalAmount = o.TotalAmount,
-                Tax = Math.Round(o.TotalAmount * 0.08m, 2),
+                PlatformCommission = o.PlatformCommission,
+                SellerPayout = o.SellerPayout,
+                Tax = Math.Round(o.PlatformCommission * VatRate, 0),
                 ShippingFee = o.ShippingFee,
                 PaymentMethod = o.PaymentMethod
             }).OrderByDescending(x => x.CreatedAt).ToList();
@@ -83,24 +92,33 @@ namespace ShoppingFood.Application.Features.Admin.Queries
             using var workbook = new XLWorkbook();
             var worksheet = workbook.Worksheets.Add("Báo cáo tài chính");
 
-            worksheet.Cell(1, 1).Value = "BÁO CÁO TÀI CHÍNH";
-            worksheet.Range("A1:F1").Merge().Style.Font.SetBold().Font.FontSize = 16;
-            worksheet.Range("A1:F1").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            worksheet.Cell(1, 1).Value = "BÁO CÁO TÀI CHÍNH (DOANH THU SÀN)";
+            worksheet.Range("A1:H1").Merge().Style.Font.SetBold().Font.FontSize = 16;
+            worksheet.Range("A1:H1").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
             worksheet.Cell(2, 1).Value = $"Từ ngày: {startDate:dd/MM/yyyy} - Đến ngày: {endDate:dd/MM/yyyy}";
-            worksheet.Range("A2:F2").Merge().Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            worksheet.Range("A2:H2").Merge().Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
-            // Headers
-            var headers = new[] { "Mã đơn hàng", "Ngày tạo", "Tổng tiền", "Thuế VAT (8%)", "Phí vận chuyển", "Phương thức" };
+            worksheet.Cell(3, 1).Value = "Ghi chú: VAT 8% tính trên chiết khấu sàn (PlatformCommission), không tính trên GMV.";
+            worksheet.Range("A3:H3").Merge().Style.Font.FontColor = XLColor.Gray;
+            worksheet.Range("A3:H3").Style.Font.Italic = true;
+
+            var headers = new[]
+            {
+                "Mã đơn hàng", "Ngày tạo", "GMV (tổng đơn)", "Chiết khấu sàn",
+                "Trả seller", "Thuế VAT (8%)", "Phí vận chuyển", "Phương thức"
+            };
             for (int i = 0; i < headers.Length; i++)
             {
-                worksheet.Cell(4, i + 1).Value = headers[i];
-                worksheet.Cell(4, i + 1).Style.Font.Bold = true;
-                worksheet.Cell(4, i + 1).Style.Fill.BackgroundColor = XLColor.LightGray;
+                worksheet.Cell(5, i + 1).Value = headers[i];
+                worksheet.Cell(5, i + 1).Style.Font.Bold = true;
+                worksheet.Cell(5, i + 1).Style.Fill.BackgroundColor = XLColor.LightGray;
             }
 
-            int row = 5;
-            decimal totalRevenue = 0;
+            int row = 6;
+            decimal totalGmv = 0;
+            decimal totalCommission = 0;
+            decimal totalSellerPayout = 0;
             decimal totalTax = 0;
 
             foreach (var item in reportData)
@@ -108,21 +126,29 @@ namespace ShoppingFood.Application.Features.Admin.Queries
                 worksheet.Cell(row, 1).Value = item.Id.ToString();
                 worksheet.Cell(row, 2).Value = item.CreatedAt.ToString("dd/MM/yyyy HH:mm");
                 worksheet.Cell(row, 3).Value = item.TotalAmount;
-                worksheet.Cell(row, 4).Value = item.Tax;
-                worksheet.Cell(row, 5).Value = item.ShippingFee;
-                worksheet.Cell(row, 6).Value = item.PaymentMethod.ToString();
+                worksheet.Cell(row, 4).Value = item.PlatformCommission;
+                worksheet.Cell(row, 5).Value = item.SellerPayout;
+                worksheet.Cell(row, 6).Value = item.Tax;
+                worksheet.Cell(row, 7).Value = item.ShippingFee;
+                worksheet.Cell(row, 8).Value = item.PaymentMethod.ToString();
 
-                totalRevenue += item.TotalAmount;
+                totalGmv += item.TotalAmount;
+                totalCommission += item.PlatformCommission;
+                totalSellerPayout += item.SellerPayout;
                 totalTax += item.Tax;
                 row++;
             }
 
             worksheet.Cell(row, 2).Value = "TỔNG CỘNG";
             worksheet.Cell(row, 2).Style.Font.Bold = true;
-            worksheet.Cell(row, 3).Value = totalRevenue;
+            worksheet.Cell(row, 3).Value = totalGmv;
             worksheet.Cell(row, 3).Style.Font.Bold = true;
-            worksheet.Cell(row, 4).Value = totalTax;
+            worksheet.Cell(row, 4).Value = totalCommission;
             worksheet.Cell(row, 4).Style.Font.Bold = true;
+            worksheet.Cell(row, 5).Value = totalSellerPayout;
+            worksheet.Cell(row, 5).Style.Font.Bold = true;
+            worksheet.Cell(row, 6).Value = totalTax;
+            worksheet.Cell(row, 6).Style.Font.Bold = true;
 
             worksheet.Columns().AdjustToContents();
 
@@ -137,10 +163,10 @@ namespace ShoppingFood.Application.Features.Admin.Queries
             {
                 container.Page(page =>
                 {
-                    page.Size(PageSizes.A4);
-                    page.Margin(2, QuestUnit.Centimetre);
+                    page.Size(PageSizes.A4.Landscape());
+                    page.Margin(1.5f, QuestUnit.Centimetre);
                     page.PageColor(Colors.White);
-                    page.DefaultTextStyle(x => x.FontSize(11));
+                    page.DefaultTextStyle(x => x.FontSize(10));
 
                     page.Header().Element(compose => ComposeHeader(compose, startDate, endDate));
                     page.Content().Element(compose => ComposeContent(compose, reportData));
@@ -163,33 +189,38 @@ namespace ShoppingFood.Application.Features.Admin.Queries
             {
                 row.RelativeItem().Column(column =>
                 {
-                    column.Item().Text("BÁO CÁO TÀI CHÍNH").FontSize(20).SemiBold().FontColor(Colors.Blue.Darken2);
-                    column.Item().Text($"Từ ngày: {startDate:dd/MM/yyyy} - Đến ngày: {endDate:dd/MM/yyyy}").FontSize(12);
-                    column.Item().Text($"Ngày xuất: {DateTime.Now:dd/MM/yyyy HH:mm}").FontSize(10).FontColor(Colors.Grey.Medium);
+                    column.Item().Text("BÁO CÁO TÀI CHÍNH (DOANH THU SÀN)").FontSize(18).SemiBold().FontColor(Colors.Blue.Darken2);
+                    column.Item().Text($"Từ ngày: {startDate:dd/MM/yyyy} - Đến ngày: {endDate:dd/MM/yyyy}").FontSize(11);
+                    column.Item().Text("VAT 8% tính trên chiết khấu sàn, không trên GMV.").FontSize(9).FontColor(Colors.Grey.Medium);
+                    column.Item().Text($"Ngày xuất: {DateTime.Now:dd/MM/yyyy HH:mm}").FontSize(9).FontColor(Colors.Grey.Medium);
                 });
             });
         }
 
         private void ComposeContent(IContainer container, IEnumerable<ReportItemDto> reportData)
         {
-            container.PaddingVertical(1, QuestUnit.Centimetre).Column(column =>
+            container.PaddingVertical(0.8f, QuestUnit.Centimetre).Column(column =>
             {
                 column.Item().Table(table =>
                 {
                     table.ColumnsDefinition(columns =>
                     {
-                        columns.RelativeColumn();
-                        columns.RelativeColumn();
-                        columns.RelativeColumn();
-                        columns.RelativeColumn();
+                        columns.RelativeColumn(1.2f);
+                        columns.RelativeColumn(1.1f);
+                        columns.RelativeColumn(1.2f);
+                        columns.RelativeColumn(1.2f);
+                        columns.RelativeColumn(1.2f);
+                        columns.RelativeColumn(1.1f);
                     });
 
                     table.Header(header =>
                     {
                         header.Cell().Element(CellStyle).Text("Mã đơn");
                         header.Cell().Element(CellStyle).Text("Ngày tạo");
-                        header.Cell().Element(CellStyle).Text("Tổng tiền");
-                        header.Cell().Element(CellStyle).Text("Thuế VAT (8%)");
+                        header.Cell().Element(CellStyle).Text("GMV");
+                        header.Cell().Element(CellStyle).Text("Chiết khấu sàn");
+                        header.Cell().Element(CellStyle).Text("Trả seller");
+                        header.Cell().Element(CellStyle).Text("VAT 8%");
 
                         static IContainer CellStyle(IContainer container)
                         {
@@ -197,7 +228,9 @@ namespace ShoppingFood.Application.Features.Admin.Queries
                         }
                     });
 
-                    decimal totalRevenue = 0;
+                    decimal totalGmv = 0;
+                    decimal totalCommission = 0;
+                    decimal totalSellerPayout = 0;
                     decimal totalTax = 0;
 
                     foreach (var item in reportData)
@@ -205,16 +238,16 @@ namespace ShoppingFood.Application.Features.Admin.Queries
                         var idStr = item.Id.ToString();
                         idStr = idStr.Length > 8 ? idStr.Substring(0, 8) : idStr;
 
-                        var formattedDate = item.CreatedAt.ToString("dd/MM/yyyy");
-                        var formattedRevenue = item.TotalAmount.ToString("N0");
-                        var formattedTax = item.Tax.ToString("N0");
-
                         table.Cell().Element(CellStyle).Text(idStr);
-                        table.Cell().Element(CellStyle).Text(formattedDate);
-                        table.Cell().Element(CellStyle).Text(formattedRevenue);
-                        table.Cell().Element(CellStyle).Text(formattedTax);
+                        table.Cell().Element(CellStyle).Text(item.CreatedAt.ToString("dd/MM/yyyy"));
+                        table.Cell().Element(CellStyle).Text(item.TotalAmount.ToString("N0"));
+                        table.Cell().Element(CellStyle).Text(item.PlatformCommission.ToString("N0"));
+                        table.Cell().Element(CellStyle).Text(item.SellerPayout.ToString("N0"));
+                        table.Cell().Element(CellStyle).Text(item.Tax.ToString("N0"));
 
-                        totalRevenue += item.TotalAmount;
+                        totalGmv += item.TotalAmount;
+                        totalCommission += item.PlatformCommission;
+                        totalSellerPayout += item.SellerPayout;
                         totalTax += item.Tax;
 
                         static IContainer CellStyle(IContainer container)
@@ -223,13 +256,12 @@ namespace ShoppingFood.Application.Features.Admin.Queries
                         }
                     }
 
-                    var totalRevenueStr = totalRevenue.ToString("N0");
-                    var totalTaxStr = totalTax.ToString("N0");
-
                     table.Cell().Element(FooterCellStyle).Text("Tổng cộng:");
                     table.Cell().Element(FooterCellStyle).Text("");
-                    table.Cell().Element(FooterCellStyle).Text(totalRevenueStr);
-                    table.Cell().Element(FooterCellStyle).Text(totalTaxStr);
+                    table.Cell().Element(FooterCellStyle).Text(totalGmv.ToString("N0"));
+                    table.Cell().Element(FooterCellStyle).Text(totalCommission.ToString("N0"));
+                    table.Cell().Element(FooterCellStyle).Text(totalSellerPayout.ToString("N0"));
+                    table.Cell().Element(FooterCellStyle).Text(totalTax.ToString("N0"));
 
                     static IContainer FooterCellStyle(IContainer container)
                     {

@@ -1,5 +1,5 @@
 ﻿import { useEffect, useState } from 'react';
-import { Users, DollarSign, ShoppingCart, TrendingUp, TrendingDown, Map as MapIcon, UserPlus, Truck, Store, Download } from 'lucide-react';
+import { Users, DollarSign, ShoppingCart, TrendingUp, TrendingDown, Map as MapIcon, UserPlus, Truck, Store, Download, Wallet } from 'lucide-react';
 import { Card } from '../components/common';
 import { adminService } from '../services/AdminService';
 import { OrderHeatmap } from '../components/admin/OrderHeatmap';
@@ -36,7 +36,7 @@ export function AdminDashboardPage() {
       } else {
         toast.error(res.message);
       }
-    } catch (err: any) {
+    } catch {
       toast.error('Có lỗi xảy ra khi tải dữ liệu thống kê');
     } finally {
       setIsLoading(false);
@@ -67,7 +67,7 @@ export function AdminDashboardPage() {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
       toast.success(`Xuất ${format.toUpperCase()} thành công!`, { id: toastId });
-    } catch (error) {
+    } catch {
       toast.error(`Lỗi khi xuất ${format.toUpperCase()}`);
     }
   };
@@ -86,12 +86,28 @@ export function AdminDashboardPage() {
     );
   };
 
+  const chartTooltipFormatter = (value: unknown, name: unknown) => {
+    const key = String(name);
+    const labels: Record<string, string> = {
+      gmv: 'GMV (tổng đơn)',
+      platformRevenue: 'Doanh thu sàn',
+      sellerPayout: 'Trả seller',
+      shipperIncome: 'Trả shipper',
+      ordersCount: 'Số đơn',
+    };
+    const num = Number(value ?? 0);
+    if (key === 'ordersCount') return [num, labels[key]];
+    return [formatCurrency(num), labels[key] || key];
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
       <div className="flex justify-between items-end">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard Thống kê</h1>
-          <p className="text-gray-500">Tổng quan hoạt động doanh thu và đơn hàng</p>
+          <p className="text-gray-500">
+            Phân bổ thanh toán nền tảng · {days} ngày gần nhất
+          </p>
         </div>
         <div className="flex flex-col items-end gap-3">
           <div className="flex gap-2">
@@ -131,47 +147,72 @@ export function AdminDashboardPage() {
         </div>
       ) : stats ? (
         <>
-          {/* Row 1: Main Stats (UC-SYS-001) */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500 mb-1">Tổng doanh thu</p>
-                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalRevenue)}</p>
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-1">Phân bổ dòng tiền trong kỳ</h2>
+            <p className="text-sm text-gray-500 mb-4">
+              GMV = Doanh thu sàn + Trả seller + Phí ship (và các khoản liên quan). Dùng để biết cần thanh toán bao nhiêu cho từng bên.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card className="p-5 border border-gray-100 shadow-sm">
+                <p className="text-sm font-medium text-gray-500 mb-1">GMV toàn nền tảng</p>
+                <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.grossMerchandiseValue)}</p>
+                <p className="text-xs text-gray-400 mt-1">Tổng tiền khách thanh toán · {stats.totalOrders} đơn</p>
+              </Card>
+              <Card className="p-5 border border-orange-100 bg-orange-50/40 shadow-sm">
+                <p className="text-sm font-medium text-orange-700 mb-1">Doanh thu sàn (platform)</p>
+                <p className="text-2xl font-bold text-orange-800">{formatCurrency(stats.totalRevenue)}</p>
+                <p className="text-xs text-orange-600/80 mt-1">Chiết khấu · VAT ~ {formatCurrency(stats.estimatedTax)}</p>
+              </Card>
+              <Card className="p-5 border border-green-100 bg-green-50/40 shadow-sm">
+                <p className="text-sm font-medium text-green-700 mb-1">Cần trả seller</p>
+                <p className="text-2xl font-bold text-green-800">{formatCurrency(stats.totalSellerPayout)}</p>
+                <p className="text-xs text-green-600/80 mt-1">Tiền món sau trừ hoa hồng sàn</p>
+              </Card>
+              <Card className="p-5 border border-blue-100 bg-blue-50/40 shadow-sm">
+                <p className="text-sm font-medium text-blue-700 mb-1">Cần trả shipper</p>
+                <p className="text-2xl font-bold text-blue-800">{formatCurrency(stats.totalShipperIncome)}</p>
+                <p className="text-xs text-blue-600/80 mt-1">Thu nhập giao hàng trong kỳ</p>
+              </Card>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="p-5 border border-gray-100 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
+                  <Wallet className="w-5 h-5 text-amber-600" />
                 </div>
-                <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center">
-                  <DollarSign className="w-6 h-6 text-green-600" />
+                <div>
+                  <p className="text-sm text-gray-500">Sàn sau VAT ước tính</p>
+                  <p className="text-xl font-bold text-gray-900">{formatCurrency(stats.netPlatformRevenue)}</p>
                 </div>
               </div>
             </Card>
-
-            <Card className="p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500 mb-1">Số đơn hàng</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalOrders}</p>
+            <Card className="p-5 border border-gray-100 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                  <ShoppingCart className="w-5 h-5 text-blue-600" />
                 </div>
-                <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center">
-                  <ShoppingCart className="w-6 h-6 text-blue-600" />
+                <div>
+                  <p className="text-sm text-gray-500">Số đơn trong kỳ</p>
+                  <p className="text-xl font-bold text-gray-900">{stats.totalOrders}</p>
                 </div>
               </div>
             </Card>
-
-            <Card className="p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500 mb-1">Người dùng Online</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.activeUsers}</p>
+            <Card className="p-5 border border-gray-100 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
+                  <Users className="w-5 h-5 text-purple-600" />
                 </div>
-                <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center">
-                  <Users className="w-6 h-6 text-purple-600" />
+                <div>
+                  <p className="text-sm text-gray-500">Người dùng Online</p>
+                  <p className="text-xl font-bold text-gray-900">{stats.activeUsers}</p>
                 </div>
               </div>
             </Card>
           </div>
 
-          {/* Row 2: Growth Stats (UC-SYS-002) */}
-          <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">Người dùng mới & Tăng trưởng</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mt-2 mb-4">Người dùng mới & Tăng trưởng</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card className="p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
@@ -219,16 +260,20 @@ export function AdminDashboardPage() {
             </Card>
           </div>
 
-          {/* Row 3: Charts and Heatmap (UC-SYS-001 & UC-SYS-003) */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+          <div className="grid grid-cols-1 gap-6 mt-4">
             <Card className="p-6 border border-gray-100 shadow-sm">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-gray-500" /> 
-                  Biểu đồ Doanh thu & Đơn hàng
-                </h3>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-gray-500" />
+                    Biểu đồ phân bổ theo ngày ({days} ngày)
+                  </h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Theo dõi GMV, doanh thu sàn, trả seller và trả shipper theo từng ngày trong kỳ
+                  </p>
+                </div>
               </div>
-              <div className="h-80">
+              <div className="h-96">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
                     data={stats.revenueChartData}
@@ -238,16 +283,16 @@ export function AdminDashboardPage() {
                     <XAxis dataKey="date" padding={{ left: 20, right: 20 }} axisLine={false} tickLine={false} />
                     <YAxis yAxisId="left" tickFormatter={(val) => `${val / 1000}k`} axisLine={false} tickLine={false} />
                     <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} />
-                    <Tooltip 
-                      formatter={(value, name) => [
-                        name === 'revenue' ? formatCurrency(Number(value ?? 0)) : Number(value ?? 0),
-                        name === 'revenue' ? 'Doanh thu' : 'Số đơn'
-                      ]}
+                    <Tooltip
+                      formatter={chartTooltipFormatter}
                       contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                     />
                     <Legend />
-                    <Line yAxisId="left" type="monotone" dataKey="revenue" name="Doanh thu" stroke="#16a34a" strokeWidth={3} activeDot={{ r: 8 }} />
-                    <Line yAxisId="right" type="monotone" dataKey="ordersCount" name="Số đơn" stroke="#3b82f6" strokeWidth={3} />
+                    <Line yAxisId="left" type="monotone" dataKey="gmv" name="GMV (tổng đơn)" stroke="#64748b" strokeWidth={2} dot={false} />
+                    <Line yAxisId="left" type="monotone" dataKey="platformRevenue" name="Doanh thu sàn" stroke="#ea580c" strokeWidth={3} activeDot={{ r: 6 }} />
+                    <Line yAxisId="left" type="monotone" dataKey="sellerPayout" name="Trả seller" stroke="#16a34a" strokeWidth={2} />
+                    <Line yAxisId="left" type="monotone" dataKey="shipperIncome" name="Trả shipper" stroke="#2563eb" strokeWidth={2} />
+                    <Line yAxisId="right" type="monotone" dataKey="ordersCount" name="Số đơn" stroke="#a855f7" strokeWidth={2} strokeDasharray="4 4" />
                   </LineChart>
                 </ResponsiveContainer>
               </div>

@@ -20,15 +20,34 @@ export interface IApproveProductRequest {
   rejectionReason?: string;
 }
 
+export interface IRevenueChartPoint {
+  date: string;
+  /** Doanh thu sàn (tương thích field cũ) */
+  revenue: number;
+  gmv: number;
+  platformRevenue: number;
+  sellerPayout: number;
+  shipperIncome: number;
+  ordersCount: number;
+}
+
 export interface IAdminDashboardStats {
+  /** GMV trong kỳ */
+  grossMerchandiseValue: number;
+  /** Doanh thu sàn = tổng PlatformCommission trong kỳ */
   totalRevenue: number;
+  /** Tổng cần trả seller trong kỳ */
+  totalSellerPayout: number;
+  /** Tổng thu nhập shipper trong kỳ */
+  totalShipperIncome: number;
+  /** VAT ước tính trên doanh thu sàn */
+  estimatedTax: number;
+  /** Doanh thu sàn sau VAT ước tính */
+  netPlatformRevenue: number;
   totalOrders: number;
   activeUsers: number;
-  revenueChartData: Array<{
-    date: string;
-    revenue: number;
-    ordersCount: number;
-  }>;
+  periodDays: number;
+  revenueChartData: IRevenueChartPoint[];
   newCustomers: number;
   customerGrowthRate: number;
   newShippers: number;
@@ -48,5 +67,4 @@ export interface ICreateSupportTicketRequest {
   customerId?: string;
   reason: string;
   description?: string;
-  evidenceImageUrl?: string;
 }

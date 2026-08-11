@@ -5,6 +5,9 @@ using ShoppingFood.Application.Services;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Domain.Enums;
 using ShoppingFood.Repository.Interfaces;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace ShoppingFood.Application.Features.Payments.Queries
 {
@@ -235,31 +238,71 @@ namespace ShoppingFood.Application.Features.Payments.Queries
                     && o.UpdatedAt >= from && o.UpdatedAt <= to,
                 disableTracking: true);
 
+            const decimal vatRate = 0.08m;
             var config = await _paymentService.GetConfigAsync();
             var totalRevenue = orders.Sum(o => o.TotalAmount);
             var totalCommission = orders.Sum(o => o.PlatformCommission);
             var totalSellerPayout = orders.Sum(o => o.SellerPayout);
+            var totalShipperIncome = orders.Sum(o => o.ShipperIncome);
             var totalShipping = orders.Sum(o => o.ShippingFee);
+            var estimatedTax = Math.Round(totalCommission * vatRate, 0);
+            var netPlatformRevenue = totalCommission - estimatedTax;
             var codOrders = orders.Count(o => o.PaymentMethod == PaymentMethod.COD);
             var prepaidOrders = orders.Count(o => o.PaymentMethod != PaymentMethod.COD);
+
+            // Biểu đồ phân bổ theo ngày trong kỳ thanh toán/đối soát
+            var fromDate = from.Date;
+            var toDate = to.Date;
+            var days = Math.Max(1, (toDate - fromDate).Days + 1);
+            var groupedByDay = orders
+                .GroupBy(o => o.UpdatedAt.Date)
+                .ToDictionary(
+                    g => g.Key,
+                    g => new
+                    {
+                        gmv = g.Sum(o => o.TotalAmount),
+                        platformRevenue = g.Sum(o => o.PlatformCommission),
+                        sellerPayout = g.Sum(o => o.SellerPayout),
+                        shipperIncome = g.Sum(o => o.ShipperIncome),
+                        ordersCount = g.Count()
+                    });
+
+            var chartData = new List<object>();
+            for (var d = fromDate; d <= toDate; d = d.AddDays(1))
+            {
+                groupedByDay.TryGetValue(d, out var day);
+                chartData.Add(new
+                {
+                    date = d.ToString("MM/dd"),
+                    gmv = day?.gmv ?? 0m,
+                    platformRevenue = day?.platformRevenue ?? 0m,
+                    sellerPayout = day?.sellerPayout ?? 0m,
+                    shipperIncome = day?.shipperIncome ?? 0m,
+                    ordersCount = day?.ordersCount ?? 0
+                });
+            }
 
             var transactions = await _transactionRepository.GetAllAsync();
             var recentTx = transactions.Where(t => t.CreatedAt >= from && t.CreatedAt <= to).ToList();
 
             return ApiResponse.Success(new
             {
-                period = new { from, to },
+                period = new { from, to, days },
                 summary = new
                 {
                     totalOrders = orders.Count,
                     totalRevenue,
                     totalCommission,
                     totalSellerPayout,
+                    totalShipperIncome,
                     totalShipping,
+                    estimatedTax,
+                    netPlatformRevenue,
                     commissionRate = config.CommissionRate,
                     codOrders,
                     prepaidOrders
                 },
+                chartData,
                 transactionCount = recentTx.Count,
                 transactionVolume = recentTx.Sum(t => Math.Abs(t.Amount))
             }, "Reconciliation report generated.");

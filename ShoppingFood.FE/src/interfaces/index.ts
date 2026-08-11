@@ -2,7 +2,7 @@ export type { IApiResponse, IQueryParams } from './IApiResponse';
 export type { IUserDto, ILoginRequest, ILoginGoogleRequest, ILoginMicrosoftRequest, ILoginResponse, IRegisterRequest, ISellerRegisterDto, IRegisterSellerRequest, IChangePasswordRequest, IUserAddressDto, IAddUserAddress } from './IUser';
 export type { IProductDto, IProductRecommendationDto, IProductToppingDto, IProductSizeDto, IAddProductRequest, IUpdateProductRequest, IUpdateStockStatusRequest, IToggleVisibilityRequest, IUpdateAvailabilityRequest, ISearchProductQuery } from './IProduct';
 export type { IMenuCategoryDto, IAddMenuCategoryRequest, IUpdateMenuCategoryRequest } from './IMenuCategory';
-export type { IApproveApplicationRequest, IApproveProductRequest, ICreateSupportTicketRequest, IAdminDashboardStats, IHeatmapPoint } from './IAdmin';
+export type { IApproveApplicationRequest, IApproveProductRequest, ICreateSupportTicketRequest, IAdminDashboardStats, IHeatmapPoint, IRevenueChartPoint } from './IAdmin';
 export type { IAuthState, IAuthContext } from './IAuth';
 export type { IActionLogDto, IErrorLogDto } from './ILog';
 export type { ICartItem, ICartState, ICartContext, IAddToCartRequest, IUpdateCartItemQuantityRequest, IRemoveCartItemParams, IClearCartParams } from './ICart';
