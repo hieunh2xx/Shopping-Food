@@ -67,4 +67,5 @@ export interface ICreateSupportTicketRequest {
   customerId?: string;
   reason: string;
   description?: string;
+  evidenceImageUrl?: string;
 }
