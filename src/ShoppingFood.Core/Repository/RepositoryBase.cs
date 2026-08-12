@@ -54,7 +54,14 @@ namespace ShoppingFood.Core.Repository
 
         public virtual void Add(T entity) => _dbContext.Set<T>().Add(entity);
 
-        public virtual void Update(T entity) => _dbContext.Entry(entity).State = EntityState.Modified;
+        public virtual void Update(T entity)
+        {
+            var entry = _dbContext.Entry(entity);
+            if (entry.State == EntityState.Detached)
+                _dbContext.Set<T>().Update(entity);
+            else if (entry.State != EntityState.Added)
+                entry.State = EntityState.Modified;
+        }
 
         public virtual void Delete(T entity) => _dbContext.Set<T>().Remove(entity);
     }

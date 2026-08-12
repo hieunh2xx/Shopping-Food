@@ -105,11 +105,12 @@ namespace ShoppingFood.Application.Services
             return wallet;
         }
 
-        public async Task RecordTransactionAsync(Wallet wallet, FinancialTransactionType type, decimal amount, string description, Guid? referenceId = null, string? referenceType = null)
+        public Task RecordTransactionAsync(Wallet wallet, FinancialTransactionType type, decimal amount, string description, Guid? referenceId = null, string? referenceType = null)
         {
             wallet.Balance += amount;
             wallet.UpdatedAt = DateTime.UtcNow;
-            _walletRepository.Update(wallet);
+            // Không gọi Update() — entity đã được track (Added hoặc Modified).
+            // Gọi Update() sau Add() sẽ đổi state Added→Modified và EF cố UPDATE ví chưa INSERT → lỗi FK.
 
             _transactionRepository.Add(new FinancialTransaction
             {
@@ -123,6 +124,7 @@ namespace ShoppingFood.Application.Services
                 Description = description,
                 CreatedAt = DateTime.UtcNow
             });
+            return Task.CompletedTask;
         }
 
         public async Task<string?> ProcessCheckoutPaymentAsync(Order order, Guid? userId, string? cardLastFour = null, string? cardBrand = null, EWalletProvider? provider = null)
@@ -396,10 +398,17 @@ namespace ShoppingFood.Application.Services
             }
             else if (session.UserAccountId.HasValue)
             {
-                // This is a Wallet Top-up session because OrderId is null
-                var wallet = await GetOrCreateWalletAsync(WalletOwnerType.Customer, session.UserAccountId.Value);
-                await RecordTransactionAsync(wallet, FinancialTransactionType.TopUp, session.Amount,
-                    $"Nạp tiền từ thanh toán SePay - Mã {resolvedInvoice}");
+                // Phiên nạp ví (OrderId = null)
+                var alreadyCredited = await _transactionRepository.ExistsAsync(t =>
+                    t.ReferenceId == session.Id
+                    && t.ReferenceType == "PaymentSession"
+                    && t.Type == FinancialTransactionType.TopUp);
+                if (!alreadyCredited)
+                {
+                    var wallet = await GetOrCreateWalletAsync(WalletOwnerType.Customer, session.UserAccountId.Value);
+                    await RecordTransactionAsync(wallet, FinancialTransactionType.TopUp, session.Amount,
+                        $"Nạp tiền từ thanh toán SePay - Mã {resolvedInvoice}", session.Id, "PaymentSession");
+                }
             }
 
             return true;
