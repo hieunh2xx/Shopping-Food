@@ -1,11 +1,12 @@
 ﻿import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Star, Truck, Clock, ShoppingCart, ShieldAlert, Check } from 'lucide-react';
-import { useProducts, useCart } from '../hooks';
+import { useProducts, useCart, useAuth } from '../hooks';
 import { Loading, Button, Modal } from '../components/common';
 import { formatCurrency } from '../utils/formatters';
 import { ROUTES } from '../routes/routeConfig';
 import { ProductReviews } from '../components/product/ProductReviews';
+import { MemberTierPricingNote } from '../components/product/MemberTierPricingNote';
 import { productService } from '../services';
 import toast from 'react-hot-toast';
 
@@ -13,6 +14,7 @@ export function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { product, isLoading, fetchProductById } = useProducts();
   const { addItem } = useCart();
+  const { isAuthenticated, user } = useAuth();
 
   // Selection states
   const [selectedSize, setSelectedSize] = useState<string>('');
@@ -176,7 +178,14 @@ export function ProductDetailPage() {
               )}
             </div>
 
-            <div className="flex flex-wrap items-center gap-4 text-sm">
+            <MemberTierPricingNote
+              displayPrice={getDisplayPrice()}
+              isFlashSale={!!product.flashSalePrice}
+              isAuthenticated={isAuthenticated}
+              userTier={user?.tier}
+            />
+
+            <div className="flex flex-wrap items-center gap-4 text-sm mt-4">
               <span className="flex items-center gap-1.5 font-medium text-gray-900 bg-gray-100 px-3 py-1.5 rounded-lg">
                 <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
                 {product.averageRating > 0 ? `${product.averageRating.toFixed(1)} (${product.reviewCount} đánh giá)` : 'Chưa có đánh giá'}

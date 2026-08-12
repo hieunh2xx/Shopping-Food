@@ -136,7 +136,7 @@ using (var scope = app.Services.CreateScope())
 
         if (app.Environment.IsDevelopment())
         {
-            // Seed logic goes here if needed
+            await ShoppingFood.API.Data.DemoDataSeeder.SeedAsync(app.Services);
         }
         
         // Tự động quét và nạp API Endpoints vào DB

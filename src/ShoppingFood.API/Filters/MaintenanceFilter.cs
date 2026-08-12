@@ -23,10 +23,13 @@ namespace ShoppingFood.API.Filters
 
             if (isMaintenance)
             {
-                // Cho phép các API Login và hệ thống admin
-                if (path != null && (path.StartsWith("/api/user/login") || path.StartsWith("/api/admin")))
+                // Cho phép các API Login, admin và webhook thanh toán (SePay gọi từ bên ngoài)
+                if (path != null && (
+                    path.StartsWith("/api/user/login") ||
+                    path.StartsWith("/api/admin") ||
+                    path.StartsWith("/api/payment/sepay/ipn") ||
+                    path.StartsWith("/api/payment/sepay/webhook")))
                 {
-                    // Cho đi tiếp
                     await next();
                     return;
                 }

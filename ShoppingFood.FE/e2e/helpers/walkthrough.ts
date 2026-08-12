@@ -1,4 +1,5 @@
 import { type Page } from '@playwright/test';
+import { waitForPageReady } from './wait-for-page';
 
 /** Pause between steps so viewers can follow the UI (ms). Override: WALKTHROUGH_PAUSE_MS=2000 */
 export const WALKTHROUGH_PAUSE_MS = Number(process.env.WALKTHROUGH_PAUSE_MS ?? 1200);
@@ -50,7 +51,6 @@ export async function visitStep(
   subtitle?: string
 ): Promise<void> {
   await showStepLabel(page, title, subtitle);
-  await page.goto(route);
-  await page.waitForLoadState('domcontentloaded');
-  await pauseForViewer(page);
+  await page.goto(route, { waitUntil: 'domcontentloaded' });
+  await waitForPageReady(page, { hideBanner: false, settleMs: WALKTHROUGH_PAUSE_MS });
 }

@@ -68,7 +68,7 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid, onAban
     if (paidNotifiedRef.current) return;
     paidNotifiedRef.current = true;
     markPaid();
-    toast.success('SePay đã xác nhận thanh toán qua webhook!');
+    toast.success('Thanh toán đã được xác nhận!');
     onPaid(invoiceNumber);
   }, [onPaid, markPaid]);
 
@@ -208,6 +208,33 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid, onAban
     }, 1000);
     return () => clearInterval(t);
   }, [isOpen, qrData?.isPaid, qrData?.isExpired, abandonUnpaid]);
+
+  useEffect(() => {
+    if (!isOpen || !sessionId || !qrData || qrData.isPaid || qrData.isExpired) return;
+
+    const pollStatus = async () => {
+      try {
+        const res = await paymentService.getPaymentSessionStatus({ sessionId });
+        if (!res.error && res.data) {
+          applySessionStatus({
+            isPaid: res.data.isPaid,
+            isExpired: res.data.isExpired,
+            displayStatus: res.data.displayStatus ?? res.data.status,
+            statusLabel: res.data.statusLabel,
+            invoiceNumber: res.data.invoiceNumber,
+            remainingSeconds: res.data.remainingSeconds,
+          });
+        }
+      } catch {
+        // Bỏ qua lỗi mạng tạm thời — lần poll sau sẽ thử lại
+      }
+    };
+
+    // Poll ngay + mỗi 5s: gọi session/status (BE tự reconcile SePay API khi webhook miss)
+    void pollStatus();
+    const interval = setInterval(pollStatus, 5000);
+    return () => clearInterval(interval);
+  }, [isOpen, sessionId, qrData?.isPaid, qrData?.isExpired, applySessionStatus]);
 
   useEffect(() => {
     if (!isOpen || !sessionId || !qrData || qrData.isPaid || qrData.isExpired) return;
@@ -401,7 +428,7 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid, onAban
           ) : (
             <>
               <p className="text-center text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
-                Đóng cửa sổ (X) khi chưa chuyển khoản sẽ <strong>hủy đơn hàng</strong>.
+                Đóng cửa sổ khi chưa chuyển khoản vẫn <strong>giữ đơn chờ thanh toán</strong> — bạn có thể thanh toán lại trong mục Đơn hàng.
               </p>
 
               <p className="text-center text-sm text-gray-500 border-b pb-2">
@@ -495,7 +522,7 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid, onAban
               <p className="text-center text-xs text-gray-400">
                 {qrData.displayStatus === 'processing'
                   ? 'Đã nhận webhook — hệ thống đang xác nhận giao dịch...'
-                  : 'Quét QR hoặc chuyển khoản — hệ thống tự cập nhật khi SePay gửi webhook'}
+                  : 'Sau khi chuyển khoản, màn hình tự cập nhật trong vài giây (không cần tải lại trang).'}
               </p>
 
               <div className="flex justify-center pt-1 gap-4">

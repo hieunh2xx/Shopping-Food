@@ -14,7 +14,9 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:report": "playwright show-report",
     "test:walkthrough": "playwright test --project=walkthrough",
-    "test:walkthrough:ui": "playwright test --project=walkthrough --ui"
+    "test:walkthrough:ui": "playwright test --project=walkthrough --ui",
+    "test:report-screenshots": "playwright test e2e/walkthrough/report-screenshots.spec.ts --project=report-screenshots",
+    "report:build": "python ../tools/generate_report_diagrams.py && python ../tools/insert_report6_screenshots.py && python ../tools/insert_report6_diagrams.py"
   },
   "dependencies": {
     "@azure/msal-browser": "^5.11.0",

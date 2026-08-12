@@ -46,3 +46,4 @@ appsettings.Development.json
 appsettings.Production.json
 /Migrations
 *.docx
+/tools

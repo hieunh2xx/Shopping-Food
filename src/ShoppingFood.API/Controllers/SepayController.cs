@@ -128,8 +128,7 @@ namespace ShoppingFood.API.Controllers
                     expiresAt = s.ExpiresAt,
                     remainingSeconds = Math.Max(0, (int)(s.ExpiresAt - DateTime.UtcNow).TotalSeconds)
                 }),
-                sepayDashboardWebhookUrl = "https://modulator-vowed-embark.ngrok-free.dev/api/Payment/sepay/webhook",
-                note = "Dat hang SePay truoc, roi CK dung invoice+amount trong pendingSepaySessions. SePay chi gui webhook khi co GD that tren TK da chon."
+                note = "Dat hang SePay truoc, roi CK dung invoice+amount trong pendingSepaySessions. SePay chi gui webhook khi co GD that tren TK da chon. Ngrok phai forward toi API (port 5091) hoac FE co proxy /api."
             });
         }
 

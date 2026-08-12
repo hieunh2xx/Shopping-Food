@@ -102,6 +102,9 @@ namespace ShoppingFood.API.Filters
                                      path.StartsWith("/api/Payment/sepay/webhook/", StringComparison.OrdinalIgnoreCase))) ||
 
                                 (method == "GET" &&
+                                    path.Equals("/api/Payment/sepay/webhook/diagnostics", StringComparison.OrdinalIgnoreCase)) ||
+
+                                (method == "GET" &&
                                     path.StartsWith("/api/Payment/sepay/session/status", StringComparison.OrdinalIgnoreCase));
 
             bool isGuestCartRequest = (path.StartsWith("/api/Cart", StringComparison.OrdinalIgnoreCase) ||

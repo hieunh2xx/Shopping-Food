@@ -76,5 +76,18 @@ export default defineConfig({
         },
       },
     },
+    // Headless annotated screenshots for Report 6 user guide
+    {
+      name: 'report-screenshots',
+      testDir: './e2e/walkthrough',
+      testMatch: 'report-screenshots.spec.ts',
+      timeout: 900_000,
+      use: {
+        ...devices['Desktop Chrome'],
+        headless: true,
+        viewport: { width: 1440, height: 900 },
+        screenshot: 'off',
+      },
+    },
   ],
 });
