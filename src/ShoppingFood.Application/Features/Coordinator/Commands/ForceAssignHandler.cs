@@ -189,13 +189,16 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
 
         private void AddNotifications(Order order, ShipperProfile shipper)
         {
+            var shortId = Common.OrderDisplayHelper.ShortId(order.Id);
+            var shipperName = shipper.UserProfile.FullName ?? "Tài xế";
             _notificationRepository.Add(new Notification
             {
                 Id = Guid.NewGuid(),
                 UserId = shipper.UserProfile.UserAccountId,
-                Title = "Đơn hàng gán bắt buộc",
-                Message = $"Bạn được gán trực tiếp đơn hàng mã '{order.Id}' từ Điều phối viên.",
+                Title = "Bạn được gán đơn giao hàng",
+                Message = $"Điều phối viên đã gán đơn #{shortId} cho bạn. Vào mục Đơn đang giao để xem chi tiết và bắt đầu lấy hàng.",
                 NotificationType = NotificationType.Delivery,
+                TargetId = order.Id,
                 IsRead = false,
                 CreateAt = DateTime.UtcNow,
             });
@@ -206,9 +209,10 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
                 {
                     Id = Guid.NewGuid(),
                     UserId = order.UserAccountId.Value,
-                    Title = "Đơn hàng đang được giao",
-                    Message = $"Tài xế '{shipper.UserProfile.FullName}' đã nhận vận chuyển đơn hàng mã '{order.Id}' của bạn.",
+                    Title = "Tài xế đang giao đơn của bạn",
+                    Message = $"Tài xế {shipperName} đã nhận giao đơn #{shortId}. Bạn có thể theo dõi hành trình trong mục Đơn hàng.",
                     NotificationType = NotificationType.Delivery,
+                    TargetId = order.Id,
                     IsRead = false,
                     CreateAt = DateTime.UtcNow
                 });

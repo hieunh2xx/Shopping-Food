@@ -58,7 +58,19 @@ export function NotificationBell() {
     const onRealtime = (n: INotificationDto) => {
       setNotifications(prev => [n, ...prev.filter(x => x.id !== n.id)]);
       setUnreadCount(prev => prev + 1);
-      toast(n.title, { icon: '🔔' });
+      toast(
+        () => (
+          <div style={{ maxWidth: 320 }}>
+            <div style={{ fontWeight: 600, marginBottom: 4 }}>{n.title}</div>
+            {n.message ? (
+              <div style={{ fontSize: 13, lineHeight: 1.4, opacity: 0.9 }}>
+                {n.message.length > 160 ? `${n.message.slice(0, 160)}…` : n.message}
+              </div>
+            ) : null}
+          </div>
+        ),
+        { icon: '🔔', duration: 5000 }
+      );
 
       // Phát sự kiện toàn cục để các trang có thể lắng nghe và cập nhật UI (vd: trạng thái duyệt sản phẩm)
       window.dispatchEvent(new CustomEvent('ON_REALTIME_NOTIFICATION', { detail: n }));
@@ -254,6 +266,9 @@ export function NotificationBell() {
           lower.includes('đăng ký tài xế cần bổ sung');
 
         if (role === 'Admin') {
+          if (lower.includes('nộp cod') || lower.includes('cod từ tài xế') || lower.includes('yêu cầu nộp cod')) {
+            return ROUTES.ADMIN_COD_REMITTANCES;
+          }
           if (lower.includes('hạng thành viên') || lower.includes('xếp hạng')) {
             return ROUTES.ADMIN_MEMBER_RANKS;
           }
@@ -283,6 +298,7 @@ export function NotificationBell() {
         }
 
         if (role === 'Shipper') {
+          if (lower.includes('nộp cod') || lower.includes('cod')) return ROUTES.SHIPPER_WALLET;
           if (lower.includes('uy tín')) return ROUTES.SHIPPER_PROFILE + '?tab=reputation';
           if (lower.includes('giải trình') && n.targetId) {
             return `${ROUTES.SHIPPER_DASHBOARD}?explanationOrderId=${n.targetId}`;
@@ -303,6 +319,9 @@ export function NotificationBell() {
           return null;
         }
         if (role === 'Coordinator') {
+          if (lower.includes('nộp cod') || lower.includes('cod từ tài xế') || lower.includes('yêu cầu nộp cod')) {
+            return ROUTES.COORDINATOR_COD_REMITTANCES;
+          }
           if (lower.includes('sự cố') || lower.includes('khiếu nại') || lower.includes('báo cáo') || lower.includes('giải trình')) {
             return n.targetId
               ? `${ROUTES.COORDINATOR_INCIDENTS}?orderId=${n.targetId}`
@@ -423,7 +442,7 @@ export function NotificationBell() {
                     <p className={`text-xs text-gray-900 leading-snug truncate ${!n.isRead ? 'font-bold text-gray-950' : 'font-medium'}`}>
                       {n.title}
                     </p>
-                    <p className="text-[11px] text-gray-500 leading-normal line-clamp-2">
+                    <p className="text-[11px] text-gray-500 leading-normal line-clamp-3">
                       {n.message}
                     </p>
                     <p className="text-[9px] text-gray-400 font-semibold mt-1">

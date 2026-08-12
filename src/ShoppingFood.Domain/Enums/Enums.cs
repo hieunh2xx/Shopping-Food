@@ -115,6 +115,13 @@ namespace ShoppingFood.Domain.Enums
         Disputed
     }
 
+    public enum CodRemittanceStatus
+    {
+        Pending,
+        Approved,
+        Rejected
+    }
+
     public enum InvoiceStatus
     {
         Pending,

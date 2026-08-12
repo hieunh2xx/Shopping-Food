@@ -105,7 +105,7 @@ namespace ShoppingFood.Application.Features.LoyaltyPoints.Commands
                 Id = Guid.NewGuid(),
                 UserId = userId,
                 Title = "Đổi voucher thành công",
-                Message = $"Chúc mừng! Bạn đã đổi thành công {pointRequired} điểm tích lũy lấy mã giảm giá: {discount.Title} ({discount.Code}). Hãy kiểm tra kho lưu trữ voucher của bạn ngay!",
+                Message = $"Bạn đã dùng {pointRequired} điểm để đổi mã giảm giá «{discount.Title}» (mã: {discount.Code}). Mở mục Kho voucher để xem và áp dụng khi đặt đơn.",
                 NotificationType = NotificationType.Loyalty,
                 IsRead = false,
                 CreateAt = now

@@ -33,6 +33,12 @@ export class SupportService {
     freeDeliveryRadiusKm?: number;
     freeShippingMinimumOrder?: number;
     shippingFee?: number;
+    shipperBaseFee?: number;
+    shipperFeePerKm?: number;
+    rushHourMultiplier?: number;
+    rushHourStartTime?: string;
+    rushHourEndTime?: string;
+    includedKmInBaseFee?: number;
   }>> {
     return httpClient.get(API_ENDPOINTS.SYSTEM.DELIVERY_SETTINGS);
   }

@@ -1,4 +1,3 @@
-using AutoMapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ShoppingFood.Core.Base;
@@ -6,9 +5,8 @@ using ShoppingFood.Domain.Models;
 using ShoppingFood.Dto.Order;
 using ShoppingFood.Repository.Interfaces;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ShoppingFood.Application.Features.Orders.Queries
@@ -27,7 +25,6 @@ namespace ShoppingFood.Application.Features.Orders.Queries
             _orderRepository = orderRepository;
             _shipperProfileReporitory = shipperProfileRepository;
             _userRepository = userRepository;
-  
         }
 
         public async Task<ApiResponse> Handle(GetShipperIncomeReportQuery request, CancellationToken cancellationToken)
@@ -43,44 +40,36 @@ namespace ShoppingFood.Application.Features.Orders.Queries
 
                 var startDate = request.StartDate ?? DateTime.UtcNow.AddDays(-7);
                 var endDate = request.EndDate ?? DateTime.UtcNow;
+                var skip = Math.Max(0, request.Skip);
+                var take = request.Take <= 0 ? 10 : Math.Min(request.Take, 50);
 
+                // Lightweight load for chart + totals (no includes)
                 var orders = await _orderRepository.GetAsync(
                     predicate: o => o.ShipperId == shipperProfile.Id &&
                                     (o.Status == Domain.Enums.OrderStatus.Delivered || o.Status == Domain.Enums.OrderStatus.Cancelled) &&
                                     o.UpdatedAt >= startDate &&
-                                    o.UpdatedAt <= endDate,
-                    disableTracking: true
-                    );
+                                    o.UpdatedAt <= endDate);
 
                 var deliveredOrders = orders.Where(o => o.Status == Domain.Enums.OrderStatus.Delivered).ToList();
 
                 var dailyReports = deliveredOrders.GroupBy(o => o.UpdatedAt.Date).Select(g =>
                 {
                     var ordersInDay = g.ToList();
-                    var dayBaseFee = ordersInDay.Sum(o => o.ShipperBaseFeeAmount);
-                    var dayDistanceFee = ordersInDay.Sum(o => o.ShipperDistanceFeeAmount);
-                    var dayBonus = ordersInDay.Sum(o => o.ShipperPeakBonus);
-                    var dayTotalIncome = ordersInDay.Sum(o => o.ShipperIncome);
-
                     return new DailyIncomeReportDto
                     {
                         Date = g.Key.ToString("yyyy-MM-dd"),
                         CompletedOrdersCount = ordersInDay.Count,
-                        BaseFees = dayBaseFee,
-                        DistanceFees = dayDistanceFee,
-                        Bonus = dayBonus,
-                        TotalIncome = dayTotalIncome
+                        BaseFees = ordersInDay.Sum(o => o.ShipperBaseFeeAmount),
+                        DistanceFees = ordersInDay.Sum(o => o.ShipperDistanceFeeAmount),
+                        Bonus = ordersInDay.Sum(o => o.ShipperPeakBonus),
+                        TotalIncome = ordersInDay.Sum(o => o.ShipperIncome)
                     };
                 }).OrderBy(d => d.Date).ToList();
 
-                var completedOrderCount = deliveredOrders.Count;
-                var totalBaseFees = dailyReports.Sum(d => d.BaseFees);
-                var totalDistanceFees = dailyReports.Sum(d => d.DistanceFees);
-                var totalBonuses = dailyReports.Sum(d => d.Bonus);
-                var totalIncome = dailyReports.Sum(d => d.TotalIncome);
-
-                var orderDtos = orders
-                    .OrderByDescending(o => o.UpdatedAt)
+                var ordered = orders.OrderByDescending(o => o.UpdatedAt).ToList();
+                var orderDtos = ordered
+                    .Skip(skip)
+                    .Take(take)
                     .Select(o => new ShipperCompletedOrderDto
                     {
                         OrderId = o.Id,
@@ -100,13 +89,16 @@ namespace ShoppingFood.Application.Features.Orders.Queries
 
                 var result = new ShipperIncomeReportDto
                 {
-                    CompletedOrdersCount = completedOrderCount,
-                    TotalBaseFees = totalBaseFees,
-                    TotalDistanceFees = totalDistanceFees,
-                    TotalBonuses = totalBonuses,
-                    TotalIncome = totalIncome,
+                    CompletedOrdersCount = deliveredOrders.Count,
+                    TotalBaseFees = dailyReports.Sum(d => d.BaseFees),
+                    TotalDistanceFees = dailyReports.Sum(d => d.DistanceFees),
+                    TotalBonuses = dailyReports.Sum(d => d.Bonus),
+                    TotalIncome = dailyReports.Sum(d => d.TotalIncome),
                     DailyReports = dailyReports,
                     Orders = orderDtos,
+                    OrdersTotalCount = ordered.Count,
+                    Skip = skip,
+                    Take = take
                 };
 
                 return ApiResponse.Success(result, "Successfully retrieved shipper income report.");
@@ -121,8 +113,7 @@ namespace ShoppingFood.Application.Features.Orders.Queries
         {
             var users = await _userRepository.GetAsync(
                 predicate: u => u.Id == userId,
-                include: q => q.Include(u => u.Profile)
-                );
+                include: q => q.Include(u => u.Profile));
             var shipperProfile = users.FirstOrDefault()?.Profile;
 
             if (shipperProfile == null)
@@ -131,9 +122,8 @@ namespace ShoppingFood.Application.Features.Orders.Queries
             var profiles = await _shipperProfileReporitory.GetAsync(
                 predicate: p => p.UserProfileId == shipperProfile.Id,
                 include: q => q.Include(p => p.UserProfile),
-                disableTracking: true
+                disableTracking: true);
 
-                );
             return profiles.FirstOrDefault();
         }
     }

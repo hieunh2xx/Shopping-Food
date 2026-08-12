@@ -20,6 +20,11 @@ namespace ShoppingFood.Repository.Implementations
         public WithdrawalRequestRepository(ShoppingFoodContext dbContext) : base(dbContext) { }
     }
 
+    public class CodRemittanceRequestRepository : RepositoryBase<CodRemittanceRequest>, ICodRemittanceRequestRepository
+    {
+        public CodRemittanceRequestRepository(ShoppingFoodContext dbContext) : base(dbContext) { }
+    }
+
     public class EInvoiceRequestRepository : RepositoryBase<EInvoiceRequest>, IEInvoiceRequestRepository
     {
         public EInvoiceRequestRepository(ShoppingFoodContext dbContext) : base(dbContext) { }

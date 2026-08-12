@@ -225,10 +225,11 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
             var order = orders.FirstOrDefault();
             var sellerAccountId = order?.Items.FirstOrDefault()?.Product?.Restaurant?.Owner?.UserAccountId;
 
-            var title = resolutionType == Domain.Enums.ComplaintResolutionType.Warning ? "Cảnh cáo chất lượng phục vụ" : "Cảnh báo chất lượng đơn hàng (Có đền bù/Hủy)";
+            var shortOrderId = order != null ? Common.OrderDisplayHelper.ShortId(order.Id) : "—";
+            var title = resolutionType == Domain.Enums.ComplaintResolutionType.Warning ? "Cảnh cáo chất lượng phục vụ" : "Cảnh báo chất lượng đơn hàng";
             var message = resolutionType == Domain.Enums.ComplaintResolutionType.Warning 
-                ? $"Bạn nhận được một cảnh cáo từ hệ thống liên quan đến đơn hàng {order?.Id}. Vui lòng cải thiện chất lượng phục vụ. Ghi chú: {notes}"
-                : $"Khiếu nại về đơn hàng của bạn đã được xác minh. Ghi chú: {notes}. Đơn hàng có thể bị hủy hoặc yêu cầu đền bù.";
+                ? $"Bạn nhận được cảnh cáo liên quan đến đơn #{shortOrderId}. Vui lòng cải thiện chất lượng phục vụ. Ghi chú: {notes}"
+                : $"Khiếu nại về đơn #{shortOrderId} đã được xác minh. Ghi chú: {notes}. Đơn có thể bị hủy hoặc yêu cầu đền bù — kiểm tra chi tiết trong kênh người bán.";
 
             if (sellerAccountId.HasValue)
             {
@@ -257,7 +258,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
                     Id = Guid.NewGuid(),
                     UserId = admin.Id,
                     Title = $"Khiếu nại nhà hàng đã được xử lý ({vietnameseResolutionType})",
-                    Message = $"Coordinator đã xử lý khiếu nại liên quan đến nhà hàng. Mức độ: {vietnameseResolutionType}. Ghi chú: {notes}",
+                    Message = $"Điều phối viên đã xử lý khiếu nại liên quan đến nhà hàng. Kết quả: {vietnameseResolutionType}. Ghi chú: {notes}",
                     NotificationType = NotificationType.System,
                     IsRead = false,
                     CreateAt = DateTime.UtcNow
@@ -277,8 +278,8 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
                 Domain.Enums.ComplaintResolutionType.CompensateCustomer => "Đền bù khách hàng",
                 Domain.Enums.ComplaintResolutionType.Dismiss => "Bỏ qua",
                 Domain.Enums.ComplaintResolutionType.NoFault => "Không có lỗi",
-                Domain.Enums.ComplaintResolutionType.EscalateToAdmin => "Chuyển Admin đền bù",
-                _ => resolutionType.ToString()
+                Domain.Enums.ComplaintResolutionType.EscalateToAdmin => "Chuyển quản trị viên đền bù",
+                _ => "Khác"
             };
         }
 
@@ -312,7 +313,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
             string vietnameseResolutionType = TranslateResolutionType(resolutionType);
             
             var message = (resolutionType == Domain.Enums.ComplaintResolutionType.NoFault || resolutionType == Domain.Enums.ComplaintResolutionType.Dismiss)
-                ? $"Khiếu nại của bạn dã được xem xét. Kết quả: Không xác nhận vi phạm ({vietnameseResolutionType}). Ghi chú: {notes}"
+                ? $"Khiếu nại của bạn đã được xem xét. Kết quả: Không xác nhận vi phạm ({vietnameseResolutionType}). Ghi chú: {notes}"
                 : $"Khiếu nại của bạn đã được xem xét và xác nhận. Kết quả: {vietnameseResolutionType}. Ghi chú: {notes}";
 
             _notificationRepository.Add(new Notification

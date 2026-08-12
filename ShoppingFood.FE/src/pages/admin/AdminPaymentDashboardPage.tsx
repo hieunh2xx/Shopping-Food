@@ -11,8 +11,9 @@ export function AdminPaymentDashboardPage() {
   useEffect(() => {
     paymentService.getPaymentDashboard().then(res => {
       if (!res.error) setData(res.data);
+      else console.error(res.message);
       setLoading(false);
-    });
+    }).catch(() => setLoading(false));
   }, []);
 
   if (loading) return <div className="p-8 text-center">Đang tải dashboard...</div>;
@@ -23,8 +24,8 @@ export function AdminPaymentDashboardPage() {
     <div className="p-6">
       <div className="mb-8 flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard thanh toán</h1>
-          <p className="text-sm text-gray-500 mt-1">Giám sát phiên QR, hàng đợi xử lý và webhook SePay</p>
+          <h1 className="text-2xl font-bold text-gray-900">SePay / QR thanh toán</h1>
+          <p className="text-sm text-gray-500 mt-1">Giám sát phiên QR, hàng đợi xử lý và webhook (không phải doanh thu seller)</p>
         </div>
       </div>
 

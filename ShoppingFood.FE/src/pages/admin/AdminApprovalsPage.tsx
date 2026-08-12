@@ -48,6 +48,44 @@ export function AdminApprovalsPage() {
 
   const [statusFilter, setStatusFilter] = useState<'Pending' | 'NeedsInfo' | 'All'>('Pending');
 
+  const canReviewApplication = (status?: string) =>
+    status === 'Pending' || status === 'NeedsInfo';
+
+  const canReviewProduct = (status?: string) =>
+    !status || status === 'Pending';
+
+  const renderStatusBadge = (status?: string) => {
+    if (status === 'Approved') {
+      return (
+        <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full border border-green-200">
+          Đã duyệt
+        </span>
+      );
+    }
+    if (status === 'Rejected') {
+      return (
+        <span className="px-2 py-0.5 bg-red-100 text-red-700 text-[10px] font-bold rounded-full border border-red-200">
+          Từ chối
+        </span>
+      );
+    }
+    if (status === 'NeedsInfo') {
+      return (
+        <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-[10px] font-bold rounded-full border border-orange-200">
+          Chờ bổ sung
+        </span>
+      );
+    }
+    if (status === 'Pending') {
+      return (
+        <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-full border border-amber-200">
+          Chờ duyệt
+        </span>
+      );
+    }
+    return null;
+  };
+
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -139,7 +177,12 @@ export function AdminApprovalsPage() {
       if (!res.error) {
         toast.success(type === 'approve' ? 'Đã phê duyệt thành công!' : type === 'needsInfo' ? 'Đã gửi yêu cầu bổ sung.' : 'Đã từ chối đơn đăng ký.');
         setActionModal(prev => ({ ...prev, isOpen: false }));
-        fetchData();
+        if (type === 'needsInfo' && (targetTab === 'shippers' || targetTab === 'sellers')) {
+          setPage(1);
+          setStatusFilter('NeedsInfo');
+        } else {
+          fetchData();
+        }
       } else {
         toast.error(res.message);
       }
@@ -259,7 +302,7 @@ export function AdminApprovalsPage() {
                     {sellers.map((app) => (
                       <tr key={app.id} className="hover:bg-gray-50/50 transition-colors">
                         <td className="py-4 px-6">
-                          <div className="font-semibold text-gray-900 flex items-center gap-2">
+                          <div className="font-semibold text-gray-900 flex items-center gap-2 flex-wrap">
                             {app.fullName}
                             {app.type === 'UpgradeToMall' ? (
                               <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-[10px] font-bold rounded-full border border-purple-200">
@@ -270,17 +313,18 @@ export function AdminApprovalsPage() {
                                 Mới
                               </span>
                             )}
-                            {app.status === 'NeedsInfo' && (
-                              <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-[10px] font-bold rounded-full border border-orange-200">
-                                Chờ bổ sung
-                              </span>
-                            )}
+                            {renderStatusBadge(app.status)}
                           </div>
                           <div className="text-xs text-gray-500 mt-1">Email: {app.email}</div>
                           <div className="text-xs text-gray-500 mt-0.5">SĐT: {app.phone}</div>
                           {app.status === 'NeedsInfo' && app.rejectionReason && (
                             <div className="text-xs text-orange-700 bg-orange-50 p-2 rounded mt-2 border border-orange-100 max-w-xs">
                               <span className="font-semibold">Đã yêu cầu:</span> {app.rejectionReason}
+                            </div>
+                          )}
+                          {app.status === 'Rejected' && app.rejectionReason && (
+                            <div className="text-xs text-red-700 bg-red-50 p-2 rounded mt-2 border border-red-100 max-w-xs">
+                              <span className="font-semibold">Lý do từ chối:</span> {app.rejectionReason}
                             </div>
                           )}
                         </td>
@@ -323,28 +367,32 @@ export function AdminApprovalsPage() {
                           </div>
                         </td>
                         <td className="py-4 px-6 text-right">
-                          <div className="flex justify-end gap-2">
-                            <button
-                              onClick={() => openActionModal('approve', 'sellers', app.id, app.businessName)}
-                              className="inline-flex items-center gap-1 bg-green-50 text-green-700 hover:bg-green-100 font-bold text-xs px-3 py-1.5 rounded-xl transition-all"
-                            >
-                              <CheckCircle className="w-4 h-4 text-green-600" /> Duyệt
-                            </button>
-                            {app.status !== 'NeedsInfo' && (
+                          {canReviewApplication(app.status) ? (
+                            <div className="flex justify-end gap-2">
                               <button
-                                onClick={() => openActionModal('needsInfo', 'sellers', app.id, app.businessName)}
-                                className="inline-flex items-center gap-1 bg-orange-50 text-orange-700 hover:bg-orange-100 font-bold text-xs px-3 py-1.5 rounded-xl transition-all"
+                                onClick={() => openActionModal('approve', 'sellers', app.id, app.businessName)}
+                                className="inline-flex items-center gap-1 bg-green-50 text-green-700 hover:bg-green-100 font-bold text-xs px-3 py-1.5 rounded-xl transition-all"
                               >
-                                Yêu cầu bổ sung
+                                <CheckCircle className="w-4 h-4 text-green-600" /> Duyệt
                               </button>
-                            )}
-                            <button
-                              onClick={() => openActionModal('reject', 'sellers', app.id, app.businessName)}
-                              className="inline-flex items-center gap-1 bg-red-50 text-red-700 hover:bg-red-100 font-bold text-xs px-3 py-1.5 rounded-xl transition-all"
-                            >
-                              <XCircle className="w-4 h-4 text-red-600" /> Từ chối
-                            </button>
-                          </div>
+                              {app.status !== 'NeedsInfo' && (
+                                <button
+                                  onClick={() => openActionModal('needsInfo', 'sellers', app.id, app.businessName)}
+                                  className="inline-flex items-center gap-1 bg-orange-50 text-orange-700 hover:bg-orange-100 font-bold text-xs px-3 py-1.5 rounded-xl transition-all"
+                                >
+                                  Yêu cầu bổ sung
+                                </button>
+                              )}
+                              <button
+                                onClick={() => openActionModal('reject', 'sellers', app.id, app.businessName)}
+                                className="inline-flex items-center gap-1 bg-red-50 text-red-700 hover:bg-red-100 font-bold text-xs px-3 py-1.5 rounded-xl transition-all"
+                              >
+                                <XCircle className="w-4 h-4 text-red-600" /> Từ chối
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-400 italic">Đã xử lý</span>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -377,13 +425,9 @@ export function AdminApprovalsPage() {
                     {shippers.map((app) => (
                       <tr key={app.id} className="hover:bg-gray-50/50 transition-colors">
                         <td className="py-4 px-6">
-                          <div className="font-semibold text-gray-900 flex items-center gap-2">
+                          <div className="font-semibold text-gray-900 flex items-center gap-2 flex-wrap">
                             {app.fullName}
-                            {app.status === 'NeedsInfo' && (
-                              <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-[10px] font-bold rounded-full border border-orange-200">
-                                Chờ bổ sung
-                              </span>
-                            )}
+                            {renderStatusBadge(app.status)}
                           </div>
                           <div className="text-xs text-gray-500 mt-0.5">Email: {app.email}</div>
                           <div className="text-xs text-gray-500 mt-0.5">SĐT: {app.phone}</div>
@@ -393,6 +437,11 @@ export function AdminApprovalsPage() {
                           {app.status === 'NeedsInfo' && app.rejectionReason && (
                             <div className="text-xs text-orange-700 bg-orange-50 p-2 rounded mt-2 border border-orange-100 max-w-xs">
                               <span className="font-semibold">Đã yêu cầu:</span> {app.rejectionReason}
+                            </div>
+                          )}
+                          {app.status === 'Rejected' && app.rejectionReason && (
+                            <div className="text-xs text-red-700 bg-red-50 p-2 rounded mt-2 border border-red-100 max-w-xs">
+                              <span className="font-semibold">Lý do từ chối:</span> {app.rejectionReason}
                             </div>
                           )}
                         </td>
@@ -437,28 +486,32 @@ export function AdminApprovalsPage() {
                           </div>
                         </td>
                         <td className="py-4 px-6 text-right">
-                          <div className="flex justify-end gap-2">
-                            <button
-                              onClick={() => openActionModal('approve', 'shippers', app.id, app.fullName)}
-                              className="inline-flex items-center gap-1 bg-green-50 text-green-700 hover:bg-green-100 font-bold text-xs px-3 py-1.5 rounded-xl transition-all"
-                            >
-                              <CheckCircle className="w-4 h-4 text-green-600" /> Duyệt
-                            </button>
-                            {app.status !== 'NeedsInfo' && (
+                          {canReviewApplication(app.status) ? (
+                            <div className="flex justify-end gap-2">
                               <button
-                                onClick={() => openActionModal('needsInfo', 'shippers', app.id, app.fullName)}
-                                className="inline-flex items-center gap-1 bg-orange-50 text-orange-700 hover:bg-orange-100 font-bold text-xs px-3 py-1.5 rounded-xl transition-all"
+                                onClick={() => openActionModal('approve', 'shippers', app.id, app.fullName)}
+                                className="inline-flex items-center gap-1 bg-green-50 text-green-700 hover:bg-green-100 font-bold text-xs px-3 py-1.5 rounded-xl transition-all"
                               >
-                                Yêu cầu bổ sung
+                                <CheckCircle className="w-4 h-4 text-green-600" /> Duyệt
                               </button>
-                            )}
-                            <button
-                              onClick={() => openActionModal('reject', 'shippers', app.id, app.fullName)}
-                              className="inline-flex items-center gap-1 bg-red-50 text-red-700 hover:bg-red-100 font-bold text-xs px-3 py-1.5 rounded-xl transition-all"
-                            >
-                              <XCircle className="w-4 h-4 text-red-600" /> Từ chối
-                            </button>
-                          </div>
+                              {app.status !== 'NeedsInfo' && (
+                                <button
+                                  onClick={() => openActionModal('needsInfo', 'shippers', app.id, app.fullName)}
+                                  className="inline-flex items-center gap-1 bg-orange-50 text-orange-700 hover:bg-orange-100 font-bold text-xs px-3 py-1.5 rounded-xl transition-all"
+                                >
+                                  Yêu cầu bổ sung
+                                </button>
+                              )}
+                              <button
+                                onClick={() => openActionModal('reject', 'shippers', app.id, app.fullName)}
+                                className="inline-flex items-center gap-1 bg-red-50 text-red-700 hover:bg-red-100 font-bold text-xs px-3 py-1.5 rounded-xl transition-all"
+                              >
+                                <XCircle className="w-4 h-4 text-red-600" /> Từ chối
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-400 italic">Đã xử lý</span>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -496,7 +549,10 @@ export function AdminApprovalsPage() {
                               )}
                             </div>
                             <div>
-                              <div className="font-semibold text-gray-900">{prod.itemName}</div>
+                              <div className="font-semibold text-gray-900 flex items-center gap-2 flex-wrap">
+                                {prod.itemName}
+                                {renderStatusBadge(prod.status)}
+                              </div>
                               <div className="text-xs text-gray-500 mt-0.5 line-clamp-1 max-w-xs">{prod.description || 'Không có mô tả.'}</div>
 
                               {prod.sizes && prod.sizes.length > 0 && (
@@ -534,20 +590,24 @@ export function AdminApprovalsPage() {
                           {formatCurrency(prod.price)}
                         </td>
                         <td className="py-4 px-6 text-right">
-                          <div className="flex justify-end gap-2">
-                            <button
-                              onClick={() => openActionModal('approve', 'products', prod.id, prod.itemName)}
-                              className="inline-flex items-center gap-1 bg-green-50 text-green-700 hover:bg-green-100 font-bold text-xs px-3 py-1.5 rounded-xl transition-all"
-                            >
-                              <CheckCircle className="w-4 h-4 text-green-600" /> Duyệt
-                            </button>
-                            <button
-                              onClick={() => openActionModal('reject', 'products', prod.id, prod.itemName)}
-                              className="inline-flex items-center gap-1 bg-red-50 text-red-700 hover:bg-red-100 font-bold text-xs px-3 py-1.5 rounded-xl transition-all"
-                            >
-                              <XCircle className="w-4 h-4 text-red-600" /> Từ chối
-                            </button>
-                          </div>
+                          {canReviewProduct(prod.status) ? (
+                            <div className="flex justify-end gap-2">
+                              <button
+                                onClick={() => openActionModal('approve', 'products', prod.id, prod.itemName)}
+                                className="inline-flex items-center gap-1 bg-green-50 text-green-700 hover:bg-green-100 font-bold text-xs px-3 py-1.5 rounded-xl transition-all"
+                              >
+                                <CheckCircle className="w-4 h-4 text-green-600" /> Duyệt
+                              </button>
+                              <button
+                                onClick={() => openActionModal('reject', 'products', prod.id, prod.itemName)}
+                                className="inline-flex items-center gap-1 bg-red-50 text-red-700 hover:bg-red-100 font-bold text-xs px-3 py-1.5 rounded-xl transition-all"
+                              >
+                                <XCircle className="w-4 h-4 text-red-600" /> Từ chối
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-400 italic">Đã xử lý</span>
+                          )}
                         </td>
                       </tr>
                     ))}

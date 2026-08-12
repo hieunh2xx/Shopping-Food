@@ -145,6 +145,7 @@ export const API_ENDPOINTS = {
     ACCEPT_OFFER: '/Shipper/accept-offer', // POST
     CONFIRM_ARRIVED: '/Shipper/confirm-arrived', // POST
     CONFIRM_PICKED_UP: '/Shipper/confirm-picked-up', // POST
+    CONFIRM_PICKED_UP_BATCH: '/Shipper/confirm-picked-up-batch', // POST
     CONFIRM_DELIVERED: '/Shipper/confirm-delivered', // POST
     CONFIRM_FAILED: '/Shipper/confirm-failed', //POST
     LOCATION: '/Shipper/location', // POST
@@ -271,8 +272,14 @@ export const API_ENDPOINTS = {
     TRANSACTIONS: '/Payment/transactions',
     INVOICE: '/Payment/invoice',
     REPAY_DEBT: '/Payment/shipper/repay-debt',
+    COD_REMITTANCE: '/Payment/shipper/cod-remittance',
+    COD_REMITTANCES: '/Payment/cod-remittances',
+    REVIEW_COD_REMITTANCE: '/Payment/cod-remittances/review',
     DEBT_LIMIT: '/Payment/shipper/debt-limit',
     RECONCILIATION: '/Payment/reconciliation',
+    COD_OVERVIEW: '/Payment/cod-overview',
+    SELLER_REVENUES: '/Payment/seller-revenues',
+    SHIPPER_REVENUES: '/Payment/shipper-revenues',
     SEPAY_CHECKOUT: (sessionId: string) => `/Payment/sepay/checkout/${sessionId}`,
     SEPAY_QR: (sessionId: string) => `/Payment/sepay/qr/${sessionId}`,
     SEPAY_STATUS: '/Payment/sepay/session/status',

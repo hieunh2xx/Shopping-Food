@@ -86,7 +86,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                         Id = Guid.NewGuid(),
                         UserId = order.UserAccountId.Value,
                         Title = "Đơn hàng đã bị hủy",
-                        Message = $"Đơn hàng #{shortId} của bạn đã bị hủy bởi cửa hàng. Lý do: {request.Reason}.{refundNote}",
+                        Message = $"Đơn #{shortId} đã bị cửa hàng hủy. Lý do: {request.Reason}.{refundNote} Xem chi tiết trong mục Đơn hàng.",
                         NotificationType = NotificationType.System,
                         TargetId = order.Id,
                         IsRead = false,

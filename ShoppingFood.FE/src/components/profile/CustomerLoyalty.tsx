@@ -4,7 +4,7 @@ import { loyaltyPointService } from '../../services/LoyaltyPointService';
 import { pointGiftConfigService } from '../../services/PointGiftConfigService';
 import type { ILoyaltyPointDto, IPointGiftConfigDto } from '../../interfaces';
 import toast from 'react-hot-toast';
-import { Button, Modal } from '../common';
+import { Button, Modal, MemberTierBadge, getMemberTierMeta } from '../common';
 
 export function CustomerLoyalty() {
   const [loyaltyData, setLoyaltyData] = useState<ILoyaltyPointDto | null>(null);
@@ -107,24 +107,24 @@ export function CustomerLoyalty() {
     return <div className="text-center p-6 text-gray-500">Đang tải điểm tích lũy...</div>;
   }
 
+  const tierMeta = getMemberTierMeta(loyaltyData?.tier);
+
   return (
     <div className="space-y-6">
       {/* Overview Card */}
-      <div className="bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
-        <div className="absolute -right-4 -top-4 opacity-10">
+      <div className={`bg-gradient-to-br ${tierMeta.gradientClass} rounded-2xl p-6 text-white shadow-lg relative overflow-hidden`}>
+        <div className="absolute -right-4 -top-4 opacity-15">
           <Award className="w-48 h-48" />
         </div>
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-6">
-            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${getTierColor(loyaltyData?.tier || 'Bronze')}`}>
-              Hạng {loyaltyData?.tier || 'Bronze'}
-            </span>
+            <MemberTierBadge tier={loyaltyData?.tier || 'Bronze'} size="lg" />
           </div>
           <div className="mb-2">
-            <p className="text-orange-100 text-sm font-medium mb-1">Điểm hiện có</p>
+            <p className="text-white/80 text-sm font-medium mb-1">Điểm hiện có</p>
             <h2 className="text-4xl font-black">{loyaltyData?.pointsBalance?.toLocaleString() || 0} <span className="text-xl font-semibold opacity-80">điểm</span></h2>
           </div>
-          <p className="text-sm text-orange-100">Tổng điểm tích lũy: {loyaltyData?.totalEarnedPoints?.toLocaleString() || 0}</p>
+          <p className="text-sm text-white/80">Tổng điểm tích lũy: {loyaltyData?.totalEarnedPoints?.toLocaleString() || 0}</p>
         </div>
       </div>
 

@@ -203,6 +203,7 @@ namespace ShoppingFood.Application.Mappings
 
             CreateMap<Order, ProposedDeliveryOfferDto>()
                 .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.RestaurantId, opt => opt.MapFrom(src => src.Items.FirstOrDefault() != null && src.Items.FirstOrDefault().Product != null ? src.Items.FirstOrDefault().Product.RestaurantId : (Guid?)null))
                 .ForMember(dest => dest.RestaurantName, opt => opt.MapFrom(src => src.Items.FirstOrDefault() != null && src.Items.FirstOrDefault().Product != null && src.Items.FirstOrDefault().Product.Restaurant != null ? src.Items.FirstOrDefault().Product.Restaurant.RestaurantName : string.Empty))
                 .ForMember(dest => dest.RestaurantAddress, opt => opt.MapFrom(src => src.Items.FirstOrDefault() != null && src.Items.FirstOrDefault().Product != null && src.Items.FirstOrDefault().Product.Restaurant != null ? src.Items.FirstOrDefault().Product.Restaurant.Address : string.Empty))
                 .ForMember(dest => dest.RestaurantPhone, opt => opt.MapFrom(src => src.Items.FirstOrDefault() != null && src.Items.FirstOrDefault().Product != null && src.Items.FirstOrDefault().Product.Restaurant != null ? src.Items.FirstOrDefault().Product.Restaurant.Phone : string.Empty))
@@ -234,6 +235,7 @@ namespace ShoppingFood.Application.Mappings
             CreateMap<Order, DispatchOrderDto>()
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
                 .ForMember(dest => dest.PaymentMethod, opt => opt.MapFrom(src => src.PaymentMethod.ToString()))
+                .ForMember(dest => dest.RestaurantId, opt => opt.MapFrom(src => src.Items.FirstOrDefault() != null && src.Items.FirstOrDefault().Product != null ? src.Items.FirstOrDefault().Product.RestaurantId : (Guid?)null))
                 .ForMember(dest => dest.RestaurantName, opt => opt.MapFrom(src => src.Items.FirstOrDefault() != null &&
                             src.Items.FirstOrDefault().Product != null && src.Items.FirstOrDefault().Product.Restaurant != null ?
                             src.Items.FirstOrDefault().Product.Restaurant.RestaurantName : "N/A"))
@@ -242,6 +244,9 @@ namespace ShoppingFood.Application.Mappings
                             src.Items.FirstOrDefault().Product.Restaurant.Address : "N/A"))
                 .ForMember(dest => dest.ShipperName, opt => opt.MapFrom(src => src.Shipper != null && src.Shipper.UserProfile != null ? src.Shipper.UserProfile.FullName : null))
                 .ForMember(dest => dest.ShipperPhone, opt => opt.MapFrom(src => src.Shipper != null && src.Shipper.UserProfile != null && src.Shipper.UserProfile.UserAccount != null ? src.Shipper.UserProfile.UserAccount.Phone : null))
+                .ForMember(dest => dest.BatchPickupCode, opt => opt.Ignore())
+                .ForMember(dest => dest.BatchBagCount, opt => opt.Ignore())
+                .ForMember(dest => dest.BatchOrderLabels, opt => opt.Ignore())
                 .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.Items));
 
             CreateMap<OrderItem, DispatchOrderItemDto>();

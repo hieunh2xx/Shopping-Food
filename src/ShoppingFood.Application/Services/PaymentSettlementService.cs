@@ -66,11 +66,16 @@ namespace ShoppingFood.Application.Services
         }
 
         public (decimal ItemsSubtotal, decimal PlatformCommission, decimal SellerPayout, decimal ShipperEarning) CalculateSplit(
-            decimal totalAmount, decimal shippingFee, decimal shipperIncome, decimal commissionRate, bool isSelfDelivery = false)
+            decimal totalAmount, decimal shippingFee, decimal shipperIncome, decimal commissionRate, bool isSelfDelivery = false, decimal? preservedItemsSubtotal = null)
         {
-            var itemsSubtotal = Math.Max(0, totalAmount - shippingFee);
-            var platformCommission = Math.Round(itemsSubtotal * commissionRate, 0);
-            var sellerPayout = itemsSubtotal - platformCommission;
+            // foodPaid = phần tiền món khách thực trả (sau giảm giá hạng/voucher)
+            var foodPaid = Math.Max(0, totalAmount - shippingFee);
+            // ItemsSubtotal giữ nguyên tiền món trước giảm giá (để hiển thị rõ trên đơn)
+            var itemsSubtotal = preservedItemsSubtotal.HasValue && preservedItemsSubtotal.Value > 0
+                ? preservedItemsSubtotal.Value
+                : foodPaid;
+            var platformCommission = Math.Round(foodPaid * commissionRate, 0);
+            var sellerPayout = foodPaid - platformCommission;
             if (isSelfDelivery)
             {
                 sellerPayout += shippingFee;
@@ -123,8 +128,10 @@ namespace ShoppingFood.Application.Services
         public async Task<string?> ProcessCheckoutPaymentAsync(Order order, Guid? userId, string? cardLastFour = null, string? cardBrand = null, EWalletProvider? provider = null)
         {
             var config = await GetConfigAsync();
-            var split = CalculateSplit(order.TotalAmount, order.ShippingFee, order.ShipperIncome, config.CommissionRate);
-            order.ItemsSubtotal = split.ItemsSubtotal;
+            var preservedItemsSubtotal = order.ItemsSubtotal;
+            var split = CalculateSplit(order.TotalAmount, order.ShippingFee, order.ShipperIncome, config.CommissionRate, preservedItemsSubtotal: preservedItemsSubtotal);
+            // Giữ tiền món trước giảm giá để UI hiển thị rõ (100k - giảm 3k = 97k)
+            order.ItemsSubtotal = preservedItemsSubtotal > 0 ? preservedItemsSubtotal : split.ItemsSubtotal;
             order.PlatformCommission = split.PlatformCommission;
             order.SellerPayout = split.SellerPayout;
 
@@ -377,7 +384,7 @@ namespace ShoppingFood.Application.Services
                             Id = Guid.NewGuid(),
                             UserId = restaurant.Owner.UserAccountId,
                             Title = "Đơn hàng mới",
-                            Message = $"Bạn có đơn hàng mới #{order.Id.ToString().Substring(0, 8)} (Đã thanh toán Online).",
+                            Message = $"Bạn có đơn mới #{Common.OrderDisplayHelper.ShortId(order.Id)} — khách đã thanh toán online. Vào mục Đơn hàng để xác nhận và chuẩn bị món.",
                             NotificationType = NotificationType.System,
                             TargetId = order.Id,
                             IsRead = false,
@@ -403,8 +410,9 @@ namespace ShoppingFood.Application.Services
             if (order.IsFinancialSettled) return;
 
             var config = await GetConfigAsync();
-            var split = CalculateSplit(order.TotalAmount, order.ShippingFee, order.ShipperIncome, config.CommissionRate);
-            order.ItemsSubtotal = split.ItemsSubtotal;
+            var split = CalculateSplit(order.TotalAmount, order.ShippingFee, order.ShipperIncome, config.CommissionRate, preservedItemsSubtotal: order.ItemsSubtotal);
+            if (order.ItemsSubtotal <= 0)
+                order.ItemsSubtotal = split.ItemsSubtotal;
             order.PlatformCommission = split.PlatformCommission;
             order.SellerPayout = split.SellerPayout;
 
@@ -496,8 +504,9 @@ namespace ShoppingFood.Application.Services
             if (order.IsFinancialSettled) return;
 
             var config = await GetConfigAsync();
-            var split = CalculateSplit(order.TotalAmount, order.ShippingFee, order.ShipperIncome, config.CommissionRate, isSelfDelivery: true);
-            order.ItemsSubtotal = split.ItemsSubtotal;
+            var preservedItemsSubtotal = order.ItemsSubtotal;
+            var split = CalculateSplit(order.TotalAmount, order.ShippingFee, order.ShipperIncome, config.CommissionRate, isSelfDelivery: true, preservedItemsSubtotal: preservedItemsSubtotal);
+            order.ItemsSubtotal = preservedItemsSubtotal > 0 ? preservedItemsSubtotal : split.ItemsSubtotal;
             order.PlatformCommission = split.PlatformCommission;
             order.SellerPayout = split.SellerPayout;
 
@@ -595,8 +604,8 @@ namespace ShoppingFood.Application.Services
             var shortId = order.Id.ToString()[..8].ToUpperInvariant();
             var amountText = refundAmount.ToString("N0");
             var message = order.PaymentMethod == PaymentMethod.SystemWallet
-                ? $"Đơn #{shortId} đã hủy. {amountText}đ đã được hoàn lại vào ví tích lũy của bạn."
-                : $"Đơn #{shortId} đã được hoàn {amountText}đ vào ví ShoppingFood của bạn.";
+                ? $"Đơn #{shortId} đã hủy. {amountText}đ đã được hoàn lại vào ví tích lũy của bạn. Kiểm tra số dư trong mục Ví."
+                : $"Đơn #{shortId} đã được hoàn {amountText}đ vào ví ShoppingFood của bạn. Kiểm tra số dư trong mục Ví.";
 
             _notificationRepository.Add(new Notification
             {

@@ -153,8 +153,8 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
             {
                 Id = Guid.NewGuid(),
                 UserId = shipperUserAccountId,
-                Title = "Đề xuất giao hàng mới",
-                Message = $"Bạn nhận được đề xuất giao đơn hàng mã '{order.Id}'. Vui lòng phản hồi trong vòng 60 giây.",
+                Title = "Có đề xuất đơn giao hàng",
+                Message = $"Bạn nhận được đề xuất giao đơn #{Common.OrderDisplayHelper.ShortId(order.Id)}. Vui lòng chấp nhận hoặc từ chối trong vòng 60 giây.",
                 NotificationType = NotificationType.Delivery,
                 IsRead = false,
                 CreateAt = DateTime.UtcNow

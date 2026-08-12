@@ -116,7 +116,7 @@ namespace ShoppingFood.Application.Features.Support.Commands
                     Id = Guid.NewGuid(),
                     UserId = coordinator.Id,
                     Title = "Khiếu nại tài xế không giao hàng",
-                    Message = "Có khiếu nại mới về tài xế không giao hàng đang chờ điều tra.",
+                    Message = "Có khiếu nại mới về tài xế không giao hàng. Vào mục Khiếu nại để điều tra và xử lý.",
                     NotificationType = Domain.Enums.NotificationType.Delivery,
                     IsRead = false,
                     CreateAt = DateTime.UtcNow

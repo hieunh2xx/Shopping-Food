@@ -212,7 +212,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                         Id = Guid.NewGuid(),
                         UserId = ownerUserId.Value,
                         Title = "Đơn hàng mới",
-                        Message = $"Bạn có đơn hàng mới #{order.Id.ToString().Substring(0, 8)} (Thanh toán khi nhận hàng).",
+                        Message = $"Bạn có đơn mới #{Common.OrderDisplayHelper.ShortId(order.Id)} — thanh toán khi nhận hàng. Vào mục Đơn hàng để xác nhận và chuẩn bị món.",
                         NotificationType = NotificationType.System,
                         TargetId = order.Id,
                         IsRead = false,
@@ -408,10 +408,15 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             var platformFinanceConfig = configs.FirstOrDefault();
 
             var systemConfigs = await _dbContext.SystemConfigs.FirstOrDefaultAsync(c => c.Key == "DeliverySettings");
-            DeliverySettingsDto deliverySettings = null;
+            DeliverySettingsDto? deliverySettings = null;
             if (systemConfigs != null && !string.IsNullOrEmpty(systemConfigs.Value))
             {
-                deliverySettings = global::System.Text.Json.JsonSerializer.Deserialize<ShoppingFood.Dto.System.DeliverySettingsDto>(systemConfigs.Value);
+                var jsonOpts = new global::System.Text.Json.JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+                deliverySettings = global::System.Text.Json.JsonSerializer.Deserialize<ShoppingFood.Dto.System.DeliverySettingsDto>(
+                    systemConfigs.Value, jsonOpts);
             }
 
             bool isRushHour = false;
@@ -450,40 +455,46 @@ namespace ShoppingFood.Application.Features.Orders.Commands
 
                 if (restaurant.DeliveryType == ShoppingFood.Domain.Enums.DeliveryType.PlatformDelivery)
                 {
-                    // Platform Delivery Logic
+                    // Khách trả Phí giao hàng mặc định (DeliverySettings.ShippingFee).
+                    // Shipper nhận riêng theo ShipperBaseFee + km × ShipperFeePerKm (không lấy số shipper làm phí khách).
                     double freeDeliveryRadiusKm = deliverySettings?.FreeDeliveryRadiusKm ?? 3.0;
                     decimal freeShippingMinimumOrder = deliverySettings?.FreeShippingMinimumOrder ?? 0m;
-                    decimal shippingFee = deliverySettings?.ShippingFee ?? 15000m;
-                    decimal feePerKm = platformFinanceConfig?.FeePerKm > 0
-                        ? platformFinanceConfig.FeePerKm
-                        : platformFinanceConfig?.ShipperFeePerKm > 0
-                            ? platformFinanceConfig.ShipperFeePerKm
-                            : 3000m;
+                    // Nguồn duy nhất: config Admin → Cấu hình Giao hàng → Phí giao hàng mặc định
+                    decimal customerShippingFee = 0;
+                    if (deliverySettings != null && deliverySettings.ShippingFee > 0)
+                        customerShippingFee = deliverySettings.ShippingFee;
+                    else if (platformFinanceConfig != null && platformFinanceConfig.BaseDeliveryFee > 0)
+                        customerShippingFee = platformFinanceConfig.BaseDeliveryFee;
+                    const double includedKmInBase = 5.0;
+
+                    if (isRushHour && platformFinanceConfig != null && platformFinanceConfig.RushHourMultiplier > 1)
+                        customerShippingFee = Math.Round(customerShippingFee * platformFinanceConfig.RushHourMultiplier, 0);
 
                     if (itemsTotal >= freeShippingMinimumOrder && freeShippingMinimumOrder > 0)
                         feeForRestaurant = 0;
                     else if (!hasDestinationCoords)
-                        // Missing coords must NOT be treated as 0km (would always free-ship). Use flat fee like SePay QR amount.
-                        feeForRestaurant = shippingFee;
+                        feeForRestaurant = customerShippingFee;
                     else if (distanceKm <= freeDeliveryRadiusKm)
                         feeForRestaurant = 0;
                     else
-                    {
-                        // Graduated fee by excess km (capped at configured flat fee) so short trips aren't overcharged
-                        var excessKm = distanceKm - freeDeliveryRadiusKm;
-                        var distanceBased = Math.Max(feePerKm, (decimal)Math.Ceiling(excessKm) * feePerKm);
-                        feeForRestaurant = Math.Min(shippingFee, distanceBased);
-                    }
+                        feeForRestaurant = customerShippingFee;
 
                     if (platformFinanceConfig != null)
                     {
                         baseFeeForShipper = platformFinanceConfig.ShipperBaseFee;
-                        distanceFeeForShipper = hasDestinationCoords && distanceKm > 5.0
-                            ? (decimal)(distanceKm - 5.0) * platformFinanceConfig.ShipperFeePerKm
+                        distanceFeeForShipper = hasDestinationCoords && distanceKm > includedKmInBase
+                            ? (decimal)(distanceKm - includedKmInBase) * platformFinanceConfig.ShipperFeePerKm
                             : 0m;
                         decimal incomeBeforeBonus = baseFeeForShipper + distanceFeeForShipper;
                         peakBonusForShipper = isRushHour ? incomeBeforeBonus * (platformFinanceConfig.ShipperRushHourBonus / 100m) : 0m;
                         incomeForShipper = incomeBeforeBonus + peakBonusForShipper;
+                    }
+                    else
+                    {
+                        // Không có finance config: shipper tạm lấy cùng mức phí khách (fallback)
+                        baseFeeForShipper = customerShippingFee;
+                        distanceFeeForShipper = 0;
+                        incomeForShipper = customerShippingFee;
                     }
                 }
                 else

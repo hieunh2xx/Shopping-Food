@@ -115,8 +115,8 @@ namespace ShoppingFood.Application.Features.Users.Commands
                 {
                     Id = Guid.NewGuid(),
                     UserId = admin.Id,
-                    Title = "Yêu cầu lên Mall mới",
-                    Message = $"Cửa hàng {businessName} vừa gửi yêu cầu nâng cấp lên Mall. Vui lòng kiểm tra và duyệt.",
+                    Title = "Yêu cầu nâng cấp Mall mới",
+                    Message = $"Cửa hàng {businessName} vừa gửi yêu cầu nâng cấp lên ShoppingFood Mall. Vào mục Duyệt đối tác để kiểm tra và phê duyệt.",
                     NotificationType = NotificationType.System,
                     IsRead = false,
                     CreateAt = DateTime.UtcNow,

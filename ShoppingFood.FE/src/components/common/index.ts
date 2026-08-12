@@ -7,3 +7,5 @@ export { Pagination } from './Pagination';
 export { Card } from './Card';
 export { PromptModal } from './PromptModal';
 export { ConfirmModal } from './ConfirmModal';
+export { MemberTierBadge, MemberTierSelectCard, MEMBER_TIERS, getMemberTierLabel, getMemberTierMeta, normalizeMemberTier } from './MemberTierBadge';
+export type { MemberTierKey } from './MemberTierBadge';

@@ -15,6 +15,9 @@ namespace ShoppingFood.Dto.Order
         public decimal TotalIncome { get; set; }
         public List<DailyIncomeReportDto> DailyReports { get; set; } = new List<DailyIncomeReportDto>();
         public List<ShipperCompletedOrderDto> Orders { get; set; } = new List<ShipperCompletedOrderDto>();
+        public int OrdersTotalCount { get; set; }
+        public int Skip { get; set; }
+        public int Take { get; set; }
     }
 
     public class DailyIncomeReportDto

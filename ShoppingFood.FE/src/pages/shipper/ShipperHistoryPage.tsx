@@ -1,107 +1,119 @@
-import { useState, useEffect, useCallback } from 'react';
-import { 
-  PackageOpen, 
-  CheckCircle2, 
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import {
+  PackageOpen,
+  CheckCircle2,
   Calendar,
-  Search,
-  ChevronDown,
+  ChevronRight,
   DollarSign,
   TrendingUp,
-  Loader2
+  Loader2,
 } from 'lucide-react';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
 import { shipperService } from '../../services';
+import { Pagination } from '../../components/common';
+import { ShipperOrderDetailModal } from '../../components/order/ShipperOrderDetailModal';
 import type { IDailyIncomeReportDto, IShipperCompletedOrderDto } from '../../interfaces/IShipper';
+import { formatCurrency } from '../../utils/formatters';
+
+function buildMonthOptions(monthsBack = 12) {
+  const now = new Date();
+  const options: { key: string; label: string; start: Date; end: Date }[] = [];
+  for (let i = 0; i < monthsBack; i++) {
+    const start = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59, 999);
+    const key = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}`;
+    const label =
+      i === 0
+        ? `Tháng này (${start.getMonth() + 1}/${start.getFullYear()})`
+        : i === 1
+          ? `Tháng trước (${start.getMonth() + 1}/${start.getFullYear()})`
+          : `Tháng ${start.getMonth() + 1}/${start.getFullYear()}`;
+    options.push({ key, label, start, end });
+  }
+  return options;
+}
 
 export function ShipperHistoryPage() {
+  const monthOptions = useMemo(() => buildMonthOptions(12), []);
+  const [monthKey, setMonthKey] = useState(monthOptions[0].key);
   const [loading, setLoading] = useState(true);
   const [dailyReports, setDailyReports] = useState<IDailyIncomeReportDto[]>([]);
   const [orders, setOrders] = useState<IShipperCompletedOrderDto[]>([]);
   const [totalIncome, setTotalIncome] = useState(0);
   const [totalOrders, setTotalOrders] = useState(0);
+  const [ordersTotalCount, setOrdersTotalCount] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
-  const [filterPeriod, setFilterPeriod] = useState<'week' | 'month' | 'all'>('month');
-  const [searchTerm, setSearchTerm] = useState('');
-
-  const getDateRange = useCallback(() => {
-    const now = new Date();
-    let startDate: Date;
-
-    if (filterPeriod === 'week') {
-      const dayOfWeek = now.getDay();
-      const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diff);
-    } else if (filterPeriod === 'month') {
-      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-    } else {
-      // Last 90 days
-      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 90);
-    }
-
-    const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
-    return { startDate: startDate.toISOString(), endDate: endDate.toISOString() };
-  }, [filterPeriod]);
+  const selectedMonth = monthOptions.find((m) => m.key === monthKey) || monthOptions[0];
 
   const fetchHistory = useCallback(async () => {
     setLoading(true);
     try {
-      const { startDate, endDate } = getDateRange();
-      const res = await shipperService.getIncomeReport(startDate, endDate);
+      const skip = (page - 1) * pageSize;
+      const res = await shipperService.getIncomeReport(
+        selectedMonth.start.toISOString(),
+        selectedMonth.end.toISOString(),
+        skip,
+        pageSize
+      );
       if (res.data) {
         setDailyReports(res.data.dailyReports || []);
         setOrders(res.data.orders || []);
         setTotalIncome(res.data.totalIncome);
         setTotalOrders(res.data.completedOrdersCount);
+        setOrdersTotalCount(res.data.ordersTotalCount ?? res.data.orders?.length ?? 0);
       }
     } catch (err) {
       console.error('Failed to fetch history:', err);
     } finally {
       setLoading(false);
     }
-  }, [getDateRange]);
+  }, [selectedMonth, page, pageSize]);
 
   useEffect(() => {
     fetchHistory();
   }, [fetchHistory]);
 
-  const formatCurrency = (amount: number | undefined | null) => {
-    const validAmount = (typeof amount === 'number' && !isNaN(amount)) ? amount : 0;
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(validAmount);
-  };
+  useEffect(() => {
+    setPage(1);
+  }, [monthKey]);
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('vi-VN', {
-      weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric'
-    });
-  };
+  const chartData = dailyReports.map((d) => ({
+    label: new Date(d.date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }),
+    income: d.totalIncome,
+    orders: d.completedOrdersCount,
+  }));
 
-  // Filter daily reports by search (date)
-  const filteredReports = dailyReports.filter(day => {
-    if (!searchTerm) return true;
-    const dateStr = formatDate(day.date).toLowerCase();
-    return dateStr.includes(searchTerm.toLowerCase());
-  });
-
-  if (loading) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <Loader2 className="w-12 h-12 text-orange-500 animate-spin mx-auto" />
-          <p className="text-gray-500 font-medium">Đang tải lịch sử giao hàng...</p>
-        </div>
-      </div>
-    );
-  }
+  const totalPages = Math.max(1, Math.ceil(ordersTotalCount / pageSize));
 
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Lịch sử giao hàng</h1>
-          <p className="text-gray-500 text-sm mt-0.5">Tổng kết các đơn hàng bạn đã giao nhận theo ngày</p>
+          <p className="text-gray-500 text-sm mt-0.5">Danh sách đơn đã giao — bấm vào để xem chi tiết</p>
         </div>
+        <select
+          value={monthKey}
+          onChange={(e) => setMonthKey(e.target.value)}
+          className="appearance-none bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500/50 cursor-pointer min-w-[220px]"
+        >
+          {monthOptions.map((m) => (
+            <option key={m.key} value={m.key}>{m.label}</option>
+          ))}
+        </select>
       </div>
 
-      {/* Summary Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-5 text-white shadow-md">
           <div className="flex items-center justify-between opacity-80 mb-2">
@@ -112,171 +124,117 @@ export function ShipperHistoryPage() {
         </div>
         <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-5 text-white shadow-md">
           <div className="flex items-center justify-between opacity-80 mb-2">
-            <span className="text-xs font-medium uppercase tracking-wider">Tổng đơn hoàn thành</span>
+            <span className="text-xs font-medium uppercase tracking-wider">Đơn hoàn thành</span>
             <CheckCircle2 className="w-5 h-5" />
           </div>
           <h3 className="text-2xl font-extrabold">{totalOrders} đơn</h3>
         </div>
         <div className="bg-gradient-to-br from-indigo-500 to-violet-600 rounded-2xl p-5 text-white shadow-md">
           <div className="flex items-center justify-between opacity-80 mb-2">
-            <span className="text-xs font-medium uppercase tracking-wider">Số ngày có dữ liệu</span>
+            <span className="text-xs font-medium uppercase tracking-wider">Ngày có giao</span>
             <TrendingUp className="w-5 h-5" />
           </div>
           <h3 className="text-2xl font-extrabold">{dailyReports.length} ngày</h3>
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-gray-100 flex flex-col md:flex-row gap-4">
-        <div className="flex-1 relative">
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-            <Search className="w-5 h-5 text-gray-400" />
+      <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+        <h2 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2">
+          <Calendar className="w-5 h-5 text-orange-500" />
+          Biểu đồ thu nhập theo ngày
+        </h2>
+        <p className="text-xs text-gray-500 mb-4">{selectedMonth.label}</p>
+        {loading ? (
+          <div className="h-56 flex items-center justify-center text-gray-400 gap-2">
+            <Loader2 className="w-5 h-5 animate-spin" /> Đang tải biểu đồ...
           </div>
-          <input
-            type="text"
-            placeholder="Tìm theo ngày (VD: 25/06)..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-11 pr-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all text-sm"
-          />
-        </div>
-        <div className="flex gap-2">
-          <div className="relative">
-            <select
-              value={filterPeriod}
-              onChange={(e) => setFilterPeriod(e.target.value as 'week' | 'month' | 'all')}
-              className="appearance-none bg-gray-50/50 border border-gray-200 rounded-xl pl-4 pr-10 py-2.5 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500/50 cursor-pointer"
-            >
-              <option value="week">Tuần này</option>
-              <option value="month">Tháng này</option>
-              <option value="all">90 ngày qua</option>
-            </select>
-            <ChevronDown className="w-4 h-4 text-gray-500 absolute right-3.5 top-[14px] pointer-events-none" />
+        ) : chartData.length === 0 ? (
+          <div className="h-40 flex items-center justify-center text-gray-400 text-sm">Chưa có dữ liệu tháng này</div>
+        ) : (
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
+                <Tooltip
+                  formatter={(value) => formatCurrency(Number(value ?? 0))}
+                  labelFormatter={(l) => `Ngày ${l}`}
+                />
+                <Bar dataKey="income" name="Thu nhập" fill="#f97316" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Per-order list */}
       <div className="space-y-3">
-        <h2 className="text-lg font-bold text-gray-900">Chi tiết từng đơn</h2>
-        {orders.length === 0 ? (
-          <div className="bg-white rounded-2xl p-8 text-center border border-gray-100 text-gray-400 text-sm">
-            Chưa có đơn trong khoảng thời gian này
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-gray-900">Danh sách đơn</h2>
+          <span className="text-xs text-gray-500">{ordersTotalCount} đơn</span>
+        </div>
+
+        {loading ? (
+          <div className="bg-white rounded-2xl p-10 text-center border border-gray-100">
+            <Loader2 className="w-8 h-8 text-orange-500 animate-spin mx-auto mb-2" />
+            <p className="text-gray-500 text-sm">Đang tải danh sách...</p>
+          </div>
+        ) : orders.length === 0 ? (
+          <div className="bg-white rounded-2xl p-10 text-center border border-gray-100 flex flex-col items-center">
+            <PackageOpen className="w-14 h-14 text-gray-300 mb-2" />
+            <h3 className="font-bold text-gray-700">Không có đơn trong tháng này</h3>
           </div>
         ) : (
-          orders.map(order => (
-            <div key={order.orderId} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <p className="font-bold text-gray-900">#{order.orderId.slice(0, 8).toUpperCase()}</p>
-                  <p className="text-xs text-gray-500">{order.contactName} · {order.deliveryAddress}</p>
-                </div>
-                <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-                  order.status === 'Delivered' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                }`}>
-                  {order.status === 'Delivered' ? 'Hoàn thành' : 'Đã hủy'}
-                </span>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-                <div>
-                  <p className="text-xs text-gray-400 uppercase font-bold">Tổng đơn</p>
-                  <p className="font-bold text-gray-900">{formatCurrency(order.totalAmount)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400 uppercase font-bold">Tiền món</p>
-                  <p className="font-medium text-gray-800">{formatCurrency(order.itemsSubtotal)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400 uppercase font-bold">Phí ship</p>
-                  <p className="font-medium text-gray-800">{formatCurrency(order.shippingFee)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400 uppercase font-bold">Thu nhập</p>
-                  <p className="font-bold text-emerald-600">{formatCurrency(order.totalIncome)}</p>
-                </div>
-              </div>
-              {order.status === 'Delivered' && (
-                <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-100 text-xs space-y-1">
-                  <div className="flex justify-between"><span>Phí cơ bản</span><span className="font-bold">{formatCurrency(order.baseFee)}</span></div>
-                  <div className="flex justify-between"><span>Phí km</span><span className="font-bold">{formatCurrency(order.distanceFee)}</span></div>
-                  {(order.peakBonus || 0) > 0 && (
-                    <div className="flex justify-between"><span>Thưởng</span><span className="font-bold">{formatCurrency(order.peakBonus)}</span></div>
-                  )}
-                  <div className="flex justify-between text-gray-500 pt-1 border-t border-emerald-200/60">
-                    <span>Thanh toán</span><span>{order.paymentMethod}</span>
+          <div className="bg-white rounded-2xl border border-gray-100 divide-y divide-gray-50 overflow-hidden">
+            {orders.map((order) => (
+              <button
+                key={order.orderId}
+                type="button"
+                onClick={() => setSelectedOrderId(order.orderId)}
+                className="w-full text-left px-4 py-3.5 hover:bg-orange-50/60 transition-colors flex items-center gap-3"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-0.5">
+                    <span className="font-bold text-gray-900">#{order.orderId.slice(0, 8).toUpperCase()}</span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      order.status === 'Delivered' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                    }`}>
+                      {order.status === 'Delivered' ? 'Hoàn thành' : 'Đã hủy'}
+                    </span>
                   </div>
-                </div>
-              )}
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* Daily List */}
-      <div className="space-y-4">
-        <h2 className="text-lg font-bold text-gray-900">Tổng hợp theo ngày</h2>
-        {filteredReports.map((day, idx) => (
-          <div key={idx} className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between gap-6 hover:shadow-md transition-shadow">
-            
-            <div className="space-y-3 flex-1">
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="font-extrabold text-gray-900 text-lg flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-orange-500" />
-                  {formatDate(day.date)}
-                </span>
-                <span className="bg-green-100 text-green-800 text-xs px-2.5 py-0.5 rounded-full font-bold inline-flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> {day.completedOrdersCount} đơn hoàn thành
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-1">
-                <div className="space-y-1">
-                  <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Phí cơ bản</p>
-                  <p className="text-sm font-bold text-gray-800">{formatCurrency(day.baseFees)}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Phí km</p>
-                  <p className="text-sm font-bold text-gray-800">{formatCurrency(day.distanceFees)}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Tiền thưởng</p>
-                  <p className="text-sm font-bold text-amber-600">{formatCurrency(day.bonus)}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">TB mỗi đơn</p>
-                  <p className="text-sm font-bold text-gray-600">
-                    {day.completedOrdersCount > 0 
-                      ? formatCurrency(day.totalIncome / day.completedOrdersCount) 
-                      : '—'
-                    }
+                  <p className="text-xs text-gray-500 truncate">{order.contactName} · {order.deliveryAddress}</p>
+                  <p className="text-[11px] text-gray-400 mt-0.5">
+                    {new Date(order.completedAt).toLocaleString('vi-VN')}
                   </p>
                 </div>
-              </div>
-            </div>
-
-            <div className="flex md:flex-col justify-between md:justify-center items-end border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-6 shrink-0 gap-2">
-              <div className="text-left md:text-right">
-                <p className="text-xs text-gray-400">Tổng thu nhập ngày</p>
-                <p className="text-2xl font-extrabold text-emerald-600">{formatCurrency(day.totalIncome)}</p>
-              </div>
-            </div>
-
-          </div>
-        ))}
-
-        {filteredReports.length === 0 && (
-          <div className="bg-white rounded-3xl p-12 text-center border border-gray-100 flex flex-col items-center">
-            <PackageOpen className="w-16 h-16 text-gray-300 mb-3" />
-            <h3 className="text-lg font-bold text-gray-700">Không tìm thấy dữ liệu</h3>
-            <p className="text-gray-400 text-sm mt-1">
-              {searchTerm 
-                ? 'Vui lòng điều chỉnh từ khóa tìm kiếm' 
-                : 'Chưa có lịch sử giao hàng trong khoảng thời gian này'
-              }
-            </p>
+                <div className="text-right shrink-0">
+                  <p className="text-sm font-bold text-emerald-600">{formatCurrency(order.totalIncome)}</p>
+                  <p className="text-[11px] text-gray-400">{formatCurrency(order.totalAmount)}</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
+              </button>
+            ))}
           </div>
         )}
+
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          pageSize={pageSize}
+          pageSizeOptions={[10, 20, 50]}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(1);
+          }}
+        />
       </div>
+
+      <ShipperOrderDetailModal
+        isOpen={!!selectedOrderId}
+        onClose={() => setSelectedOrderId(null)}
+        orderId={selectedOrderId}
+      />
     </div>
   );
 }

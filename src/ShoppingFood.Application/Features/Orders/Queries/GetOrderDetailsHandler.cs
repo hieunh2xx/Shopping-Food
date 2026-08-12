@@ -130,6 +130,10 @@ namespace ShoppingFood.Application.Features.Orders.Queries
 
         private OrderDetailDto MapToOrderDetailDto(Order order)
         {
+            var itemsSum = order.Items?.Where(i => !i.IsGift).Sum(i => i.TotalPrice) ?? 0;
+            var displaySubtotal = itemsSum > 0 ? itemsSum : order.ItemsSubtotal;
+            var discountAmount = Math.Max(0, displaySubtotal - Math.Max(0, order.TotalAmount - order.ShippingFee));
+
             return new OrderDetailDto
             {
                 Id = order.Id,
@@ -147,7 +151,10 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                 UpdatedAt = order.UpdatedAt,
                 RejectReason = order.RejectReason,
                 ShippingFee = order.ShippingFee,
-                ItemsSubtotal = order.ItemsSubtotal,
+                ItemsSubtotal = displaySubtotal,
+                DiscountAmount = discountAmount,
+                PlatformCommission = order.PlatformCommission,
+                SellerPayout = order.SellerPayout,
                 ShipperIncome = order.ShipperIncome,
                 ShipperBaseFeeAmount = order.ShipperBaseFeeAmount,
                 ShipperDistanceFeeAmount = order.ShipperDistanceFeeAmount,

@@ -178,7 +178,7 @@ namespace ShoppingFood.Application.Features.Products.Commands
                     Id = Guid.NewGuid(),
                     UserId = ownerUserAccountId.Value,
                     Title = "Món ăn nhận được đánh giá mới",
-                    Message = $"Món ăn '{product.ItemName}' của bạn vừa nhận được đánh giá {rating} sao từ khách hành '{customerProfile.FullName}'.",
+                    Message = $"Món «{product.ItemName}» vừa nhận đánh giá {rating} sao từ khách hàng {customerProfile.FullName}. Xem chi tiết trong mục Đánh giá.",
                     NotificationType = NotificationType.Review,
                     IsRead = false,
                     CreateAt = DateTime.UtcNow

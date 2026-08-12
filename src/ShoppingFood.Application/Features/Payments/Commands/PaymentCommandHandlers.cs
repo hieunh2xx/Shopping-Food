@@ -4,13 +4,13 @@ using ShoppingFood.Application.Interfaces;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
 using ShoppingFood.Domain.Enums;
+using ShoppingFood.Domain.Models;
 using ShoppingFood.Repository.Interfaces;
 
 namespace ShoppingFood.Application.Features.Payments.Commands
 {
-    public class TopUpWalletCommand : IRequest<ApiResponse>
+    public class TopUpWalletCommand : BaseCommand, IRequest<ApiResponse>
     {
-        public Guid? CurrentUserId { get; set; }
         public decimal Amount { get; set; }
     }
 
@@ -160,10 +160,16 @@ namespace ShoppingFood.Application.Features.Payments.Commands
             }
 
             var wallet = await _paymentService.GetOrCreateWalletAsync(ownerType, ownerId);
-            
-            var availableBalance = wallet.Balance - codDebt;
+
+            // Số dư khả dụng = Balance - yêu cầu rút đang chờ duyệt - nợ COD
+            // Không trừ tiền ngay khi gửi yêu cầu; chỉ trừ khi Admin duyệt.
+            var pendingWithdrawals = (await _withdrawalRepository.GetAsync(
+                predicate: w => w.WalletId == wallet.Id && w.Status == WithdrawalStatus.Pending))
+                ?.ToList() ?? new List<Domain.Models.WithdrawalRequest>();
+            var pendingTotal = pendingWithdrawals.Sum(w => w.Amount);
+            var availableBalance = wallet.Balance - pendingTotal - codDebt;
             if (availableBalance < request.Amount)
-                return ApiResponse.Failure(400, "Insufficient balance. (Note: COD debt cannot be withdrawn)");
+                return ApiResponse.Failure(400, "Insufficient balance. (Note: COD debt and pending withdrawals cannot be withdrawn)");
 
             wallet.BankName = request.BankName;
             wallet.BankAccountNumber = request.BankAccountNumber;
@@ -183,9 +189,6 @@ namespace ShoppingFood.Application.Features.Payments.Commands
             };
             _withdrawalRepository.Add(withdrawal);
 
-            await _paymentService.RecordTransactionAsync(wallet, FinancialTransactionType.Withdrawal, -request.Amount,
-                $"Withdrawal request #{withdrawal.Id}", withdrawal.Id, "Withdrawal");
-
             await _unitOfWork.SaveChangesAsync();
             return ApiResponse.Success(new { withdrawalId = withdrawal.Id, status = "Pending" }, "Withdrawal request submitted successfully.");
         }
@@ -204,17 +207,20 @@ namespace ShoppingFood.Application.Features.Payments.Commands
     {
         private readonly IWithdrawalRequestRepository _withdrawalRepository;
         private readonly IWalletRepository _walletRepository;
+        private readonly IFinancialTransactionRepository _transactionRepository;
         private readonly IPaymentSettlementService _paymentService;
         private readonly IUnitOfWork _unitOfWork;
 
         public ApproveWithdrawalHandler(
             IWithdrawalRequestRepository withdrawalRepository,
             IWalletRepository walletRepository,
+            IFinancialTransactionRepository transactionRepository,
             IPaymentSettlementService paymentService,
             IUnitOfWork unitOfWork)
         {
             _withdrawalRepository = withdrawalRepository;
             _walletRepository = walletRepository;
+            _transactionRepository = transactionRepository;
             _paymentService = paymentService;
             _unitOfWork = unitOfWork;
         }
@@ -230,10 +236,32 @@ namespace ShoppingFood.Application.Features.Payments.Commands
             if (withdrawal.Status != WithdrawalStatus.Pending)
                 return ApiResponse.Failure(400, "Withdrawal already processed.");
 
+            var relatedTx = await _transactionRepository.GetAsync(
+                predicate: t => t.ReferenceId == withdrawal.Id
+                    && t.Type == FinancialTransactionType.Withdrawal
+                    && t.Amount < 0);
+            var alreadyDebited = relatedTx != null && relatedTx.Any();
+
             if (request.Approve)
             {
                 if (string.IsNullOrEmpty(request.TransferProofImageUrl))
                     return ApiResponse.Failure(400, "Please provide the transfer proof image url.");
+
+                // Trừ tiền khi Admin duyệt (yêu cầu mới không trừ lúc gửi).
+                // Yêu cầu cũ đã trừ sẵn: bỏ qua để tránh trừ 2 lần.
+                if (!alreadyDebited)
+                {
+                    if (withdrawal.Wallet.Balance < withdrawal.Amount)
+                        return ApiResponse.Failure(400, "Insufficient wallet balance to approve this withdrawal.");
+
+                    await _paymentService.RecordTransactionAsync(
+                        withdrawal.Wallet,
+                        FinancialTransactionType.Withdrawal,
+                        -withdrawal.Amount,
+                        $"Rút tiền đã duyệt #{withdrawal.Id}",
+                        withdrawal.Id,
+                        "Withdrawal");
+                }
 
                 withdrawal.Status = WithdrawalStatus.Approved;
                 withdrawal.ApprovedByUserId = request.CurrentUserId;
@@ -244,8 +272,13 @@ namespace ShoppingFood.Application.Features.Payments.Commands
             {
                 withdrawal.Status = WithdrawalStatus.Rejected;
                 withdrawal.RejectReason = request.RejectReason;
-                await _paymentService.RecordTransactionAsync(withdrawal.Wallet, FinancialTransactionType.Refund, withdrawal.Amount,
-                    $"Hoàn tiền yêu cầu rút #{withdrawal.Id} bị từ chối", withdrawal.Id, "Withdrawal");
+
+                // Chỉ hoàn tiền nếu lúc gửi yêu cầu đã trừ (luồng cũ).
+                if (alreadyDebited)
+                {
+                    await _paymentService.RecordTransactionAsync(withdrawal.Wallet, FinancialTransactionType.Refund, withdrawal.Amount,
+                        $"Hoàn tiền yêu cầu rút #{withdrawal.Id} bị từ chối", withdrawal.Id, "Withdrawal");
+                }
             }
             withdrawal.UpdatedAt = DateTime.UtcNow;
             _withdrawalRepository.Update(withdrawal);
@@ -402,65 +435,29 @@ namespace ShoppingFood.Application.Features.Payments.Commands
     {
         public Guid? CurrentUserId { get; set; }
         public decimal Amount { get; set; }
+        public string? Note { get; set; }
+        public string? ProofImageUrl { get; set; }
     }
 
+    /// <summary>Giữ endpoint cũ: chuyển thành tạo yêu cầu chờ duyệt thay vì trừ ngay.</summary>
     public class RepayShipperDebtHandler : IRequestHandler<RepayShipperDebtCommand, ApiResponse>
     {
-        private readonly IShipperProfileRepository _shipperRepository;
-        private readonly IUserRepository _userRepository;
-        private readonly IPaymentSettlementService _paymentService;
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMediator _mediator;
 
-        public RepayShipperDebtHandler(
-            IShipperProfileRepository shipperRepository,
-            IUserRepository userRepository,
-            IPaymentSettlementService paymentService,
-            IUnitOfWork unitOfWork)
+        public RepayShipperDebtHandler(IMediator mediator)
         {
-            _shipperRepository = shipperRepository;
-            _userRepository = userRepository;
-            _paymentService = paymentService;
-            _unitOfWork = unitOfWork;
+            _mediator = mediator;
         }
 
-        public async Task<ApiResponse> Handle(RepayShipperDebtCommand request, CancellationToken cancellationToken)
+        public Task<ApiResponse> Handle(RepayShipperDebtCommand request, CancellationToken cancellationToken)
         {
-            if (!request.CurrentUserId.HasValue)
-                return ApiResponse.Failure(401, "Unauthorized.");
-            if (request.Amount <= 0)
-                return ApiResponse.Failure(400, "Invalid amount.");
-
-            var users = await _userRepository.GetAsync(
-                predicate: u => u.Id == request.CurrentUserId.Value,
-                include: q => q.Include(u => u.Profile));
-            var profile = users.FirstOrDefault()?.Profile;
-            if (profile?.Role != UserRole.Shipper)
-                return ApiResponse.Failure(403, "Only shippers can repay debt.");
-
-            var shippers = await _shipperRepository.GetAsync(
-                predicate: s => s.UserProfileId == profile.Id,
-                disableTracking: false);
-            var shipper = shippers.FirstOrDefault();
-            if (shipper == null) return ApiResponse.Failure(404, "Shipper not found.");
-            if (shipper.CodCollectedAmount <= 0)
-                return ApiResponse.Failure(400, "No debt to repay.");
-
-            var repayAmount = Math.Min(request.Amount, shipper.CodCollectedAmount);
-            shipper.CodCollectedAmount -= repayAmount;
-            shipper.UpdatedAt = DateTime.UtcNow;
-            _shipperRepository.Update(shipper);
-
-            var wallet = await _paymentService.GetOrCreateWalletAsync(WalletOwnerType.Shipper, shipper.Id);
-            await _paymentService.RecordTransactionAsync(wallet, FinancialTransactionType.CodRemittance, -repayAmount,
-                $"Repaid COD debt to platform", null, "CodRemittance");
-
-            await _unitOfWork.SaveChangesAsync();
-            return ApiResponse.Success(new
+            return _mediator.Send(new RequestCodRemittanceCommand
             {
-                repaid = repayAmount,
-                remainingDebt = shipper.CodCollectedAmount,
-                debtLimit = shipper.DebtLimit
-            }, "Debt repaid successfully.");
+                CurrentUserId = request.CurrentUserId,
+                Amount = request.Amount,
+                Note = request.Note,
+                ProofImageUrl = request.ProofImageUrl
+            }, cancellationToken);
         }
     }
 

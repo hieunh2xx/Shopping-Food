@@ -11,7 +11,7 @@ interface SuccessDeliveryModalProps {
   orderId: string;
   latitude: number;
   longitude: number;
-  onSuccess: () => void;
+  onSuccess: (orderId: string) => void;
 }
 
 export const SuccessDeliveryModal: React.FC<SuccessDeliveryModalProps> = ({
@@ -36,7 +36,9 @@ export const SuccessDeliveryModal: React.FC<SuccessDeliveryModalProps> = ({
       toast.error('Vui lòng tải lên ảnh chứng minh giao hàng thành công');
       return;
     }
+    if (isSubmitting) return;
 
+    const confirmingOrderId = orderId;
     setIsSubmitting(true);
     try {
       // 1. Upload image
@@ -51,22 +53,38 @@ export const SuccessDeliveryModal: React.FC<SuccessDeliveryModalProps> = ({
 
       // 2. Confirm delivery
       const res = await shipperService.confirmDelivered({
-        orderId,
+        orderId: confirmingOrderId,
         latitude,
         longitude,
         deliveryProofImageUrl: imageUrl
       });
 
       if (!res.error) {
-        toast.success('Chúc mừng! Giao hàng thành công.');
-        onSuccess();
+        toast.success(
+          (res.data as any)?.alreadyCompleted
+            ? 'Đơn này đã được xác nhận giao trước đó.'
+            : 'Chúc mừng! Giao hàng thành công.'
+        );
+        onSuccess(confirmingOrderId);
         onClose();
         setProofImageFile(null);
       } else {
         toast.error(res.message);
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.message);
+      const apiMsg = err.response?.data?.message || '';
+      // Đơn đã Delivered trên BE nhưng FE còn giữ → gỡ khỏi danh sách active
+      if (
+        typeof apiMsg === 'string' &&
+        apiMsg.toLowerCase().includes('delivered')
+      ) {
+        toast.success('Đơn này đã hoàn thành trên hệ thống.');
+        onSuccess(confirmingOrderId);
+        onClose();
+        setProofImageFile(null);
+      } else {
+        toast.error(apiMsg || 'Xác nhận giao hàng thất bại.');
+      }
     } finally {
       setIsSubmitting(false);
     }

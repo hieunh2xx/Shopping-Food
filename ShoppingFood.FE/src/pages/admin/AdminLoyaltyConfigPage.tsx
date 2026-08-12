@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect } from 'react';
 import { Gift, Award, Plus, Trash2, Edit2, Play } from 'lucide-react';
-import { Button, Input, Modal } from '../../components/common';
+import { Button, Input, Modal, MemberTierBadge, getMemberTierLabel } from '../../components/common';
 import toast from 'react-hot-toast';
 import { pointGiftConfigService } from '../../services/PointGiftConfigService';
 import { loyaltyPointService } from '../../services/LoyaltyPointService';
@@ -285,7 +285,9 @@ export function AdminLoyaltyConfigPage() {
             <tbody className="divide-y divide-gray-100">
               {tiers.map(tier => (
                 <tr key={tier.id} className="hover:bg-gray-50">
-                  <td className="py-4 px-4 font-bold text-gray-900 uppercase">{tier.tier}</td>
+                  <td className="py-4 px-4">
+                    <MemberTierBadge tier={tier.tier} />
+                  </td>
                   <td className="py-4 px-4 text-center font-bold text-blue-600">{tier.minPoints.toLocaleString()}</td>
                   <td className="py-4 px-4 text-right">
                     {tier.tier !== 'Bronze' && ( 
@@ -343,7 +345,7 @@ export function AdminLoyaltyConfigPage() {
         <form onSubmit={handleTierSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Hạng thành viên</label>
-            <Input disabled value={tierFormData.tier.toUpperCase()} />
+            <Input disabled value={getMemberTierLabel(tierFormData.tier)} />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Điểm tối thiểu lên hạng *</label>

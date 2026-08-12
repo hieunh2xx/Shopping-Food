@@ -173,38 +173,44 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
             var oldShipper = oldShippers.FirstOrDefault();
             if (oldShipper != null)
             {
+                var shortId = Common.OrderDisplayHelper.ShortId(order.Id);
                 var oldNotification = new Notification
                 {
                     Id = Guid.NewGuid(),
                     UserId = oldShipper.UserProfile.UserAccountId,
-                    Title = "Đơn hàng đã được chuyển giao",
-                    Message = $"Đơn hàng mã '{order.Id}' của bạn đã bị chuyển cho tài xế khác. Lý do: {reason}",
+                    Title = "Đơn hàng được chuyển cho tài xế khác",
+                    Message = $"Đơn #{shortId} không còn thuộc bạn nữa — điều phối viên đã giao cho tài xế khác. Lý do: {reason}. Bạn không cần tiếp tục giao đơn này.",
                     NotificationType = NotificationType.Delivery,
+                    TargetId = order.Id,
                     IsRead = false,
                     CreateAt = DateTime.UtcNow
                 };
                 _notificationRepository.Add(oldNotification);
             }
+            var shortIdNew = Common.OrderDisplayHelper.ShortId(order.Id);
             var newNotification = new Notification
             {
                 Id = Guid.NewGuid(),
                 UserId = newShipper.UserProfile.UserAccountId,
-                Title = "Bạn có đơn hàng mới",
-                Message = $"Bạn được gán trực tiếp đơn hàng mã '{order.Id}' từ Điều phối viên.",
+                Title = "Bạn được nhận đơn giao hàng",
+                Message = $"Điều phối viên đã gán đơn #{shortIdNew} cho bạn. Vào mục Đơn đang giao để xem địa chỉ lấy hàng và giao khách.",
                 NotificationType = NotificationType.Delivery,
+                TargetId = order.Id,
                 IsRead = false,
                 CreateAt = DateTime.UtcNow
             };
             _notificationRepository.Add(newNotification);
             if (order.UserAccountId.HasValue)
             {
+                var newName = newShipper.UserProfile.FullName ?? "tài xế mới";
                 var customerNotification = new Notification
                 {
                     Id = Guid.NewGuid(),
                     UserId = order.UserAccountId.Value,
-                    Title = "Đơn hàng thay đổi tài xế",
-                    Message = $"Đơn hàng mã '{order.Id}' của bạn đã được chuyển giao cho tài xế mới: '{newShipper.UserProfile.FullName}'.",
+                    Title = "Đổi tài xế giao hàng",
+                    Message = $"Đơn #{shortIdNew} của bạn sẽ được giao bởi tài xế {newName}. Bạn có thể theo dõi trạng thái trong mục Đơn hàng.",
                     NotificationType = NotificationType.Delivery,
+                    TargetId = order.Id,
                     IsRead = false,
                     CreateAt = DateTime.UtcNow
                 };
@@ -306,15 +312,17 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
                 );
             var shipper = shippers.FirstOrDefault();
 
+            var shortId = Common.OrderDisplayHelper.ShortId(order.Id);
             if(shipper != null)
             {
                 var shipperNotification = new Notification
                 {
                     Id = Guid.NewGuid(),
                     UserId = shipper.UserProfile.UserAccountId,
-                    Title = "Thu hồi đơn hàng",
-                    Message = $"Đơn hàng mã '{order.Id}' của bạn đã bị thu hồi bởi Điều phối viên. Lý do: {reason}",
+                    Title = "Đơn hàng bị thu hồi",
+                    Message = $"Điều phối viên đã thu hồi đơn #{shortId} khỏi bạn. Lý do: {reason}. Bạn không cần tiếp tục giao đơn này.",
                     NotificationType = NotificationType.Delivery,
+                    TargetId = order.Id,
                     IsRead = false,
                     CreateAt = DateTime.UtcNow
                 };
@@ -327,9 +335,10 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
                 {
                     Id = Guid.NewGuid(),
                     UserId = order.UserAccountId.Value,
-                    Title = "Đơn hàng đang được điều phối lại",
-                    Message = $"Đơn hàng mã '{order.Id}' của bạn đang được tìm kiếm tài xế mới.",
+                    Title = "Đang tìm tài xế mới",
+                    Message = $"Đơn #{shortId} đang được tìm tài xế khác để giao. Bạn vui lòng chờ thêm một chút — chúng tôi sẽ cập nhật khi có tài xế nhận đơn.",
                     NotificationType = NotificationType.Delivery,
+                    TargetId = order.Id,
                     IsRead = false,
                     CreateAt = DateTime.UtcNow
                 };

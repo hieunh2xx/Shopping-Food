@@ -85,7 +85,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                         Id = Guid.NewGuid(),
                         UserId = order.UserAccountId.Value,
                         Title = "Đơn hàng đã bị từ chối",
-                        Message = $"Đơn hàng #{shortId} của bạn đã bị từ chối bởi cửa hàng. Lý do: {request.RejectReason}.{refundNote}",
+                        Message = $"Đơn #{shortId} đã bị cửa hàng từ chối. Lý do: {request.RejectReason}.{refundNote} Xem chi tiết trong mục Đơn hàng.",
                         NotificationType = NotificationType.System,
                         TargetId = order.Id,
                         IsRead = false,

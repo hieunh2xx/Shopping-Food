@@ -22,6 +22,7 @@ type PeriodDays = 7 | 30;
 export function AdminFinancePage() {
   const [days, setDays] = useState<PeriodDays>(30);
   const [reconciliation, setReconciliation] = useState<any>(null);
+  const [codOverview, setCodOverview] = useState<any>(null);
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
   const [disputedWithdrawals, setDisputedWithdrawals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,17 +43,19 @@ export function AdminFinancePage() {
       const from = new Date();
       from.setDate(to.getDate() - (days - 1));
 
-      const [recRes, wdRes, dispRes] = await Promise.all([
+      const [recRes, wdRes, dispRes, codRes] = await Promise.all([
         paymentService.getReconciliation({
           fromDate: from.toISOString(),
           toDate: to.toISOString(),
         }),
         paymentService.getWithdrawals('Pending'),
         paymentService.getWithdrawals('Disputed'),
+        paymentService.getCodOverview(),
       ]);
       if (!recRes.error) setReconciliation(recRes.data);
       if (!wdRes.error) setWithdrawals(wdRes.data || []);
       if (!dispRes.error) setDisputedWithdrawals(dispRes.data || []);
+      if (!codRes.error) setCodOverview(codRes.data);
     } finally {
       setLoading(false);
     }
@@ -257,8 +260,74 @@ export function AdminFinancePage() {
         </div>
       </Card>
 
+      <Card className="p-6 mb-6">
+        <div className="mb-4 flex flex-wrap justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">COD thu hộ &amp; nộp lại</h2>
+            <p className="text-sm text-gray-500">
+              Nợ COD còn lại của shipper và lịch sử nộp về sàn
+            </p>
+          </div>
+          <div className="flex gap-4 text-sm">
+            <div>
+              <p className="text-gray-500">Shipper còn nợ</p>
+              <p className="font-bold text-gray-900">{codOverview?.summary?.shippersWithDebt ?? 0}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">Tổng COD chưa nộp</p>
+              <p className="font-bold text-amber-700">{formatCurrency(codOverview?.summary?.totalOutstandingCod || 0)}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">Đã nộp về sàn (gần đây)</p>
+              <p className="font-bold text-green-700">{formatCurrency(codOverview?.summary?.totalRemitted || 0)}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div>
+            <h3 className="text-sm font-semibold text-gray-700 mb-2">Công nợ COD hiện tại</h3>
+            {(codOverview?.outstandingDebts || []).length === 0 ? (
+              <p className="text-sm text-gray-400">Không có shipper đang nợ COD</p>
+            ) : (
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {codOverview.outstandingDebts.map((s: any) => (
+                  <div key={s.shipperId} className="flex justify-between items-center p-3 border rounded-xl">
+                    <div>
+                      <p className="font-medium text-gray-900">{s.shipperName}</p>
+                      <p className="text-xs text-gray-500">{s.phone || '—'}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-amber-700">{formatCurrency(s.codCollectedAmount)}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-gray-700 mb-2">Lịch sử shipper nộp COD</h3>
+            {(codOverview?.recentRemittances || []).length === 0 ? (
+              <p className="text-sm text-gray-400">Chưa có giao dịch nộp COD về sàn</p>
+            ) : (
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {codOverview.recentRemittances.map((t: any) => (
+                  <div key={t.id} className="flex justify-between items-center p-3 border rounded-xl bg-green-50/40">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{t.description}</p>
+                      <p className="text-xs text-gray-500">{new Date(t.createdAt).toLocaleString('vi-VN')}</p>
+                    </div>
+                    <p className="font-bold text-green-700">+{formatCurrency(t.amount)}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </Card>
+
       <Card className="p-6">
-        <h2 className="text-lg font-semibold mb-4">Yêu cầu rút tiền chờ duyệt (UC-PAY-009)</h2>
+        <h2 className="text-lg font-semibold mb-4">Yêu cầu rút tiền chờ duyệt </h2>
         {withdrawals.length === 0 ? (
           <p className="text-gray-500 text-sm">Không có yêu cầu chờ duyệt</p>
         ) : (

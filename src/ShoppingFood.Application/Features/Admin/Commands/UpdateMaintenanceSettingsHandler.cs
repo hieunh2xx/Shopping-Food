@@ -97,9 +97,13 @@ namespace ShoppingFood.Application.Features.Admin.Commands
                 if (request.ScheduledStartTime.HasValue && !request.IsMaintenanceMode)
                 {
                     // Hẹn giờ bảo trì (In-app và Email)
-                    if (string.IsNullOrEmpty(body)) 
-                        body = $"Hệ thống sẽ bảo trì vào lúc {request.ScheduledStartTime.Value:dd/MM/yyyy HH:mm} UTC. Vui lòng hoàn tất các giao dịch trước thời gian này.";
-                        
+                    if (string.IsNullOrEmpty(body))
+                    {
+                        var vnTime = request.ScheduledStartTime.Value.Kind == DateTimeKind.Utc
+                            ? request.ScheduledStartTime.Value.AddHours(7)
+                            : request.ScheduledStartTime.Value;
+                        body = $"Hệ thống sẽ bảo trì vào lúc {vnTime:dd/MM/yyyy HH:mm} (giờ Việt Nam). Vui lòng hoàn tất giao dịch trước thời gian này.";
+                    } 
                     foreach (var u in users)
                     {
                         if (!string.IsNullOrEmpty(u.Email))

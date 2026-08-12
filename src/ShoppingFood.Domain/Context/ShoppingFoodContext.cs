@@ -64,6 +64,7 @@ namespace ShoppingFood.Domain.Context
         public DbSet<Wallet> Wallets { get; set; } = null!;
         public DbSet<FinancialTransaction> FinancialTransactions { get; set; } = null!;
         public DbSet<WithdrawalRequest> WithdrawalRequests { get; set; } = null!;
+        public DbSet<CodRemittanceRequest> CodRemittanceRequests { get; set; } = null!;
         public DbSet<EInvoiceRequest> EInvoiceRequests { get; set; } = null!;
         public DbSet<PlatformFinanceConfig> PlatformFinanceConfigs { get; set; } = null!;
         public DbSet<PaymentSession> PaymentSessions { get; set; } = null!;
@@ -974,6 +975,23 @@ namespace ShoppingFood.Domain.Context
                 entity.Property(e => e.Status).HasConversion<string>().IsRequired();
                 entity.Property(e => e.RejectReason).HasMaxLength(500);
                 entity.HasOne(d => d.Wallet).WithMany().HasForeignKey(d => d.WalletId).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<CodRemittanceRequest>(entity =>
+            {
+                entity.ToTable("COD_REMITTANCE_REQUEST");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Amount).HasColumnType("decimal(12,2)").IsRequired();
+                entity.Property(e => e.Note).HasMaxLength(500);
+                entity.Property(e => e.ProofImageUrl).HasMaxLength(500);
+                entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
+                entity.Property(e => e.RejectReason).HasMaxLength(500);
+                entity.HasIndex(e => e.ShipperProfileId);
+                entity.HasIndex(e => e.Status);
+                entity.HasOne(d => d.ShipperProfile)
+                    .WithMany()
+                    .HasForeignKey(d => d.ShipperProfileId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             modelBuilder.Entity<EInvoiceRequest>(entity =>

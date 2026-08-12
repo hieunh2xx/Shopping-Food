@@ -23,7 +23,8 @@ import {
   MessageSquareWarning,
   ShieldBan,
   Activity,
-  Wallet
+  Wallet,
+  Banknote
 } from 'lucide-react';
 import { useAuth, useSupportChatWatcher } from '../../../hooks';
 import { ROUTES } from '../../../routes/routeConfig';
@@ -69,9 +70,12 @@ export function AdminLayout() {
     { name: 'Hạng thành viên', path: '/admin/member-ranks', icon: Crown, group: 'Marketing & Ưu đãi' },
 
     // Tài chính & Thanh toán
-    { name: 'Tài chính', path: ROUTES.ADMIN_FINANCE, icon: DollarSign, group: 'Tài chính & Thanh toán' },
-    { name: 'Duyệt Rút tiền', path: ROUTES.ADMIN_WITHDRAWALS, icon: Wallet, group: 'Tài chính & Thanh toán' },
-    { name: 'Thanh toán', path: ROUTES.ADMIN_PAYMENTS, icon: CreditCard, group: 'Tài chính & Thanh toán' },
+    { name: 'Tài chính / COD', path: ROUTES.ADMIN_FINANCE, icon: DollarSign, group: 'Tài chính & Thanh toán' },
+    { name: 'Duyệt nộp COD', path: ROUTES.ADMIN_COD_REMITTANCES, icon: Banknote, group: 'Tài chính & Thanh toán' },
+    { name: 'Doanh thu theo quán', path: '/admin/seller-revenues', icon: Store, group: 'Tài chính & Thanh toán' },
+    { name: 'Doanh thu theo shipper', path: '/admin/shipper-revenues', icon: Truck, group: 'Tài chính & Thanh toán' },
+    { name: 'Duyệt rút tiền', path: ROUTES.ADMIN_WITHDRAWALS, icon: Wallet, group: 'Tài chính & Thanh toán' },
+    { name: 'SePay / QR', path: ROUTES.ADMIN_PAYMENTS, icon: CreditCard, group: 'Tài chính & Thanh toán' },
 
     // Hệ thống
     { name: 'Cấu hình TC/Vận hành', path: '/admin/finance-config', icon: Settings, group: 'Hệ thống' },

@@ -91,8 +91,8 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
             {
                 Id = Guid.NewGuid(),
                 UserId = shipper.Id,
-                Title = "Tài khoản bị tạm đình chỉ nhận đơn",
-                Message = $"Tài khoản hoạt động shipper của bạn đã bị tạm dừng nhận đề xuất giao đơn trong {durationMinutes} phút. Lý do : {reason}",
+                Title = "Tài khoản tạm dừng nhận đơn",
+                Message = $"Bạn tạm thời không nhận được đề xuất đơn mới trong {durationMinutes} phút. Lý do: {reason}. Sau thời gian này hệ thống sẽ tự cho phép nhận đơn lại.",
                 NotificationType = NotificationType.System,
                 IsRead = false,
                 CreateAt = DateTime.UtcNow,

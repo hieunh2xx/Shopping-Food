@@ -21,11 +21,17 @@ namespace ShoppingFood.Dto.Coordinator
         public DateTime UpdatedAt = DateTime.UtcNow;
 
         public string RestaurantName { get; set; } = string.Empty;
-        public string RestaurantAddress { get;set; } = string.Empty; 
+        public string RestaurantAddress { get;set; } = string.Empty;
+        public Guid? RestaurantId { get; set; }
         
         public Guid? ShipperId { get; set; }
         public string? ShipperName { get;set;  } 
         public string? ShipperPhone { get; set; }
+
+        /// <summary>Batch pickup when this shipper has ≥2 Shipping orders at the same restaurant.</summary>
+        public string? BatchPickupCode { get; set; }
+        public int BatchBagCount { get; set; }
+        public List<ShoppingFood.Dto.Order.BatchOrderLabelDto>? BatchOrderLabels { get; set; }
 
         public List<DispatchOrderItemDto> Items { get; set; } = new();
     }

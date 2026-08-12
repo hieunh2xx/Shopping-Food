@@ -128,10 +128,10 @@ export function AdminFinanceOperationsPage() {
         config: {
           ...fullConfig,
           commissionRate: commissionRate !== '' ? Number(commissionRate) / 100 : 0.1,
-          baseDeliveryFee: Number(baseDeliveryFee) || 0,
           feePerKm: Number(feePerKm) || 0,
           shipperBaseFee: Number(shipperBaseFee) || 0,
           shipperFeePerKm: Number(shipperFeePerKm) || 0,
+          baseDeliveryFee: Number(baseDeliveryFee) || 0,
           rushHourMultiplier: Number(rushHourMultiplier) || 0,
           shipperRushHourBonus: Number(shipperRushHourBonus) || 0,
           rushHourStartTime,
@@ -215,6 +215,7 @@ export function AdminFinanceOperationsPage() {
               <div className="bg-white/80 rounded-xl px-3 py-2 border border-emerald-100">
                 <p className="text-[11px] text-gray-500">Phí ship khách (Platform)</p>
                 <p className="font-bold text-gray-900">{formatVnd(shippingFee)}</p>
+                <p className="text-[10px] text-gray-400 mt-0.5">Từ Cấu hình Giao hàng</p>
               </div>
               <div className="bg-white/80 rounded-xl px-3 py-2 border border-emerald-100">
                 <p className="text-[11px] text-gray-500">Freeship trong bán kính</p>
@@ -295,6 +296,7 @@ export function AdminFinanceOperationsPage() {
                   onChange={(e) => setShipperBaseFee(e.target.value === '' ? '' : Number(e.target.value))}
                   placeholder="VD: 12000"
                 />
+                <p className="text-xs text-gray-500 mt-1">Số shipper nhận (không phải phí khách trả).</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Thu nhập Shipper / Km (VNĐ)</label>
@@ -304,6 +306,7 @@ export function AdminFinanceOperationsPage() {
                   onChange={(e) => setShipperFeePerKm(e.target.value === '' ? '' : Number(e.target.value))}
                   placeholder="VD: 4000"
                 />
+                <p className="text-xs text-gray-500 mt-1">Cộng thêm khi quãng đường &gt; 5km.</p>
               </div>
             </div>
 
@@ -377,12 +380,15 @@ export function AdminFinanceOperationsPage() {
               placeholder="VD: 15 (Để trống nếu không giới hạn)"
             />
             <Input
-              label="Phí giao hàng mặc định (VNĐ)"
+              label="Phí giao hàng mặc định (VNĐ) — khách trả trên checkout"
               type="number"
               value={shippingFee}
               onChange={(e) => setShippingFee(e.target.value === '' ? '' : Number(e.target.value))}
               placeholder="VD: 15000"
             />
+            <p className="text-xs text-gray-500 -mt-2 mb-2">
+              Đây là phí khách thấy ở tóm tắt đơn. Thu nhập shipper cấu hình ở tab riêng.
+            </p>
             <Input
               label="Bán kính miễn phí giao hàng (km)"
               type="number"

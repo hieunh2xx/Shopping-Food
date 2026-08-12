@@ -88,10 +88,10 @@ namespace ShoppingFood.Application.Features.FlashSales.Commands
                 UserId = sellerUserAccountId.Value,
                 Title = isApproved
                     ? "Sản phẩm Flash Sale đã được duyệt"
-                    : "Sản phẩn Flash Sale bị từ chối",
+                    : "Sản phẩm Flash Sale bị từ chối",
                 Message = isApproved
-                    ? $"Sản phẩm \"{productName}\" đã được duyệt tham gia Flash Sale. Sản phẩm sẽ hiển thị khi chương trình bắt đầu."
-                    : $"Sản phẩm \"{productName}\" đã bị từ chối tham gia Flash Sale. Lý do: {flashSaleProduct.RejectReason}",
+                    ? $"Món «{productName}» đã được duyệt tham gia Flash Sale và sẽ hiển thị khi chương trình bắt đầu."
+                    : $"Món «{productName}» bị từ chối tham gia Flash Sale. Lý do: {flashSaleProduct.RejectReason}",
                 NotificationType = Domain.Enums.NotificationType.Review,
                 IsRead = false,
                 CreateAt = DateTime.UtcNow

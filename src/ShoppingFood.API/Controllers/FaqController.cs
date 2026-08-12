@@ -55,6 +55,8 @@ namespace ShoppingFood.API.Controllers
         public async Task<ActionResult<ApiResponse>> Delete(Guid id)
         {
             var command = new DeleteFaqCommand { Id = id };
+            if (userDto != null)
+                command.CurrentUserId = userDto.Id;
             var response = await _mediator.Send(command);
             return StatusCode(response.Code, response);
         }

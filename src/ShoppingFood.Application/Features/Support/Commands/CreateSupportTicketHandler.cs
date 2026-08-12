@@ -104,8 +104,8 @@ namespace ShoppingFood.Application.Features.Support.Commands
                 {
                     Id = Guid.NewGuid(),
                     UserId = coordinator.Id,
-                    Title = "Ticket hỗ trợ mới từ CSKH",
-                    Message = "Nhân viên CSKH vừa tiếp nhận và mở ticket hỗ trợ mới. Vui lòng xử lý.",
+                    Title = "Phiếu hỗ trợ mới từ CSKH",
+                    Message = "Nhân viên CSKH vừa mở phiếu hỗ trợ mới. Vào mục Hỗ trợ / Khiếu nại để xem nội dung và xử lý.",
                     NotificationType = Domain.Enums.NotificationType.Order,
                     TargetId = orderId,
                     IsRead = false,

@@ -155,7 +155,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     Id = Guid.NewGuid(),
                     UserId = order.UserAccountId.Value,
                     Title = "Tài xế đã đến cửa hàng",
-                    Message = $"Tài xế '{shipperName}' đã đến cửa hàng và đang chờ nhận món ăn cho đơn hàng mã '{order.Id}' của bạn.",
+                    Message = $"Tài xế {shipperName} đã đến và đang chờ nhận món cho đơn #{Common.OrderDisplayHelper.ShortId(order.Id)}. Vui lòng bàn giao đúng đơn (kiểm tra mã đơn trên túi).",
                     NotificationType = NotificationType.Delivery,
                     TargetId = order.Id,
                     IsRead = false,

@@ -72,8 +72,8 @@ namespace ShoppingFood.Application.Features.Admin.Commands
                 UserId = shipper.UserProfile.UserAccountId,
                 Title = request.IsLocked ? "Tài khoản tài xế bị khóa" : "Tài khoản tài xế được mở khóa",
                 Message = request.IsLocked
-                    ? "Tài khoản của bạn đã bị khóa do điểm uy tín quá thấp. Vui lòng liên hệ Admin để tham gia đào tạo lại nghiệp vụ."
-                    : "Tài khoản của bạn đã được mở khóa. Bạn có thể bắt đầu hoạt động lại.",
+                    ? "Tài khoản tài xế của bạn đã bị khóa do điểm uy tín quá thấp. Liên hệ bộ phận hỗ trợ / quản trị viên để đăng ký đào tạo lại và mở khóa."
+                    : "Tài khoản tài xế của bạn đã được mở khóa. Bạn có thể bật trạng thái online và tiếp tục nhận đơn.",
                 NotificationType = NotificationType.System,
                 IsRead = false,
                 CreateAt = DateTime.UtcNow

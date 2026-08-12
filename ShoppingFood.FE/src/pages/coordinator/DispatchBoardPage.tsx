@@ -410,6 +410,33 @@ export default function DispatchBoardPage() {
                       <span>Tài xế giao: <strong className="text-purple-700">{order.shipperName}</strong> ({order.shipperPhone})</span>
                     </div>
                   )}
+                  {order.batchPickupCode && (
+                    <div className="sm:col-span-2 mt-1.5 w-full rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-2 text-xs text-amber-900">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <span className="font-semibold">Lô lấy hàng cùng quán</span>
+                        <span className="font-mono font-black tracking-wider text-amber-700">{order.batchPickupCode}</span>
+                        <span>· {order.batchBagCount || order.batchOrderLabels?.length || 0} túi</span>
+                        <span className="text-amber-700/80">· {order.restaurantName}</span>
+                      </div>
+                      {Array.isArray(order.batchOrderLabels) && order.batchOrderLabels.length > 0 && (
+                        <div className="mt-1.5 flex flex-wrap gap-1.5">
+                          {order.batchOrderLabels.map((l: any) => (
+                            <span
+                              key={l.orderId || l.OrderId}
+                              className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-mono text-[11px] border ${
+                                (l.orderId || l.OrderId) === order.id
+                                  ? 'bg-amber-200 border-amber-400 font-bold'
+                                  : 'bg-white border-amber-100'
+                              }`}
+                            >
+                              #{(l.shortCode || l.ShortCode || '').toUpperCase()}
+                              <span className="font-sans text-amber-800/80">{l.contactName || l.ContactName}</span>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                   {order.rejectReason && order.status === 'Cancelled' && (
                     <div className="flex items-start gap-1.5 sm:col-span-2 mt-1 py-1 px-2.5 bg-red-50 rounded-lg w-full border border-red-100 text-red-700">
                       <AlertTriangle className="w-3.5 h-3.5 mt-0.5" />

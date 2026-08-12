@@ -95,8 +95,8 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
                         {
                             Id = Guid.NewGuid(),
                             UserId = shipper.UserProfile.UserAccountId,
-                            Title = "Đề xuất giao hàng mới",
-                            Message = $"Có đơn hàng mới '{order.Id}' ở gần bạn. Hãy nhanh tay nhận đơn!",
+                            Title = "Có đơn gần bạn",
+                            Message = $"Có đơn #{Common.OrderDisplayHelper.ShortId(order.Id)} gần vị trí của bạn. Nhận đơn sớm để không bị người khác lấy trước!",
                             NotificationType = NotificationType.System,
                             TargetId = order.Id,
                             IsRead = false,

@@ -7,7 +7,8 @@ import type {
   IToggleShipperOnlineRequest, 
   IAcceptDeliveryOfferRequest, 
   IConfirmArrivedRequest, 
-  IConfirmPickedUpRequest, 
+  IConfirmPickedUpRequest,
+  IConfirmPickedUpBatchRequest,
   IUpdateShipperLocationRequest,
   IConfirmDeliveryFailedRequest,
   IConfirmDeliverySuccessRequest,
@@ -36,6 +37,10 @@ class ShipperService {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.SHIPPER.CONFIRM_PICKED_UP, data);
   }
 
+  async confirmPickedUpBatch(data: IConfirmPickedUpBatchRequest): Promise<IApiResponse<any>> {
+    return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.SHIPPER.CONFIRM_PICKED_UP_BATCH, data);
+  }
+
   async updateLocation(data: IUpdateShipperLocationRequest): Promise<IApiResponse<any>> {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.SHIPPER.LOCATION, data);
   }
@@ -52,10 +57,12 @@ class ShipperService {
     return httpClient.post<IApiResponse<any>>(API_ENDPOINTS.SHIPPER.CONFIRM_FAILED, data);
   }
 
-  async getIncomeReport(startDate?: string, endDate?: string): Promise<IApiResponse<IShipperIncomeReportDto>>{
+  async getIncomeReport(startDate?: string, endDate?: string, skip = 0, take = 10): Promise<IApiResponse<IShipperIncomeReportDto>>{
     const params = new URLSearchParams();
     if(startDate) params.append('startDate', startDate);
     if(endDate) params.append('endDate', endDate);
+    params.append('skip', String(skip));
+    params.append('take', String(take));
     return httpClient.get<IApiResponse<IShipperIncomeReportDto>>(`${API_ENDPOINTS.SHIPPER.INCOME_REPORT}?${params.toString()}`)
   }
 

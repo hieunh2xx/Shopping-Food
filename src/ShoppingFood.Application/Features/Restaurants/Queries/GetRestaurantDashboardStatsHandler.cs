@@ -73,6 +73,8 @@ namespace ShoppingFood.Application.Features.Restaurants.Queries
                     .ToList();
 
                 var totalRevenue = restaurantItems.Sum(i => i.TotalPrice);
+                var totalPlatformCommission = deliveredOrders.Sum(o => o.PlatformCommission);
+                var totalSellerPayout = deliveredOrders.Sum(o => o.SellerPayout);
 
                 // Group by product name to get best sellers
                 var bestSellers = restaurantItems
@@ -90,6 +92,8 @@ namespace ShoppingFood.Application.Features.Restaurants.Queries
                 var statsDto = new RestaurantDashboardStatsDto
                 {
                     TotalRevenue = totalRevenue,
+                    TotalPlatformCommission = totalPlatformCommission,
+                    TotalSellerPayout = totalSellerPayout,
                     TotalOrders = totalOrders,
                     CancelledOrders = cancelledOrders,
                     CancellationRate = Math.Round(cancellationRate, 2),

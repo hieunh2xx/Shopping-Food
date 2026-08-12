@@ -52,7 +52,7 @@ export function CustomerWalletPage() {
         paymentService.getTransactions({ take }),
       ]);
       if (!wRes.error && wRes.data) setWallet(wRes.data);
-      if (!tRes.error && tRes.data) setTransactions(tRes.data);
+      if (!tRes.error && tRes.data) setTransactions(tRes.data.items || []);
     } finally {
       setLoading(false);
     }

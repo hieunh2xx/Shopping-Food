@@ -14,6 +14,7 @@ namespace ShoppingFood.Dto.Order
         public string ContactName { get; set; } = string.Empty;
         public string ContactPhone { get; set; } = string.Empty;
         public string? Note { get; set; }
+        public Guid? RestaurantId { get; set; }
         public string RestaurantName { get; set; } = string.Empty;
         public string RestaurantAddress { get; set; } = string.Empty;
         public string RestaurantPhone { get; set; } = string.Empty;

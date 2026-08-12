@@ -81,7 +81,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                         Id = Guid.NewGuid(),
                         UserId = order.UserAccountId.Value,
                         Title = "Đơn hàng đã được xác nhận",
-                        Message = $"Nhà hàng đã xác nhận đơn #{order.Id.ToString()[..8]}. Bạn không thể tự hủy — nhắn tin người bán nếu cần hủy.",
+                        Message = $"Nhà hàng đã xác nhận đơn #{Common.OrderDisplayHelper.ShortId(order.Id)}. Bạn không thể tự hủy — nếu cần hủy, hãy nhắn tin cho nhà hàng trong mục Đơn hàng.",
                         NotificationType = NotificationType.Order,
                         TargetId = order.Id,
                         IsRead = false,

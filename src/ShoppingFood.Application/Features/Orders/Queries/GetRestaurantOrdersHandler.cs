@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using ShoppingFood.Application.Common;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Domain.Enums;
 using ShoppingFood.Domain.Models;
@@ -47,11 +48,24 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                     return ApiResponse.Failure(403, "You do not own any restaurants on the system.");
                 }
 
-                // 2. Build predicate
-                Expression<Func<Order, bool>> predicate = o => 
+                // 2. Build predicate (Filter: order id / OTP short code / customer / phone / address / shipper name)
+                var filter = request.Filter?.Trim();
+                var hasFilter = !string.IsNullOrWhiteSpace(filter);
+                var filterLower = hasFilter ? filter!.ToLowerInvariant() : null;
+
+                Expression<Func<Order, bool>> predicate = o =>
                     o.Items.Any(i => i.Product != null && i.Product.RestaurantId == restaurant.Id)
                     && !(o.PaymentMethod != PaymentMethod.COD && o.PaymentStatus == PaymentStatus.Pending)
-                    && (!request.Status.HasValue || o.Status == request.Status.Value);
+                    && (!request.Status.HasValue || o.Status == request.Status.Value)
+                    && (!hasFilter ||
+                        o.Id.ToString().ToLower().Contains(filterLower!) ||
+                        (o.ContactName != null && o.ContactName.ToLower().Contains(filterLower!)) ||
+                        (o.ContactPhone != null && o.ContactPhone.ToLower().Contains(filterLower!)) ||
+                        (o.DeliveryAddress != null && o.DeliveryAddress.ToLower().Contains(filterLower!)) ||
+                        (o.Note != null && o.Note.ToLower().Contains(filterLower!)) ||
+                        (o.Shipper != null && o.Shipper.UserProfile != null &&
+                         o.Shipper.UserProfile.FullName != null &&
+                         o.Shipper.UserProfile.FullName.ToLower().Contains(filterLower!)));
 
                 var total = await _orderRepository.GetCountAsync(predicate);
 
@@ -59,7 +73,8 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                 var orders = await _orderRepository.GetAsync(
                     predicate: predicate,
                     orderBy: q => q.OrderByDescending(o => o.CreatedAt),
-                    include: q => q.Include(o => o.Items).ThenInclude(i => i.Product),
+                    include: q => q.Include(o => o.Items).ThenInclude(i => i.Product)
+                                   .Include(o => o.Shipper).ThenInclude(s => s.UserProfile).ThenInclude(p => p.UserAccount),
                     skip: request.Skip,
                     take: request.Take,
                     disableTracking: true
@@ -72,6 +87,8 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                     UserAccountId = o.UserAccountId,
                     GuestUserId = o.GuestUserId,
                     ShipperId = o.ShipperId,
+                    ShipperName = o.Shipper?.UserProfile?.FullName,
+                    ShipperPhone = o.Shipper?.UserProfile?.UserAccount?.Phone,
                     TotalAmount = o.TotalAmount,
                     DeliveryAddress = o.DeliveryAddress,
                     ContactName = o.ContactName,
@@ -102,6 +119,47 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                         BuyXGetYPromotionId = i.BuyXGetYPromotionId
                     }).ToList()
                 }).ToList();
+
+                // 5. Attach batch pickup codes + readable bag labels (full Shipping set at restaurant)
+                var allShippingAtRestaurant = await _orderRepository.GetAsync(
+                    predicate: o =>
+                        o.Status == OrderStatus.Shipping &&
+                        o.ShipperId.HasValue &&
+                        o.Items.Any(i => i.Product != null && i.Product.RestaurantId == restaurant.Id),
+                    include: q => q.Include(o => o.Shipper).ThenInclude(s => s.UserProfile).ThenInclude(p => p.UserAccount),
+                    disableTracking: true
+                );
+
+                var batchGroups = allShippingAtRestaurant
+                    .GroupBy(o => o.ShipperId!.Value)
+                    .Where(g => g.Count() >= 2)
+                    .ToList();
+
+                foreach (var group in batchGroups)
+                {
+                    var ordered = group.OrderBy(o => o.Id).ToList();
+                    var batchOrderIds = ordered.Select(o => o.Id).ToList();
+                    var code = BatchPickupCodeHelper.Compute(group.Key, restaurant.Id, batchOrderIds);
+                    var labels = ordered.Select(o => new BatchOrderLabelDto
+                    {
+                        OrderId = o.Id,
+                        ShortCode = o.Id.ToString("N")[..8].ToUpperInvariant(),
+                        ContactName = string.IsNullOrWhiteSpace(o.ContactName) ? "Khách" : o.ContactName
+                    }).ToList();
+                    var shipperName = ordered.First().Shipper?.UserProfile?.FullName;
+                    var shipperPhone = ordered.First().Shipper?.UserProfile?.UserAccount?.Phone;
+
+                    foreach (var orderId in batchOrderIds)
+                    {
+                        var dto = dtos.FirstOrDefault(d => d.Id == orderId);
+                        if (dto == null) continue;
+                        dto.BatchPickupCode = code;
+                        dto.BatchOrderIds = batchOrderIds;
+                        dto.BatchOrderLabels = labels;
+                        dto.ShipperName ??= shipperName;
+                        dto.ShipperPhone ??= shipperPhone;
+                    }
+                }
 
                 return ApiResponse.Success(dtos, "Restaurant orders retrieved successfully.", total);
             }

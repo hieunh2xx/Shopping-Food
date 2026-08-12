@@ -68,7 +68,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Queries
                     {
                         Id = o.Id,
                         IncidentType = "DeliveryFailed",
-                        Title = "Báo cáo sự cố giao hàng (Shipper)",
+                        Title = "Báo cáo sự cố giao hàng (tài xế)",
                         Description = o.RejectReason,
                         Status = "Pending",
                         OrderId = o.Id,

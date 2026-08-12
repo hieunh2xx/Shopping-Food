@@ -11,7 +11,7 @@ import { ROUTES } from '../routes/routeConfig';
 
 export function BuyXGetYPage() {
   const { addBuyXGetY } = useCart();
-  const { alert } = useConfirm();
+  const { showModal } = useConfirm();
   const [promotions, setPromotions] = useState<Array<{ promo: IBuyXGetYPromotionDto, p: IProductDto | null, r: IRestaurantDto | null }>>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -149,7 +149,7 @@ export function BuyXGetYPage() {
                             });
                           } else {
                             console.warn("Product not found", item);
-                            void alert({ message: 'Không tìm thấy thông tin sản phẩm' });
+                            void showModal({ message: 'Không tìm thấy thông tin sản phẩm' });
                           }
                         }}
                         className={`text-sm font-bold px-5 py-2.5 rounded-xl ${btnColor} text-white hover:brightness-110 active:scale-95 transition-all shadow-md shrink-0`}

@@ -77,6 +77,8 @@ class HttpClient {
         'otp has expired.': 'Mã OTP đã hết hạn.',
         'invalid or expired otp': 'Mã OTP không hợp lệ hoặc đã hết hạn',
         'must provide either new email or new phone.': 'Vui lòng cung cấp email hoặc số điện thoại mới',
+        'validation failed.': 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại thông tin đã nhập.',
+        'validation failed': 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại thông tin đã nhập.',
         'security validation failed. ip mismatch.': 'Xác thực bảo mật thất bại (địa chỉ IP không khớp)',
         'user not found': 'Không tìm thấy tài khoản người dùng',
         'user not found.': 'Không tìm thấy tài khoản người dùng',

@@ -1,4 +1,5 @@
 using FluentValidation;
+using System;
 using System.IO;
 
 namespace ShoppingFood.Application.Features.Users.Commands
@@ -16,14 +17,14 @@ namespace ShoppingFood.Application.Features.Users.Commands
             RuleFor(x => x.IdentityCardFrontUrl)
                 .NotEmpty().WithMessage("{PropertyName} is required.")
                 .MaximumLength(255).WithMessage("{PropertyName} must not exceed 255 characters.")
-                .Must(url => HasValidImageExtension(url))
-                .WithMessage("{PropertyName} must be a valid image file (.jpg, .jpeg, .png, .webp).");
+                .Must(IsValidImageUrl)
+                .WithMessage("{PropertyName} must be a valid image URL.");
 
             RuleFor(x => x.IdentityCardBackUrl)
                 .NotEmpty().WithMessage("{PropertyName} is required.")
                 .MaximumLength(255).WithMessage("{PropertyName} must not exceed 255 characters.")
-                .Must(url => HasValidImageExtension(url))
-                .WithMessage("{PropertyName} must be a valid image file (.jpg, .jpeg, .png, .webp).");
+                .Must(IsValidImageUrl)
+                .WithMessage("{PropertyName} must be a valid image URL.");
 
             RuleFor(x => x.VehicleType)
                 .IsInEnum().WithMessage("Invalid vehicle type. Allowed: Motorcycle, ElectricMotorbike, Car.");
@@ -35,22 +36,35 @@ namespace ShoppingFood.Application.Features.Users.Commands
             RuleFor(x => x.DriverLicenseUrl)
                 .NotEmpty().WithMessage("{PropertyName} is required.")
                 .MaximumLength(255).WithMessage("{PropertyName} must not exceed 255 characters.")
-                .Must(url => HasValidImageExtension(url))
-                .WithMessage("{PropertyName} must be a valid image file (.jpg, .jpeg, .png, .webp).");
+                .Must(IsValidImageUrl)
+                .WithMessage("{PropertyName} must be a valid image URL.");
 
             RuleFor(x => x.VehicleRegistrationUrl)
                 .NotEmpty().WithMessage("{PropertyName} is required.")
                 .MaximumLength(255).WithMessage("{PropertyName} must not exceed 255 characters.")
-                .Must(url => HasValidImageExtension(url))
-                .WithMessage("{PropertyName} must be a valid image file (.jpg, .jpeg, .png, .webp).");
+                .Must(IsValidImageUrl)
+                .WithMessage("{PropertyName} must be a valid image URL.");
         }
 
-        private bool HasValidImageExtension(string url)
+        /// <summary>
+        /// Accepts http(s)/relative CDN URLs (Cloudinary/placehold often omit file extension)
+        /// or paths that end with a known image extension.
+        /// </summary>
+        internal static bool IsValidImageUrl(string url)
         {
-            if (string.IsNullOrEmpty(url)) return false;
-            var cleanUrl = url.Split('?')[0];
-            var ext = Path.GetExtension(cleanUrl).ToLower();
-            return ext is ".jpg" or ".jpeg" or ".png" or ".webp";
+            if (string.IsNullOrWhiteSpace(url)) return false;
+
+            var cleanUrl = url.Split('?')[0].Trim();
+            if (cleanUrl.Length == 0) return false;
+
+            var ext = Path.GetExtension(cleanUrl).ToLowerInvariant();
+            if (ext is ".jpg" or ".jpeg" or ".png" or ".webp")
+                return true;
+
+            // CDN / placeholder URLs without extension
+            return cleanUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+                || cleanUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+                || cleanUrl.StartsWith('/');
         }
     }
 }

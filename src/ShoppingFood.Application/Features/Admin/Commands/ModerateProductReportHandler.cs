@@ -70,8 +70,8 @@ namespace ShoppingFood.Application.Features.Admin.Commands
                         if (product.Restaurant?.Owner?.Id != null)
                         {
                             string sellerMessage = request.HideProduct 
-                                ? $"Sản phẩm '{product.ItemName}' của bạn đã bị ẩn do vi phạm chính sách. Lý do: {request.AdminNote}"
-                                : $"Sản phẩm '{product.ItemName}' của bạn đã nhận một báo cáo vi phạm. Quản trị viên nhắc nhở: {request.AdminNote}";
+                                ? $"Món «{product.ItemName}» đã bị ẩn do vi phạm chính sách. Lý do: {request.AdminNote}. Liên hệ hỗ trợ nếu bạn cần khiếu nại."
+                                : $"Món «{product.ItemName}» nhận báo cáo vi phạm. Quản trị viên nhắc: {request.AdminNote}. Vui lòng chỉnh sửa để tránh bị ẩn.";
 
                             _notificationRepository.Add(new Notification
                             {
@@ -102,14 +102,14 @@ namespace ShoppingFood.Application.Features.Admin.Commands
 
             // Notify Customer (Reporter)
             string reporterMessage = request.IsApproved 
-                ? $"Báo cáo của bạn về sản phẩm đã được xử lý thành công. Cảm ơn sự đóng góp của bạn!{(string.IsNullOrEmpty(request.AdminNote) ? "" : $" (Ghi chú: {request.AdminNote})")}" 
-                : $"Báo cáo của bạn về sản phẩm đã bị bác bỏ.{(string.IsNullOrEmpty(request.AdminNote) ? "" : $" (Lý do: {request.AdminNote})")}";
+                ? $"Báo cáo sản phẩm của bạn đã được xử lý. Cảm ơn bạn đã góp phần giữ chất lượng nền tảng!{(string.IsNullOrEmpty(request.AdminNote) ? "" : $" Ghi chú: {request.AdminNote}")}" 
+                : $"Báo cáo sản phẩm của bạn không được chấp nhận.{(string.IsNullOrEmpty(request.AdminNote) ? "" : $" Lý do: {request.AdminNote}")}";
 
             _notificationRepository.Add(new Notification
             {
                 Id = Guid.NewGuid(),
                 UserId = report.ReporterId,
-                Title = "Cập nhật trạng thái Báo cáo",
+                Title = "Kết quả báo cáo sản phẩm",
                 Message = reporterMessage,
                 NotificationType = Domain.Enums.NotificationType.System,
                 IsRead = false,

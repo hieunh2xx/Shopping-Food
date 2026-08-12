@@ -129,10 +129,17 @@ export function CustomerApplications() {
         setIsUpdateModalOpen(false);
         fetchApplications();
       } else {
-        toast.error(res.message);
+        const details = Array.isArray(res.data)
+          ? res.data.map((d: any) => d.error || d.Error).filter(Boolean).join('\n')
+          : '';
+        toast.error(details || res.message || 'Không thể cập nhật đơn đăng ký.');
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.message);
+      const data = err.response?.data;
+      const details = Array.isArray(data?.data)
+        ? data.data.map((d: any) => d.error || d.Error).filter(Boolean).join('\n')
+        : Object.values(data?.errors || {}).flat().join('\n');
+      toast.error(details || data?.message || 'Lỗi kết nối khi cập nhật đơn.');
     } finally {
       setIsUpdating(false);
     }

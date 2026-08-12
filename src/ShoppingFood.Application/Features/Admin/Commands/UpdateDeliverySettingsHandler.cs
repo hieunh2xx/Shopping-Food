@@ -34,7 +34,10 @@ namespace ShoppingFood.Application.Features.Admin.Commands
                 ShippingFee = request.ShippingFee
             };
 
-            var serializedSettings = JsonSerializer.Serialize(settingsDto);
+            var serializedSettings = JsonSerializer.Serialize(settingsDto, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            });
 
             if (config == null)
             {

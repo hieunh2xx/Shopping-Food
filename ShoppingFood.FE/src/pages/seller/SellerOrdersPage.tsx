@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { orderService } from '../../services/OrderService';
 import { authService } from '../../services/AuthService';
@@ -17,11 +17,15 @@ import {
   Utensils,
   Truck,
   AlertCircle,
-  MessageCircle
+  MessageCircle,
+  Package,
+  Search,
+  Printer
 } from 'lucide-react';
-import { Card, Button, Pagination, PromptModal } from '../../components/common';
+import { Card, Button, Pagination, PromptModal, Input } from '../../components/common';
 import { OrderSellerChatModal } from '../../components/chat/OrderSellerChatModal';
 import toast from 'react-hot-toast';
+import { printSellerOrderBills, type OrderBillData } from '../../utils/printOrderBill';
 
 const STATUS_TABS = [
   { label: 'Tất cả', value: '' },
@@ -50,7 +54,9 @@ export function SellerOrdersPage() {
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
 
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
+  const [restaurantName, setRestaurantName] = useState<string>('Shopping Food');
   const [deliveryType, setDeliveryType] = useState<string>('PlatformDelivery');
+  const [printingBatchCode, setPrintingBatchCode] = useState<string | null>(null);
   const [orderChatMap, setOrderChatMap] = useState<Record<string, string>>({});
   const [sellerChat, setSellerChat] = useState<{ isOpen: boolean; orderId: string; sessionId?: string }>({
     isOpen: false,
@@ -62,10 +68,12 @@ export function SellerOrdersPage() {
   // Pagination states
   const [page, setPage] = useState(1);
   const [take, setTake] = useState(10);
+  const [searchInput, setSearchInput] = useState('');
+  const [appliedFilter, setAppliedFilter] = useState('');
 
   useEffect(() => {
     fetchOrders();
-  }, [activeTab, page]);
+  }, [activeTab, page, take, appliedFilter]);
 
   // Deep-link từ thông báo: ?orderId=...&status=Cancelled
   useEffect(() => {
@@ -155,6 +163,9 @@ export function SellerOrdersPage() {
     authService.getProfile().then(res => {
       if (!res.error && res.data?.sellerInfo?.restaurantId) {
         setRestaurantId(res.data.sellerInfo.restaurantId);
+        if (res.data.sellerInfo.restaurantName) {
+          setRestaurantName(res.data.sellerInfo.restaurantName);
+        }
         if (res.data.sellerInfo.deliveryType) {
           setDeliveryType(res.data.sellerInfo.deliveryType);
         }
@@ -188,10 +199,17 @@ export function SellerOrdersPage() {
       if (activeTab) {
         params.status = activeTab;
       }
+      if (appliedFilter.trim()) {
+        params.filter = appliedFilter.trim();
+      }
       const res = await orderService.getRestaurantOrders(params);
       if (!res.error && res.data) {
         setOrders(res.data);
         setTotal(res.total || 0);
+        // 1 kết quả → mở sẵn chi tiết để đọc OTP nhanh
+        if (appliedFilter.trim() && res.data.length === 1) {
+          setSelectedOrder(res.data[0]);
+        }
       } else {
         toast.error(res.message || 'Không tải được danh sách đơn hàng.');
       }
@@ -200,6 +218,83 @@ export function SellerOrdersPage() {
       toast.error(apiMsg || 'Tải danh sách đơn hàng thất bại do lỗi kết nối mạng.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSearch = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    setPage(1);
+    setAppliedFilter(searchInput.trim());
+  };
+
+  const handleClearSearch = () => {
+    setSearchInput('');
+    setAppliedFilter('');
+    setPage(1);
+  };
+
+  const toBillData = (order: any): OrderBillData => ({
+    id: order.id,
+    contactName: order.contactName,
+    contactPhone: order.contactPhone,
+    deliveryAddress: order.deliveryAddress,
+    note: order.note,
+    status: order.status,
+    paymentMethod: order.paymentMethod,
+    itemsSubtotal: order.itemsSubtotal,
+    shippingFee: order.shippingFee,
+    totalAmount: order.totalAmount,
+    createdAt: order.createdAt,
+    items: order.items,
+    shipperName: order.shipperName,
+    batchPickupCode: order.batchPickupCode,
+  });
+
+  const handlePrintOrderBill = (order: any) => {
+    if (!order?.id) return;
+    printSellerOrderBills([toBillData(order)], {
+      restaurantName,
+      title: `Bill #${String(order.id).slice(0, 8).toUpperCase()}`,
+    });
+  };
+
+  /** In riêng từng đơn trong lô (mỗi đơn 1 trang) — không in 1 tờ gộp. */
+  const handlePrintBatchBills = async (batch: {
+    code: string;
+    labels: { orderId: string; shortCode: string; contactName: string }[];
+  }) => {
+    if (!batch.labels.length) return;
+    setPrintingBatchCode(batch.code);
+    const toastId = toast.loading(`Đang chuẩn bị ${batch.labels.length} bill...`);
+    try {
+      const bills: OrderBillData[] = [];
+      for (const label of batch.labels) {
+        const cached = orders.find((o) => o.id === label.orderId);
+        if (cached?.items?.length) {
+          bills.push(toBillData({ ...cached, batchPickupCode: batch.code }));
+          continue;
+        }
+        const res = await orderService.getOrderDetails(label.orderId);
+        if (!res.error && res.data) {
+          bills.push(toBillData({ ...res.data, batchPickupCode: batch.code }));
+        } else {
+          bills.push({
+            id: label.orderId,
+            contactName: label.contactName,
+            batchPickupCode: batch.code,
+            items: [],
+          });
+        }
+      }
+      printSellerOrderBills(bills, {
+        restaurantName,
+        title: `Bill lô ${batch.code}`,
+      });
+      toast.success(`Đã mở ${bills.length} bill (mỗi đơn 1 trang)`, { id: toastId });
+    } catch {
+      toast.error('Không chuẩn bị được bill lô', { id: toastId });
+    } finally {
+      setPrintingBatchCode(null);
     }
   };
 
@@ -349,14 +444,70 @@ export function SellerOrdersPage() {
     }
   };
 
+  /** Unique pickup batches on current page (one card per shipper code). */
+  const pickupBatches = useMemo(() => {
+    const map = new Map<string, {
+      code: string;
+      shipperId: string;
+      shipperName?: string;
+      shipperPhone?: string;
+      labels: { orderId: string; shortCode: string; contactName: string }[];
+    }>();
+    for (const o of orders) {
+      if (!o.batchPickupCode || !o.shipperId) continue;
+      if (map.has(o.batchPickupCode)) continue;
+      const labels = (o.batchOrderLabels || []).map((l: any) => ({
+        orderId: l.orderId || l.OrderId,
+        shortCode: (l.shortCode || l.ShortCode || String(l.orderId || '').slice(0, 8)).toUpperCase(),
+        contactName: l.contactName || l.ContactName || 'Khách',
+      }));
+      map.set(o.batchPickupCode, {
+        code: o.batchPickupCode,
+        shipperId: o.shipperId,
+        shipperName: o.shipperName,
+        shipperPhone: o.shipperPhone,
+        labels,
+      });
+    }
+    return Array.from(map.values());
+  }, [orders]);
+
   return (
     <div className="p-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Quản lý Đơn hàng</h1>
           <p className="text-sm text-gray-500 mt-1">Xem và xử lý các đơn đặt tại quán của bạn</p>
         </div>
       </div>
+
+      <form onSubmit={handleSearch} className="mb-6 flex flex-col sm:flex-row gap-2 sm:items-end">
+        <div className="flex-1">
+          <Input
+            label="Tìm đơn / OTP"
+            placeholder="Mã đơn (#8 ký tự), OTP 6 ký tự, SĐT, tên khách, tên tài xế..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+          />
+        </div>
+        <div className="flex gap-2 shrink-0 pb-0.5">
+          <Button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white">
+            <Search className="w-4 h-4 mr-1.5" />
+            Tìm kiếm
+          </Button>
+          {(appliedFilter || searchInput) && (
+            <Button type="button" variant="outline" onClick={handleClearSearch}>
+              Xóa
+            </Button>
+          )}
+        </div>
+      </form>
+      {appliedFilter && (
+        <p className="text-xs text-gray-500 -mt-4 mb-4">
+          Đang lọc: <span className="font-semibold text-orange-600">“{appliedFilter}”</span>
+          {total >= 0 ? ` · ${total} kết quả` : ''}
+        </p>
+      )}
 
       {/* Tabs */}
       <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-3 mb-6">
@@ -380,6 +531,72 @@ export function SellerOrdersPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Orders list */}
         <div className="lg:col-span-2 space-y-4">
+          {pickupBatches.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Package className="w-5 h-5 text-orange-600" />
+                <h3 className="font-bold text-gray-900">Bảng giao túi cho tài xế</h3>
+              </div>
+              <p className="text-xs text-gray-500 -mt-1">
+                Mỗi tài xế chỉ cần <strong>1 mã</strong>. Dán / đọc nhãn <strong>#8 ký tự</strong> trên từng túi để khỏi lẫn đơn.
+              </p>
+              {pickupBatches.map((batch) => (
+                <Card key={batch.code} className="p-4 bg-orange-50/80 border border-orange-200">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 text-sm text-gray-800">
+                        <Truck className="w-4 h-4 text-orange-600" />
+                        <span className="font-semibold">{batch.shipperName || 'Tài xế'}</span>
+                        {batch.shipperPhone && (
+                          <span className="text-gray-500">· {batch.shipperPhone}</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-orange-700 font-medium">
+                        Đưa đủ {batch.labels.length} túi · đọc mã gộp bên phải cho tài xế
+                      </p>
+                      <ul className="mt-2 space-y-1.5">
+                        {batch.labels.map((label, idx) => (
+                          <li
+                            key={label.orderId}
+                            className="flex items-center gap-2 text-sm bg-white/80 rounded-lg px-2.5 py-1.5 border border-orange-100 cursor-pointer hover:border-orange-300"
+                            onClick={() => {
+                              const found = orders.find((o) => o.id === label.orderId);
+                              if (found) setSelectedOrder(found);
+                            }}
+                          >
+                            <span className="text-[10px] font-bold text-orange-500 w-5">#{idx + 1}</span>
+                            <span className="font-mono font-bold text-gray-900 tracking-wide">#{label.shortCode}</span>
+                            <span className="text-gray-600 truncate">{label.contactName}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <div className="flex flex-col items-center justify-center bg-white border-2 border-orange-300 rounded-xl px-5 py-3 min-w-[140px]">
+                        <span className="text-[10px] uppercase tracking-wider text-orange-500 font-semibold">Mã gộp</span>
+                        <span className="text-3xl font-black text-orange-600 tracking-widest">{batch.code}</span>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="border-orange-300 text-orange-700 hover:bg-orange-50"
+                        disabled={printingBatchCode === batch.code}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePrintBatchBills(batch);
+                        }}
+                      >
+                        <Printer className="w-3.5 h-3.5 mr-1" />
+                        {printingBatchCode === batch.code ? 'Đang in...' : 'In bill từng đơn'}
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+
           {isLoading ? (
             <div className="text-center py-10">Đang tải đơn hàng...</div>
           ) : orders.length === 0 ? (
@@ -403,6 +620,20 @@ export function SellerOrdersPage() {
                       <Clock className="w-4 h-4" />
                       {new Date(order.createdAt).toLocaleString('vi-VN')}
                     </div>
+                    {order.batchPickupCode && (
+                      <div className="mt-2 inline-flex flex-wrap items-center gap-1.5 text-xs font-semibold bg-orange-100 text-orange-700 px-2 py-1 rounded-md">
+                        <Package className="w-3.5 h-3.5" />
+                        Lô TX {order.shipperName ? `· ${order.shipperName}` : ''} · mã {order.batchPickupCode} ·{' '}
+                        {(order.batchOrderLabels?.length || order.batchOrderIds?.length || 0)} túi
+                      </div>
+                    )}
+                    {!order.batchPickupCode && order.shipperName && order.status === 'Shipping' && (
+                      <div className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md">
+                        <Truck className="w-3.5 h-3.5" />
+                        TX: {order.shipperName}
+                        <span className="font-mono">· OTP {order.id.slice(-6).toUpperCase()}</span>
+                      </div>
+                    )}
                   </div>
                   {getStatusBadge(order.status)}
                 </div>
@@ -580,16 +811,63 @@ export function SellerOrdersPage() {
                     <X className="w-5 h-5" />
                   </button>
                 </div>
-                {getStatusBadge(selectedOrder.status)}
+                <div className="flex flex-wrap items-center gap-2">
+                  {getStatusBadge(selectedOrder.status)}
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handlePrintOrderBill(selectedOrder)}
+                  >
+                    <Printer className="w-3.5 h-3.5 mr-1" />
+                    In bill
+                  </Button>
+                </div>
               </div>
 
               {/* Delivery Code for Shipper Verification */}
               {deliveryType !== 'SelfDelivery' && ['Confirmed', 'Preparing', 'WaitingForShipper', 'Shipping', 'Delivered'].includes(selectedOrder.status) && (
-                <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex flex-col items-center justify-center text-center">
-                  <span className="text-xs text-orange-600 font-semibold mb-1 uppercase tracking-wider">Mã xác nhận Shipper</span>
-                  <span className="text-3xl font-black text-orange-600 tracking-widest">{selectedOrder.id.slice(-6).toUpperCase()}</span>
-                  <p className="text-xs text-orange-500 mt-1">Sử dụng 6 ký tự cuối của mã đơn hàng để đối chiếu với tài xế</p>
-                </div>
+                selectedOrder.batchPickupCode && selectedOrder.status === 'Shipping' ? (
+                  <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 space-y-3">
+                    <div className="text-center">
+                      <span className="text-xs text-orange-600 font-semibold uppercase tracking-wider">Mã lấy hàng gộp</span>
+                      <div className="text-3xl font-black text-orange-600 tracking-widest mt-1">{selectedOrder.batchPickupCode}</div>
+                      <p className="text-xs text-orange-700 mt-1 font-medium">
+                        Tài xế: {selectedOrder.shipperName || '—'}
+                        {selectedOrder.shipperPhone ? ` · ${selectedOrder.shipperPhone}` : ''}
+                      </p>
+                    </div>
+                    <div className="bg-white/70 rounded-lg p-3 border border-orange-100">
+                      <p className="text-[11px] font-semibold text-orange-600 uppercase mb-2">
+                        Túi cần đưa ({selectedOrder.batchOrderLabels?.length || selectedOrder.batchOrderIds?.length || 0})
+                      </p>
+                      <ul className="space-y-1.5 text-sm">
+                        {(selectedOrder.batchOrderLabels || []).map((l: any, idx: number) => (
+                          <li key={l.orderId || l.OrderId || idx} className="flex gap-2 items-center">
+                            <span className="text-[10px] text-orange-500 font-bold w-4">#{idx + 1}</span>
+                            <span className="font-mono font-bold">#{(l.shortCode || l.ShortCode || '').toUpperCase()}</span>
+                            <span className="text-gray-600 truncate">{l.contactName || l.ContactName}</span>
+                            {(l.orderId || l.OrderId) === selectedOrder.id && (
+                              <span className="text-[10px] text-orange-500">(đang xem)</span>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <p className="text-[11px] text-orange-500 text-center">
+                      Không đọc mã từng đơn — chỉ đọc mã gộp + đối chiếu nhãn túi #...
+                    </p>
+                  </div>
+                ) : (
+                  <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex flex-col items-center justify-center text-center">
+                    <span className="text-xs text-orange-600 font-semibold mb-1 uppercase tracking-wider">Mã xác nhận Shipper</span>
+                    <span className="text-3xl font-black text-orange-600 tracking-widest">{selectedOrder.id.slice(-6).toUpperCase()}</span>
+                    <p className="text-xs text-orange-500 mt-1">Sử dụng 6 ký tự cuối của mã đơn hàng để đối chiếu với tài xế</p>
+                    {selectedOrder.shipperName && selectedOrder.status === 'Shipping' && (
+                      <p className="text-xs text-gray-600 mt-2">Tài xế: {selectedOrder.shipperName}</p>
+                    )}
+                  </div>
+                )
               )}
 
               {/* Customer Section */}

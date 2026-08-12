@@ -81,12 +81,12 @@ namespace ShoppingFood.Application.Features.Shippers.Commands
             var requesterAccountId = pending.RequestedBy?.UserAccountId;
             if (requesterAccountId.HasValue)
             {
-                var msg = $"Tài xế {profile.FullName} đã gửi giải trình cho đơn #{shortId}.";
+                var msg = $"Tài xế {profile.FullName} đã gửi giải trình cho đơn #{shortId}. Vào mục Giải trình / Sự cố để xem nội dung.";
                 _notificationRepository.Add(new Notification
                 {
                     Id = Guid.NewGuid(),
                     UserId = requesterAccountId.Value,
-                    Title = $"Shipper đã giải trình đơn #{shortId}",
+                    Title = $"Tài xế đã giải trình đơn #{shortId}",
                     Message = msg,
                     NotificationType = NotificationType.System,
                     TargetId = order.Id,
@@ -109,8 +109,8 @@ namespace ShoppingFood.Application.Features.Shippers.Commands
                 {
                     Id = Guid.NewGuid(),
                     UserId = staff.Id,
-                    Title = $"Shipper đã giải trình đơn #{shortId}",
-                    Message = $"Tài xế {profile.FullName} đã gửi giải trình cho đơn #{shortId}.",
+                    Title = $"Tài xế đã giải trình đơn #{shortId}",
+                    Message = $"Tài xế {profile.FullName} đã gửi giải trình cho đơn #{shortId}. Vào mục Giải trình / Sự cố để xem nội dung.",
                     NotificationType = NotificationType.System,
                     TargetId = order.Id,
                     IsRead = false,

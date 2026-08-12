@@ -21,6 +21,7 @@ export interface IProposedDeliveryOfferDto {
   contactName: string;
   contactPhone: string;
   note?: string;
+  restaurantId?: string;
   restaurantName: string;
   restaurantAddress: string;
   restaurantPhone: string;
@@ -60,6 +61,13 @@ export interface IConfirmArrivedRequest {
 
 export interface IConfirmPickedUpRequest {
   orderId: string;
+  verificationCode: string;
+  latitude: number;
+  longitude: number;
+}
+
+export interface IConfirmPickedUpBatchRequest {
+  orderIds: string[];
   verificationCode: string;
   latitude: number;
   longitude: number;
@@ -117,6 +125,9 @@ export interface IShipperIncomeReportDto {
   totalIncome: number;
   dailyReports: IDailyIncomeReportDto[];
   orders?: IShipperCompletedOrderDto[];
+  ordersTotalCount?: number;
+  skip?: number;
+  take?: number;
 }
 
 export interface IWorkingScheduleItemDto{

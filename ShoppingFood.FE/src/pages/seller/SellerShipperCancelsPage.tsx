@@ -40,8 +40,9 @@ export function SellerShipperCancelsPage() {
       } else {
         toast.error(res.message || 'Không tải được danh sách');
       }
-    } catch {
-      toast.error('Lỗi kết nối khi tải đơn hủy bởi tài xế');
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || 'Lỗi kết nối khi tải đơn hủy bởi tài xế';
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

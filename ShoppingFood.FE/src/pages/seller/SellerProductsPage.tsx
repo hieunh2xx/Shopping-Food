@@ -32,8 +32,6 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
   const [sizes, setSizes] = useState<IProductSizeDto[]>([]);
   const [availableToppings, setAvailableToppings] = useState<IToppingDto[]>([]);
   const [selectedToppings, setSelectedToppings] = useState<string[]>([]);
-  const [availableFrom, setAvailableFrom] = useState('');
-  const [availableTo, setAvailableTo] = useState('');
   const [isUploading, setIsUploading] = useState(false);
 
   const handleUploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -100,8 +98,6 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
       setImageUrls(product.images || (product.primaryImageUrl ? [product.primaryImageUrl] : []));
       setSizes(product.sizes || []);
       setSelectedToppings(product.toppings?.map(t => t.id) || []);
-      setAvailableFrom(product.availableFrom || '');
-      setAvailableTo(product.availableTo || '');
     } else {
       setItemName('');
       setDescription('');
@@ -111,8 +107,6 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
       setImageUrls([]);
       setSizes([]);
       setSelectedToppings([]);
-      setAvailableFrom('');
-      setAvailableTo('');
     }
   }, [product, isOpen, categories]);
 
@@ -171,8 +165,8 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
         if (!res.error) {
           const timeRes = await productService.updateAvailability({
             id: product.id,
-            availableFrom: availableFrom || undefined,
-            availableTo: availableTo || undefined
+            availableFrom: undefined,
+            availableTo: undefined
           });
           if (timeRes.error) {
             toast.error(timeRes.message || 'Lỗi khi cập nhật giờ bán');
@@ -396,41 +390,6 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
         </div>
 
 
-
-        {isEditing && (
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Mở bán từ (Giờ:Phút)</label>
-                <Input
-                  type="time"
-                  value={availableFrom}
-                  onChange={(e) => setAvailableFrom(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Đến lúc (Giờ:Phút)</label>
-                <Input
-                  type="time"
-                  value={availableTo}
-                  onChange={(e) => setAvailableTo(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={() => {
-                  setAvailableFrom('');
-                  setAvailableTo('');
-                }}
-                className="text-sm text-orange-600 hover:text-orange-700 font-medium"
-              >
-                Dùng giờ mở cửa của quán
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Actions */}
         <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">

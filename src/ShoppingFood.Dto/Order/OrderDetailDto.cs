@@ -12,6 +12,8 @@ namespace ShoppingFood.Dto.Order
         public Guid? UserAccountId { get; set; }
         public Guid? GuestUserId { get; set; }
         public Guid? ShipperId { get; set; }
+        public string? ShipperName { get; set; }
+        public string? ShipperPhone { get; set; }
         public decimal TotalAmount { get; set; }
         public string DeliveryAddress { get; set; } = string.Empty;
         public string ContactName { get; set; } = string.Empty;
@@ -35,10 +37,20 @@ namespace ShoppingFood.Dto.Order
         public string? RejectReason { get; set; }
         public decimal ShippingFee { get; set; }
         public decimal ItemsSubtotal { get; set; }
+        /// <summary>Giảm giá (voucher + hạng thành viên) = ItemsSubtotal - (TotalAmount - ShippingFee).</summary>
+        public decimal DiscountAmount { get; set; }
+        public decimal PlatformCommission { get; set; }
+        public decimal SellerPayout { get; set; }
         public decimal ShipperIncome { get; set; }
         public decimal ShipperBaseFeeAmount { get; set; }
         public decimal ShipperDistanceFeeAmount { get; set; }
         public decimal ShipperPeakBonus { get; set; }
+        /// <summary>6-char batch pickup code when ≥2 Shipping orders share the same shipper at this restaurant.</summary>
+        public string? BatchPickupCode { get; set; }
+        /// <summary>Order IDs included in the same batch pickup group (same shipper, Shipping).</summary>
+        public List<Guid>? BatchOrderIds { get; set; }
+        /// <summary>Readable labels for every bag in the batch (even if not on current page).</summary>
+        public List<BatchOrderLabelDto>? BatchOrderLabels { get; set; }
         public List<OrderItemDto> Items { get; set; } = new List<OrderItemDto>();
     }
 }

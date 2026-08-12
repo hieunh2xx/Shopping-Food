@@ -10,7 +10,9 @@ import {
   XOctagon, 
   Calendar, 
   ChevronRight, 
-  Utensils
+  Utensils,
+  Percent,
+  Wallet
 } from 'lucide-react';
 import { Card } from '../components/common';
 
@@ -101,7 +103,7 @@ export function SellerDashboardPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Quản lý cửa hàng</h1>
-          <p className="text-sm text-gray-500 mt-1">Tổng quan hiệu quả kinh doanh của nhà hàng (UC-SYS-005)</p>
+          <p className="text-sm text-gray-500 mt-1">Tổng quan hiệu quả kinh doanh của nhà hàng</p>
         </div>
 
         {/* Filter select */}
@@ -120,15 +122,16 @@ export function SellerDashboardPage() {
       </div>
 
       {/* Primary Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
         {/* Doanh thu */}
         <Card className="p-6 bg-white border border-gray-100 hover:shadow-md transition-shadow">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-sm text-gray-500 font-medium uppercase tracking-wider mb-1">Doanh số</p>
+              <p className="text-sm text-gray-500 font-medium uppercase tracking-wider mb-1">Doanh số món</p>
               <h3 className="text-2xl font-extrabold text-gray-900">
                 {(stats?.totalRevenue || 0).toLocaleString('vi-VN')} đ
               </h3>
+              <p className="text-xs text-gray-400 mt-1">Từ đơn đã giao trong kỳ</p>
             </div>
             <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center text-green-500">
               <TrendingUp className="w-6 h-6" />
@@ -136,6 +139,40 @@ export function SellerDashboardPage() {
           </div>
         </Card>
 
+        {/* Chiết khấu sàn */}
+        <Card className="p-6 bg-white border border-orange-100 hover:shadow-md transition-shadow">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-sm text-orange-600/80 font-medium uppercase tracking-wider mb-1">Chiết khấu sàn</p>
+              <h3 className="text-2xl font-extrabold text-orange-600">
+                {(stats?.totalPlatformCommission || 0).toLocaleString('vi-VN')} đ
+              </h3>
+              <p className="text-xs text-gray-400 mt-1">Hoa hồng platform đã trừ</p>
+            </div>
+            <div className="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500">
+              <Percent className="w-6 h-6" />
+            </div>
+          </div>
+        </Card>
+
+        {/* Nhà hàng nhận */}
+        <Card className="p-6 bg-white border border-emerald-100 hover:shadow-md transition-shadow">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-sm text-emerald-700/80 font-medium uppercase tracking-wider mb-1">Nhà hàng nhận</p>
+              <h3 className="text-2xl font-extrabold text-emerald-700">
+                {(stats?.totalSellerPayout || 0).toLocaleString('vi-VN')} đ
+              </h3>
+              <p className="text-xs text-gray-400 mt-1">Sau chiết khấu (cộng vào ví)</p>
+            </div>
+            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600">
+              <Wallet className="w-6 h-6" />
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {/* Số đơn hàng */}
         <Card className="p-6 bg-white border border-gray-100 hover:shadow-md transition-shadow">
           <div className="flex justify-between items-start">

@@ -73,7 +73,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     Id = Guid.NewGuid(),
                     UserId = order.UserAccountId.Value,
                     Title = "Đơn hàng đang được chuẩn bị",
-                    Message = $"Nhà hàng đang chuẩn bị món cho đơn hàng #{order.Id.ToString()[..8]}.",
+                    Message = $"Nhà hàng đang chuẩn bị món cho đơn #{Common.OrderDisplayHelper.ShortId(order.Id)}. Bạn sẽ được thông báo khi đơn sẵn sàng giao.",
                     NotificationType = NotificationType.Order,
                     TargetId = order.Id,
                     IsRead = false,

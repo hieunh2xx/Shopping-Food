@@ -5,10 +5,12 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
+using MediatR;
 using Microsoft.EntityFrameworkCore.Query;
 using Moq;
 using ShoppingFood.Application.Features.Payments.Commands;
 using ShoppingFood.Application.Interfaces;
+using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
 using ShoppingFood.Domain.Enums;
 using ShoppingFood.Domain.Models;
@@ -278,7 +280,11 @@ namespace ShoppingFood.Tests.Features.Payments
             _paymentServiceMock = new Mock<IPaymentSettlementService>();
             _unitOfWorkMock = new Mock<IUnitOfWork>();
             _handler = new ApproveWithdrawalHandler(
-                _withdrawalRepoMock.Object, _walletRepoMock.Object, _paymentServiceMock.Object, _unitOfWorkMock.Object);
+                _withdrawalRepoMock.Object,
+                _walletRepoMock.Object,
+                new Mock<IFinancialTransactionRepository>().Object,
+                _paymentServiceMock.Object,
+                _unitOfWorkMock.Object);
         }
 
         private void SetupWithdrawal(WithdrawalRequest w) =>
@@ -321,7 +327,13 @@ namespace ShoppingFood.Tests.Features.Payments
         [Fact]
         public async Task Handle_Approve_Returns200AndSetsApproved()
         {
-            var withdrawal = new WithdrawalRequest { Id = Guid.NewGuid(), Status = WithdrawalStatus.Pending, Wallet = new Wallet { Id = Guid.NewGuid() } };
+            var withdrawal = new WithdrawalRequest
+            {
+                Id = Guid.NewGuid(),
+                Status = WithdrawalStatus.Pending,
+                Amount = 100_000,
+                Wallet = new Wallet { Id = Guid.NewGuid(), Balance = 500_000 }
+            };
             SetupWithdrawal(withdrawal);
 
             var result = await _handler.Handle(new ApproveWithdrawalCommand
@@ -333,19 +345,21 @@ namespace ShoppingFood.Tests.Features.Payments
 
             result.Code.Should().Be(200);
             withdrawal.Status.Should().Be(WithdrawalStatus.Approved);
+            _paymentServiceMock.Verify(p => p.RecordTransactionAsync(withdrawal.Wallet, FinancialTransactionType.Withdrawal, -withdrawal.Amount,
+                It.IsAny<string>(), withdrawal.Id, "Withdrawal"), Times.Once);
             _withdrawalRepoMock.Verify(r => r.Update(withdrawal), Times.Once);
             _unitOfWorkMock.Verify(u => u.SaveChangesAsync(), Times.Once);
         }
 
         [Fact]
-        public async Task Handle_Reject_RecordsRefund()
+        public async Task Handle_Reject_WithoutPriorDebit_DoesNotRefund()
         {
             var withdrawal = new WithdrawalRequest
             {
                 Id = Guid.NewGuid(),
                 Status = WithdrawalStatus.Pending,
                 Amount = 100_000,
-                Wallet = new Wallet { Id = Guid.NewGuid() }
+                Wallet = new Wallet { Id = Guid.NewGuid(), Balance = 500_000 }
             };
             SetupWithdrawal(withdrawal);
 
@@ -359,8 +373,8 @@ namespace ShoppingFood.Tests.Features.Payments
             result.Code.Should().Be(200);
             withdrawal.Status.Should().Be(WithdrawalStatus.Rejected);
             withdrawal.RejectReason.Should().Be("Invalid bank");
-            _paymentServiceMock.Verify(p => p.RecordTransactionAsync(withdrawal.Wallet, FinancialTransactionType.Refund, withdrawal.Amount,
-                It.IsAny<string>(), withdrawal.Id, "Withdrawal"), Times.Once);
+            _paymentServiceMock.Verify(p => p.RecordTransactionAsync(It.IsAny<Wallet>(), FinancialTransactionType.Refund, It.IsAny<decimal>(),
+                It.IsAny<string>(), It.IsAny<Guid?>(), It.IsAny<string>()), Times.Never);
         }
     }
 
@@ -412,92 +426,37 @@ namespace ShoppingFood.Tests.Features.Payments
 
     public class RepayShipperDebtHandlerTests
     {
-        private readonly Mock<IShipperProfileRepository> _shipperRepoMock;
-        private readonly Mock<IUserRepository> _userRepoMock;
-        private readonly Mock<IPaymentSettlementService> _paymentServiceMock;
-        private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+        private readonly Mock<IMediator> _mediatorMock;
         private readonly RepayShipperDebtHandler _handler;
 
         public RepayShipperDebtHandlerTests()
         {
-            _shipperRepoMock = new Mock<IShipperProfileRepository>();
-            _userRepoMock = new Mock<IUserRepository>();
-            _paymentServiceMock = new Mock<IPaymentSettlementService>();
-            _unitOfWorkMock = new Mock<IUnitOfWork>();
-            _handler = new RepayShipperDebtHandler(
-                _shipperRepoMock.Object, _userRepoMock.Object, _paymentServiceMock.Object, _unitOfWorkMock.Object);
-        }
-
-        private void SetupUser(User user) =>
-            _userRepoMock.Setup(u => u.GetAsync(
-                    It.IsAny<Expression<Func<User, bool>>>(),
-                    It.IsAny<Func<IQueryable<User>, IOrderedQueryable<User>>>(),
-                    It.IsAny<Func<IQueryable<User>, IIncludableQueryable<User, object>>>(),
-                    It.IsAny<int>(), It.IsAny<int>(), It.IsAny<bool>()))
-                .ReturnsAsync(new List<User> { user });
-
-        private void SetupShipper(ShipperProfile shipper) =>
-            _shipperRepoMock.Setup(r => r.GetAsync(
-                    It.IsAny<Expression<Func<ShipperProfile, bool>>>(),
-                    It.IsAny<Func<IQueryable<ShipperProfile>, IOrderedQueryable<ShipperProfile>>>(),
-                    It.IsAny<Func<IQueryable<ShipperProfile>, IIncludableQueryable<ShipperProfile, object>>>(),
-                    It.IsAny<int>(), It.IsAny<int>(), It.IsAny<bool>()))
-                .ReturnsAsync(new List<ShipperProfile> { shipper });
-
-        [Fact]
-        public async Task Handle_NoUser_Returns401()
-        {
-            var result = await _handler.Handle(new RepayShipperDebtCommand { CurrentUserId = null, Amount = 100 }, CancellationToken.None);
-            result.Code.Should().Be(401);
+            _mediatorMock = new Mock<IMediator>();
+            _handler = new RepayShipperDebtHandler(_mediatorMock.Object);
         }
 
         [Fact]
-        public async Task Handle_InvalidAmount_Returns400()
+        public async Task Handle_DelegatesToRequestCodRemittance()
         {
-            var result = await _handler.Handle(new RepayShipperDebtCommand { CurrentUserId = Guid.NewGuid(), Amount = 0 }, CancellationToken.None);
-            result.Code.Should().Be(400);
-        }
+            var userId = Guid.NewGuid();
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<RequestCodRemittanceCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ApiResponse.Success(new { amount = 200_000m }, "ok"));
 
-        [Fact]
-        public async Task Handle_NotShipper_Returns403()
-        {
-            var profile = new UserProfile { Id = Guid.NewGuid(), Role = UserRole.Seller };
-            var user = new User { Id = Guid.NewGuid(), Profile = profile };
-            SetupUser(user);
-
-            var result = await _handler.Handle(new RepayShipperDebtCommand { CurrentUserId = user.Id, Amount = 100 }, CancellationToken.None);
-            result.Code.Should().Be(403);
-        }
-
-        [Fact]
-        public async Task Handle_NoDebtToRepay_Returns400()
-        {
-            var profile = new UserProfile { Id = Guid.NewGuid(), Role = UserRole.Shipper };
-            var user = new User { Id = Guid.NewGuid(), Profile = profile };
-            SetupUser(user);
-            SetupShipper(new ShipperProfile { CodCollectedAmount = 0 });
-
-            var result = await _handler.Handle(new RepayShipperDebtCommand { CurrentUserId = user.Id, Amount = 100 }, CancellationToken.None);
-            result.Code.Should().Be(400);
-        }
-
-        [Fact]
-        public async Task Handle_Valid_RepaysDebt()
-        {
-            var profile = new UserProfile { Id = Guid.NewGuid(), Role = UserRole.Shipper };
-            var user = new User { Id = Guid.NewGuid(), Profile = profile };
-            var shipper = new ShipperProfile { Id = Guid.NewGuid(), UserProfileId = profile.Id, CodCollectedAmount = 500_000 };
-            var wallet = new Wallet { Id = Guid.NewGuid(), Balance = 0 };
-            SetupUser(user);
-            SetupShipper(shipper);
-            _paymentServiceMock.Setup(p => p.GetOrCreateWalletAsync(WalletOwnerType.Shipper, shipper.Id)).ReturnsAsync(wallet);
-
-            var result = await _handler.Handle(new RepayShipperDebtCommand { CurrentUserId = user.Id, Amount = 200_000 }, CancellationToken.None);
+            var result = await _handler.Handle(new RepayShipperDebtCommand
+            {
+                CurrentUserId = userId,
+                Amount = 200_000,
+                Note = "test"
+            }, CancellationToken.None);
 
             result.Code.Should().Be(200);
-            shipper.CodCollectedAmount.Should().Be(300_000);
-            _shipperRepoMock.Verify(r => r.Update(shipper), Times.Once);
-            _unitOfWorkMock.Verify(u => u.SaveChangesAsync(), Times.Once);
+            _mediatorMock.Verify(m => m.Send(
+                It.Is<RequestCodRemittanceCommand>(c =>
+                    c.CurrentUserId == userId &&
+                    c.Amount == 200_000 &&
+                    c.Note == "test"),
+                It.IsAny<CancellationToken>()), Times.Once);
         }
     }
 }

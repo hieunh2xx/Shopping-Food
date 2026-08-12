@@ -1,30 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Search, Award, Play, Loader2, Star, Shield } from 'lucide-react';
-import { Input, Button, Pagination } from '../../components/common';
+import { Search, Award, Play, Loader2, Shield } from 'lucide-react';
+import { Input, Button, Pagination, MemberTierBadge, MemberTierSelectCard, MEMBER_TIERS, getMemberTierLabel } from '../../components/common';
 import { Modal } from '../../components/common/Modal';
 import { userService } from '../../services/UserService';
 import { loyaltyPointService } from '../../services/LoyaltyPointService';
 import type { IUserDto } from '../../interfaces';
 import { maskEmail, maskPhone } from '../../utils/formatters';
 import toast from 'react-hot-toast';
-
-const TIERS = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'] as const;
-
-const TIER_COLORS: Record<string, string> = {
-  Bronze: 'bg-amber-100 text-amber-800 border-amber-200',
-  Silver: 'bg-slate-100 text-slate-700 border-slate-200',
-  Gold: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  Platinum: 'bg-sky-100 text-sky-800 border-sky-200',
-  Diamond: 'bg-violet-100 text-violet-800 border-violet-200',
-};
-
-const TIER_LABELS: Record<string, string> = {
-  Bronze: 'Đồng',
-  Silver: 'Bạc',
-  Gold: 'Vàng',
-  Platinum: 'Bạch kim',
-  Diamond: 'Kim cương',
-};
 
 export function AdminMemberRanksPage() {
   const [search, setSearch] = useState('');
@@ -57,7 +39,6 @@ export function AdminMemberRanksPage() {
   const fetchCustomers = async () => {
     setIsLoading(true);
     try {
-      // API filters by keyword; we request a larger page then keep Customers only
       const skip = (page - 1) * take;
       const res = await userService.getAll({
         skip: 0,
@@ -114,7 +95,7 @@ export function AdminMemberRanksPage() {
     try {
       const res = await loyaltyPointService.adjustUserTier(selectedUser.id, newTier);
       if (!res.error) {
-        toast.success(`Đã cập nhật hạng ${selectedUser.fullName || selectedUser.userName} → ${TIER_LABELS[newTier] || newTier}`);
+        toast.success(`Đã cập nhật hạng ${selectedUser.fullName || selectedUser.userName} → ${getMemberTierLabel(newTier)}`);
         setIsTierModalOpen(false);
         fetchCustomers();
       } else {
@@ -136,40 +117,24 @@ export function AdminMemberRanksPage() {
             Đánh giá hạng thành viên
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Theo dõi hạng khách hàng sau chu kỳ đánh giá. Email &amp; SĐT được che một phần để bảo mật.
+            Theo dõi hạng khách hàng. Hạng tự lên khi đạt mốc điểm; Admin có thể điều chỉnh thủ công.
           </p>
         </div>
-        <Button
-          onClick={handleEvaluate}
-          disabled={isEvaluating}
-          className="shadow-md shadow-orange-500/20"
-        >
-          {isEvaluating ? (
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          ) : (
-            <Play className="w-4 h-4 mr-2" />
-          )}
+        <Button onClick={handleEvaluate} disabled={isEvaluating} className="shadow-md shadow-orange-500/20">
+          {isEvaluating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Play className="w-4 h-4 mr-2" />}
           Chạy đánh giá hạng
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        {TIERS.map((t) => (
-          <button
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {MEMBER_TIERS.map((t) => (
+          <MemberTierSelectCard
             key={t}
-            type="button"
+            tier={t}
+            selected={tierFilter === t}
             onClick={() => setTierFilter((prev) => (prev === t ? 'all' : t))}
-            className={`rounded-2xl border px-3 py-3 text-left transition-all ${
-              tierFilter === t
-                ? 'border-orange-400 bg-orange-50 ring-2 ring-orange-200'
-                : 'border-gray-200 bg-white hover:border-orange-200'
-            }`}
-          >
-            <div className={`inline-flex text-xs font-bold px-2 py-0.5 rounded-full border ${TIER_COLORS[t]}`}>
-              {TIER_LABELS[t]}
-            </div>
-            <p className="text-[11px] text-gray-400 mt-2">{t}</p>
-          </button>
+            subtitle="Lọc theo hạng"
+          />
         ))}
       </div>
 
@@ -248,14 +213,7 @@ export function AdminMemberRanksPage() {
                         {revealed ? user.phone || '—' : maskPhone(user.phone)}
                       </td>
                       <td className="py-4 px-6 text-center">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${
-                            TIER_COLORS[user.tier || 'Bronze'] || 'bg-gray-100 text-gray-600'
-                          }`}
-                        >
-                          <Star className="w-3 h-3" />
-                          {TIER_LABELS[user.tier || ''] || user.tier || 'Đồng'}
-                        </span>
+                        <MemberTierBadge tier={user.tier} />
                       </td>
                       <td className="py-4 px-6 text-center text-xs">
                         <div className="font-semibold text-gray-900">
@@ -271,7 +229,6 @@ export function AdminMemberRanksPage() {
                             type="button"
                             onClick={() => setRevealId(revealed ? null : user.id)}
                             className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50"
-                            title="Hiện/ẩn email & SĐT đầy đủ"
                           >
                             <Shield className="w-3.5 h-3.5 inline mr-1" />
                             {revealed ? 'Ẩn' : 'Hiện'}
@@ -320,24 +277,16 @@ export function AdminMemberRanksPage() {
           <form onSubmit={handleAdjustTier} className="space-y-4">
             <p className="text-sm text-gray-600">
               Thành viên: <strong>{selectedUser.fullName || selectedUser.userName}</strong>
-              <br />
-              <span className="text-xs text-gray-400 font-mono">
-                {maskEmail(selectedUser.email)} · {maskPhone(selectedUser.phone)}
-              </span>
             </p>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Hạng mới</label>
-              <select
-                value={newTier}
-                onChange={(e) => setNewTier(e.target.value)}
-                className="w-full p-3 rounded-xl border border-gray-200 bg-gray-50"
-              >
-                {TIERS.map((t) => (
-                  <option key={t} value={t}>
-                    {TIER_LABELS[t]} ({t})
-                  </option>
-                ))}
-              </select>
+            <div className="grid grid-cols-2 gap-2">
+              {MEMBER_TIERS.map((t) => (
+                <MemberTierSelectCard
+                  key={t}
+                  tier={t}
+                  selected={newTier === t}
+                  onClick={() => setNewTier(t)}
+                />
+              ))}
             </div>
             <div className="flex gap-2 pt-2">
               <Button type="button" variant="secondary" className="flex-1" onClick={() => setIsTierModalOpen(false)}>

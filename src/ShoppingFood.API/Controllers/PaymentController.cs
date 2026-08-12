@@ -111,6 +111,30 @@ namespace ShoppingFood.API.Controllers
             return StatusCode(response.Code, response);
         }
 
+        [HttpPost("shipper/cod-remittance")]
+        public async Task<IActionResult> RequestCodRemittance([FromBody] RequestCodRemittanceCommand command)
+        {
+            command.CurrentUserId = userDto?.Id;
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpGet("cod-remittances")]
+        public async Task<IActionResult> GetCodRemittances([FromQuery] GetCodRemittanceRequestsQuery query)
+        {
+            query.CurrentUserId = userDto?.Id;
+            var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpPost("cod-remittances/review")]
+        public async Task<IActionResult> ReviewCodRemittance([FromBody] ReviewCodRemittanceCommand command)
+        {
+            command.CurrentUserId = userDto?.Id;
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
+
         [HttpPut("shipper/debt-limit")]
         public async Task<IActionResult> UpdateShipperDebtLimit([FromBody] UpdateShipperDebtLimitCommand command)
         {
@@ -145,6 +169,30 @@ namespace ShoppingFood.API.Controllers
 
         [HttpGet("dashboard")]
         public async Task<IActionResult> GetPaymentDashboard([FromQuery] GetPaymentDashboardQuery query)
+        {
+            query.CurrentUserId = userDto?.Id;
+            var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpGet("cod-overview")]
+        public async Task<IActionResult> GetCodOverview([FromQuery] GetCodOverviewQuery query)
+        {
+            query.CurrentUserId = userDto?.Id;
+            var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpGet("seller-revenues")]
+        public async Task<IActionResult> GetSellerRevenues([FromQuery] GetSellerRevenuesQuery query)
+        {
+            query.CurrentUserId = userDto?.Id;
+            var response = await _mediator.Send(query);
+            return StatusCode(response.Code, response);
+        }
+
+        [HttpGet("shipper-revenues")]
+        public async Task<IActionResult> GetShipperRevenues([FromQuery] GetShipperRevenuesQuery query)
         {
             query.CurrentUserId = userDto?.Id;
             var response = await _mediator.Send(query);

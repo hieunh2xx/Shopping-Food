@@ -1,5 +1,6 @@
-﻿import { useEffect, useState } from 'react';
-import { Users, DollarSign, ShoppingCart, TrendingUp, TrendingDown, Map as MapIcon, UserPlus, Truck, Store, Download, Wallet } from 'lucide-react';
+﻿import { useEffect, useState, type ReactNode } from 'react';
+import { Link } from 'react-router-dom';
+import { Users, ShoppingCart, TrendingUp, TrendingDown, Map as MapIcon, UserPlus, Truck, Store, Download, Wallet, ChevronRight } from 'lucide-react';
 import { Card } from '../components/common';
 import { adminService } from '../services/AdminService';
 import { OrderHeatmap } from '../components/admin/OrderHeatmap';
@@ -15,6 +16,34 @@ import {
   ResponsiveContainer
 } from 'recharts';
 import type { IAdminDashboardStats, IHeatmapPoint } from '../interfaces';
+import { ROUTES } from '../routes/routeConfig';
+
+function StatLink({
+  to,
+  className = '',
+  children,
+}: {
+  to: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <Link
+      to={to}
+      className={`block group focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 rounded-2xl ${className}`}
+    >
+      <Card
+        hoverable
+        className="h-full border border-gray-100 shadow-sm group-hover:border-purple-200 group-hover:shadow-md transition-all relative"
+      >
+        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+          <ChevronRight className="w-4 h-4 text-purple-500" />
+        </div>
+        {children}
+      </Card>
+    </Link>
+  );
+}
 
 export function AdminDashboardPage() {
   const [days, setDays] = useState<number>(7);
@@ -153,168 +182,198 @@ export function AdminDashboardPage() {
               GMV = Doanh thu sàn + Trả seller + Phí ship (và các khoản liên quan). Dùng để biết cần thanh toán bao nhiêu cho từng bên.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card className="p-5 border border-gray-100 shadow-sm">
-                <p className="text-sm font-medium text-gray-500 mb-1">GMV toàn nền tảng</p>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.grossMerchandiseValue)}</p>
-                <p className="text-xs text-gray-400 mt-1">Tổng tiền khách thanh toán · {stats.totalOrders} đơn</p>
-              </Card>
-              <Card className="p-5 border border-orange-100 bg-orange-50/40 shadow-sm">
-                <p className="text-sm font-medium text-orange-700 mb-1">Doanh thu sàn (platform)</p>
-                <p className="text-2xl font-bold text-orange-800">{formatCurrency(stats.totalRevenue)}</p>
-                <p className="text-xs text-orange-600/80 mt-1">Chiết khấu · VAT ~ {formatCurrency(stats.estimatedTax)}</p>
-              </Card>
-              <Card className="p-5 border border-green-100 bg-green-50/40 shadow-sm">
-                <p className="text-sm font-medium text-green-700 mb-1">Cần trả seller</p>
-                <p className="text-2xl font-bold text-green-800">{formatCurrency(stats.totalSellerPayout)}</p>
-                <p className="text-xs text-green-600/80 mt-1">Tiền món sau trừ hoa hồng sàn</p>
-              </Card>
-              <Card className="p-5 border border-blue-100 bg-blue-50/40 shadow-sm">
-                <p className="text-sm font-medium text-blue-700 mb-1">Cần trả shipper</p>
-                <p className="text-2xl font-bold text-blue-800">{formatCurrency(stats.totalShipperIncome)}</p>
-                <p className="text-xs text-blue-600/80 mt-1">Thu nhập giao hàng trong kỳ</p>
-              </Card>
+              <StatLink to={ROUTES.ADMIN_FINANCE}>
+                <div className="p-5">
+                  <p className="text-sm font-medium text-gray-500 mb-1">GMV toàn nền tảng</p>
+                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.grossMerchandiseValue)}</p>
+                  <p className="text-xs text-gray-400 mt-1">Tổng tiền khách thanh toán · {stats.totalOrders} đơn</p>
+                  <p className="text-[11px] text-purple-600 mt-2 font-medium group-hover:underline">Xem tài chính / COD →</p>
+                </div>
+              </StatLink>
+              <StatLink to={ROUTES.ADMIN_FINANCE}>
+                <div className="p-5 border-0 bg-orange-50/40 rounded-2xl">
+                  <p className="text-sm font-medium text-orange-700 mb-1">Doanh thu sàn (platform)</p>
+                  <p className="text-2xl font-bold text-orange-800">{formatCurrency(stats.totalRevenue)}</p>
+                  <p className="text-xs text-orange-600/80 mt-1">Chiết khấu · VAT ~ {formatCurrency(stats.estimatedTax)}</p>
+                  <p className="text-[11px] text-orange-700 mt-2 font-medium group-hover:underline">Chi tiết dòng tiền →</p>
+                </div>
+              </StatLink>
+              <StatLink to="/admin/seller-revenues">
+                <div className="p-5 bg-green-50/40 rounded-2xl">
+                  <p className="text-sm font-medium text-green-700 mb-1">Cần trả seller</p>
+                  <p className="text-2xl font-bold text-green-800">{formatCurrency(stats.totalSellerPayout)}</p>
+                  <p className="text-xs text-green-600/80 mt-1">Tiền món sau trừ hoa hồng sàn</p>
+                  <p className="text-[11px] text-green-700 mt-2 font-medium group-hover:underline">Doanh thu theo quán →</p>
+                </div>
+              </StatLink>
+              <StatLink to="/admin/shipper-revenues">
+                <div className="p-5 bg-blue-50/40 rounded-2xl">
+                  <p className="text-sm font-medium text-blue-700 mb-1">Cần trả shipper</p>
+                  <p className="text-2xl font-bold text-blue-800">{formatCurrency(stats.totalShipperIncome)}</p>
+                  <p className="text-xs text-blue-600/80 mt-1">Thu nhập giao hàng trong kỳ</p>
+                  <p className="text-[11px] text-blue-700 mt-2 font-medium group-hover:underline">Doanh thu theo shipper →</p>
+                </div>
+              </StatLink>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="p-5 border border-gray-100 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
-                  <Wallet className="w-5 h-5 text-amber-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Sàn sau VAT ước tính</p>
-                  <p className="text-xl font-bold text-gray-900">{formatCurrency(stats.netPlatformRevenue)}</p>
-                </div>
-              </div>
-            </Card>
-            <Card className="p-5 border border-gray-100 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                  <ShoppingCart className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Số đơn trong kỳ</p>
-                  <p className="text-xl font-bold text-gray-900">{stats.totalOrders}</p>
+            <StatLink to={ROUTES.ADMIN_FINANCE}>
+              <div className="p-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
+                    <Wallet className="w-5 h-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Sàn sau VAT ước tính</p>
+                    <p className="text-xl font-bold text-gray-900">{formatCurrency(stats.netPlatformRevenue)}</p>
+                  </div>
                 </div>
               </div>
-            </Card>
-            <Card className="p-5 border border-gray-100 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
-                  <Users className="w-5 h-5 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Người dùng Online</p>
-                  <p className="text-xl font-bold text-gray-900">{stats.activeUsers}</p>
+            </StatLink>
+            <StatLink to={ROUTES.ADMIN_DISPATCH_HISTORY}>
+              <div className="p-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                    <ShoppingCart className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Số đơn trong kỳ</p>
+                    <p className="text-xl font-bold text-gray-900">{stats.totalOrders}</p>
+                  </div>
                 </div>
               </div>
-            </Card>
+            </StatLink>
+            <StatLink to="/admin/users">
+              <div className="p-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
+                    <Users className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Người dùng Online</p>
+                    <p className="text-xl font-bold text-gray-900">{stats.activeUsers}</p>
+                  </div>
+                </div>
+              </div>
+            </StatLink>
           </div>
 
           <h2 className="text-xl font-semibold text-gray-900 mt-2 mb-4">Người dùng mới & Tăng trưởng</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
-                    <UserPlus className="w-5 h-5 text-blue-600" />
+            <StatLink to="/admin/users">
+              <div className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
+                      <UserPlus className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Khách hàng mới</p>
+                      <p className="text-xl font-bold text-gray-900">{stats.newCustomers}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Khách hàng mới</p>
-                    <p className="text-xl font-bold text-gray-900">{stats.newCustomers}</p>
-                  </div>
+                  {renderGrowthBadge(stats.customerGrowthRate)}
                 </div>
-                {renderGrowthBadge(stats.customerGrowthRate)}
               </div>
-            </Card>
+            </StatLink>
 
-            <Card className="p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center">
-                    <Truck className="w-5 h-5 text-orange-600" />
+            <StatLink to={ROUTES.ADMIN_SHIPPERS}>
+              <div className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center">
+                      <Truck className="w-5 h-5 text-orange-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Tài xế mới</p>
+                      <p className="text-xl font-bold text-gray-900">{stats.newShippers}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Tài xế mới</p>
-                    <p className="text-xl font-bold text-gray-900">{stats.newShippers}</p>
-                  </div>
+                  {renderGrowthBadge(stats.shipperGrowthRate)}
                 </div>
-                {renderGrowthBadge(stats.shipperGrowthRate)}
               </div>
-            </Card>
+            </StatLink>
 
-            <Card className="p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center">
-                    <Store className="w-5 h-5 text-red-600" />
+            <StatLink to="/admin/restaurants">
+              <div className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center">
+                      <Store className="w-5 h-5 text-red-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Nhà hàng mới</p>
+                      <p className="text-xl font-bold text-gray-900">{stats.newRestaurants}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Nhà hàng mới</p>
-                    <p className="text-xl font-bold text-gray-900">{stats.newRestaurants}</p>
-                  </div>
+                  {renderGrowthBadge(stats.restaurantGrowthRate)}
                 </div>
-                {renderGrowthBadge(stats.restaurantGrowthRate)}
               </div>
-            </Card>
+            </StatLink>
           </div>
 
           <div className="grid grid-cols-1 gap-6 mt-4">
-            <Card className="p-6 border border-gray-100 shadow-sm">
-              <div className="flex justify-between items-center mb-6">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-gray-500" />
-                    Biểu đồ phân bổ theo ngày ({days} ngày)
-                  </h3>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Theo dõi GMV, doanh thu sàn, trả seller và trả shipper theo từng ngày trong kỳ
-                  </p>
+            <StatLink to={ROUTES.ADMIN_FINANCE}>
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                      <TrendingUp className="w-5 h-5 text-gray-500" />
+                      Biểu đồ phân bổ theo ngày ({days} ngày)
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Theo dõi GMV, doanh thu sàn, trả seller và trả shipper theo từng ngày trong kỳ
+                    </p>
+                  </div>
+                  <span className="text-sm text-purple-600 font-medium hidden sm:inline group-hover:underline">Mở trang Tài chính →</span>
+                </div>
+                <div className="h-96 pointer-events-none">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={stats.revenueChartData}
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="date" padding={{ left: 20, right: 20 }} axisLine={false} tickLine={false} />
+                      <YAxis yAxisId="left" tickFormatter={(val) => `${val / 1000}k`} axisLine={false} tickLine={false} />
+                      <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} />
+                      <Tooltip
+                        formatter={chartTooltipFormatter}
+                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                      />
+                      <Legend />
+                      <Line yAxisId="left" type="monotone" dataKey="gmv" name="GMV (tổng đơn)" stroke="#64748b" strokeWidth={2} dot={false} />
+                      <Line yAxisId="left" type="monotone" dataKey="platformRevenue" name="Doanh thu sàn" stroke="#ea580c" strokeWidth={3} activeDot={{ r: 6 }} />
+                      <Line yAxisId="left" type="monotone" dataKey="sellerPayout" name="Trả seller" stroke="#16a34a" strokeWidth={2} />
+                      <Line yAxisId="left" type="monotone" dataKey="shipperIncome" name="Trả shipper" stroke="#2563eb" strokeWidth={2} />
+                      <Line yAxisId="right" type="monotone" dataKey="ordersCount" name="Số đơn" stroke="#a855f7" strokeWidth={2} strokeDasharray="4 4" />
+                    </LineChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
-              <div className="h-96">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={stats.revenueChartData}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="date" padding={{ left: 20, right: 20 }} axisLine={false} tickLine={false} />
-                    <YAxis yAxisId="left" tickFormatter={(val) => `${val / 1000}k`} axisLine={false} tickLine={false} />
-                    <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} />
-                    <Tooltip
-                      formatter={chartTooltipFormatter}
-                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                    />
-                    <Legend />
-                    <Line yAxisId="left" type="monotone" dataKey="gmv" name="GMV (tổng đơn)" stroke="#64748b" strokeWidth={2} dot={false} />
-                    <Line yAxisId="left" type="monotone" dataKey="platformRevenue" name="Doanh thu sàn" stroke="#ea580c" strokeWidth={3} activeDot={{ r: 6 }} />
-                    <Line yAxisId="left" type="monotone" dataKey="sellerPayout" name="Trả seller" stroke="#16a34a" strokeWidth={2} />
-                    <Line yAxisId="left" type="monotone" dataKey="shipperIncome" name="Trả shipper" stroke="#2563eb" strokeWidth={2} />
-                    <Line yAxisId="right" type="monotone" dataKey="ordersCount" name="Số đơn" stroke="#a855f7" strokeWidth={2} strokeDasharray="4 4" />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </Card>
+            </StatLink>
 
-            <Card className="p-6 border border-gray-100 shadow-sm">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <MapIcon className="w-5 h-5 text-gray-500" />
-                  Bản đồ nhiệt mật độ đơn hàng
-                </h3>
+            <StatLink to={ROUTES.ADMIN_DISPATCH_HISTORY}>
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <MapIcon className="w-5 h-5 text-gray-500" />
+                    Bản đồ nhiệt mật độ đơn hàng
+                  </h3>
+                  <span className="text-sm text-purple-600 font-medium hidden sm:inline group-hover:underline">Lịch sử điều phối →</span>
+                </div>
+                <div className="h-80 w-full bg-gray-50 rounded-xl overflow-hidden relative pointer-events-none">
+                  {heatmapPoints.length > 0 ? (
+                    <OrderHeatmap points={heatmapPoints} />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+                      Chưa có đủ dữ liệu tọa độ để vẽ bản đồ nhiệt
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="h-80 w-full bg-gray-50 rounded-xl overflow-hidden relative">
-                {heatmapPoints.length > 0 ? (
-                  <OrderHeatmap points={heatmapPoints} />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-                    Chưa có đủ dữ liệu tọa độ để vẽ bản đồ nhiệt
-                  </div>
-                )}
-              </div>
-            </Card>
+            </StatLink>
           </div>
         </>
       ) : (

@@ -187,8 +187,8 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 {
                     Id = Guid.NewGuid(),
                     UserId = order.UserAccountId.Value,
-                    Title = "Đơn hàng đang được giao",
-                    Message = $"Tài xế '{shipperName}' đã nhận vận chuyển đơn hàng mã '{order.Id}' của bạn.",
+                    Title = "Tài xế đã nhận giao đơn",
+                    Message = $"Tài xế {shipperName} đã nhận giao đơn #{Common.OrderDisplayHelper.ShortId(order.Id)}. Đơn sẽ sớm được lấy tại nhà hàng và giao tới bạn.",
                     NotificationType = NotificationType.Delivery,
                     TargetId = order.Id,
                     IsRead = false,

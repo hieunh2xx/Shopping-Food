@@ -88,7 +88,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                         Id = Guid.NewGuid(),
                         UserId = restaurant.Owner.UserAccountId,
                         Title = "Đơn hàng đã bị hủy",
-                        Message = $"Đơn hàng #{order.Id.ToString().Substring(0, 8)} đã bị khách hàng hủy.",
+                        Message = $"Đơn #{Common.OrderDisplayHelper.ShortId(order.Id)} đã bị khách hàng hủy. Bạn không cần chuẩn bị món cho đơn này nữa.",
                         NotificationType = NotificationType.System,
                         TargetId = order.Id,
                         IsRead = false,

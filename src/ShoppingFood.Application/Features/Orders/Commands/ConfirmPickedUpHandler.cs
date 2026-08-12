@@ -116,7 +116,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     Id = Guid.NewGuid(),
                     UserId = order.UserAccountId.Value,
                     Title = "Đơn hàng đang trên đường giao",
-                    Message = $"Tài xế '{shipperName}' đã lấy đồ ăn thành công và đang trên đường giao tới địa chỉ của bạn.",
+                    Message = $"Tài xế {shipperName} đã lấy món cho đơn #{Common.OrderDisplayHelper.ShortId(order.Id)} và đang giao tới địa chỉ của bạn. Theo dõi trong mục Đơn hàng.",
                     NotificationType = NotificationType.Delivery,
                     TargetId = order.Id,
                     IsRead = false,

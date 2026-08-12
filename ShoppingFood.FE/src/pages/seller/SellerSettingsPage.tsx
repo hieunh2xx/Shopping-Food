@@ -592,7 +592,9 @@ export function SellerSettingsPage() {
                   <option value="SelfDelivery">Nhà hàng tự giao</option>
                 </select>
                 <p className="text-xs text-gray-500">
-                  {deliveryType === 'PlatformDelivery' ? 'Sử dụng mạng lưới Shipper của hệ thống. Phí ship theo cấu hình của sàn.' : 'Tự quản lý đội ngũ giao hàng. Tùy chỉnh phí ship.'}
+                  {deliveryType === 'PlatformDelivery'
+                    ? 'Đơn sẽ được tài xế hệ thống nhận giao. Phí ship theo cấu hình sàn.'
+                    : 'Nhà hàng tự giao bằng đội tài xế/nhân viên của quán: sau khi chuẩn bị xong bấm “Bắt đầu đi giao”, giao xong bấm “Đã giao thành công”. Quán nhận thêm phí ship (không qua shipper sàn).'}
                 </p>
               </div>
 

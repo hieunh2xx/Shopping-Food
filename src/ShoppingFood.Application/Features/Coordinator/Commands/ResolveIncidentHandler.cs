@@ -181,15 +181,27 @@ namespace ShoppingFood.Application.Features.Coordinator.Commands
             var shipper = shippers.FirstOrDefault();
             if (shipper == null) return;
 
+            var shortId = Common.OrderDisplayHelper.ShortId(order.Id);
+            var resolutionLabel = resolutionType == "ShipperFault"
+                ? "do lỗi của tài xế"
+                : resolutionType switch
+                {
+                    "NoFault" => "không xác định lỗi tài xế",
+                    "SellerFault" => "do phía nhà hàng",
+                    "CustomerFault" => "do phía khách hàng",
+                    "ForceCancelNoPenalty" => "hủy đơn, không phạt tài xế",
+                    _ => "đã được xử lý"
+                };
+
             var message = resolutionType == "ShipperFault"
-                ? $"Sự cố đơn hàng '{order.Id}' được kết luận: Lỗi do tài xế. Bạn đã bị trừ điểm uy tín. Lý do: {notes}"
-                : $"Sự cố đơn hàng '{order.Id}' được kết luận: {resolutionType}. Bạn không bị trừ điểm uy tín. Ghi chú: {notes}";
+                ? $"Sự cố đơn #{shortId} được kết luận {resolutionLabel}. Điểm uy tín của bạn đã bị trừ. Ghi chú từ điều phối: {notes}"
+                : $"Sự cố đơn #{shortId} được kết luận {resolutionLabel}. Bạn không bị trừ điểm uy tín. Ghi chú: {notes}";
 
             var notification = new Notification
             {
                 Id = Guid.NewGuid(),
                 UserId = shipper.UserProfile.UserAccountId,
-                Title = "Kết quả phân giải sự cố đơn hàng",
+                Title = "Kết quả xử lý sự cố giao hàng",
                 Message = message,
                 NotificationType = NotificationType.Order,
                 TargetId = order.Id,

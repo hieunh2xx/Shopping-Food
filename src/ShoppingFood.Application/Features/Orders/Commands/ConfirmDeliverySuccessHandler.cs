@@ -76,6 +76,14 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 if (order.ShipperId != shipperProfile.Id)
                     return ApiResponse.Failure(403, "Forbidden. You are not assigned to this order.");
 
+                // Idempotent: đã giao rồi (double-submit / FE stale) → coi như thành công
+                if (order.Status == OrderStatus.Delivered)
+                {
+                    return ApiResponse.Success(
+                        new { order.Id, Status = order.Status.ToString(), AlreadyCompleted = true },
+                        "Order was already delivered.");
+                }
+
                 if (order.Status != OrderStatus.Shipping)
                     return ApiResponse.Failure(400, $"Invalid order status for completing delivery. Current status: {order.Status}");
 
@@ -116,8 +124,15 @@ namespace ShoppingFood.Application.Features.Orders.Commands
 
                 await _unitOfWork.SaveChangesAsync();
 
-                // Đóng session chat khi đơn đã giao (cửa sổ 24h vẫn mở, auto-close sau 24h)
-                await _chatSessionCloseService.CloseSessionsForDeliveredOrderIfExpiredAsync(order.Id, order.UpdatedAt);
+                // Không để lỗi đóng chat làm FE nghĩ giao thất bại trong khi đơn đã Delivered
+                try
+                {
+                    await _chatSessionCloseService.CloseSessionsForDeliveredOrderIfExpiredAsync(order.Id, order.UpdatedAt);
+                }
+                catch (Exception chatEx)
+                {
+                    await _unitOfWork.LogErrorAsync("ConfirmDeliverySuccessHandler.CloseChat", chatEx);
+                }
 
                 return ApiResponse.Success(new {order.Id, Status = order.Status.ToString()}, "Order delivery successfully.");
             }
@@ -157,6 +172,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             )).FirstOrDefault();
 
             bool isNew = false;
+            var oldTier = MemberTier.Bronze;
             if (loyaltyPoints == null)
             {
                 loyaltyPoints = new LoyaltyPoint
@@ -169,6 +185,10 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 };
                 isNew = true;
             }
+            else
+            {
+                oldTier = loyaltyPoints.Tier;
+            }
 
             loyaltyPoints.PointsBalance += pointEarned;
             loyaltyPoints.TotalEarnedPoints += pointEarned;
@@ -176,7 +196,8 @@ namespace ShoppingFood.Application.Features.Orders.Commands
 
             var tierConfigs = (await _memberTierConfigRepository.GetAllAsync())?.ToList()
                 ?? new List<MemberTierConfig>();
-            loyaltyPoints.Tier = DetermineMemberTier(loyaltyPoints.TotalEarnedPoints, tierConfigs);
+            var newTier = ShoppingFood.Application.Common.MemberTierHelper.Determine(loyaltyPoints.TotalEarnedPoints, tierConfigs);
+            loyaltyPoints.Tier = newTier;
 
             if (isNew)
             {
@@ -198,32 +219,35 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             };
             _loyaltyPointHistoryRepository.Add(history);
 
+            var tierLabel = ShoppingFood.Application.Common.MemberTierHelper.ToVietnamese(newTier);
             var notification = new Notification
             {
                 Id = Guid.NewGuid(),
                 UserId = userId,
-                Title = "Tích lũy điểm thưởng thành công",
-                Message = $"Chúc mừng! Bạn đã tích lũy thành công {pointEarned} điểm thưởng từ đơn hàng #{order.Id}. Hạng thành viên hiện tại: {loyaltyPoints.Tier.ToString()}.",
+                Title = "Tích điểm thưởng thành công",
+                Message = $"Bạn vừa nhận {pointEarned} điểm thưởng từ đơn #{Common.OrderDisplayHelper.ShortId(order.Id)}. Hạng thành viên hiện tại: {tierLabel}. Xem điểm trong mục Thành viên / Điểm thưởng.",
                 NotificationType = NotificationType.Loyalty,
                 TargetId = order.Id,
                 IsRead = false,
                 CreateAt = DateTime.UtcNow
             };
             _notificationRepository.Add(notification);
+
+            if (!isNew && oldTier != newTier && (int)newTier > (int)oldTier)
+            {
+                _notificationRepository.Add(new Notification
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = userId,
+                    Title = "Chúc mừng lên hạng thành viên!",
+                    Message = $"Bạn đã được nâng hạng: {ShoppingFood.Application.Common.MemberTierHelper.ToVietnamese(oldTier)} → {tierLabel}. Hạng mới giúp bạn nhận ưu đãi tốt hơn khi đặt đơn.",
+                    NotificationType = NotificationType.Loyalty,
+                    TargetId = order.Id,
+                    IsRead = false,
+                    CreateAt = DateTime.UtcNow
+                });
+            }
         }
-
-        private MemberTier DetermineMemberTier(int totalEarnedPoints, List<MemberTierConfig> tiers)
-        {
-            var diamondMin = tiers.FirstOrDefault(c => c.Tier == MemberTier.Diamond)?.MinPoints ?? 1000;
-            var goldMin = tiers.FirstOrDefault(c => c.Tier == MemberTier.Gold)?.MinPoints ?? 500;
-            var silverMin = tiers.FirstOrDefault(c => c.Tier == MemberTier.Silver)?.MinPoints ?? 100;
-
-            if (totalEarnedPoints >= diamondMin) return MemberTier.Diamond;
-            if (totalEarnedPoints >= goldMin) return MemberTier.Gold;
-            if (totalEarnedPoints >= silverMin) return MemberTier.Silver;
-            return MemberTier.Bronze;
-        }
-
 
         private async Task<ShipperProfile?> GetActiveShipperProfileAsync(Guid userId)
         {
@@ -262,7 +286,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     Id = Guid.NewGuid(),
                     UserId = order.UserAccountId.Value,
                     Title = "Giao hàng thành công",
-                    Message = $"Đơn hàng của bạn đã được giao thành công bởi tài xế '{shipperName}'. Chúc bạn ngon miệng!",
+                    Message = $"Đơn #{Common.OrderDisplayHelper.ShortId(order.Id)} đã được tài xế {shipperName} giao thành công. Chúc bạn ngon miệng! Bạn có thể đánh giá món ăn trong mục Đơn hàng.",
                     NotificationType = NotificationType.Delivery,
                     TargetId = order.Id,
                     IsRead = false,

@@ -28,6 +28,8 @@ import { ReportIncidentModal } from './components/ReportIncidentModal';
 import { SuccessDeliveryModal } from './components/SuccessDeliveryModal';
 import { OrderProposalPopup } from './components/OrderProposalPopup';
 import { PickupCodeModal } from './components/PickupCodeModal';
+import { BatchPickupCodeModal } from './components/BatchPickupCodeModal';
+import type { BatchPickupOrderItem } from './components/BatchPickupCodeModal';
 import { Modal, Button } from '../../components/common';
 
 export function ShipperDashboard() {
@@ -53,6 +55,9 @@ export function ShipperDashboard() {
   // Modals for prompt replacement
   const [isPickupCodeModalOpen, setIsPickupCodeModalOpen] = useState(false);
   const [pendingPickupOrderId, setPendingPickupOrderId] = useState<string | null>(null);
+  const [isBatchPickupModalOpen, setIsBatchPickupModalOpen] = useState(false);
+  const [batchPickupOrders, setBatchPickupOrders] = useState<BatchPickupOrderItem[]>([]);
+  const [batchPickupRestaurantName, setBatchPickupRestaurantName] = useState<string>('');
 
   // State cho Popup đề xuất 60s
   const [proposalPopupOffer, setProposalPopupOffer] = useState<IProposedDeliveryOfferDto | null>(null);
@@ -210,6 +215,18 @@ export function ShipperDashboard() {
             const promises = deliveries.map(async (d: any) => {
               try {
                 const routeRes = await shipperService.getDeliveryRoute(d.orderId);
+                if (routeRes.error) {
+                  const msg = String(routeRes.message || '').toLowerCase();
+                  // Đơn không còn Shipping (Delivered/Cancelled/...) → gỡ khỏi danh sách active
+                  if (
+                    msg.includes('delivered') ||
+                    msg.includes('cancelled') ||
+                    msg.includes('only available for shipping') ||
+                    msg.includes('shipping status')
+                  ) {
+                    return { valid: false, id: d.orderId, googleMapNavigationUrl: undefined };
+                  }
+                }
                 return { 
                   valid: true, 
                   id: d.orderId, 
@@ -221,10 +238,18 @@ export function ShipperDashboard() {
                 };
               } catch (err: any) {
                 const status = err.response?.status;
-                if (status === 403 || status === 404) {
+                const msg = String(err.response?.data?.message || '').toLowerCase();
+                if (
+                  status === 403 ||
+                  status === 404 ||
+                  msg.includes('delivered') ||
+                  msg.includes('cancelled') ||
+                  msg.includes('only available for shipping') ||
+                  msg.includes('shipping status')
+                ) {
                   return { valid: false, id: d.orderId, googleMapNavigationUrl: undefined };
                 }
-                // Keep it if it's 400 (e.g., missing GPS) or 500
+                // Keep it if it's transient 400 (e.g., missing GPS) or 500
                 return { valid: true, id: d.orderId, googleMapNavigationUrl: undefined };
               }
             });
@@ -498,6 +523,9 @@ export function ShipperDashboard() {
     }
   };
 
+  const restaurantKey = (d: { restaurantId?: string; restaurantName: string; restaurantAddress: string }) =>
+    d.restaurantId || `${d.restaurantName}|${d.restaurantAddress}`;
+
   // Accept an available offer
   const handleStepTransition = async (orderId: string) => {
     const activeDelivery = activeDeliveries.find(d => d.orderId === orderId);
@@ -518,8 +546,26 @@ export function ShipperDashboard() {
           toast.error(res.message);
         }
       } else if (activeDelivery.step === 'arrived') {
-        setPendingPickupOrderId(activeDelivery.orderId);
-        setIsPickupCodeModalOpen(true);
+        // Include picked_up siblings: they are still Shipping on BE, so batch code stays active
+        const sameRestaurant = activeDeliveries.filter(
+          (d) => restaurantKey(d) === restaurantKey(activeDelivery)
+        );
+        if (sameRestaurant.length >= 2) {
+          setBatchPickupOrders(
+            sameRestaurant
+              .filter((d) => d.step !== 'picked_up')
+              .map((d) => ({
+                orderId: d.orderId,
+                contactName: d.contactName,
+                canSelect: d.step === 'arrived',
+              }))
+          );
+          setBatchPickupRestaurantName(activeDelivery.restaurantName);
+          setIsBatchPickupModalOpen(true);
+        } else {
+          setPendingPickupOrderId(activeDelivery.orderId);
+          setIsPickupCodeModalOpen(true);
+        }
       }
     } catch (err: any) {
       const status = err.response?.status;
@@ -562,6 +608,33 @@ export function ShipperDashboard() {
     } finally {
       setActionLoading(null);
       setPendingPickupOrderId(null);
+    }
+  };
+
+  const handleConfirmBatchPickup = async (orderIds: string[], code: string) => {
+    setIsBatchPickupModalOpen(false);
+    setActionLoading(orderIds[0] ?? 'batch');
+    try {
+      const res = await shipperService.confirmPickedUpBatch({
+        orderIds,
+        verificationCode: code,
+        latitude: coords.lat,
+        longitude: coords.lng,
+      });
+      if (!res.error) {
+        toast.success(res.message || `Đã lấy ${orderIds.length} đơn thành công!`);
+        const confirmed = new Set(orderIds);
+        setActiveDeliveries((prev) =>
+          prev.map((d) => (confirmed.has(d.orderId) ? { ...d, step: 'picked_up' } : d))
+        );
+      } else {
+        toast.error(res.message);
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Không thể xác nhận lấy hàng gộp.');
+    } finally {
+      setActionLoading(null);
+      setBatchPickupOrders([]);
     }
   };
 
@@ -632,9 +705,8 @@ export function ShipperDashboard() {
   };
 
   // Complete delivery
-  const handleSuccessCallback = () => {
-    if (!successModalOrderId) return;
-    setActiveDeliveries(prev => prev.filter(d => d.orderId !== successModalOrderId));
+  const handleSuccessCallback = (orderId: string) => {
+    setActiveDeliveries(prev => prev.filter(d => d.orderId !== orderId));
     setSuccessModalOrderId(null);
     fetchAvailableOffers();
     fetchIncomeReport();
@@ -1199,6 +1271,18 @@ export function ShipperDashboard() {
         }}
         onConfirm={handleConfirmPickup}
         isLoading={actionLoading === pendingPickupOrderId}
+      />
+
+      <BatchPickupCodeModal
+        isOpen={isBatchPickupModalOpen}
+        onClose={() => {
+          setIsBatchPickupModalOpen(false);
+          setBatchPickupOrders([]);
+        }}
+        onConfirm={handleConfirmBatchPickup}
+        orders={batchPickupOrders}
+        restaurantName={batchPickupRestaurantName}
+        isLoading={!!actionLoading && batchPickupOrders.some((o) => o.orderId === actionLoading)}
       />
 
       <Modal

@@ -65,6 +65,17 @@ namespace ShoppingFood.API.Controllers
             return StatusCode(response.Code, response);
         }
 
+        [HttpPost("confirm-picked-up-batch")]
+        public async Task<ActionResult<ApiResponse>> ConfirmPickedUpBatch([FromBody] ConfirmPickedUpBatchCommand command)
+        {
+            if (userDto != null)
+            {
+                command.CurrentUserId = userDto.Id;
+            }
+            var response = await _mediator.Send(command);
+            return StatusCode(response.Code, response);
+        }
+
         [HttpPost("location")]
         public async Task<ActionResult<ApiResponse>> UpdateLocation([FromBody] UpdateShipperLocationCommand command)
         {
@@ -111,12 +122,18 @@ namespace ShoppingFood.API.Controllers
         }
 
         [HttpGet("income-report")]
-        public async Task<ActionResult<ApiResponse>> GetIncomeReport([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
+        public async Task<ActionResult<ApiResponse>> GetIncomeReport(
+            [FromQuery] DateTime? startDate,
+            [FromQuery] DateTime? endDate,
+            [FromQuery] int skip = 0,
+            [FromQuery] int take = 10)
         {
             var query = new GetShipperIncomeReportQuery
             {
                 StartDate = startDate,
-                EndDate = endDate
+                EndDate = endDate,
+                Skip = skip,
+                Take = take
             };
             if (userDto != null)
             {

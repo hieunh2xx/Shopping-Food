@@ -487,6 +487,10 @@ namespace ShoppingFood.API.Controllers
         [HttpPut("update-shipper-application")]
         public async Task<ActionResult<ApiResponse>> UpdateShipperApplication([FromBody] UpdateShipperApplicationCommand command)
         {
+            if (userDto != null)
+            {
+                command.CurrentUserId = userDto.Id;
+            }
             var response = await _mediator.Send(command);
             return Ok(response);
         }

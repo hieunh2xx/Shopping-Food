@@ -118,7 +118,7 @@ namespace ShoppingFood.Application.Features.Support.Commands
                     Id = Guid.NewGuid(),
                     UserId = coordinator.Id,
                     Title = "Khiếu nại đơn hàng mới",
-                    Message = $"Có khiếu nại mới về đơn hàng đang chờ bạn xử lý.",
+                    Message = $"Có khiếu nại mới về đơn #{Common.OrderDisplayHelper.ShortId(orderId)}. Vào mục Khiếu nại đơn hàng để xem nội dung và xử lý trong 24 giờ.",
                     NotificationType = NotificationType.Order,
                     TargetId = orderId,
                     IsRead = false,

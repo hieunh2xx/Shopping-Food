@@ -1,12 +1,12 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using ShoppingFood.Application.Common;
 using ShoppingFood.Application.Features.LoyaltyPoints.Commands;
 using ShoppingFood.Application.Features.LoyaltyPoints.Queries;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
 using ShoppingFood.Domain.Enums;
 using ShoppingFood.Domain.Models;
-using ShoppingFood.Repository.Implementations;
 using ShoppingFood.Repository.Interfaces;
 
 namespace ShoppingFood.API.Controllers
@@ -69,7 +69,6 @@ namespace ShoppingFood.API.Controllers
         /// <summary>
         /// Ép hệ thống thực thi cập nhật hạng ngay lập tức thủ công
         /// </summary>
-        /// <returns></returns>
         [HttpPost("evaluate-tiers")]
         public async Task<ActionResult<ApiResponse>> EvaluateTiers()
         {
@@ -80,7 +79,6 @@ namespace ShoppingFood.API.Controllers
         /// <summary>
         /// Lấy mốc điểm của các rank đang có trong db
         /// </summary>
-        /// <returns></returns>
         [HttpGet("tier-configs")]
         public async Task<ActionResult<ApiResponse>> GetTierConfigs()
         {
@@ -92,9 +90,6 @@ namespace ShoppingFood.API.Controllers
         /// <summary>
         /// Add hoặc update rank
         /// </summary>
-        /// <param name="tier"></param>
-        /// <param name="minPoints"></param>
-        /// <returns></returns>
         [HttpPost("tier-configs")]
         public async Task<ActionResult<ApiResponse>> AddOrUpdateTierConfig([FromQuery] MemberTier tier, [FromQuery] int minPoints)
         {
@@ -104,7 +99,7 @@ namespace ShoppingFood.API.Controllers
             var configs = await _memberTierConfigRepository.GetAsync();
             var config = configs.FirstOrDefault(c => c.Tier == tier);
 
-            if(config == null)
+            if (config == null)
             {
                 config = new MemberTierConfig
                 {
@@ -123,32 +118,51 @@ namespace ShoppingFood.API.Controllers
             await _unitOfWork.SaveChangesAsync();
             return Ok(ApiResponse.Success(config, $"Successfully added/updated min points for tier {tier}."));
         }
+
         /// <summary>
-        /// sửa rank của 1 tài khoản cụ thể
+        /// Sửa rank của 1 tài khoản cụ thể. Tự tạo ví loyalty nếu khách chưa có.
         /// </summary>
-        /// <param name="userId"></param>
-        /// <param name="newTier"></param>
-        /// <returns></returns>
         [HttpPut("adjust-user-tier")]
         public async Task<ActionResult<ApiResponse>> AdjustUserTier([FromQuery] Guid userId, [FromQuery] MemberTier newTier)
         {
-            var loyaltyPoints = await _loyaltyPointRepository.GetAsync();
-            var loyaltyPoint = loyaltyPoints.FirstOrDefault(lp => lp.UserAccountId == userId);
+            var loyaltyPoints = await _loyaltyPointRepository.GetAsync(
+                predicate: lp => lp.UserAccountId == userId,
+                disableTracking: false);
+            var loyaltyPoint = loyaltyPoints.FirstOrDefault();
 
+            var oldTier = MemberTier.Bronze;
             if (loyaltyPoint == null)
-                return NotFound(ApiResponse.Failure(404, "Customer loyalty point wallet not found."));
+            {
+                loyaltyPoint = new LoyaltyPoint
+                {
+                    UserAccountId = userId,
+                    PointsBalance = 0,
+                    TotalEarnedPoints = 0,
+                    Tier = newTier,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                _loyaltyPointRepository.Add(loyaltyPoint);
+            }
+            else
+            {
+                oldTier = loyaltyPoint.Tier;
+                if (oldTier == newTier)
+                    return Ok(ApiResponse.Success(new { userId, oldTier, newTier }, "Hạng thành viên không thay đổi."));
 
-            var oldTier = loyaltyPoint.Tier;
-            loyaltyPoint.Tier = newTier;
-            loyaltyPoint.UpdatedAt = DateTime.UtcNow;
-            _loyaltyPointRepository.Update(loyaltyPoint);
+                loyaltyPoint.Tier = newTier;
+                loyaltyPoint.UpdatedAt = DateTime.UtcNow;
+                _loyaltyPointRepository.Update(loyaltyPoint);
+            }
+
+            var oldLabel = MemberTierHelper.ToVietnamese(oldTier);
+            var newLabel = MemberTierHelper.ToVietnamese(newTier);
 
             var notification = new Notification
             {
                 Id = Guid.NewGuid(),
                 UserId = userId,
                 Title = "Hạng thành viên của bạn đã thay đổi",
-                Message = $"Tài khoản của bạn đã được Admin điều chỉnh hạng thành viên: {oldTier} -> {newTier}",
+                Message = $"Tài khoản của bạn đã được quản trị viên điều chỉnh hạng: {oldLabel} → {newLabel}. Xem quyền lợi hạng trong mục Thành viên.",
                 NotificationType = NotificationType.Loyalty,
                 IsRead = false,
                 CreateAt = DateTime.UtcNow
@@ -156,7 +170,7 @@ namespace ShoppingFood.API.Controllers
             _notificationRepository.Add(notification);
 
             await _unitOfWork.SaveChangesAsync();
-            return Ok(ApiResponse.Success(new {userId, oldTier, newTier}, "Successfully adjusted member tier manually."));
+            return Ok(ApiResponse.Success(new { userId, oldTier, newTier, oldLabel, newLabel }, "Successfully adjusted member tier manually."));
         }
     }
 }

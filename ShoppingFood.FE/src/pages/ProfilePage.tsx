@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { authService } from '../services/AuthService';
 import { restaurantService } from '../services/RestaurantService';
 import type { IUserDto, IFavoriteRestaurantDto } from '../interfaces';
-import { Button, Input, Modal } from '../components/common';
+import { Button, Input, Modal, MemberTierBadge } from '../components/common';
 import toast from 'react-hot-toast';
 import { useAuthContext } from '../contexts/AuthContext';
 import { Camera, MapPin as MapPinIcon, BadgeCheck, AlertCircle, Heart, Lock, Trash2, Ticket, Plus } from 'lucide-react';
@@ -202,16 +202,6 @@ export function ProfilePage() {
     }
   };
 
-  const getTierName = (tier?: string | null) => {
-    switch (tier) {
-      case 'Bronze': return 'Đồng';
-      case 'Silver': return 'Bạc';
-      case 'Gold': return 'Vàng';
-      case 'Diamond': return 'Kim Cương';
-      default: return 'Thân thiết';
-    }
-  };
-
   if (isLoading) {
     return <div className="flex justify-center p-10">Đang tải...</div>;
   }
@@ -264,8 +254,8 @@ export function ProfilePage() {
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">{profile.fullName || profile.userName}</h2>
-                <p className="text-gray-600 flex items-center gap-1.5 mt-1 text-sm font-medium">
-                  Khách hàng hạng {getTierName(profile.tier)}
+                <p className="text-gray-600 flex items-center gap-2 mt-1.5 text-sm font-medium">
+                  Khách hàng hạng <MemberTierBadge tier={profile.tier} size="sm" />
                 </p>
               </div>
             </div>

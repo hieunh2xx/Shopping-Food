@@ -18,6 +18,8 @@ export interface IWalletDto {
   bankAccountNumber?: string;
   bankAccountHolder?: string;
   codCollectedAmount?: number;
+  pendingCodRemittance?: number;
+  availableCodToRemit?: number;
   debtLimit?: number;
   debtRemaining?: number;
 }
@@ -31,6 +33,14 @@ export interface ITransactionDto {
   referenceId?: string;
   referenceType?: string;
   createdAt: string;
+}
+
+export interface ITransactionsPageDto {
+  items: ITransactionDto[];
+  totalCount: number;
+  skip: number;
+  take: number;
+  dailyChart: { date: string; income: number; expense: number; net: number }[];
 }
 
 class PaymentService {
@@ -54,7 +64,15 @@ class PaymentService {
     return httpClient.post(API_ENDPOINTS.PAYMENT.WITHDRAW, data);
   }
 
-  async getTransactions(params?: { skip?: number; take?: number }): Promise<IApiResponse<ITransactionDto[]>> {
+  async getTransactions(params?: {
+    skip?: number;
+    take?: number;
+    fromDate?: string;
+    toDate?: string;
+    type?: string;
+    codOnly?: boolean;
+    excludeCod?: boolean;
+  }): Promise<IApiResponse<ITransactionsPageDto>> {
     return httpClient.get(API_ENDPOINTS.PAYMENT.TRANSACTIONS, { params });
   }
 
@@ -89,8 +107,20 @@ class PaymentService {
     return httpClient.post(API_ENDPOINTS.PAYMENT.INVOICE, data);
   }
 
-  async repayShipperDebt(amount: number): Promise<IApiResponse<{ repaid: number; remainingDebt: number }>> {
-    return httpClient.post(API_ENDPOINTS.PAYMENT.REPAY_DEBT, { amount });
+  async repayShipperDebt(amount: number, data?: { note?: string; proofImageUrl?: string }): Promise<IApiResponse<any>> {
+    return httpClient.post(API_ENDPOINTS.PAYMENT.REPAY_DEBT, { amount, ...data });
+  }
+
+  async requestCodRemittance(data: { amount: number; note?: string; proofImageUrl?: string }): Promise<IApiResponse<any>> {
+    return httpClient.post(API_ENDPOINTS.PAYMENT.COD_REMITTANCE, data);
+  }
+
+  async getCodRemittances(status?: string): Promise<IApiResponse<any>> {
+    return httpClient.get(API_ENDPOINTS.PAYMENT.COD_REMITTANCES, { params: { status } });
+  }
+
+  async reviewCodRemittance(data: { remittanceId: string; approve: boolean; rejectReason?: string }): Promise<IApiResponse<any>> {
+    return httpClient.post(API_ENDPOINTS.PAYMENT.REVIEW_COD_REMITTANCE, data);
   }
 
   async updateShipperDebtLimit(shipperProfileId: string, debtLimit: number): Promise<IApiResponse<any>> {
@@ -99,6 +129,18 @@ class PaymentService {
 
   async getReconciliation(params?: { fromDate?: string; toDate?: string }): Promise<IApiResponse<any>> {
     return httpClient.get(API_ENDPOINTS.PAYMENT.RECONCILIATION, { params });
+  }
+
+  async getCodOverview(): Promise<IApiResponse<any>> {
+    return httpClient.get(API_ENDPOINTS.PAYMENT.COD_OVERVIEW);
+  }
+
+  async getSellerRevenues(params?: { fromDate?: string; toDate?: string; restaurantId?: string }): Promise<IApiResponse<any>> {
+    return httpClient.get(API_ENDPOINTS.PAYMENT.SELLER_REVENUES, { params });
+  }
+
+  async getShipperRevenues(params?: { fromDate?: string; toDate?: string; shipperId?: string }): Promise<IApiResponse<any>> {
+    return httpClient.get(API_ENDPOINTS.PAYMENT.SHIPPER_REVENUES, { params });
   }
 
   async getSepayCheckout(sessionId: string, paymentMethod?: string): Promise<IApiResponse<ISepayCheckoutDto>> {

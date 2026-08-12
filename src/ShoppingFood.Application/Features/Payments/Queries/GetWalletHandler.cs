@@ -4,6 +4,8 @@ using ShoppingFood.Application.Interfaces;
 using ShoppingFood.Core.Base;
 using ShoppingFood.Domain.Enums;
 using ShoppingFood.Repository.Interfaces;
+using System;
+using System.Linq;
 
 namespace ShoppingFood.Application.Features.Payments.Queries
 {
@@ -20,17 +22,20 @@ namespace ShoppingFood.Application.Features.Payments.Queries
         private readonly IUserRepository _userRepository;
         private readonly IRestaurantProfileRepository _restaurantRepository;
         private readonly IShipperProfileRepository _shipperRepository;
+        private readonly ICodRemittanceRequestRepository _remittanceRepository;
 
         public GetWalletHandler(
             IPaymentSettlementService paymentService,
             IUserRepository userRepository,
             IRestaurantProfileRepository restaurantRepository,
-            IShipperProfileRepository shipperRepository)
+            IShipperProfileRepository shipperRepository,
+            ICodRemittanceRequestRepository remittanceRepository)
         {
             _paymentService = paymentService;
             _userRepository = userRepository;
             _restaurantRepository = restaurantRepository;
             _shipperRepository = shipperRepository;
+            _remittanceRepository = remittanceRepository;
         }
 
         public async Task<ApiResponse> Handle(GetWalletQuery request, CancellationToken cancellationToken)
@@ -91,12 +96,22 @@ namespace ShoppingFood.Application.Features.Payments.Queries
 
             decimal? codCollected = null;
             decimal? debtLimit = null;
+            decimal? pendingCodRemittance = null;
+            decimal? availableCodToRemit = null;
             if (ownerType == WalletOwnerType.Shipper)
             {
                 var shippers = await _shipperRepository.GetAsync(predicate: s => s.Id == ownerId);
                 var shipper = shippers.FirstOrDefault();
                 codCollected = shipper?.CodCollectedAmount;
                 debtLimit = shipper?.DebtLimit;
+                if (shipper != null)
+                {
+                    var pending = await _remittanceRepository.GetAsync(
+                        predicate: r => r.ShipperProfileId == shipper.Id && r.Status == CodRemittanceStatus.Pending,
+                        disableTracking: true);
+                    pendingCodRemittance = pending.Sum(r => r.Amount);
+                    availableCodToRemit = Math.Max(0, (codCollected ?? 0) - pendingCodRemittance.Value);
+                }
             }
 
             return ApiResponse.Success(new
@@ -108,6 +123,8 @@ namespace ShoppingFood.Application.Features.Payments.Queries
                 bankAccountNumber = wallet.BankAccountNumber,
                 bankAccountHolder = wallet.BankAccountHolder,
                 codCollectedAmount = codCollected,
+                pendingCodRemittance,
+                availableCodToRemit,
                 debtLimit,
                 debtRemaining = debtLimit.HasValue && codCollected.HasValue ? (decimal?)Math.Max(0, debtLimit.Value - codCollected.Value) : null
             }, "Wallet retrieved.");

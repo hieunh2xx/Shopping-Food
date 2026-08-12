@@ -117,7 +117,6 @@ export function CheckoutPage() {
     freeDeliveryRadiusKm: number;
     freeShippingMinimumOrder: number;
     shippingFee: number;
-    feePerKm: number;
   } | null>(null);
   const [savedAddresses, setSavedAddresses] = useState<IUserAddressDto[]>([]);
   const [saveAddress, setSaveAddress] = useState(true);
@@ -162,10 +161,10 @@ export function CheckoutPage() {
       : (restaurantInfo.freeShippingMinimumOrder || 0);
     if (checkoutTotal >= freeMinOrder && freeMinOrder > 0) return 0;
 
-    // Platform fee must come from Admin DeliverySettings — never hardcode 15k
-    const flatCap = isPlatform
-      ? (platformDelivery?.shippingFee ?? restaurantInfo.shippingFee ?? 0)
-      : (restaurantInfo.shippingFee || 0);
+    // Platform: chỉ lấy phí từ config Admin (DeliverySettings.shippingFee) — không hardcode, không lấy phí shipper/restaurant
+    const customerFee = isPlatform
+      ? Number(platformDelivery?.shippingFee ?? 0)
+      : Number(restaurantInfo.shippingFee || 0);
 
     const hasCoords = !!(
       formData.deliveryLatitude &&
@@ -174,8 +173,7 @@ export function CheckoutPage() {
       restaurantInfo.longitude
     );
 
-    // No destination coords → charge flat fee (do not treat as 0km free-ship)
-    if (!hasCoords) return flatCap;
+    if (!hasCoords) return customerFee;
 
     const distanceKm = calculateDistance(
       formData.deliveryLatitude!,
@@ -189,14 +187,7 @@ export function CheckoutPage() {
       : (restaurantInfo.freeDeliveryRadiusKm ?? 0);
     if (distanceKm <= freeRadius) return 0;
 
-    if (isPlatform) {
-      const feePerKm = platformDelivery?.feePerKm || 3000;
-      const excessKm = Math.max(0, distanceKm - freeRadius);
-      const distanceBased = Math.max(feePerKm, Math.ceil(excessKm) * feePerKm);
-      return Math.min(flatCap || distanceBased, distanceBased);
-    }
-
-    return flatCap;
+    return customerFee;
   }, [hasFreeshipItem, restaurantInfo, platformDelivery, formData.deliveryLatitude, formData.deliveryLongitude, checkoutTotal]);
 
   useEffect(() => {
@@ -215,10 +206,9 @@ export function CheckoutPage() {
           freeDeliveryRadiusKm: Number(res.data.freeDeliveryRadiusKm ?? 3),
           freeShippingMinimumOrder: Number(res.data.freeShippingMinimumOrder ?? 0),
           shippingFee: Number(res.data.shippingFee ?? 0),
-          feePerKm: 3000, // matches BE default when finance ShipperFeePerKm unset
         });
       }
-    }).catch(() => { /* keep null → FE will show restaurant fee / 0 until loaded */ });
+    }).catch(() => { /* keep null */ });
   }, []);
 
   useEffect(() => {
@@ -885,6 +875,15 @@ export function CheckoutPage() {
                     )}
                   </span>
                 </div>
+                {!hasFreeshipItem && restaurantInfo && (
+                  <p className="text-[11px] text-gray-400 -mt-1 text-right">
+                    {restaurantInfo.deliveryType === 'PlatformDelivery'
+                      ? (platformDelivery
+                        ? `Theo cấu hình sàn: ${formatCurrency(platformDelivery.shippingFee)}`
+                        : 'Đang tải cấu hình sàn…')
+                      : 'Theo phí ship của nhà hàng (tự giao)'}
+                  </p>
+                )}
                 {selectedDiscount && discountAmount > 0 && (
                   <div className="flex justify-between text-green-600">
                     <span>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Search, Shield, Ban, CheckCircle2, Award, Loader2, Star, AlertCircle } from 'lucide-react';
-import { Input, Button, Pagination } from '../../components/common';
+import { Input, Button, Pagination, MemberTierBadge, MemberTierSelectCard, MEMBER_TIERS, getMemberTierLabel } from '../../components/common';
 import { Modal } from '../../components/common/Modal';
 import { userService } from '../../services/UserService';
 import { loyaltyPointService } from '../../services/LoyaltyPointService';
@@ -8,22 +8,6 @@ import type { IUserDto } from '../../interfaces';
 import toast from 'react-hot-toast';
 import { adminService } from '../../services/AdminService';
 import { maskEmail, maskPhone } from '../../utils/formatters';
-
-const TIERS = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
-const TIER_COLORS: Record<string, string> = {
-  Bronze: 'bg-amber-100 text-amber-700',
-  Silver: 'bg-gray-200 text-gray-700',
-  Gold: 'bg-yellow-100 text-yellow-700',
-  Platinum: 'bg-blue-100 text-blue-700',
-  Diamond: 'bg-purple-100 text-purple-700',
-};
-const TIER_ICONS: Record<string, string> = {
-  Bronze: '🥉',
-  Silver: '🥈',
-  Gold: '🥇',
-  Platinum: '💎',
-  Diamond: '👑',
-};
 
 export function AdminUsersPage() {
   const [search, setSearch] = useState('');
@@ -116,7 +100,7 @@ export function AdminUsersPage() {
     try {
       const res = await loyaltyPointService.adjustUserTier(selectedUser.id, newTier);
       if (!res.error) {
-        toast.success(`Đã cập nhật hạng ${selectedUser.fullName || selectedUser.userName} thành ${newTier}`);
+        toast.success(`Đã cập nhật hạng ${selectedUser.fullName || selectedUser.userName} thành ${getMemberTierLabel(newTier)}`);
         setIsTierModalOpen(false);
         fetchUsers();
       } else {
@@ -265,10 +249,7 @@ export function AdminUsersPage() {
                     </td>
                     <td className="py-4 px-6 text-center">
                       {user.role === 'Customer' ? (
-                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${TIER_COLORS[user.tier || ''] || 'bg-gray-100 text-gray-600'}`}>
-                          <span>{TIER_ICONS[user.tier || ''] || '🎖️'}</span>
-                          {user.tier || 'Chưa có'}
-                        </span>
+                        <MemberTierBadge tier={user.tier} />
                       ) : (
                         <span className="text-gray-400">—</span>
                       )}
@@ -372,9 +353,7 @@ export function AdminUsersPage() {
                 <div className="font-semibold text-gray-900">{selectedUser.fullName || selectedUser.userName}</div>
                 <div className="text-sm text-gray-500">{selectedUser.email}</div>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${TIER_COLORS[selectedUser.tier || ''] || 'bg-gray-100 text-gray-600'}`}>
-                    {TIER_ICONS[selectedUser.tier || ''] || '🎖️'} {selectedUser.tier || 'Chưa có'}
-                  </span>
+                  <MemberTierBadge tier={selectedUser.tier} size="sm" />
                   <span className="text-xs text-gray-400">•</span>
                   <span className="text-xs text-gray-500">{(selectedUser.totalEarnedPoints || 0).toLocaleString()} điểm tích lũy</span>
                 </div>
@@ -383,20 +362,14 @@ export function AdminUsersPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Chọn hạng mới</label>
-              <div className="grid grid-cols-5 gap-2">
-                {TIERS.map(tier => (
-                  <button
+              <div className="grid grid-cols-2 gap-2">
+                {MEMBER_TIERS.map(tier => (
+                  <MemberTierSelectCard
                     key={tier}
-                    type="button"
+                    tier={tier}
+                    selected={newTier === tier}
                     onClick={() => setNewTier(tier)}
-                    className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all ${newTier === tier
-                        ? 'border-orange-500 bg-orange-50 shadow-sm'
-                        : 'border-gray-200 hover:border-gray-300 bg-white'
-                      }`}
-                  >
-                    <span className="text-xl">{TIER_ICONS[tier]}</span>
-                    <span className={`text-xs font-semibold ${newTier === tier ? 'text-orange-600' : 'text-gray-600'}`}>{tier}</span>
-                  </button>
+                  />
                 ))}
               </div>
             </div>
@@ -405,7 +378,7 @@ export function AdminUsersPage() {
               <div className="flex items-center gap-2 p-3 bg-orange-50 border border-orange-100 rounded-xl">
                 <Star className="w-4 h-4 text-orange-500 shrink-0" />
                 <span className="text-sm text-orange-700">
-                  Thay đổi: <strong>{selectedUser.tier || 'Chưa có'}</strong> → <strong>{newTier}</strong>
+                  Thay đổi: <strong>{getMemberTierLabel(selectedUser.tier)}</strong> → <strong>{getMemberTierLabel(newTier)}</strong>
                 </span>
               </div>
             )}

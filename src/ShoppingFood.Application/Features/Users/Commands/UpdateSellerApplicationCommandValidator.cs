@@ -1,4 +1,6 @@
 using FluentValidation;
+using System;
+using System.IO;
 
 namespace ShoppingFood.Application.Features.Users.Commands
 {
@@ -41,14 +43,23 @@ namespace ShoppingFood.Application.Features.Users.Commands
         private bool HasValidImageExtension(string url, bool allowDocs = false)
         {
             if (string.IsNullOrEmpty(url)) return false;
-            var cleanUrl = url.Split('?')[0];
+            var cleanUrl = url.Split('?')[0].Trim();
             var ext = Path.GetExtension(cleanUrl).ToLower();
-            
+
             if (allowDocs)
             {
-                return ext is ".jpg" or ".jpeg" or ".png" or ".webp" or ".pdf" or ".doc" or ".docx";
+                if (ext is ".jpg" or ".jpeg" or ".png" or ".webp" or ".pdf" or ".doc" or ".docx")
+                    return true;
             }
-            return ext is ".jpg" or ".jpeg" or ".png" or ".webp";
+            else if (ext is ".jpg" or ".jpeg" or ".png" or ".webp")
+            {
+                return true;
+            }
+
+            // CDN / placeholder URLs without extension (Cloudinary, placehold.co, ...)
+            return cleanUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+                || cleanUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+                || cleanUrl.StartsWith('/');
         }
     }
 }
