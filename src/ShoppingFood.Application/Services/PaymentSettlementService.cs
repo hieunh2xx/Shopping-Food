@@ -18,6 +18,7 @@ namespace ShoppingFood.Application.Services
         private readonly IOrderRepository _orderRepository;
         private readonly IRestaurantProfileRepository _restaurantProfileRepository;
         private readonly IShipperProfileRepository _shipperProfileRepository;
+        private readonly IUserRepository _userRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ISepayService _sepayService;
         private readonly IPaymentCacheService _paymentCache;
@@ -32,6 +33,7 @@ namespace ShoppingFood.Application.Services
             IOrderRepository orderRepository,
             IRestaurantProfileRepository restaurantProfileRepository,
             IShipperProfileRepository shipperProfileRepository,
+            IUserRepository userRepository,
             IUnitOfWork unitOfWork,
             ISepayService sepayService,
             IPaymentCacheService paymentCache,
@@ -45,6 +47,7 @@ namespace ShoppingFood.Application.Services
             _orderRepository = orderRepository;
             _restaurantProfileRepository = restaurantProfileRepository;
             _shipperProfileRepository = shipperProfileRepository;
+            _userRepository = userRepository;
             _unitOfWork = unitOfWork;
             _sepayService = sepayService;
             _paymentCache = paymentCache;
@@ -82,6 +85,26 @@ namespace ShoppingFood.Application.Services
             }
             var shipperEarning = shipperIncome;
             return (itemsSubtotal, platformCommission, sellerPayout, shipperEarning);
+        }
+
+        public decimal ResolveCommissionRate(decimal globalRate, decimal? customRatePercent)
+        {
+            if (customRatePercent.HasValue)
+                return customRatePercent.Value / 100m;
+            return globalRate;
+        }
+
+        private async Task<decimal> GetCommissionRateForRestaurantAsync(Guid? restaurantId)
+        {
+            var config = await GetConfigAsync();
+            if (!restaurantId.HasValue)
+                return config.CommissionRate;
+
+            var restaurants = await _restaurantProfileRepository.GetAsync(
+                predicate: r => r.Id == restaurantId.Value,
+                disableTracking: true);
+            var restaurant = restaurants.FirstOrDefault();
+            return ResolveCommissionRate(config.CommissionRate, restaurant?.CustomCommissionRate);
         }
 
         public async Task<Wallet> GetOrCreateWalletAsync(WalletOwnerType ownerType, Guid ownerId)
@@ -131,7 +154,9 @@ namespace ShoppingFood.Application.Services
         {
             var config = await GetConfigAsync();
             var preservedItemsSubtotal = order.ItemsSubtotal;
-            var split = CalculateSplit(order.TotalAmount, order.ShippingFee, order.ShipperIncome, config.CommissionRate, preservedItemsSubtotal: preservedItemsSubtotal);
+            var restaurantId = await GetOrderRestaurantIdAsync(order);
+            var commissionRate = await GetCommissionRateForRestaurantAsync(restaurantId);
+            var split = CalculateSplit(order.TotalAmount, order.ShippingFee, order.ShipperIncome, commissionRate, preservedItemsSubtotal: preservedItemsSubtotal);
             // Giữ tiền món trước giảm giá để UI hiển thị rõ (100k - giảm 3k = 97k)
             order.ItemsSubtotal = preservedItemsSubtotal > 0 ? preservedItemsSubtotal : split.ItemsSubtotal;
             order.PlatformCommission = split.PlatformCommission;
@@ -398,16 +423,40 @@ namespace ShoppingFood.Application.Services
             }
             else if (session.UserAccountId.HasValue)
             {
-                // Phiên nạp ví (OrderId = null)
+                // Phiên nạp ví (OrderId = null) — Customer hoặc Seller/Mall
                 var alreadyCredited = await _transactionRepository.ExistsAsync(t =>
                     t.ReferenceId == session.Id
                     && t.ReferenceType == "PaymentSession"
                     && t.Type == FinancialTransactionType.TopUp);
                 if (!alreadyCredited)
                 {
-                    var wallet = await GetOrCreateWalletAsync(WalletOwnerType.Customer, session.UserAccountId.Value);
+                    var walletOwnerType = WalletOwnerType.Customer;
+                    var walletOwnerId = session.UserAccountId.Value;
+
+                    var users = await _userRepository.GetAsync(
+                        predicate: u => u.Id == session.UserAccountId.Value,
+                        include: q => q.Include(u => u.Profile),
+                        disableTracking: true);
+                    var user = users.FirstOrDefault();
+                    if (user?.Profile?.Role is UserRole.Seller or UserRole.Mall)
+                    {
+                        var restaurants = await _restaurantProfileRepository.GetAsync(
+                            predicate: r => r.OwnerId == user.Profile.Id,
+                            disableTracking: true);
+                        var restaurant = restaurants.FirstOrDefault();
+                        if (restaurant != null)
+                        {
+                            walletOwnerType = WalletOwnerType.Seller;
+                            walletOwnerId = restaurant.Id;
+                        }
+                    }
+
+                    var wallet = await GetOrCreateWalletAsync(walletOwnerType, walletOwnerId);
+                    var topUpLabel = walletOwnerType == WalletOwnerType.Seller
+                        ? $"Nạp ví duy trì nhà hàng — SePay {resolvedInvoice}"
+                        : $"Nạp tiền từ thanh toán SePay - Mã {resolvedInvoice}";
                     await RecordTransactionAsync(wallet, FinancialTransactionType.TopUp, session.Amount,
-                        $"Nạp tiền từ thanh toán SePay - Mã {resolvedInvoice}", session.Id, "PaymentSession");
+                        topUpLabel, session.Id, "PaymentSession");
                 }
             }
 
@@ -512,65 +561,39 @@ namespace ShoppingFood.Application.Services
         {
             if (order.IsFinancialSettled) return;
 
-            var config = await GetConfigAsync();
             var preservedItemsSubtotal = order.ItemsSubtotal;
-            var split = CalculateSplit(order.TotalAmount, order.ShippingFee, order.ShipperIncome, config.CommissionRate, isSelfDelivery: true, preservedItemsSubtotal: preservedItemsSubtotal);
+            var restaurantId = await GetOrderRestaurantIdAsync(order);
+            if (restaurantId == null) return;
+
+            var commissionRate = await GetCommissionRateForRestaurantAsync(restaurantId);
+            var split = CalculateSplit(order.TotalAmount, order.ShippingFee, order.ShipperIncome, commissionRate, isSelfDelivery: true, preservedItemsSubtotal: preservedItemsSubtotal);
             order.ItemsSubtotal = preservedItemsSubtotal > 0 ? preservedItemsSubtotal : split.ItemsSubtotal;
             order.PlatformCommission = split.PlatformCommission;
             order.SellerPayout = split.SellerPayout;
-
-            var restaurantId = await GetOrderRestaurantIdAsync(order);
-            if (restaurantId == null) return;
 
             var sellerWallet = await GetOrCreateWalletAsync(WalletOwnerType.Seller, restaurantId.Value);
             var platformWallet = await GetOrCreateWalletAsync(WalletOwnerType.Platform, Guid.Empty);
 
             if (order.PaymentMethod == PaymentMethod.COD)
             {
-                // Tiền mặt đang ở nhà hàng — chưa về sàn.
-                // SellerPayout đã = (food − commission) + ship; chỉ cộng ví seller phần này.
-                // Ghi công nợ CodPayableAmount = commission (nộp sau khi đối soát / rút tiền).
-                var restaurants = await _restaurantProfileRepository.GetAsync(
-                    predicate: r => r.Id == restaurantId.Value,
-                    disableTracking: false);
-                var restaurant = restaurants.FirstOrDefault();
-                if (restaurant == null) return;
-
-                await RecordTransactionAsync(sellerWallet, FinancialTransactionType.SellerPayout, split.SellerPayout,
-                    $"Doanh thu đơn #{order.Id} (COD tự giao — còn nợ CK sàn {split.PlatformCommission:N0}đ)", order.Id, "Order");
-
+                // COD tự giao: tiền mặt ở quán — chỉ trừ chiết khấu sàn từ ví duy trì (cho phép âm).
                 if (split.PlatformCommission > 0)
                 {
-                    restaurant.CodPayableAmount += split.PlatformCommission;
-                    restaurant.UpdatedAt = DateTime.UtcNow;
-                    _restaurantProfileRepository.Update(restaurant);
-
-                    // Ledger công nợ (không đổi số dư ví)
-                    _transactionRepository.Add(new FinancialTransaction
-                    {
-                        Id = Guid.NewGuid(),
-                        WalletId = sellerWallet.Id,
-                        Type = FinancialTransactionType.CodCollection,
-                        Amount = split.PlatformCommission,
-                        BalanceAfter = sellerWallet.Balance,
-                        ReferenceId = order.Id,
-                        ReferenceType = "Order",
-                        Description = $"Công nợ chiết khấu sàn đơn #{order.Id} (COD tự giao — chờ nộp)",
-                        CreatedAt = DateTime.UtcNow
-                    });
+                    await RecordTransactionAsync(sellerWallet, FinancialTransactionType.Commission, -split.PlatformCommission,
+                        $"Chiết khấu sàn đơn #{order.Id} (COD tự giao)", order.Id, "Order");
+                    await RecordTransactionAsync(platformWallet, FinancialTransactionType.Commission, split.PlatformCommission,
+                        $"Chiết khấu sàn đơn #{order.Id} (COD tự giao)", order.Id, "Order");
                 }
 
                 order.PaymentStatus = PaymentStatus.Settled;
             }
             else if (order.PaymentStatus == PaymentStatus.Paid)
             {
-                // Khách đã thanh toán online cho nền tảng (nền tảng đã thu đủ tiền).
-                // Nền tảng trả cho nhà hàng SellerPayout (bao gồm tiền món + tiền ship).
                 await RecordTransactionAsync(sellerWallet, FinancialTransactionType.SellerPayout, split.SellerPayout,
-                    $"Doanh thu đơn #{order.Id} (Tự giao)", order.Id, "Order");
-                
+                    $"Doanh thu đơn #{order.Id} (Tự giao — online)", order.Id, "Order");
+
                 await RecordTransactionAsync(platformWallet, FinancialTransactionType.Commission, split.PlatformCommission,
-                    $"Chiết khấu sàn đơn #{order.Id} (Tự giao)", order.Id, "Order");
+                    $"Chiết khấu sàn đơn #{order.Id} (Tự giao — online)", order.Id, "Order");
 
                 order.PaymentStatus = PaymentStatus.Settled;
             }
@@ -578,6 +601,55 @@ namespace ShoppingFood.Application.Services
             order.IsFinancialSettled = true;
             order.UpdatedAt = DateTime.UtcNow;
             _orderRepository.Update(order);
+        }
+
+        public async Task ChargeSellerMaintenanceFeeAsync(Guid restaurantId, string description)
+        {
+            var config = await GetConfigAsync();
+            if (config.SellerMaintenanceFee <= 0)
+                return;
+
+            var restaurants = await _restaurantProfileRepository.GetAsync(
+                predicate: r => r.Id == restaurantId,
+                disableTracking: false);
+            var restaurant = restaurants.FirstOrDefault();
+            if (restaurant == null)
+                return;
+
+            var sellerWallet = await GetOrCreateWalletAsync(WalletOwnerType.Seller, restaurantId);
+            var platformWallet = await GetOrCreateWalletAsync(WalletOwnerType.Platform, Guid.Empty);
+
+            await RecordTransactionAsync(sellerWallet, FinancialTransactionType.MaintenanceFee, -config.SellerMaintenanceFee,
+                description, restaurantId, "Restaurant");
+            await RecordTransactionAsync(platformWallet, FinancialTransactionType.MaintenanceFee, config.SellerMaintenanceFee,
+                description, restaurantId, "Restaurant");
+
+            restaurant.LastMaintenanceFeeChargedAt = DateTime.UtcNow;
+            restaurant.UpdatedAt = DateTime.UtcNow;
+            _restaurantProfileRepository.Update(restaurant);
+        }
+
+        public async Task ProcessDueMaintenanceFeesAsync()
+        {
+            var config = await GetConfigAsync();
+            if (config.SellerMaintenanceFee <= 0)
+                return;
+
+            var now = DateTime.UtcNow;
+            var restaurants = await _restaurantProfileRepository.GetAsync(
+                predicate: r => r.Status == RestaurantStatus.Active
+                    && (!r.LastMaintenanceFeeChargedAt.HasValue
+                        || r.LastMaintenanceFeeChargedAt.Value.AddMonths(1) <= now),
+                disableTracking: true);
+
+            foreach (var restaurant in restaurants)
+            {
+                var isFirstCharge = !restaurant.LastMaintenanceFeeChargedAt.HasValue;
+                var description = isFirstCharge
+                    ? $"Phí duy trì nhà hàng (kích hoạt) — {restaurant.RestaurantName}"
+                    : $"Phí duy trì nhà hàng tháng {now:MM/yyyy} — {restaurant.RestaurantName}";
+                await ChargeSellerMaintenanceFeeAsync(restaurant.Id, description);
+            }
         }
 
         public async Task<string?> ProcessRefundAsync(Order order)

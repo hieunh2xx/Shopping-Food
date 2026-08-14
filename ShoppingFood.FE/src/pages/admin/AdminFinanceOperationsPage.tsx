@@ -18,6 +18,7 @@ export function AdminFinanceOperationsPage() {
 
   // Platform config state
   const [commissionRate, setCommissionRate] = useState<number | ''>('');
+  const [sellerMaintenanceFee, setSellerMaintenanceFee] = useState<number | ''>('');
   const [baseDeliveryFee, setBaseDeliveryFee] = useState<number | ''>('');
   const [feePerKm, setFeePerKm] = useState<number | ''>('');
   const [shipperBaseFee, setShipperBaseFee] = useState<number | ''>('');
@@ -64,6 +65,7 @@ export function AdminFinanceOperationsPage() {
         setCommissionRate(
           res.data.commissionRate != null ? Number((res.data.commissionRate * 100).toFixed(2)) : ''
         );
+        setSellerMaintenanceFee(res.data.sellerMaintenanceFee ?? '');
         setBaseDeliveryFee(res.data.baseDeliveryFee ?? '');
         setFeePerKm(res.data.feePerKm ?? '');
         setShipperBaseFee(res.data.shipperBaseFee ?? '');
@@ -131,6 +133,7 @@ export function AdminFinanceOperationsPage() {
         config: {
           ...fullConfig,
           commissionRate: commissionRate !== '' ? Number(commissionRate) / 100 : 0.1,
+          sellerMaintenanceFee: Number(sellerMaintenanceFee) || 0,
           feePerKm: Number(feePerKm) || 0,
           shipperBaseFee: Number(shipperBaseFee) || 0,
           shipperFeePerKm: Number(shipperFeePerKm) || 0,
@@ -476,8 +479,25 @@ export function AdminFinanceOperationsPage() {
                 <p className="text-xs text-gray-500 mt-2">Mức này áp dụng cho toàn bộ nhà hàng chưa được cài đặt chiết khấu riêng.</p>
               </div>
 
-              {/* Cột 2: Tìm kiếm nhà hàng */}
-              <div className="bg-blue-50/50 p-5 rounded-2xl border border-blue-100 flex flex-col justify-center">
+              {/* Cột 2: Phí duy trì nhà hàng */}
+              <div className="bg-emerald-50/60 p-5 rounded-2xl border border-emerald-100 flex flex-col justify-center">
+                <label className="block text-sm font-medium text-emerald-900 mb-2">Phí duy trì nhà hàng / tháng (VNĐ)</label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    value={sellerMaintenanceFee}
+                    onChange={(e) => setSellerMaintenanceFee(e.target.value === '' ? '' : Number(e.target.value))}
+                    placeholder="VD: 200000"
+                  />
+                  <Button onClick={handleSaveConfig} isLoading={isSaving} className="bg-emerald-600 hover:bg-emerald-700 text-white shrink-0">
+                    Lưu
+                  </Button>
+                </div>
+                <p className="text-xs text-emerald-700 mt-2">Thu khi duyệt đăng ký và hàng tháng. Trừ ví duy trì (cho phép âm — nhà hàng cần nạp bù).</p>
+              </div>
+
+              {/* Cột 3: Tìm kiếm nhà hàng — full width on md */}
+              <div className="md:col-span-2 bg-blue-50/50 p-5 rounded-2xl border border-blue-100 flex flex-col justify-center">
                 <label className="block text-sm font-medium text-blue-900 mb-2">Tìm kiếm & Cài đặt riêng từng nhà hàng</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">

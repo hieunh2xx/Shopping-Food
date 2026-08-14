@@ -62,6 +62,15 @@ namespace ShoppingFood.API.Data
                     ALTER TABLE dbo.ORDER_ITEM ADD BuyXGetYPromotionId uniqueidentifier NULL;
                 """,
                 """
+                IF COL_LENGTH('dbo.PLATFORM_FINANCE_CONFIG', 'SellerMaintenanceFee') IS NULL
+                    ALTER TABLE dbo.PLATFORM_FINANCE_CONFIG ADD SellerMaintenanceFee decimal(12,2) NOT NULL
+                        CONSTRAINT DF_PLATFORM_FINANCE_CONFIG_SellerMaintenanceFee DEFAULT(0);
+                """,
+                """
+                IF COL_LENGTH('dbo.RESTAURANT_PROFILE', 'LastMaintenanceFeeChargedAt') IS NULL
+                    ALTER TABLE dbo.RESTAURANT_PROFILE ADD LastMaintenanceFeeChargedAt datetime2 NULL;
+                """,
+                """
                 IF COL_LENGTH('dbo.CHAT_SESSION', 'OrderId') IS NULL
                     ALTER TABLE dbo.CHAT_SESSION ADD OrderId uniqueidentifier NULL;
                 """,

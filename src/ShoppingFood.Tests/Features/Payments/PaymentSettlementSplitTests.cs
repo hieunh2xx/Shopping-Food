@@ -18,6 +18,7 @@ namespace ShoppingFood.Tests.Features.Payments
             Mock.Of<IOrderRepository>(),
             Mock.Of<IRestaurantProfileRepository>(),
             Mock.Of<IShipperProfileRepository>(),
+            Mock.Of<IUserRepository>(),
             Mock.Of<IUnitOfWork>(),
             Mock.Of<ISepayService>(),
             Mock.Of<IPaymentCacheService>(),

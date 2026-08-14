@@ -24,6 +24,10 @@ export interface IWalletDto {
   availableCodToRemit?: number;
   debtLimit?: number;
   debtRemaining?: number;
+  walletDebt?: number;
+  sellerMaintenanceFee?: number;
+  nextMaintenanceDueAt?: string;
+  lastMaintenanceFeeChargedAt?: string;
 }
 
 export interface ITransactionDto {

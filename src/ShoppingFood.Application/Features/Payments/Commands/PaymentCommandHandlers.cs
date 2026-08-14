@@ -143,7 +143,8 @@ namespace ShoppingFood.Application.Features.Payments.Commands
                 if (restaurant == null) return ApiResponse.Failure(404, "Restaurant not found.");
                 ownerType = WalletOwnerType.Seller;
                 ownerId = restaurant.Id;
-                codDebt = restaurant.CodPayableAmount;
+                // Ví duy trì nhà hàng — chiết khấu COD tự giao trừ trực tiếp, không chặn rút bằng CodPayableAmount
+                codDebt = 0;
             }
             else if (user.Profile.Role == UserRole.Shipper)
             {
@@ -168,9 +169,13 @@ namespace ShoppingFood.Application.Features.Payments.Commands
                 predicate: w => w.WalletId == wallet.Id && w.Status == WithdrawalStatus.Pending))
                 ?.ToList() ?? new List<Domain.Models.WithdrawalRequest>();
             var pendingTotal = pendingWithdrawals.Sum(w => w.Amount);
-            var availableBalance = wallet.Balance - pendingTotal - codDebt;
+            var availableBalance = ownerType == WalletOwnerType.Shipper
+                ? wallet.Balance - pendingTotal - codDebt
+                : Math.Max(0, wallet.Balance - pendingTotal);
             if (availableBalance < request.Amount)
-                return ApiResponse.Failure(400, "Insufficient balance. (Note: COD debt and pending withdrawals cannot be withdrawn)");
+                return ApiResponse.Failure(400, ownerType == WalletOwnerType.Seller
+                    ? "Số dư khả dụng không đủ. (Phí duy trì / chiết khấu có thể tạo số dư âm — vui lòng nạp thêm nếu cần)"
+                    : "Insufficient balance. (Note: COD debt and pending withdrawals cannot be withdrawn)");
 
             wallet.BankName = request.BankName;
             wallet.BankAccountNumber = request.BankAccountNumber;

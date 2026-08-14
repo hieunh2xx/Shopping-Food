@@ -27,6 +27,8 @@ namespace ShoppingFood.Domain.Models
         public decimal? CustomCommissionRate { get; set; }
         /// <summary>Hoa hồng COD tự giao còn phải nộp về sàn (tương tự ShipperProfile.CodCollectedAmount).</summary>
         public decimal CodPayableAmount { get; set; } = 0;
+        /// <summary>Lần cuối thu phí duy trì (UTC).</summary>
+        public DateTime? LastMaintenanceFeeChargedAt { get; set; }
         public double AverageRating { get; set; } = 0.0;
         public int ReviewCount { get; set; } = 0;
         public bool IsVerified { get; set; } = false;

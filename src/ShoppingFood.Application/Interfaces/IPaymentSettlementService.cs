@@ -23,5 +23,8 @@ namespace ShoppingFood.Application.Interfaces
             decimal? paidAmount = null,
             string? externalTransactionId = null,
             bool allowExpired = false);
+        Task ChargeSellerMaintenanceFeeAsync(Guid restaurantId, string description);
+        Task ProcessDueMaintenanceFeesAsync();
+        decimal ResolveCommissionRate(decimal globalRate, decimal? customRatePercent);
     }
 }

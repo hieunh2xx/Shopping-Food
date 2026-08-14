@@ -103,7 +103,9 @@ namespace ShoppingFood.Domain.Enums
         CodRemittance,
         Adjustment,
         /// <summary>Sàn bù phí giao (freeship / ShippingFee &lt; ShipperIncome).</summary>
-        ShippingSubsidy
+        ShippingSubsidy,
+        /// <summary>Phí duy trì nhà hàng hàng tháng.</summary>
+        MaintenanceFee
     }
 
     public enum WithdrawalStatus

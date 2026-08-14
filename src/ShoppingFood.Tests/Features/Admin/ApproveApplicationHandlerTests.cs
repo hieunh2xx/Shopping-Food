@@ -27,6 +27,7 @@ namespace ShoppingFood.Tests.Features.Admin
         private readonly Mock<IEmailService> _mockEmailService;
         private readonly Mock<INotificationRepository> _mockNotificationRepo;
         private readonly Mock<INotificationPushService> _mockNotificationPushService;
+        private readonly Mock<ShoppingFood.Application.Interfaces.IPaymentSettlementService> _mockPaymentSettlementService;
         private readonly ShoppingFoodContext _dbContext;
         private readonly ApproveApplicationHandler _handler;
 
@@ -40,6 +41,7 @@ namespace ShoppingFood.Tests.Features.Admin
             _mockEmailService = new Mock<IEmailService>();
             _mockNotificationRepo = new Mock<INotificationRepository>();
             _mockNotificationPushService = new Mock<INotificationPushService>();
+            _mockPaymentSettlementService = new Mock<ShoppingFood.Application.Interfaces.IPaymentSettlementService>();
 
             var options = new DbContextOptionsBuilder<ShoppingFoodContext>()
                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
@@ -56,7 +58,8 @@ namespace ShoppingFood.Tests.Features.Admin
                 _mockEmailService.Object,
                 _mockNotificationRepo.Object,
                 _mockNotificationPushService.Object,
-                _dbContext
+                _dbContext,
+                _mockPaymentSettlementService.Object
             );
         }
 
@@ -203,6 +206,23 @@ namespace ShoppingFood.Tests.Features.Admin
                 It.IsAny<int>(), It.IsAny<int>(), It.IsAny<bool>()
             )).ReturnsAsync(new List<SellerApplication> { application });
 
+            var createdRestaurant = new RestaurantProfile
+            {
+                Id = Guid.NewGuid(),
+                SellerApplicationId = applicationId,
+                RestaurantName = "Test Shop"
+            };
+            _mockRestaurantProfileRepo.Setup(x => x.GetAsync(
+                It.IsAny<Expression<Func<RestaurantProfile, bool>>>(),
+                It.IsAny<Func<IQueryable<RestaurantProfile>, IOrderedQueryable<RestaurantProfile>>?>(),
+                It.IsAny<Func<IQueryable<RestaurantProfile>, Microsoft.EntityFrameworkCore.Query.IIncludableQueryable<RestaurantProfile, object>>?>(),
+                It.IsAny<int>(), It.IsAny<int>(), It.IsAny<bool>()
+            )).ReturnsAsync(new List<RestaurantProfile> { createdRestaurant });
+
+            _mockPaymentSettlementService
+                .Setup(x => x.ChargeSellerMaintenanceFeeAsync(It.IsAny<Guid>(), It.IsAny<string>()))
+                .Returns(Task.CompletedTask);
+
             var result = await _handler.Handle(command, CancellationToken.None);
 
             Assert.False(result.Error);
@@ -212,7 +232,10 @@ namespace ShoppingFood.Tests.Features.Admin
             
             _mockUserRepo.Verify(x => x.Update(It.IsAny<User>()), Times.Once);
             _mockRestaurantProfileRepo.Verify(x => x.Add(It.IsAny<RestaurantProfile>()), Times.Once);
-            _mockUnitOfWork.Verify(x => x.SaveChangesAsync(), Times.Once);
+            _mockUnitOfWork.Verify(x => x.SaveChangesAsync(), Times.AtLeast(2));
+            _mockPaymentSettlementService.Verify(
+                x => x.ChargeSellerMaintenanceFeeAsync(createdRestaurant.Id, It.IsAny<string>()),
+                Times.Once);
             _mockEmailService.Verify(x => x.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Once);
             _mockNotificationPushService.Verify(x => x.PushToUserAsync(userAccountId, It.IsAny<object>(), It.IsAny<CancellationToken>()), Times.Once);
         }

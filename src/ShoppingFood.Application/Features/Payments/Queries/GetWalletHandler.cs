@@ -117,7 +117,29 @@ namespace ShoppingFood.Application.Features.Payments.Queries
             {
                 var restaurants = await _restaurantRepository.GetAsync(predicate: r => r.Id == ownerId);
                 var restaurant = restaurants.FirstOrDefault();
-                codCollected = restaurant?.CodPayableAmount;
+                var config = await _paymentService.GetConfigAsync();
+                var nextMaintenanceDueAt = restaurant?.LastMaintenanceFeeChargedAt?.AddMonths(1);
+
+                return ApiResponse.Success(new
+                {
+                    wallet.Id,
+                    balance = wallet.Balance,
+                    availableBalance = Math.Max(0, wallet.Balance),
+                    walletDebt = wallet.Balance < 0 ? Math.Abs(wallet.Balance) : 0m,
+                    ownerType = wallet.OwnerType.ToString(),
+                    bankName = wallet.BankName,
+                    bankAccountNumber = wallet.BankAccountNumber,
+                    bankAccountHolder = wallet.BankAccountHolder,
+                    sellerMaintenanceFee = config.SellerMaintenanceFee,
+                    nextMaintenanceDueAt,
+                    lastMaintenanceFeeChargedAt = restaurant?.LastMaintenanceFeeChargedAt,
+                    codCollectedAmount = (decimal?)null,
+                    codPayableAmount = (decimal?)null,
+                    pendingCodRemittance = (decimal?)null,
+                    availableCodToRemit = (decimal?)null,
+                    debtLimit = (decimal?)null,
+                    debtRemaining = (decimal?)null
+                }, "Wallet retrieved.");
             }
 
             return ApiResponse.Success(new

@@ -17,6 +17,8 @@ namespace ShoppingFood.Domain.Models
 
         public decimal MinWithdrawalAmount { get; set; } = 50_000m;
         public decimal LargeWithdrawalThreshold { get; set; } = 5_000_000m;
+        /// <summary>Phí duy trì nhà hàng mỗi tháng (trừ ví seller).</summary>
+        public decimal SellerMaintenanceFee { get; set; } = 0m;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     }
 }

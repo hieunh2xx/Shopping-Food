@@ -27,6 +27,7 @@ namespace ShoppingFood.Application.Features.Admin.Commands
         private readonly INotificationRepository _notificationRepository;
         private readonly INotificationPushService _notificationPushService;
         private readonly ShoppingFoodContext _dbContext;
+        private readonly ShoppingFood.Application.Interfaces.IPaymentSettlementService _paymentSettlementService;
 
         public ApproveApplicationHandler(
             ISellerApplicationRepository sellerApplicationRepository,
@@ -37,7 +38,8 @@ namespace ShoppingFood.Application.Features.Admin.Commands
             IEmailService emailService,
             INotificationRepository notificationRepository,
             INotificationPushService notificationPushService,
-            ShoppingFoodContext dbContext)
+            ShoppingFoodContext dbContext,
+            ShoppingFood.Application.Interfaces.IPaymentSettlementService paymentSettlementService)
         {
             _sellerApplicationRepository = sellerApplicationRepository;
             _restaurantProfileRepository = restaurantProfileRepository;
@@ -48,6 +50,7 @@ namespace ShoppingFood.Application.Features.Admin.Commands
             _notificationRepository = notificationRepository;
             _notificationPushService = notificationPushService;
             _dbContext = dbContext;
+            _paymentSettlementService = paymentSettlementService;
         }
 
         public async Task<ApiResponse> Handle(ApproveApplicationCommand request, CancellationToken cancellationToken)
@@ -118,6 +121,21 @@ namespace ShoppingFood.Application.Features.Admin.Commands
                 var notification = AddDbNotification(application, request.Action);
 
                 await _unitOfWork.SaveChangesAsync();
+
+                if (request.Action == "Approve" && application.Type == ApplicationType.NewSeller)
+                {
+                    var createdRestaurants = await _restaurantProfileRepository.GetAsync(
+                        predicate: r => r.SellerApplicationId == application.Id,
+                        disableTracking: true);
+                    var createdRestaurant = createdRestaurants.FirstOrDefault();
+                    if (createdRestaurant != null)
+                    {
+                        await _paymentSettlementService.ChargeSellerMaintenanceFeeAsync(
+                            createdRestaurant.Id,
+                            $"Phí duy trì khi kích hoạt cửa hàng — {createdRestaurant.RestaurantName}");
+                        await _unitOfWork.SaveChangesAsync();
+                    }
+                }
                 
                 try 
                 {

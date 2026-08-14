@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useConfirm } from '../../hooks';
-import { Banknote, ArrowDownCircle, History, TrendingUp, TrendingDown, RefreshCw, ChevronDown, Building2, Sparkles, Wallet, CircleDollarSign, CheckCircle, XCircle } from 'lucide-react';
+import { Banknote, ArrowDownCircle, ArrowUpCircle, History, TrendingUp, TrendingDown, RefreshCw, ChevronDown, Building2, Sparkles, Wallet, CircleDollarSign, CheckCircle, XCircle } from 'lucide-react';
 import { Card, Button, Input, Pagination } from '../../components/common';
 import { paymentService, type IWalletDto, type ITransactionDto } from '../../services/PaymentService';
 import { ShipperOrderDetailModal } from '../../components/order/ShipperOrderDetailModal';
 import { formatCurrency, formatTransactionDescription } from '../../utils/formatters';
+import { ROUTES } from '../../routes/routeConfig';
 import toast from 'react-hot-toast';
 import {
   BarChart,
@@ -59,6 +61,7 @@ function getTransactionBadge(type: string) {
     CodRepayment: { label: 'Nộp COD', cls: 'bg-indigo-100 text-indigo-700' },
     CodRemittance: { label: 'Nộp COD', cls: 'bg-indigo-100 text-indigo-700' },
     SellerPayout: { label: 'Thanh toán đơn', cls: 'bg-green-100 text-green-700' },
+    MaintenanceFee: { label: 'Phí duy trì', cls: 'bg-rose-100 text-rose-700' },
     ShippingSubsidy: { label: 'Bù freeship', cls: 'bg-rose-100 text-rose-700' },
     Adjustment: { label: 'Điều chỉnh', cls: 'bg-gray-100 text-gray-700' },
   };
@@ -267,6 +270,7 @@ function WithdrawalHistory({ withdrawals, onConfirm }: { withdrawals: any[]; onC
    ═══════════════════════════════════════════════════════════ */
 
 export function SellerWalletPage() {
+  const navigate = useNavigate();
   const monthOptions = useMemo(() => buildMonthOptions(12), []);
   const [wallet, setWallet] = useState<IWalletDto | null>(null);
   const [transactions, setTransactions] = useState<ITransactionDto[]>([]);
@@ -274,8 +278,10 @@ export function SellerWalletPage() {
   const [dailyChart, setDailyChart] = useState<{ date: string; income: number; expense: number; net: number }[]>([]);
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
   const [withdrawForm, setWithdrawForm] = useState({ amount: '', bankName: '', bankAccountNumber: '', bankAccountHolder: '' });
+  const [topUpAmount, setTopUpAmount] = useState('200000');
   const [loading, setLoading] = useState(true);
   const [withdrawLoading, setWithdrawLoading] = useState(false);
+  const [topUpLoading, setTopUpLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [monthKey, setMonthKey] = useState(monthOptions[0].key);
@@ -373,6 +379,28 @@ export function SellerWalletPage() {
     }
   };
 
+  const handleTopUp = async () => {
+    const amount = parseInt(topUpAmount, 10);
+    if (isNaN(amount) || amount < 10000) {
+      toast.error('Số tiền nạp tối thiểu 10.000đ');
+      return;
+    }
+    setTopUpLoading(true);
+    try {
+      const res = await paymentService.topUpWallet(amount);
+      if (!res.error && res.data) {
+        toast.success('Đang chuyển hướng sang trang thanh toán...');
+        navigate(`${ROUTES.PAYMENT_SEPAY}?sessionId=${res.data.sessionId}&returnUrl=${encodeURIComponent(ROUTES.SELLER_WALLET)}`);
+      } else {
+        toast.error(res.message);
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Nạp tiền thất bại');
+    } finally {
+      setTopUpLoading(false);
+    }
+  };
+
   if (loading && !wallet) return (
     <div className="flex items-center justify-center py-16">
       <RefreshCw className="w-6 h-6 text-green-500 animate-spin" />
@@ -395,8 +423,8 @@ export function SellerWalletPage() {
                 <Banknote className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-green-100 text-sm font-medium">Ví nhà hàng</p>
-                <p className="text-white/80 text-xs">Quản lý doanh thu</p>
+                <p className="text-green-100 text-sm font-medium">Ví duy trì nhà hàng</p>
+                <p className="text-white/80 text-xs">Phí duy trì & chiết khấu COD tự giao</p>
               </div>
             </div>
             <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm rounded-full px-3 py-1.5">
@@ -408,20 +436,31 @@ export function SellerWalletPage() {
           <div className="mb-4">
             <p className="text-green-100 text-xs uppercase tracking-wider mb-1">Số dư hiện tại</p>
             <p className="text-4xl font-black tracking-tight">{formatCurrency(wallet?.balance || 0)}</p>
-            {(wallet?.codPayableAmount ?? wallet?.codCollectedAmount ?? 0) > 0 && (
-              <div className="mt-3 space-y-1 text-sm">
-                <div className="flex justify-between gap-4 text-amber-100">
-                  <span>Công nợ CK sàn (COD tự giao)</span>
-                  <span className="font-bold">{formatCurrency(wallet?.codPayableAmount ?? wallet?.codCollectedAmount ?? 0)}</span>
-                </div>
-                <div className="flex justify-between gap-4 text-green-50">
-                  <span>Có thể rút</span>
-                  <span className="font-bold">{formatCurrency(wallet?.availableBalance ?? Math.max(0, (wallet?.balance || 0) - (wallet?.codPayableAmount ?? wallet?.codCollectedAmount ?? 0)))}</span>
-                </div>
+            {(wallet?.walletDebt ?? 0) > 0 && (
+              <div className="mt-3 text-sm text-amber-100 flex justify-between gap-4">
+                <span>Đang nợ (cần nạp bù)</span>
+                <span className="font-bold">{formatCurrency(wallet?.walletDebt ?? 0)}</span>
               </div>
             )}
+            {(wallet?.availableBalance ?? 0) > 0 && (
+              <div className="mt-2 text-sm text-green-50 flex justify-between gap-4">
+                <span>Có thể rút</span>
+                <span className="font-bold">{formatCurrency(wallet?.availableBalance ?? 0)}</span>
+              </div>
+            )}
+            {(wallet?.sellerMaintenanceFee ?? 0) > 0 && (
+              <div className="mt-2 text-sm text-green-50/90 flex justify-between gap-4">
+                <span>Phí duy trì / tháng</span>
+                <span className="font-semibold">{formatCurrency(wallet?.sellerMaintenanceFee ?? 0)}</span>
+              </div>
+            )}
+            {wallet?.nextMaintenanceDueAt && (
+              <p className="text-green-100/80 text-xs mt-2">
+                Kỳ phí tiếp theo: {new Date(wallet.nextMaintenanceDueAt).toLocaleDateString('vi-VN')}
+              </p>
+            )}
             <p className="text-green-100/90 text-xs mt-2 leading-relaxed max-w-md">
-              Đã trừ chiết khấu trên sổ đơn. COD tự giao: tiền mặt chưa về sàn — hoa hồng ghi công nợ, không cộng ví nền tảng cho đến khi đối soát/nộp.
+              COD tự giao: tiền mặt giữ tại quán, chiết khấu sàn trừ ví này. Đơn online tự giao vẫn cộng doanh thu vào ví để rút.
             </p>
           </div>
 
@@ -435,6 +474,44 @@ export function SellerWalletPage() {
       </div>
 
       <Card className="p-6 border border-gray-100 h-full">
+        <h3 className="font-bold text-gray-900 mb-5 flex items-center gap-2 text-lg">
+          <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+            <ArrowUpCircle className="w-5 h-5 text-emerald-600" />
+          </div>
+          Nạp tiền ví duy trì
+        </h3>
+        <div className="flex flex-wrap gap-2 mb-4">
+          {[100000, 200000, 500000, 1000000].map(v => (
+            <button
+              key={v}
+              onClick={() => setTopUpAmount(String(v))}
+              className={`px-4 py-2 text-sm font-semibold rounded-xl border-2 transition-all ${
+                String(v) === topUpAmount
+                  ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                  : 'border-gray-200 bg-white text-gray-600 hover:border-emerald-300'
+              }`}
+            >
+              {formatCurrency(v)}
+            </button>
+          ))}
+        </div>
+        <div className="space-y-3">
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-1 block">Số tiền nạp</label>
+            <Input placeholder="Tối thiểu 10.000đ" value={topUpAmount} onChange={e => setTopUpAmount(e.target.value.replace(/\D/g, ''))} />
+          </div>
+          <Button
+            onClick={handleTopUp}
+            disabled={topUpLoading}
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl"
+          >
+            {topUpLoading ? <RefreshCw className="w-4 h-4 animate-spin mx-auto" /> : 'Nạp qua SePay'}
+          </Button>
+        </div>
+      </Card>
+      </div>
+
+      <Card className="p-6 border border-gray-100">
         <h3 className="font-bold text-gray-900 mb-5 flex items-center gap-2 text-lg">
           <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
             <ArrowDownCircle className="w-5 h-5 text-orange-600" />
@@ -489,8 +566,6 @@ export function SellerWalletPage() {
           </Button>
         </div>
       </Card>
-      </div>
-      </div>
 
       <div className="w-full">
         <WithdrawalHistory withdrawals={withdrawals} onConfirm={handleConfirmWithdrawal} />
@@ -507,6 +582,7 @@ export function SellerWalletPage() {
           monthOptions={monthOptions}
           onMonthChange={setMonthKey}
         />
+      </div>
       </div>
     </div>
   );

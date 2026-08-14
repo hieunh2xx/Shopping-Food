@@ -40,6 +40,7 @@ builder.Services.AddHostedService<MemberTierEvaluationWorker>();
 builder.Services.AddHostedService<PaymentProcessingWorker>();
 builder.Services.AddHostedService<PaymentExpiryWorker>();
 builder.Services.AddHostedService<SepayReconciliationWorker>();
+builder.Services.AddHostedService<SellerMaintenanceFeeWorker>();
 
 // Add API documentation via Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();

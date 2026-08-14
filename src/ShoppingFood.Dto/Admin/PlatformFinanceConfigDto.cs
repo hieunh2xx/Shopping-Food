@@ -19,5 +19,6 @@ namespace ShoppingFood.Dto.Admin
 
         public decimal MinWithdrawalAmount { get; set; }
         public decimal LargeWithdrawalThreshold { get; set; }
+        public decimal SellerMaintenanceFee { get; set; }
     }
 }

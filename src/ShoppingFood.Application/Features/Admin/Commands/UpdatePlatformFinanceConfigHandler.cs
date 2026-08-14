@@ -52,6 +52,7 @@ namespace ShoppingFood.Application.Features.Admin.Commands
             config.ShipperRushHourBonus = request.Config.ShipperRushHourBonus;
             config.MinWithdrawalAmount = request.Config.MinWithdrawalAmount;
             config.LargeWithdrawalThreshold = request.Config.LargeWithdrawalThreshold;
+            config.SellerMaintenanceFee = request.Config.SellerMaintenanceFee;
             config.UpdatedAt = DateTime.UtcNow;
 
             _repository.Update(config);

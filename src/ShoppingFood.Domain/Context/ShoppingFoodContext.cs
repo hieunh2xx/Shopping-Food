@@ -169,6 +169,7 @@ namespace ShoppingFood.Domain.Context
                 entity.Property(e => e.FreeShippingMinimumOrder).HasColumnType("decimal(18,2)").IsRequired().HasDefaultValue(0);
                 entity.Property(e => e.CustomCommissionRate).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.CodPayableAmount).HasColumnType("decimal(18,2)").IsRequired();
+                entity.Property(e => e.LastMaintenanceFeeChargedAt);
                 entity.Property(e => e.AverageRating).HasDefaultValue(0.0).IsRequired();
                 entity.Property(e => e.ReviewCount).HasDefaultValue(0).IsRequired();
                 entity.HasOne(d => d.SellerApplication)
@@ -1021,6 +1022,7 @@ namespace ShoppingFood.Domain.Context
                 entity.Property(e => e.ShipperRushHourBonus).HasColumnType("decimal(12,2)").HasDefaultValue(5000m);
                 entity.Property(e => e.MinWithdrawalAmount).HasColumnType("decimal(12,2)").HasDefaultValue(50_000m);
                 entity.Property(e => e.LargeWithdrawalThreshold).HasColumnType("decimal(12,2)").HasDefaultValue(5_000_000m);
+                entity.Property(e => e.SellerMaintenanceFee).HasColumnType("decimal(12,2)").HasDefaultValue(0m);
             });
 
             modelBuilder.Entity<PaymentSession>(entity =>
