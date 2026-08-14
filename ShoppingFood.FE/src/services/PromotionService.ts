@@ -15,7 +15,7 @@ class PromotionService extends BaseService<IBuyXGetYPromotionDto, ICreatePromoti
   }
 
   async updatePromotion(id: string, data: IUpdatePromotionRequest): Promise<IApiResponse<IBuyXGetYPromotionDto>> {
-    return httpClient.put<IApiResponse<IBuyXGetYPromotionDto>>(API_ENDPOINTS.PROMOTION.UPDATE(id), data);
+    return httpClient.post<IApiResponse<IBuyXGetYPromotionDto>>(API_ENDPOINTS.PROMOTION.UPDATE(id), data);
   }
 
   async deletePromotion(id: string): Promise<IApiResponse<any>> {
