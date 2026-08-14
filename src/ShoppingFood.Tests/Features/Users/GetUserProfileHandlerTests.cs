@@ -58,6 +58,7 @@ namespace ShoppingFood.Tests.Features.Users
                     FreeDeliveryRadiusKm REAL DEFAULT 0,
                     FreeShippingMinimumOrder REAL DEFAULT 0,
                     CustomCommissionRate REAL,
+                    CodPayableAmount REAL DEFAULT 0,
                     AverageRating REAL DEFAULT 0,
                     ReviewCount INTEGER DEFAULT 0,
                     IsVerified INTEGER DEFAULT 0,

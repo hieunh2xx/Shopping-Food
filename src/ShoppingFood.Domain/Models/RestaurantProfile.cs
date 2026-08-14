@@ -25,6 +25,8 @@ namespace ShoppingFood.Domain.Models
         public double FreeDeliveryRadiusKm { get; set; } = 3.0;
         public decimal FreeShippingMinimumOrder { get; set; } = 0;
         public decimal? CustomCommissionRate { get; set; }
+        /// <summary>Hoa hồng COD tự giao còn phải nộp về sàn (tương tự ShipperProfile.CodCollectedAmount).</summary>
+        public decimal CodPayableAmount { get; set; } = 0;
         public double AverageRating { get; set; } = 0.0;
         public int ReviewCount { get; set; } = 0;
         public bool IsVerified { get; set; } = false;

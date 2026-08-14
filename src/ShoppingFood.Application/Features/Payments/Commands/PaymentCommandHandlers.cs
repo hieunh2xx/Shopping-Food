@@ -143,6 +143,7 @@ namespace ShoppingFood.Application.Features.Payments.Commands
                 if (restaurant == null) return ApiResponse.Failure(404, "Restaurant not found.");
                 ownerType = WalletOwnerType.Seller;
                 ownerId = restaurant.Id;
+                codDebt = restaurant.CodPayableAmount;
             }
             else if (user.Profile.Role == UserRole.Shipper)
             {

@@ -59,6 +59,7 @@ export interface INearbyRestaurantDto {
 export interface IUpdateRestaurantBasicInfo {
   restaurantName: string;
   phone: string;
+  email: string;
   address: string;
   logoUrl?: string;
   bannerUrl?: string;

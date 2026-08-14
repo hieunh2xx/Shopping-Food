@@ -12,6 +12,7 @@ namespace ShoppingFood.Application.Features.Restaurants.Commands
     {
         public string RestaurantName { get; set; } = string.Empty;
         public string Phone {  get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
         public string? LogoUrl {  get; set; } 
         public string? BannerUrl { get; set; }
         public string Address { get; set; } = string.Empty;

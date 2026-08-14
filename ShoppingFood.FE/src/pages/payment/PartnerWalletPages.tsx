@@ -408,8 +408,20 @@ export function SellerWalletPage() {
           <div className="mb-4">
             <p className="text-green-100 text-xs uppercase tracking-wider mb-1">Số dư hiện tại</p>
             <p className="text-4xl font-black tracking-tight">{formatCurrency(wallet?.balance || 0)}</p>
+            {(wallet?.codPayableAmount ?? wallet?.codCollectedAmount ?? 0) > 0 && (
+              <div className="mt-3 space-y-1 text-sm">
+                <div className="flex justify-between gap-4 text-amber-100">
+                  <span>Công nợ CK sàn (COD tự giao)</span>
+                  <span className="font-bold">{formatCurrency(wallet?.codPayableAmount ?? wallet?.codCollectedAmount ?? 0)}</span>
+                </div>
+                <div className="flex justify-between gap-4 text-green-50">
+                  <span>Có thể rút</span>
+                  <span className="font-bold">{formatCurrency(wallet?.availableBalance ?? Math.max(0, (wallet?.balance || 0) - (wallet?.codPayableAmount ?? wallet?.codCollectedAmount ?? 0)))}</span>
+                </div>
+              </div>
+            )}
             <p className="text-green-100/90 text-xs mt-2 leading-relaxed max-w-md">
-              Đã trừ chiết khấu sàn. Mỗi đơn chỉ cộng phần nhà hàng được nhận (tiền món sau giảm giá − hoa hồng platform).
+              Đã trừ chiết khấu trên sổ đơn. COD tự giao: tiền mặt chưa về sàn — hoa hồng ghi công nợ, không cộng ví nền tảng cho đến khi đối soát/nộp.
             </p>
           </div>
 

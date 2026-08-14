@@ -168,6 +168,7 @@ namespace ShoppingFood.Domain.Context
                 entity.Property(e => e.ShippingFee).HasColumnType("decimal(12,2)").IsRequired().HasDefaultValue(0);
                 entity.Property(e => e.FreeShippingMinimumOrder).HasColumnType("decimal(18,2)").IsRequired().HasDefaultValue(0);
                 entity.Property(e => e.CustomCommissionRate).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.CodPayableAmount).HasColumnType("decimal(18,2)").IsRequired();
                 entity.Property(e => e.AverageRating).HasDefaultValue(0.0).IsRequired();
                 entity.Property(e => e.ReviewCount).HasDefaultValue(0).IsRequired();
                 entity.HasOne(d => d.SellerApplication)

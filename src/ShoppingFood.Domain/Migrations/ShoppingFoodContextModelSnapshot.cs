@@ -1583,6 +1583,9 @@ namespace ShoppingFood.Domain.Migrations
                     b.Property<decimal?>("CustomCommissionRate")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<decimal>("CodPayableAmount")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<int>("DeliveryType")
                         .HasColumnType("int");
 

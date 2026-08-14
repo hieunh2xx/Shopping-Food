@@ -33,6 +33,7 @@ export class SupportService {
     freeDeliveryRadiusKm?: number;
     freeShippingMinimumOrder?: number;
     shippingFee?: number;
+    feePerKm?: number;
     shipperBaseFee?: number;
     shipperFeePerKm?: number;
     rushHourMultiplier?: number;

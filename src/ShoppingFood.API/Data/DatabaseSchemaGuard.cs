@@ -87,6 +87,28 @@ namespace ShoppingFood.API.Data
                     CREATE INDEX IX_ORDER_EXPLANATION_REQUEST_OrderId ON dbo.ORDER_EXPLANATION_REQUEST (OrderId);
                 END
                 """,
+                """
+                IF OBJECT_ID('dbo.COD_REMITTANCE_REQUEST', 'U') IS NULL
+                BEGIN
+                    CREATE TABLE dbo.COD_REMITTANCE_REQUEST (
+                        Id uniqueidentifier NOT NULL PRIMARY KEY,
+                        ShipperProfileId uniqueidentifier NOT NULL,
+                        Amount decimal(12,2) NOT NULL,
+                        Note nvarchar(500) NULL,
+                        ProofImageUrl nvarchar(500) NULL,
+                        Status nvarchar(50) NOT NULL,
+                        ReviewedByUserId uniqueidentifier NULL,
+                        RejectReason nvarchar(500) NULL,
+                        ReviewedAt datetime2 NULL,
+                        CreatedAt datetime2 NOT NULL,
+                        UpdatedAt datetime2 NOT NULL,
+                        CONSTRAINT FK_COD_REMITTANCE_REQUEST_SHIPPER_PROFILE
+                            FOREIGN KEY (ShipperProfileId) REFERENCES dbo.SHIPPER_PROFILE(Id)
+                    );
+                    CREATE INDEX IX_COD_REMITTANCE_REQUEST_ShipperProfileId ON dbo.COD_REMITTANCE_REQUEST (ShipperProfileId);
+                    CREATE INDEX IX_COD_REMITTANCE_REQUEST_Status ON dbo.COD_REMITTANCE_REQUEST (Status);
+                END
+                """,
             };
 
             foreach (var sql in statements)

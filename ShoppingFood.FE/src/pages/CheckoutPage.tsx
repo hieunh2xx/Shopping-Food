@@ -117,6 +117,11 @@ export function CheckoutPage() {
     freeDeliveryRadiusKm: number;
     freeShippingMinimumOrder: number;
     shippingFee: number;
+    feePerKm: number;
+    includedKmInBaseFee: number;
+    rushHourMultiplier: number;
+    rushHourStartTime?: string;
+    rushHourEndTime?: string;
   } | null>(null);
   const [savedAddresses, setSavedAddresses] = useState<IUserAddressDto[]>([]);
   const [saveAddress, setSaveAddress] = useState(true);
@@ -151,6 +156,21 @@ export function CheckoutPage() {
     return 12742 * Math.asin(Math.sqrt(a));
   };
 
+  const isRushHourNow = (start?: string, end?: string) => {
+    if (!start || !end) return false;
+    const [sh, sm] = start.split(':').map(Number);
+    const [eh, em] = end.split(':').map(Number);
+    if ([sh, sm, eh, em].some((n) => Number.isNaN(n))) return false;
+    const now = new Date();
+    const vnMinutes = now.getUTCHours() * 60 + now.getUTCMinutes() + 7 * 60;
+    const dayMinutes = ((vnMinutes % (24 * 60)) + 24 * 60) % (24 * 60);
+    const startM = sh * 60 + sm;
+    const endM = eh * 60 + em;
+    return startM <= endM
+      ? dayMinutes >= startM && dayMinutes <= endM
+      : dayMinutes >= startM || dayMinutes <= endM;
+  };
+
   const shippingFee = useMemo(() => {
     if (hasFreeshipItem) return 0;
     if (!restaurantInfo) return 0;
@@ -161,8 +181,7 @@ export function CheckoutPage() {
       : (restaurantInfo.freeShippingMinimumOrder || 0);
     if (checkoutTotal >= freeMinOrder && freeMinOrder > 0) return 0;
 
-    // Platform: chỉ lấy phí từ config Admin (DeliverySettings.shippingFee) — không hardcode, không lấy phí shipper/restaurant
-    const customerFee = isPlatform
+    const baseFee = isPlatform
       ? Number(platformDelivery?.shippingFee ?? 0)
       : Number(restaurantInfo.shippingFee || 0);
 
@@ -173,7 +192,7 @@ export function CheckoutPage() {
       restaurantInfo.longitude
     );
 
-    if (!hasCoords) return customerFee;
+    if (!hasCoords) return baseFee;
 
     const distanceKm = calculateDistance(
       formData.deliveryLatitude!,
@@ -187,8 +206,52 @@ export function CheckoutPage() {
       : (restaurantInfo.freeDeliveryRadiusKm ?? 0);
     if (distanceKm <= freeRadius) return 0;
 
-    return customerFee;
+    // SelfDelivery: phí cố định của quán (không cộng km sàn)
+    if (!isPlatform) return baseFee;
+
+    // Platform: base + km vượt × FeePerKm (+ hệ số giờ cao điểm)
+    const includedKm = Number(platformDelivery?.includedKmInBaseFee ?? 5);
+    const feePerKm = Number(platformDelivery?.feePerKm ?? 0);
+    const distanceSurcharge =
+      distanceKm > includedKm ? (distanceKm - includedKm) * feePerKm : 0;
+    let fee = baseFee + distanceSurcharge;
+
+    const multiplier = Number(platformDelivery?.rushHourMultiplier ?? 1);
+    if (
+      multiplier > 1 &&
+      isRushHourNow(platformDelivery?.rushHourStartTime, platformDelivery?.rushHourEndTime)
+    ) {
+      fee = Math.round(fee * multiplier);
+    } else {
+      fee = Math.round(fee);
+    }
+
+    return fee;
   }, [hasFreeshipItem, restaurantInfo, platformDelivery, formData.deliveryLatitude, formData.deliveryLongitude, checkoutTotal]);
+
+  const deliveryDistanceKm = useMemo(() => {
+    if (
+      !formData.deliveryLatitude ||
+      !formData.deliveryLongitude ||
+      !restaurantInfo?.latitude ||
+      !restaurantInfo?.longitude
+    ) {
+      return null;
+    }
+    return calculateDistance(
+      formData.deliveryLatitude,
+      formData.deliveryLongitude,
+      restaurantInfo.latitude,
+      restaurantInfo.longitude
+    );
+  }, [formData.deliveryLatitude, formData.deliveryLongitude, restaurantInfo]);
+
+  const outOfDeliveryRange = useMemo(() => {
+    if (!restaurantInfo || restaurantInfo.deliveryType !== 'SelfDelivery') return false;
+    const maxKm = Number(restaurantInfo.maxDeliveryRadiusKm ?? 0);
+    if (!maxKm || deliveryDistanceKm == null) return false;
+    return deliveryDistanceKm > maxKm;
+  }, [restaurantInfo, deliveryDistanceKm]);
 
   useEffect(() => {
     if (!restaurantId) return;
@@ -206,6 +269,11 @@ export function CheckoutPage() {
           freeDeliveryRadiusKm: Number(res.data.freeDeliveryRadiusKm ?? 3),
           freeShippingMinimumOrder: Number(res.data.freeShippingMinimumOrder ?? 0),
           shippingFee: Number(res.data.shippingFee ?? 0),
+          feePerKm: Number(res.data.feePerKm ?? 0),
+          includedKmInBaseFee: Number(res.data.includedKmInBaseFee ?? 5),
+          rushHourMultiplier: Number(res.data.rushHourMultiplier ?? 1),
+          rushHourStartTime: res.data.rushHourStartTime,
+          rushHourEndTime: res.data.rushHourEndTime,
         });
       }
     }).catch(() => { /* keep null */ });
@@ -286,7 +354,7 @@ export function CheckoutPage() {
         toast.success('Mã OTP đã được gửi đến email của bạn');
         setStep(2);
       } catch (error: any) {
-        toast.error(error.response?.data?.message);
+        toast.error(error.response?.data?.message || error.message || 'Không gửi được OTP');
       } finally {
         setIsSubmitting(false);
       }
@@ -405,6 +473,14 @@ export function CheckoutPage() {
       return;
     }
 
+    if (outOfDeliveryRange) {
+      const maxKm = Number(restaurantInfo?.maxDeliveryRadiusKm ?? 0);
+      toast.error(
+        `Nhà hàng chỉ giao trong bán kính ${maxKm} km. Địa chỉ hiện tại cách khoảng ${deliveryDistanceKm?.toFixed(1)} km — vui lòng chọn địa chỉ gần hơn.`
+      );
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const guestId = localStorage.getItem('sf_guest_id') || undefined;
@@ -478,7 +554,11 @@ export function CheckoutPage() {
         data?.errors && typeof data.errors === 'object'
           ? Object.values(data.errors).flat().filter(Boolean).join(' ')
           : '';
-      toast.error(data?.message || validationMsg || error.message || 'Đặt hàng thất bại');
+      const validationList =
+        Array.isArray(data?.data) && data.data[0]?.error
+          ? data.data.map((x: any) => x.error).filter(Boolean).join(' ')
+          : '';
+      toast.error(data?.message || validationMsg || validationList || error.message || 'Đặt hàng thất bại');
     } finally {
       setIsSubmitting(false);
     }
@@ -696,8 +776,8 @@ export function CheckoutPage() {
 
                   <Button 
                     onClick={handleNextStep} 
-                    disabled={isSubmitting}
-                    className="w-full mt-6 h-12 text-lg font-semibold rounded-xl bg-orange-600 hover:bg-orange-700"
+                    disabled={isSubmitting || outOfDeliveryRange}
+                    className="w-full mt-6 h-12 text-lg font-semibold rounded-xl bg-orange-600 hover:bg-orange-700 disabled:opacity-60"
                   >
                     {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : (isAuthenticated ? 'Đặt hàng ngay' : 'Tiếp tục')}
                   </Button>
@@ -879,9 +959,27 @@ export function CheckoutPage() {
                   <p className="text-[11px] text-gray-400 -mt-1 text-right">
                     {restaurantInfo.deliveryType === 'PlatformDelivery'
                       ? (platformDelivery
-                        ? `Theo cấu hình sàn: ${formatCurrency(platformDelivery.shippingFee)}`
+                        ? (deliveryDistanceKm != null &&
+                          deliveryDistanceKm > (platformDelivery.freeDeliveryRadiusKm ?? 3)
+                          ? `Cơ bản ${formatCurrency(platformDelivery.shippingFee)}` +
+                            (deliveryDistanceKm > (platformDelivery.includedKmInBaseFee ?? 5) && platformDelivery.feePerKm > 0
+                              ? ` + ${formatCurrency(
+                                  Math.round(
+                                    (deliveryDistanceKm - (platformDelivery.includedKmInBaseFee ?? 5)) *
+                                      platformDelivery.feePerKm
+                                  )
+                                )} km vượt`
+                              : '') +
+                            (deliveryDistanceKm != null ? ` · ~${deliveryDistanceKm.toFixed(1)} km` : '')
+                          : `Trong bán kính freeship · cấu hình sàn ${formatCurrency(platformDelivery.shippingFee)}`)
                         : 'Đang tải cấu hình sàn…')
                       : 'Theo phí ship của nhà hàng (tự giao)'}
+                  </p>
+                )}
+                {outOfDeliveryRange && (
+                  <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2">
+                    Nhà hàng chỉ giao trong {Number(restaurantInfo?.maxDeliveryRadiusKm ?? 0)} km.
+                    Địa chỉ hiện tại cách khoảng {deliveryDistanceKm?.toFixed(1)} km — hãy chọn vị trí gần hơn trên bản đồ.
                   </p>
                 )}
                 {selectedDiscount && discountAmount > 0 && (

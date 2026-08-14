@@ -31,7 +31,8 @@ namespace ShoppingFood.Application.Features.Admin.Commands
                 MaxDeliveryRadiusKm = request.MaxDeliveryRadiusKm,
                 FreeDeliveryRadiusKm = request.FreeDeliveryRadiusKm,
                 FreeShippingMinimumOrder = request.FreeShippingMinimumOrder,
-                ShippingFee = request.ShippingFee
+                ShippingFee = request.ShippingFee,
+                IncludedKmInBaseFee = request.IncludedKmInBaseFee > 0 ? request.IncludedKmInBaseFee : 5.0
             };
 
             var serializedSettings = JsonSerializer.Serialize(settingsDto, new JsonSerializerOptions

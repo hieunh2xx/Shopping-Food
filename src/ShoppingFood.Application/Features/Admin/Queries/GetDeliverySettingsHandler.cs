@@ -44,12 +44,15 @@ namespace ShoppingFood.Application.Features.Admin.Queries
                     settings.FreeDeliveryRadiusKm = parsed.FreeDeliveryRadiusKm;
                     settings.FreeShippingMinimumOrder = parsed.FreeShippingMinimumOrder;
                     settings.ShippingFee = parsed.ShippingFee;
+                    if (parsed.IncludedKmInBaseFee > 0)
+                        settings.IncludedKmInBaseFee = parsed.IncludedKmInBaseFee;
                 }
             }
 
             var finance = await _dbContext.PlatformFinanceConfigs.AsNoTracking().FirstOrDefaultAsync(cancellationToken);
             if (finance != null)
             {
+                settings.FeePerKm = finance.FeePerKm > 0 ? finance.FeePerKm : 0m;
                 settings.ShipperBaseFee = finance.ShipperBaseFee > 0 ? finance.ShipperBaseFee : 12000m;
                 settings.ShipperFeePerKm = finance.ShipperFeePerKm > 0
                     ? finance.ShipperFeePerKm

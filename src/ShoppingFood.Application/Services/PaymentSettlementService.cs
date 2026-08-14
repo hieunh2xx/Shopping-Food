@@ -527,16 +527,38 @@ namespace ShoppingFood.Application.Services
 
             if (order.PaymentMethod == PaymentMethod.COD)
             {
-                // Nhà hàng tự giao và đã thu đủ tiền mặt (TotalAmount).
-                // Nhà hàng được giữ SellerPayout (bao gồm tiền món + tiền ship), phải nộp lại PlatformCommission cho nền tảng.
-                await RecordTransactionAsync(sellerWallet, FinancialTransactionType.SellerPayout, split.SellerPayout,
-                    $"Doanh thu đơn #{order.Id} (COD tự giao - chờ đối soát)", order.Id, "Order");
-                
-                await RecordTransactionAsync(sellerWallet, FinancialTransactionType.Commission, -split.PlatformCommission,
-                    $"Trừ chiết khấu sàn đơn #{order.Id} (COD tự giao)", order.Id, "Order");
+                // Tiền mặt đang ở nhà hàng — chưa về sàn.
+                // SellerPayout đã = (food − commission) + ship; chỉ cộng ví seller phần này.
+                // Ghi công nợ CodPayableAmount = commission (nộp sau khi đối soát / rút tiền).
+                var restaurants = await _restaurantProfileRepository.GetAsync(
+                    predicate: r => r.Id == restaurantId.Value,
+                    disableTracking: false);
+                var restaurant = restaurants.FirstOrDefault();
+                if (restaurant == null) return;
 
-                await RecordTransactionAsync(platformWallet, FinancialTransactionType.Commission, split.PlatformCommission,
-                    $"Chiết khấu sàn đơn #{order.Id} (COD tự giao)", order.Id, "Order");
+                await RecordTransactionAsync(sellerWallet, FinancialTransactionType.SellerPayout, split.SellerPayout,
+                    $"Doanh thu đơn #{order.Id} (COD tự giao — còn nợ CK sàn {split.PlatformCommission:N0}đ)", order.Id, "Order");
+
+                if (split.PlatformCommission > 0)
+                {
+                    restaurant.CodPayableAmount += split.PlatformCommission;
+                    restaurant.UpdatedAt = DateTime.UtcNow;
+                    _restaurantProfileRepository.Update(restaurant);
+
+                    // Ledger công nợ (không đổi số dư ví)
+                    _transactionRepository.Add(new FinancialTransaction
+                    {
+                        Id = Guid.NewGuid(),
+                        WalletId = sellerWallet.Id,
+                        Type = FinancialTransactionType.CodCollection,
+                        Amount = split.PlatformCommission,
+                        BalanceAfter = sellerWallet.Balance,
+                        ReferenceId = order.Id,
+                        ReferenceType = "Order",
+                        Description = $"Công nợ chiết khấu sàn đơn #{order.Id} (COD tự giao — chờ nộp)",
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
 
                 order.PaymentStatus = PaymentStatus.Settled;
             }

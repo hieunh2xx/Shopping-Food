@@ -8,6 +8,9 @@ namespace ShoppingFood.Dto.System
         /// <summary>Phí giao hàng mặc định — số khách trả trên checkout.</summary>
         public decimal ShippingFee { get; set; }
 
+        /// <summary>Phí khách / km vượt ngưỡng (từ PlatformFinanceConfig.FeePerKm).</summary>
+        public decimal FeePerKm { get; set; }
+
         /// <summary>Thu nhập shipper cơ bản (tham chiếu hiển thị; tính trả shipper dùng PlatformFinanceConfig).</summary>
         public decimal ShipperBaseFee { get; set; } = 12000m;
         /// <summary>Thu nhập shipper / km (tham chiếu; không dùng làm phí khách).</summary>

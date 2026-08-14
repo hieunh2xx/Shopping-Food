@@ -141,7 +141,7 @@ export function SellerSettingsPage() {
 
   const handleUpdateBasicInfo = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!basicInfo.restaurantName || !basicInfo.address || !basicInfo.phone || !basicInfo.logoUrl) {
+    if (!basicInfo.restaurantName || !basicInfo.address || !basicInfo.phone || !basicInfo.email || !basicInfo.logoUrl) {
       toast.error('Vui lòng nhập đầy đủ thông tin bắt buộc và tải lên ảnh đại diện cửa hàng');
       return;
     }
@@ -152,6 +152,7 @@ export function SellerSettingsPage() {
       const res = await restaurantService.updateBasicInfo({
         restaurantName: basicInfo.restaurantName,
         phone: basicInfo.phone,
+        email: basicInfo.email.trim(),
         address: basicInfo.address,
         logoUrl: basicInfo.logoUrl || undefined,
         latitude: basicInfo.latitude,

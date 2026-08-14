@@ -202,12 +202,16 @@ Config mặc định (`PlatformFinanceConfig`):
 | Tham số | Default | Ý nghĩa |
 |---------|---------|---------|
 | `ShipperBaseFee` | **12.000₫** | Phí cơ bản mỗi đơn |
-| `ShipperFeePerKm` | **4.000₫/km** | Tính cho phần quãng đường **> 5 km** |
+| `ShipperFeePerKm` | **4.000₫/km** | Tính cho phần quãng đường **> IncludedKmInBaseFee** |
 | `ShipperRushHourBonus` | **10%** | % cộng thêm giờ cao điểm |
 | `RushHourStartTime` / `EndTime` | 17:00–19:00 (giờ VN = UTC+7) | Khung peak |
+| `IncludedKmInBaseFee` (`DeliverySettings`) | **5 km** | Ngưỡng km đã gồm trong phí cơ bản (khách & shipper) |
+| `FeePerKm` (`PlatformFinanceConfig`) | **5.000₫/km** | Phụ phí khách khi vượt `IncludedKmInBaseFee` |
 
 ```text
-distanceFee = (distanceKm > 5) ? (distanceKm − 5) × ShipperFeePerKm : 0
+includedKm = DeliverySettings.IncludedKmInBaseFee   // fallback 5
+
+distanceFee = (distanceKm > includedKm) ? (distanceKm − includedKm) × ShipperFeePerKm : 0
 incomeBeforeBonus = ShipperBaseFee + distanceFee
 peakBonus = isRushHour ? incomeBeforeBonus × (ShipperRushHourBonus / 100) : 0
 ShipperIncome = Round(incomeBeforeBonus + peakBonus)
@@ -217,13 +221,14 @@ Lưu breakdown trên Order: `ShipperBaseFeeAmount`, `ShipperDistanceFeeAmount`, 
 
 ### FR-SHIP-03 — Phí ship khách trả (khác ShipperIncome)
 
-Với **PlatformDelivery**, phí khách trả lấy từ `DeliverySettings` (SystemConfig):
+Với **PlatformDelivery**, phí khách trả lấy từ `DeliverySettings` + `FeePerKm`:
 
 | Rule | Hành vi |
 |------|---------|
 | Đơn ≥ `FreeShippingMinimumOrder` (>0) | `ShippingFee = 0` |
 | Khoảng cách ≤ `FreeDeliveryRadiusKm` (default 3km) | `ShippingFee = 0` |
-| Còn lại | `ShippingFee = DeliverySettings.ShippingFee` (default 15.000) |
+| Không có tọa độ giao | `ShippingFee = base` (`ShippingFee` / `BaseDeliveryFee`) |
+| Còn lại | `ShippingFee = base + max(0, km − IncludedKmInBaseFee) × FeePerKm` (+ rush multiplier nếu peak) |
 | Có món `IsFreeship` | Không cộng fee quán đó |
 
 Với **SelfDelivery**: dùng `RestaurantProfile.ShippingFee`, bán kính / freeship của quán; `ShipperIncome = 0`.
@@ -252,7 +257,18 @@ Hiện tại split tính **theo cả đơn** (`ItemsSubtotal` của order), khô
 
 ### FR-SELL-03 — Rút tiền
 
-Seller rút từ ví quán → Admin duyệt (min 50k).
+Seller rút từ ví quán → Admin duyệt (min 50k).  
+Số dư khả dụng = `Wallet.Balance − RestaurantProfile.CodPayableAmount − pending withdrawals`.
+
+### FR-SELL-03b — Công nợ COD tự giao
+
+Khi **SelfDelivery + COD** settle:
+- Seller ví: `+SellerPayout` (đã net commission + ship)
+- `RestaurantProfile.CodPayableAmount += PlatformCommission` (công nợ chờ nộp)
+- **Không** cộng ví nền tảng (tiền mặt chưa về sàn)
+- **Không** trừ thêm Commission trên ví seller (tránh trừ 2 lần)
+
+Online Paid SelfDelivery: giữ `+SellerPayout` seller + `+Commission` platform (tiền đã ở sàn).
 
 ### FR-SELL-04 — Hoa hồng tùy quán (ý định vs thực tế)
 
@@ -297,7 +313,7 @@ Khách có thể trả `ShippingFee` khác `ShipperIncome`. Phần chênh là **
 | | **COD** | **Online đã Paid** (Wallet/Sepay/Card) |
 |--|---------|----------------------------------------|
 | **PlatformDelivery** | Shipper: +Earning ví, +CodCollected (SellerPayout+Commission); Seller +Payout; Platform +Commission | Seller +Payout; Shipper +Earning; Platform +Commission; **không** COD debt |
-| **SelfDelivery** | Seller +Payout (gồm ship); Seller −Commission (nợ CK); Platform +Commission; không shipper | Seller +Payout (gồm ship); Platform +Commission |
+| **SelfDelivery** | Seller +Payout (gồm ship); `CodPayableAmount += Commission`; **không** +ví sàn; không shipper | Seller +Payout (gồm ship); Platform +Commission |
 
 **Guard:** `if (order.IsFinancialSettled) return;` — settle 1 lần duy nhất.
 

@@ -35,6 +35,7 @@ export function AdminFinanceOperationsPage() {
   const [freeDeliveryRadiusKm, setFreeDeliveryRadiusKm] = useState<number | ''>('');
   const [freeShippingMinimumOrder, setFreeShippingMinimumOrder] = useState<number | ''>('');
   const [shippingFee, setShippingFee] = useState<number | ''>('');
+  const [includedKmInBaseFee, setIncludedKmInBaseFee] = useState<number | ''>(5);
   const [isSavingDelivery, setIsSavingDelivery] = useState(false);
 
   // Restaurants config state
@@ -87,6 +88,8 @@ export function AdminFinanceOperationsPage() {
         setFreeDeliveryRadiusKm(delRes.data.freeDeliveryRadiusKm ?? '');
         setFreeShippingMinimumOrder(delRes.data.freeShippingMinimumOrder ?? '');
         setShippingFee(delRes.data.shippingFee ?? '');
+        setIncludedKmInBaseFee(delRes.data.includedKmInBaseFee ?? 5);
+        if (delRes.data.feePerKm != null) setFeePerKm(delRes.data.feePerKm);
       }
     } catch {
       toast.error('Lỗi tải cấu hình giao hàng');
@@ -159,12 +162,22 @@ export function AdminFinanceOperationsPage() {
         maxDeliveryRadiusKm: maxDeliveryRadiusKm === '' ? null : Number(maxDeliveryRadiusKm),
         freeDeliveryRadiusKm: Number(freeDeliveryRadiusKm) || 0,
         freeShippingMinimumOrder: Number(freeShippingMinimumOrder) || 0,
-        shippingFee: Number(shippingFee) || 0
+        shippingFee: Number(shippingFee) || 0,
+        includedKmInBaseFee: Number(includedKmInBaseFee) || 5,
       };
       const res = await adminService.updateDeliverySettings(payload);
+      // FeePerKm khách nằm ở PlatformFinanceConfig — lưu kèm khi admin đổi tab giao hàng
+      if (fullConfig) {
+        await adminService.updatePlatformFinanceConfig({
+          config: {
+            ...fullConfig,
+            feePerKm: Number(feePerKm) || 0,
+          },
+        });
+      }
       if (!res.error) {
         toast.success(res.message || 'Đã lưu cấu hình giao hàng');
-        await fetchDeliverySettings();
+        await Promise.all([fetchDeliverySettings(), fetchPlatformConfig()]);
       } else {
         toast.error(res.message);
       }
@@ -387,7 +400,26 @@ export function AdminFinanceOperationsPage() {
               placeholder="VD: 15000"
             />
             <p className="text-xs text-gray-500 -mt-2 mb-2">
-              Đây là phí khách thấy ở tóm tắt đơn. Thu nhập shipper cấu hình ở tab riêng.
+              Phí cơ bản trong số km đã gồm. Quãng đường xa hơn sẽ cộng thêm phí / km bên dưới.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input
+                label="Số km đã gồm trong phí cơ bản"
+                type="number"
+                value={includedKmInBaseFee}
+                onChange={(e) => setIncludedKmInBaseFee(e.target.value === '' ? '' : Number(e.target.value))}
+                placeholder="VD: 5"
+              />
+              <Input
+                label="Phí khách / km vượt (VNĐ)"
+                type="number"
+                value={feePerKm}
+                onChange={(e) => setFeePerKm(e.target.value === '' ? '' : Number(e.target.value))}
+                placeholder="VD: 5000"
+              />
+            </div>
+            <p className="text-xs text-gray-500 -mt-2 mb-2">
+              Công thức: phí = cơ bản + max(0, km − km gồm) × phí/km. Không phải thu nhập shipper (tab riêng).
             </p>
             <Input
               label="Bán kính miễn phí giao hàng (km)"

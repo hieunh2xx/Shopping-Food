@@ -113,16 +113,24 @@ namespace ShoppingFood.Application.Features.Payments.Queries
                     availableCodToRemit = Math.Max(0, (codCollected ?? 0) - pendingCodRemittance.Value);
                 }
             }
+            else if (ownerType == WalletOwnerType.Seller)
+            {
+                var restaurants = await _restaurantRepository.GetAsync(predicate: r => r.Id == ownerId);
+                var restaurant = restaurants.FirstOrDefault();
+                codCollected = restaurant?.CodPayableAmount;
+            }
 
             return ApiResponse.Success(new
             {
                 wallet.Id,
                 balance = wallet.Balance,
+                availableBalance = wallet.Balance - (codCollected ?? 0),
                 ownerType = wallet.OwnerType.ToString(),
                 bankName = wallet.BankName,
                 bankAccountNumber = wallet.BankAccountNumber,
                 bankAccountHolder = wallet.BankAccountHolder,
                 codCollectedAmount = codCollected,
+                codPayableAmount = ownerType == WalletOwnerType.Seller ? codCollected : null,
                 pendingCodRemittance,
                 availableCodToRemit,
                 debtLimit,

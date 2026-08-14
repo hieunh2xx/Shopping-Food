@@ -13,11 +13,13 @@ export interface IPaymentMethod {
 export interface IWalletDto {
   id: string;
   balance: number;
+  availableBalance?: number;
   ownerType: string;
   bankName?: string;
   bankAccountNumber?: string;
   bankAccountHolder?: string;
   codCollectedAmount?: number;
+  codPayableAmount?: number;
   pendingCodRemittance?: number;
   availableCodToRemit?: number;
   debtLimit?: number;

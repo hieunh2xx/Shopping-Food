@@ -162,7 +162,11 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 if (stockValidationResult != null)
                     return stockValidationResult;
 
-                var (totalAmount, shippingFee, shipperIncome, shipperBaseFee, shipperDistanceFee, shipperPeakBonus) = await CalculateTotalAmountAsync(cart.Items, request.DeliveryLatitude, request.DeliveryLongitude);
+                var (totalAmount, shippingFee, shipperIncome, shipperBaseFee, shipperDistanceFee, shipperPeakBonus, shippingError) =
+                    await CalculateTotalAmountAsync(cart.Items, request.DeliveryLatitude, request.DeliveryLongitude);
+                if (shippingError != null)
+                    return ApiResponse.Failure(400, shippingError);
+
                 // Món tặng (IsGift) không tính vào tiền hàng
                 decimal itemsTotal = cart.Items.Where(i => !i.IsGift).Sum(i => i.PriceAtAdded * i.Quantity);
                 var (discountAmount, appliedDiscountId, error) = await ApplyDiscountAsync(request, cart, itemsTotal);
@@ -392,7 +396,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             return null;
         }
 
-        private async Task<(decimal TotalAmount, decimal ShippingFee, decimal ShipperIncome, decimal ShipperBaseFee, decimal ShipperDistanceFee, decimal ShipperPeakBonus)> CalculateTotalAmountAsync(IEnumerable<CartItem> items, double? destLat, double? destLon)
+        private async Task<(decimal TotalAmount, decimal ShippingFee, decimal ShipperIncome, decimal ShipperBaseFee, decimal ShipperDistanceFee, decimal ShipperPeakBonus, string? Error)> CalculateTotalAmountAsync(IEnumerable<CartItem> items, double? destLat, double? destLon)
         {
             var itemsList = items.ToList();
             decimal itemsTotal = itemsList.Where(i => !i.IsGift).Sum(i => i.PriceAtAdded * i.Quantity);
@@ -423,10 +427,12 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             if (platformFinanceConfig != null)
             {
                 var nowTime = DateTime.UtcNow.AddHours(7).TimeOfDay; // Vietnam time
-                if (nowTime >= platformFinanceConfig.RushHourStartTime && nowTime <= platformFinanceConfig.RushHourEndTime)
-                {
-                    isRushHour = true;
-                }
+                var start = platformFinanceConfig.RushHourStartTime;
+                var end = platformFinanceConfig.RushHourEndTime;
+                // Hỗ trợ khung overnight (vd. 22:00–05:00)
+                isRushHour = start <= end
+                    ? nowTime >= start && nowTime <= end
+                    : nowTime >= start || nowTime <= end;
             }
 
             foreach (var restaurantId in restaurantIds)
@@ -455,17 +461,25 @@ namespace ShoppingFood.Application.Features.Orders.Commands
 
                 if (restaurant.DeliveryType == ShoppingFood.Domain.Enums.DeliveryType.PlatformDelivery)
                 {
-                    // Khách trả Phí giao hàng mặc định (DeliverySettings.ShippingFee).
-                    // Shipper nhận riêng theo ShipperBaseFee + km × ShipperFeePerKm (không lấy số shipper làm phí khách).
+                    // Khách: phí mặc định + (km vượt ngưỡng) × FeePerKm.
+                    // Shipper: ShipperBaseFee + (km vượt) × ShipperFeePerKm (+ peak).
                     double freeDeliveryRadiusKm = deliverySettings?.FreeDeliveryRadiusKm ?? 3.0;
                     decimal freeShippingMinimumOrder = deliverySettings?.FreeShippingMinimumOrder ?? 0m;
-                    // Nguồn duy nhất: config Admin → Cấu hình Giao hàng → Phí giao hàng mặc định
-                    decimal customerShippingFee = 0;
+                    double includedKmInBase = deliverySettings?.IncludedKmInBaseFee > 0
+                        ? deliverySettings.IncludedKmInBaseFee
+                        : 5.0;
+                    decimal feePerKm = platformFinanceConfig?.FeePerKm ?? 0m;
+
+                    decimal customerBaseFee = 0;
                     if (deliverySettings != null && deliverySettings.ShippingFee > 0)
-                        customerShippingFee = deliverySettings.ShippingFee;
+                        customerBaseFee = deliverySettings.ShippingFee;
                     else if (platformFinanceConfig != null && platformFinanceConfig.BaseDeliveryFee > 0)
-                        customerShippingFee = platformFinanceConfig.BaseDeliveryFee;
-                    const double includedKmInBase = 5.0;
+                        customerBaseFee = platformFinanceConfig.BaseDeliveryFee;
+
+                    decimal distanceSurcharge = hasDestinationCoords && distanceKm > includedKmInBase
+                        ? (decimal)(distanceKm - includedKmInBase) * feePerKm
+                        : 0m;
+                    decimal customerShippingFee = customerBaseFee + distanceSurcharge;
 
                     if (isRushHour && platformFinanceConfig != null && platformFinanceConfig.RushHourMultiplier > 1)
                         customerShippingFee = Math.Round(customerShippingFee * platformFinanceConfig.RushHourMultiplier, 0);
@@ -473,7 +487,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     if (itemsTotal >= freeShippingMinimumOrder && freeShippingMinimumOrder > 0)
                         feeForRestaurant = 0;
                     else if (!hasDestinationCoords)
-                        feeForRestaurant = customerShippingFee;
+                        feeForRestaurant = customerBaseFee; // không có tọa độ → chỉ phí mặc định
                     else if (distanceKm <= freeDeliveryRadiusKm)
                         feeForRestaurant = 0;
                     else
@@ -492,9 +506,9 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     else
                     {
                         // Không có finance config: shipper tạm lấy cùng mức phí khách (fallback)
-                        baseFeeForShipper = customerShippingFee;
+                        baseFeeForShipper = feeForRestaurant;
                         distanceFeeForShipper = 0;
-                        incomeForShipper = customerShippingFee;
+                        incomeForShipper = feeForRestaurant;
                     }
                 }
                 else
@@ -502,7 +516,8 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     // Self Delivery Logic
                     if (hasDestinationCoords && restaurant.MaxDeliveryRadiusKm.HasValue && distanceKm > restaurant.MaxDeliveryRadiusKm.Value)
                     {
-                        throw new Exception("Nhà hàng không hỗ trợ giao đến địa chỉ này.");
+                        return (0, 0, 0, 0, 0, 0,
+                            $"Nhà hàng chỉ giao trong bán kính {restaurant.MaxDeliveryRadiusKm.Value:0.#} km. Địa chỉ hiện tại cách khoảng {distanceKm:0.#} km — vui lòng chọn địa chỉ gần hơn.");
                     }
 
                     if (itemsTotal >= restaurant.FreeShippingMinimumOrder && restaurant.FreeShippingMinimumOrder > 0)
@@ -529,7 +544,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 shipperDistanceFeeTotal += Math.Round(distanceFeeForShipper, 0);
                 shipperPeakBonusTotal += Math.Round(peakBonusForShipper, 0);
             }
-            return (itemsTotal + shippingFeeTotal, shippingFeeTotal, shipperIncomeTotal, shipperBaseFeeTotal, shipperDistanceFeeTotal, shipperPeakBonusTotal);
+            return (itemsTotal + shippingFeeTotal, shippingFeeTotal, shipperIncomeTotal, shipperBaseFeeTotal, shipperDistanceFeeTotal, shipperPeakBonusTotal, null);
         }
 
         private Order CreateOrderEntity(CheckoutCommand request, decimal totalAmount, decimal shippingFee, decimal shipperIncome, decimal shipperBaseFee, decimal shipperDistanceFee, decimal shipperPeakBonus, decimal itemsSubtotal)
