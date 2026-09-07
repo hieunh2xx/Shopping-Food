@@ -129,9 +129,15 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     skippedItems.Add(oldItem.ItemName);
                     continue;
                 }
-                var product = await _productRepository.GetByIdAsync(oldItem.ProductId.Value);
+                var product = await _productRepository.GetByIdWithDetailsAsync(oldItem.ProductId.Value);
 
                 if (product == null || product.IsHidden || product.Status != ProductStatus.Approved || product.StockStatus != StockStatus.InStock)
+                {
+                    skippedItems.Add(oldItem.ItemName);
+                    continue;
+                }
+
+                if (product.Restaurant == null || !product.Restaurant.IsCurrentlyOpen(DateTime.UtcNow) || !product.IsCurrentlyAvailable(DateTime.UtcNow))
                 {
                     skippedItems.Add(oldItem.ItemName);
                     continue;

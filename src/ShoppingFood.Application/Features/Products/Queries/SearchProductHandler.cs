@@ -13,6 +13,7 @@ using ShoppingFood.Domain.Enums;
 using ShoppingFood.Dto.Product;
 using ShoppingFood.Repository.Interfaces;
 using ShoppingFood.Application.Interfaces;
+using ShoppingFood.Application.Common;
 
 namespace ShoppingFood.Application.Features.Products.Queries
 {
@@ -60,8 +61,9 @@ namespace ShoppingFood.Application.Features.Products.Queries
                 lonMax = userLon + lonDiff;
             }
 
-            Guid? userProfileId = null;
             bool isAdmin = false;
+            bool isSellerOrMall = false;
+            Guid? userProfileId = null;
             if (request.CurrentUserId.HasValue)
             {
                 var users = await _userRepository.GetAsync(
@@ -71,7 +73,12 @@ namespace ShoppingFood.Application.Features.Products.Queries
                 var currentUser = users.FirstOrDefault();
                 userProfileId = currentUser?.Profile?.Id;
                 isAdmin = currentUser?.Profile?.Role == UserRole.Admin;
+                isSellerOrMall = currentUser?.Profile?.Role == UserRole.Seller
+                    || currentUser?.Profile?.Role == UserRole.Mall;
             }
+
+            var vnNow = RestaurantOperatingHours.GetVietnamTimeOfDay(DateTime.UtcNow);
+            var sellerOwnMenuBypass = isSellerOrMall && userProfileId.HasValue && request.RestaurantId.HasValue;
 
             ProductStatus? statusFilter = null;
             if (!string.IsNullOrEmpty(request.Status) && Enum.TryParse<ProductStatus>(request.Status, true, out var statusParsed))
@@ -81,6 +88,13 @@ namespace ShoppingFood.Application.Features.Products.Queries
 
             Expression<Func<Product, bool>> predicate = p =>
                 (isAdmin || (p.Status == ProductStatus.Approved && !p.IsHidden)) &&
+                (isAdmin || (sellerOwnMenuBypass && p.Restaurant.OwnerId == userProfileId) || (
+                    p.Restaurant.Status == RestaurantStatus.Active &&
+                    (!p.Restaurant.OpeningTime.HasValue || !p.Restaurant.ClosingTime.HasValue ||
+                     (p.Restaurant.ClosingTime.Value >= p.Restaurant.OpeningTime.Value
+                        ? vnNow >= p.Restaurant.OpeningTime.Value && vnNow <= p.Restaurant.ClosingTime.Value
+                        : vnNow >= p.Restaurant.OpeningTime.Value || vnNow <= p.Restaurant.ClosingTime.Value))
+                )) &&
                 (!statusFilter.HasValue || p.Status == statusFilter.Value) &&
                 (!hasFilter || (
                     request.RestaurantId.HasValue
@@ -138,6 +152,9 @@ namespace ShoppingFood.Application.Features.Products.Queries
 
             var total = await _productRepository.GetCountAsync(predicate);
             var productDtos = _mapper.Map<IReadOnlyList<ProductDto>>(products);
+
+            if (!isAdmin)
+                ProductAvailabilityHelper.RemoveUnavailableToppings(productDtos);
 
             await _flashSalePricingService.AttachFlashSalePricesAsync(productDtos);
 

@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ShoppingFood.Application.Interfaces;
+using ShoppingFood.Application.Common;
 
 namespace ShoppingFood.Application.Features.Restaurants.Queries
 {
@@ -84,8 +85,16 @@ namespace ShoppingFood.Application.Features.Restaurants.Queries
                 restaurantDto.IsFavorite = favorite.Any();
             }
 
+            if (!isOwnerOrAdmin && !restaurant.IsCurrentlyOpen(DateTime.UtcNow))
+            {
+                restaurantDto.Products = new List<ProductDto>();
+                return ApiResponse.Success(restaurantDto, "Restaurant detail retrieved successfully.");
+            }
+
             var products = await GetApprovedProductsAsync(request.Id);
             restaurantDto.Products = _mapper.Map<List<ProductDto>>(products);
+            if (!isOwnerOrAdmin)
+                ProductAvailabilityHelper.RemoveUnavailableToppings(restaurantDto.Products);
             await _flashSalePricingService.AttachFlashSalePricesAsync(restaurantDto.Products);
 
             return ApiResponse.Success(restaurantDto, "Restaurant detail retrieved successfully.");

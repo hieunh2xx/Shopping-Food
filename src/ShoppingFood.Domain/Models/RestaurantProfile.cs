@@ -38,5 +38,8 @@ namespace ShoppingFood.Domain.Models
         // Navigation properties
         public virtual SellerApplication SellerApplication { get; set; } = null!;
         public virtual UserProfile Owner { get; set; } = null!;
+
+        public bool IsCurrentlyOpen(DateTime utcNow)
+            => RestaurantOperatingHours.IsCurrentlyOpen(Status, OpeningTime, ClosingTime, utcNow);
     }
 }

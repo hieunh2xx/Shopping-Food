@@ -18,6 +18,7 @@ namespace ShoppingFood.Dto.Restaurant
         public int ReviewCount { get; set; }
         public string? OpeningTime { get; set; }
         public string? ClosingTime { get; set; }
+        public bool IsOpenNow { get; set; }
         public double? MaxDeliveryRadius { get; set; }
         public decimal ShippingFee { get; set; }
         public double DistanceKm { get; set; }

@@ -106,7 +106,8 @@ namespace ShoppingFood.Tests.Features.Carts
                 Id = productId,
                 Status = ProductStatus.Approved,
                 IsHidden = false,
-                StockStatus = StockStatus.OutOfStock
+                StockStatus = StockStatus.OutOfStock,
+                Restaurant = new RestaurantProfile { Status = RestaurantStatus.Active }
             };
             _productRepositoryMock
                 .Setup(r => r.GetAsync(It.IsAny<Expression<Func<Product, bool>>>(), It.IsAny<Func<IQueryable<Product>, IOrderedQueryable<Product>>>(), It.IsAny<Func<IQueryable<Product>, IIncludableQueryable<Product, object>>>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<bool>()))
@@ -123,6 +124,66 @@ namespace ShoppingFood.Tests.Features.Carts
         }
 
         [Fact]
+        public async Task Handle_RestaurantClosed_ReturnsBadRequest()
+        {
+            var productId = Guid.NewGuid();
+            var vnNow = DateTime.UtcNow.AddHours(7).TimeOfDay;
+            var product = new Product
+            {
+                Id = productId,
+                Status = ProductStatus.Approved,
+                IsHidden = false,
+                StockStatus = StockStatus.InStock,
+                Restaurant = new RestaurantProfile
+                {
+                    Status = RestaurantStatus.Active,
+                    OpeningTime = vnNow.Add(TimeSpan.FromHours(2)),
+                    ClosingTime = vnNow.Add(TimeSpan.FromHours(8))
+                }
+            };
+            _productRepositoryMock
+                .Setup(r => r.GetAsync(It.IsAny<Expression<Func<Product, bool>>>(), It.IsAny<Func<IQueryable<Product>, IOrderedQueryable<Product>>>(), It.IsAny<Func<IQueryable<Product>, IIncludableQueryable<Product, object>>>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<bool>()))
+                .ReturnsAsync(new List<Product> { product }.AsReadOnly());
+
+            var result = await _handler.Handle(new AddToCartCommand { ProductId = productId, Quantity = 1 }, CancellationToken.None);
+
+            result.Code.Should().Be(400);
+            result.Message.Should().Contain("đóng cửa");
+        }
+
+        [Fact]
+        public async Task Handle_UnavailableTopping_ReturnsBadRequest()
+        {
+            var productId = Guid.NewGuid();
+            var topping = new Topping { Id = Guid.NewGuid(), ToppingName = "Trân châu", IsAvailable = false, Price = 5000 };
+            var product = new Product
+            {
+                Id = productId,
+                Status = ProductStatus.Approved,
+                IsHidden = false,
+                StockStatus = StockStatus.InStock,
+                Restaurant = new RestaurantProfile { Status = RestaurantStatus.Active },
+                ProductToppings = new List<ProductTopping>
+                {
+                    new ProductTopping { ToppingId = topping.Id, Topping = topping }
+                }
+            };
+            _productRepositoryMock
+                .Setup(r => r.GetAsync(It.IsAny<Expression<Func<Product, bool>>>(), It.IsAny<Func<IQueryable<Product>, IOrderedQueryable<Product>>>(), It.IsAny<Func<IQueryable<Product>, IIncludableQueryable<Product, object>>>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<bool>()))
+                .ReturnsAsync(new List<Product> { product }.AsReadOnly());
+
+            var result = await _handler.Handle(new AddToCartCommand
+            {
+                ProductId = productId,
+                Quantity = 1,
+                SelectedToppings = new List<string> { "Trân châu" }
+            }, CancellationToken.None);
+
+            result.Code.Should().Be(400);
+            result.Message.Should().Contain("hết");
+        }
+
+        [Fact]
         public async Task Handle_ValidNewCartItem_AddsSuccessfully()
         {
             // Arrange
@@ -134,7 +195,8 @@ namespace ShoppingFood.Tests.Features.Carts
                 Status = ProductStatus.Approved,
                 IsHidden = false,
                 StockStatus = StockStatus.InStock,
-                Price = 50000
+                Price = 50000,
+                Restaurant = new RestaurantProfile { Status = RestaurantStatus.Active }
             };
 
             _productRepositoryMock
@@ -204,7 +266,7 @@ namespace ShoppingFood.Tests.Features.Carts
             var newRestaurantId = Guid.NewGuid();
             var productId = Guid.NewGuid();
 
-            var newProduct = new Product { Id = productId, RestaurantId = newRestaurantId, Status = ProductStatus.Approved, StockStatus = StockStatus.InStock };
+            var newProduct = new Product { Id = productId, RestaurantId = newRestaurantId, Status = ProductStatus.Approved, StockStatus = StockStatus.InStock, Restaurant = new RestaurantProfile { Id = newRestaurantId, Status = RestaurantStatus.Active } };
             var existingProduct = new Product { Id = Guid.NewGuid(), RestaurantId = existingRestaurantId };
             
             _productRepositoryMock.Setup(r => r.GetAsync(It.IsAny<Expression<Func<Product, bool>>>(), It.IsAny<Func<IQueryable<Product>, IOrderedQueryable<Product>>>(), It.IsAny<Func<IQueryable<Product>, IIncludableQueryable<Product, object>>>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<bool>()))
@@ -240,7 +302,7 @@ namespace ShoppingFood.Tests.Features.Carts
             var newRestaurantId = Guid.NewGuid();
             var productId = Guid.NewGuid();
 
-            var newProduct = new Product { Id = productId, RestaurantId = newRestaurantId, Status = ProductStatus.Approved, StockStatus = StockStatus.InStock };
+            var newProduct = new Product { Id = productId, RestaurantId = newRestaurantId, Status = ProductStatus.Approved, StockStatus = StockStatus.InStock, Restaurant = new RestaurantProfile { Id = newRestaurantId, Status = RestaurantStatus.Active } };
             var existingProduct = new Product { Id = Guid.NewGuid(), RestaurantId = existingRestaurantId };
             
             _productRepositoryMock.Setup(r => r.GetAsync(It.IsAny<Expression<Func<Product, bool>>>(), It.IsAny<Func<IQueryable<Product>, IOrderedQueryable<Product>>>(), It.IsAny<Func<IQueryable<Product>, IIncludableQueryable<Product, object>>>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<bool>()))

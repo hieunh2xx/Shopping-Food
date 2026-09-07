@@ -16,6 +16,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static System.Net.WebRequestMethods;
 using ShoppingFood.Dto.System;
+using ShoppingFood.Application.Common;
 
 
 namespace ShoppingFood.Application.Features.Orders.Commands
@@ -341,7 +342,8 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             {
                 var carts = await _cartRepository.GetAsync(
                     predicate: c => c.UserAccountId == uid,
-                    include: q => q.Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Restaurant).ThenInclude(r => r.Owner),
+                    include: q => q.Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Restaurant).ThenInclude(r => r.Owner)
+                                   .Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.ProductToppings).ThenInclude(pt => pt.Topping),
                     disableTracking: false
                 );
                 return carts.FirstOrDefault();
@@ -351,7 +353,8 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             {
                 var carts = await _cartRepository.GetAsync(
                     predicate: c => c.GuestUserId == gid,
-                    include: q => q.Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Restaurant).ThenInclude(r => r.Owner),
+                    include: q => q.Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Restaurant).ThenInclude(r => r.Owner)
+                                   .Include(c => c.Items).ThenInclude(i => i.Product).ThenInclude(p => p.ProductToppings).ThenInclude(pt => pt.Topping),
                     disableTracking: false
                 );
                 return carts.FirstOrDefault();
@@ -386,12 +389,20 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             {
                 if (item.Product == null || item.Product.IsHidden || item.Product.Status != ProductStatus.Approved)
                     return ApiResponse.Failure(400, $"The {item.Product?.ItemName} is currently not available for purchase.");
+
+                var restaurantClosed = ProductAvailabilityHelper.ValidateRestaurantCanAcceptOrders(item.Product.Restaurant, DateTime.UtcNow);
+                if (restaurantClosed != null)
+                    return ApiResponse.Failure(400, restaurantClosed);
                 
                 if (!item.Product.IsCurrentlyAvailable(DateTime.UtcNow))
                     return ApiResponse.Failure(400, $"Món ăn {item.Product.ItemName} hiện chưa tới giờ mở bán.");
 
                 if (item.Product.StockStatus != StockStatus.InStock)
                     return ApiResponse.Failure(400, $"The {item.Product.ItemName} is currently out of stock.");
+
+                var toppingError = ProductAvailabilityHelper.ValidateSelectedToppingsCsv(item.Product, item.SelectedToppings);
+                if (toppingError != null)
+                    return ApiResponse.Failure(400, toppingError);
             }
             return null;
         }

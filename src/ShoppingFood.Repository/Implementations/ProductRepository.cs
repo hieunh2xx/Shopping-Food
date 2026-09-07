@@ -41,8 +41,10 @@ namespace ShoppingFood.Repository.Implementations
                 .Where(p => bestSellerIds.Contains(p.Id))
                 .ToListAsync();
 
+            var now = DateTime.UtcNow;
             return bestSellerIds
                 .Select(id => products.First(p => p.Id == id))
+                .Where(p => p.Restaurant != null && p.Restaurant.IsCurrentlyOpen(now))
                 .ToList();
         }
 
