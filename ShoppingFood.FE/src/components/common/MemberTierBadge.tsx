@@ -71,6 +71,10 @@ const TIER_META: Record<MemberTierKey, MemberTierMeta> = {
   },
 };
 
+/**
+ * Chuẩn hóa chuỗi hạng thành viên thành giá trị MemberTierKey hợp lệ (Đồng, Bạc, Vàng, Kim Cương).
+ * @param tier - Chuỗi hạng nhận được từ API
+ */
 export function normalizeMemberTier(tier?: string | null): MemberTierKey {
   const raw = (tier || 'Bronze').trim();
   if (raw.toLowerCase() === 'platinum') return 'Diamond';
@@ -78,10 +82,18 @@ export function normalizeMemberTier(tier?: string | null): MemberTierKey {
   return match || 'Bronze';
 }
 
+/**
+ * Lấy toàn bộ metadata cấu hình hiển thị của hạng thành viên (màu sắc, icon, hiệu ứng gradient, nhãn tiếng Việt).
+ * @param tier - Tên hạng
+ */
 export function getMemberTierMeta(tier?: string | null): MemberTierMeta {
   return TIER_META[normalizeMemberTier(tier)];
 }
 
+/**
+ * Lấy nhãn tiếng Việt hiển thị của hạng thành viên.
+ * @param tier - Tên hạng
+ */
 export function getMemberTierLabel(tier?: string | null): string {
   return getMemberTierMeta(tier).label;
 }
@@ -108,6 +120,11 @@ const iconSize: Record<Size, string> = {
   lg: 'w-4 h-4',
 };
 
+/**
+ * Huy hiệu Hạng Thành viên (MemberTierBadge).
+ * Hiển thị huy hiệu dạng viên thuốc tròn (pill badge) kèm icon và hiệu ứng ánh sáng gradient lung linh.
+ * @param props - Thuộc tính cấu hình huy hiệu
+ */
 export function MemberTierBadge({
   tier,
   size = 'md',
@@ -138,6 +155,11 @@ interface MemberTierCardProps {
   subtitle?: string;
 }
 
+/**
+ * Thẻ Chọn Hạng Thành viên (MemberTierSelectCard).
+ * Dùng trong màn hình cài đặt cấu hình hạng của Admin hoặc trang đổi điểm loyalty.
+ * @param props - Thuộc tính thẻ chọn
+ */
 export function MemberTierSelectCard({ tier, selected, onClick, subtitle }: MemberTierCardProps) {
   const meta = getMemberTierMeta(tier);
   const Icon = meta.Icon;

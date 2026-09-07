@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   User, 
   MapPin, 
@@ -12,11 +12,21 @@ import { useConfirm } from '../../hooks';
 import { coordinatorService } from '../../services';
 import toast from 'react-hot-toast';
 
+/**
+ * Bảng Điều Phối Đơn Hàng Thời Gian Thực (DispatchBoardPage).
+ * Trung tâm điều vận và phân công shipper:
+ * - Theo dõi tình trạng đơn: Chờ shipper nhận, Đang nấu, Đang giao, Đơn sự cố, Đơn leo thang
+ * - Tự động tìm và gợi ý danh sách các shipper gần quán ăn nhất
+ * - Đề xuất đơn hàng tới shipper có đếm ngược thời gian phản hồi
+ * - Thu hồi đơn và gán lại cho shipper khác khi cần thiết
+ * - Xử lý giải quyết tranh chấp sự cố đơn hàng trực tiếp trên bảng.
+ */
 export default function DispatchBoardPage() {
   const { confirm } = useConfirm();
   const [orders, setOrders] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'all' | 'WaitingForShipper' | 'Preparing' | 'Shipping' | 'incident' | 'escalated'>('WaitingForShipper');
+
   
   // Pagination
   const [page, setPage] = useState(1);

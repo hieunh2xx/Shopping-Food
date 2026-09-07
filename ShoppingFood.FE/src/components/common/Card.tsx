@@ -1,4 +1,4 @@
-﻿import type { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 interface CardProps {
   children: ReactNode;
@@ -7,6 +7,11 @@ interface CardProps {
   onClick?: () => void;
 }
 
+/**
+ * Thành phần Thẻ bao bọc nội dung (Card).
+ * Có hiệu ứng kính mờ (backdrop-blur), viền mỏng và hiệu ứng hover bóng đổ/nâng thẻ nhẹ.
+ * @param props - Thuộc tính cấu hình Card
+ */
 export function Card({ children, className = '', hoverable = false, onClick }: CardProps) {
   return (
     <div

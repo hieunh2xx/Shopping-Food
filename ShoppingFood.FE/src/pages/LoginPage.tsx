@@ -3,11 +3,19 @@ import { LoginForm } from '../components/auth/LoginForm';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '../routes/routeConfig';
 
+/**
+ * Trang Đăng Nhập Tài Khoản (LoginPage).
+ * Cung cấp giao diện đăng nhập đa phương thức:
+ * - Đăng nhập tài khoản / mật khẩu có hỗ trợ xác thực 2FA OTP
+ * - Đăng nhập bằng Google OAuth và Microsoft SSO
+ * - Đăng nhập nhanh bằng số điện thoại OTP Firebase.
+ */
 export function LoginPage() {
   return (
     <div className="min-h-screen flex bg-gray-50">
-      {/* Left — Decorative */}
+      {/* Cột trái — Đồ họa và lời chào mừng */}
       <div className="hidden lg:flex lg:w-5/12 relative overflow-hidden">
+
         {/* Background elements */}
         <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 via-gray-50 to-gray-50" />
         <div className="absolute top-32 left-16 w-80 h-80 bg-orange-500/10 rounded-full blur-3xl" />

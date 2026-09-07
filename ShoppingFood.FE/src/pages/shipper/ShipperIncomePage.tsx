@@ -7,15 +7,25 @@ import {
 import { shipperService } from '../../services';
 import type { IShipperIncomeReportDto, IDailyIncomeReportDto } from '../../interfaces/IShipper';
 
+/**
+ * Trang Báo Cáo Thu Nhập Chi Tiết Của Tài Xế (ShipperIncomePage).
+ * Phân tích doanh thu giao hàng theo chu kỳ Tuần (Weekly) hoặc Tháng (Monthly):
+ * - Tổng thu nhập, tổng phí cơ bản, tổng phí khoảng cách và thưởng giờ cao điểm
+ * - Biểu đồ trực quan hóa diễn biến thu nhập theo thời gian.
+ */
 export function ShipperIncomePage() {
   const [dateRange, setDateRange] = useState<'Weekly' | 'Monthly'>('Weekly');
   const [loading, setLoading] = useState(true);
   const [incomeReport, setIncomeReport] = useState<IShipperIncomeReportDto | null>(null);
 
+  /**
+   * Định dạng số tiền sang chuẩn tiền tệ Việt Nam VNĐ.
+   */
   const formatCurrency = (amount: number | undefined | null) => {
     const validAmount = (typeof amount === 'number' && !isNaN(amount)) ? amount : 0;
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(validAmount);
   };
+
 
   const getDateRange = useCallback(() => {
     const now = new Date();

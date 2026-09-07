@@ -7,15 +7,24 @@ import { useAuth, useConfirm } from '../../hooks';
 import toast from 'react-hot-toast';
 import { AdjustReputationModal } from './components/AdjustReputationModal';
 
+/**
+ * Trang Giám Sát Hoạt Động Tài Xế Dành Cho Điều Phối Viên (MonitorShippersPage).
+ * Giám sát trạng thái hoạt động và can thiệp vận hành:
+ * - Theo dõi danh sách tài xế Đang trực tuyến (Online) / Ngoại tuyến (Offline)
+ * - Tạm khóa hoạt động tài xế theo số phút có nêu rõ lý do
+ * - Điều chỉnh điểm uy tín (Cộng/Trừ sao uy tín)
+ * - Khóa/mở khóa tài khoản tài xế.
+ */
 export default function MonitorShippersPage() {
   const { user } = useAuth();
   const { confirm } = useConfirm();
   const [shippers, setShippers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Filters
+  // Bộ lọc
   const [searchTerm, setSearchTerm] = useState('');
   const [isOnlineFilter, setIsOnlineFilter] = useState<'all' | 'online' | 'offline'>('all');
+
 
   // Suspend Modal
   const [selectedShipper, setSelectedShipper] = useState<any | null>(null);

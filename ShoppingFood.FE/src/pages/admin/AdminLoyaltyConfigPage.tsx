@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Gift, Award, Plus, Trash2, Edit2, Play } from 'lucide-react';
 import { Button, Input, Modal, MemberTierBadge, getMemberTierLabel } from '../../components/common';
 import toast from 'react-hot-toast';
@@ -8,15 +8,23 @@ import { discountService } from '../../services/DiscountService';
 import type { IPointGiftConfigDto, IMemberTierConfig, IDiscountDto } from '../../interfaces';
 import { useConfirm } from '../../hooks';
 
+/**
+ * Trang Cấu Hình Điểm Thưởng & Xếp Hạng Khách Hàng Thân Thiết (AdminLoyaltyConfigPage).
+ * Trung tâm thiết lập chương trình khách hàng thân thiết (Loyalty Program):
+ * - Tab "Đổi quà": Cấu hình các mã giảm giá đổi bằng điểm thưởng tích lũy
+ * - Tab "Hạng thành viên": Thiết lập mức điểm tối thiểu cho các hạng Đồng, Bạc, Vàng, Kim Cương
+ * - Kích hoạt tự động đánh giá và nâng hạng thành viên hàng loạt.
+ */
 export function AdminLoyaltyConfigPage() {
   const { confirm } = useConfirm();
   const [activeTab, setActiveTab] = useState<'gifts' | 'tiers'>('gifts');
   
-  // Point Gift State
+  // Trạng thái quà đổi điểm
   const [gifts, setGifts] = useState<IPointGiftConfigDto[]>([]);
   const [discounts, setDiscounts] = useState<IDiscountDto[]>([]);
   const [isLoadingGifts, setIsLoadingGifts] = useState(true);
   const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
+
   const [editingGift, setEditingGift] = useState<IPointGiftConfigDto | null>(null);
   const [giftFormData, setGiftFormData] = useState({
     discountId: '',

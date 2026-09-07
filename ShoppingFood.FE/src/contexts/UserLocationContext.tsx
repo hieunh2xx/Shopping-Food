@@ -17,8 +17,16 @@ interface UserLocationState {
   isLoading: boolean;
 }
 
+/**
+ * Context Vị trí Người dùng (UserLocationContext).
+ * Cung cấp tọa độ GPS (kinh độ, vĩ độ), tên quận/huyện, thành phố và địa chỉ chi tiết.
+ */
 const UserLocationContext = createContext<UserLocationState | null>(null);
 
+/**
+ * Provider Định vị Vị trí Người dùng (UserLocationProvider).
+ * Tự động lấy tọa độ qua HTML5 Geolocation API, tra cứu ngược địa chỉ qua OpenStreetMap Nominatim và lưu cache vào sessionStorage.
+ */
 export function UserLocationProvider({ children }: { children: ReactNode }) {
   const [address, setAddress] = useState('');
   const [fullAddress, setFullAddress] = useState('');
@@ -34,6 +42,7 @@ export function UserLocationProvider({ children }: { children: ReactNode }) {
     const cachedLng = sessionStorage.getItem(CACHE_KEYS.lng);
     const cachedGps = sessionStorage.getItem(CACHE_KEYS.hasGps);
 
+    // Sử dụng vị trí lưu trong sessionStorage nếu đã có trước đó
     if (cachedAddress && cachedFullAddress && cachedLat && cachedLng && cachedGps === '1') {
       setAddress(cachedAddress);
       setFullAddress(cachedFullAddress);
@@ -51,6 +60,7 @@ export function UserLocationProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // Yêu cầu quyền truy cập GPS từ trình duyệt
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude: lat, longitude: lng } = position.coords;
@@ -62,6 +72,7 @@ export function UserLocationProvider({ children }: { children: ReactNode }) {
         sessionStorage.setItem(CACHE_KEYS.hasGps, '1');
 
         try {
+          // Tra cứu tên địa chỉ chi tiết từ tọa độ kinh vĩ độ
           const res = await fetch(
             `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=vi`
           );
@@ -116,10 +127,12 @@ export function UserLocationProvider({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * Hook tùy chỉnh để lấy dữ liệu vị trí GPS hiện tại của người dùng.
+ */
 export function useUserLocation(): UserLocationState {
   const ctx = useContext(UserLocationContext);
   if (!ctx) {
-    // Fallback so tests / isolated renders don't crash — still same hook count (1 context)
     return {
       address: '',
       fullAddress: '',

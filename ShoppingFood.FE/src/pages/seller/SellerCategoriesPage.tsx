@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Plus, Edit, Trash2, FolderOpen, ArrowUpDown } from 'lucide-react';
 import { Button, Input, Modal, Loading, Pagination } from '../../components/common';
 import { menuCategoryService } from '../../services';
@@ -6,25 +6,34 @@ import { authService } from '../../services/AuthService';
 import type { IMenuCategoryDto } from '../../interfaces';
 import toast from 'react-hot-toast';
 
+/**
+ * Trang Quản Lý Danh Mục Thực Đơn Của Quán (SellerCategoriesPage).
+ * Cho phép người bán tổ chức thực đơn theo nhóm:
+ * - Danh sách danh mục món ăn kèm thứ tự hiển thị (`sortOrder`)
+ * - Thêm mới danh mục món
+ * - Chỉnh sửa tên, mô tả và thứ tự sắp xếp
+ * - Xóa danh mục kèm xác nhận bảo vệ món ăn bên trong.
+ */
 export function SellerCategoriesPage() {
   const [restaurantId, setRestaurantId] = useState<string>('');
   const [categories, setCategories] = useState<IMenuCategoryDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Pagination
+  // Phân trang
   const [currentPage, setCurrentPage] = useState(1);
   const [take, setTake] = useState(10);
   const paginatedCategories = categories.slice((currentPage - 1) * take, currentPage * take);
   const total = categories.length;
   const totalPages = Math.ceil(total / take);
 
-  // Form Modal state
+  // Trạng thái Form Modal thêm/sửa
   const [isOpen, setIsOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<IMenuCategoryDto | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [sortOrder, setSortOrder] = useState<number>(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
 
   // Delete State
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);

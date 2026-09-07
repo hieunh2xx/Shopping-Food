@@ -4,7 +4,12 @@ import { SepayQrPaymentModal } from '../../components/payment/SepayQrPaymentModa
 import { ROUTES } from '../../routes/routeConfig';
 import toast from 'react-hot-toast';
 
-/** Trang deep-link thanh toán SePay (từ email/link). Checkout dùng modal trực tiếp. */
+/**
+ * Trang Điều Hướng & Mở Thanh Toán SePay Bằng Deep Link (SepayRedirectPage).
+ * Được sử dụng khi người dùng mở liên kết thanh toán từ email hoặc thông báo:
+ * - Trích xuất `sessionId` và `returnUrl` từ URL query params
+ * - Kích hoạt Modal quét mã QR chuyển khoản VietQR SePay (`SepayQrPaymentModal`).
+ */
 export function SepayRedirectPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -13,8 +18,9 @@ export function SepayRedirectPage() {
   const [open] = useState(!!sessionId);
 
   const handlePaid = useCallback(() => {
-    // Không tự động điều hướng nữa, để Modal hiển thị trạng thái Thành công cho người dùng
+    // Không tự động điều hướng ngay, để Modal hiển thị trạng thái Thành công cho người dùng
   }, []);
+
 
   useEffect(() => {
     if (!sessionId) {

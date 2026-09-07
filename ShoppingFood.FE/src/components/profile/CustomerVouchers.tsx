@@ -1,12 +1,17 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Tag, CheckCircle2, Ticket } from 'lucide-react';
 import { discountService } from '../../services/DiscountService';
 import type { IDiscountDto } from '../../interfaces';
 import toast from 'react-hot-toast';
-
 import { Link } from 'react-router-dom';
 import { ROUTES } from '../../routes/routeConfig';
 
+/**
+ * Danh Sách Mã Giảm Giá Của Khách Hàng (CustomerVouchers).
+ * Hỗ trợ 2 chế độ hiển thị:
+ * - Chế độ Ví voucher cá nhân (`isWalletMode = true`): Chỉ hiển thị các mã đã lưu của người dùng, phân loại đã dùng, hết hạn hoặc sẵn sàng dùng.
+ * - Chế độ Khám phá voucher (`isWalletMode = false`): Danh sách voucher toàn sàn/quán ăn để khách hàng bấm lưu vào ví.
+ */
 export function CustomerVouchers({ isWalletMode = false }: { isWalletMode?: boolean }) {
   const [vouchers, setVouchers] = useState<IDiscountDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -15,10 +20,12 @@ export function CustomerVouchers({ isWalletMode = false }: { isWalletMode?: bool
     fetchVouchers();
   }, []);
 
+  /**
+   * Tải danh sách mã giảm giá từ API tùy theo chế độ hiển thị (đã lưu hoặc tất cả).
+   */
   const fetchVouchers = async () => {
     setIsLoading(true);
     try {
-      // Get public active vouchers
       const res = await discountService.getDiscounts({ 
         take: 500, 
         isSavedOnly: isWalletMode 
@@ -33,6 +40,10 @@ export function CustomerVouchers({ isWalletMode = false }: { isWalletMode?: bool
     }
   };
 
+  /**
+   * Lưu mã giảm giá vào ví cá nhân của người dùng.
+   * @param discountId - ID của mã giảm giá
+   */
   const handleSaveVoucher = async (discountId: string) => {
     try {
       const res = await discountService.saveDiscount({ discountId });
@@ -46,6 +57,7 @@ export function CustomerVouchers({ isWalletMode = false }: { isWalletMode?: bool
       toast.error('Lưu mã giảm giá thất bại do lỗi kết nối mạng.');
     }
   };
+
 
   if (isLoading) {
     return <div className="text-center p-6 text-gray-500">Đang tải mã giảm giá...</div>;

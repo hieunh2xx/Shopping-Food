@@ -6,6 +6,13 @@ import toast from 'react-hot-toast';
 import { httpClient } from '../../services/base/HttpClient';
 import { API_ENDPOINTS } from '../../config/endpoints';
 
+/**
+ * Trang Quản Lý Toàn Bộ Nhà Hàng Đối Tác (AdminRestaurantsPage).
+ * Giám sát hoạt động của các gian hàng trong hệ thống:
+ * - Danh sách nhà hàng đối tác kèm trạng thái (Active, Suspended, Inactive)
+ * - Tìm kiếm theo tên quán, lọc theo trạng thái
+ * - Khóa / Tạm dừng hoạt động hoặc Mở khóa nhà hàng kèm hộp thoại xác nhận.
+ */
 export function AdminRestaurantsPage() {
   const [restaurants, setRestaurants] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -13,11 +20,12 @@ export function AdminRestaurantsPage() {
   const [total, setTotal] = useState(0);
   const { confirm } = useConfirm();
 
-  // Filters & Pagination
+  // Bộ lọc & Phân trang
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(1);
   const take = 10;
+
 
   useEffect(() => {
     fetchRestaurants();

@@ -3,11 +3,19 @@ import { Shield, XCircle, DollarSign } from 'lucide-react';
 import { coordinatorService } from '../../services/CoordinatorService';
 import { toast } from 'react-hot-toast';
 
+/**
+ * Trang Giải Quyết Khiếu Nại Đơn Hàng Cấp Cao Dành Cho Admin (AdminOrderComplaintsPage).
+ * Xử lý các khiếu nại tranh chấp phức tạp được điều phối viên chuyển tiếp lên:
+ * - Xem chi tiết sự cố, hình ảnh bằng chứng, lịch sử giao dịch và ghi chú giải trình
+ * - Quyết định mức hoàn tiền bồi thường cho khách hàng
+ * - Quyết định trừ tiền phạt bên chịu trách nhiệm (Nhà hàng / Tài xế).
+ */
 export const AdminOrderComplaintsPage = () => {
   const [complaints, setComplaints] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState('All');
   const [selectedComplaint, setSelectedComplaint] = useState<any | null>(null);
+
 
   // Form states
   const [resolutionType, setResolutionType] = useState('Dismiss');

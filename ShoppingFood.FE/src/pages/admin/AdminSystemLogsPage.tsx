@@ -5,6 +5,13 @@ import { adminService } from '../../services/AdminService';
 import type { IActionLogDto, IErrorLogDto } from '../../interfaces';
 import toast from 'react-hot-toast';
 
+/**
+ * Trang Nhật Ký Hoạt Động & Lỗi Hệ Thống (AdminSystemLogsPage).
+ * Giám sát và tra cứu dấu vết vận hành nền tảng:
+ * - Tab "Nhật ký hành động": Ghi lại mọi thao tác tạo, sửa, xóa, duyệt của các người dùng trên hệ thống
+ * - Tab "Nhật ký lỗi hệ thống": Ghi nhận các Exception, StackTrace và mã lỗi từ Backend
+ * - Tìm kiếm theo từ khóa và sắp xếp theo thứ tự thời gian.
+ */
 export function AdminSystemLogsPage() {
   const [activeTab, setActiveTab] = useState<'action' | 'error'>('action');
   const [search, setSearch] = useState('');
@@ -12,6 +19,7 @@ export function AdminSystemLogsPage() {
   
   const [actionLogs, setActionLogs] = useState<IActionLogDto[]>([]);
   const [errorLogs, setErrorLogs] = useState<IErrorLogDto[]>([]);
+
   
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);

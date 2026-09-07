@@ -4,16 +4,24 @@ import { Button, Input } from '../../components/common';
 import { coordinatorService } from '../../services';
 import toast from 'react-hot-toast';
 
+/**
+ * Trang Nhật Ký Lịch Sử Điều Phối Đơn Hàng (DispatchHistoryPage).
+ * Lưu trữ toàn bộ dấu vết các thao tác điều phối trong hệ thống:
+ * - Lọc theo loại hành động: Đã gán đơn thủ công, Đồng ý nhận, Từ chối đơn, Hết hạn nhận đơn, Thu hồi đơn
+ * - Tìm kiếm theo mã đơn hàng hoặc tên tài xế
+ * - Phân trang lịch sử điều phối.
+ */
 export default function DispatchHistoryPage() {
   const [histories, setHistories] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [total, setTotal] = useState(0);
 
-  // Filters & Pagination
+  // Bộ lọc & Phân trang
   const [searchTerm, setSearchTerm] = useState('');
   const [actionFilter, setActionFilter] = useState('all');
   const [page, setPage] = useState(1);
   const take = 10;
+
 
   useEffect(() => {
     fetchHistories();

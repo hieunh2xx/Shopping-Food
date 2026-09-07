@@ -88,21 +88,28 @@ import {
 } from '../pages';
 
 /**
- * AppRoutes — centralized route definitions
- * Demonstrates clean separation of routing logic from components
+ * Định Tuyến Trung Tâm Toàn Bộ Ứng Dụng (AppRoutes).
+ * Cấu hình cây định tuyến (Routing Tree) cho các nhóm phân hệ:
+ * - Public Routes: Trang chủ, Danh sách món, Chi tiết quán, Đăng nhập, Đăng ký, Chính sách...
+ * - Client Routes (UserLayout): Hồ sơ cá nhân, Đăng ký bán hàng / shipper, Ví voucher...
+ * - Seller Portal (SellerLayout): Quản lý thực đơn, đơn hàng, topping, đánh giá, khuyến mãi, Flash sale, chat...
+ * - Shipper Hub (ShipperLayout): Nhận đơn, lịch sử giao hàng, bảng thu nhập, ví tài xế...
+ * - Coordinator Hub (CoordinatorLayout): Bảng điều phối tài xế thời gian thực, sự cố, đối soát COD, chat hỗ trợ...
+ * - Admin Control Center (AdminLayout): Quản lý người dùng, nhà hàng, phân quyền, cấu hình tài chính, nhật ký hệ thống...
  */
 export function AppRoutes() {
   return (
     <Routes>
-      {/* Public routes */}
+      {/* Các tuyến đường công khai (Public Routes) */}
       <Route path={ROUTES.LOGIN} element={<LoginPage />} />
       <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
       <Route path={ROUTES.REGISTER_SELLER} element={<RegisterPage isSeller />} />
       <Route path={ROUTES.REGISTER_SHIPPER} element={<ShipperApplyPage />} />
       <Route path="/maintenance" element={<MaintenancePage />} />
 
-      {/* Routes with layout */}
+      {/* Tuyến đường chính áp dụng MainLayout */}
       <Route element={<MainLayout />}>
+
         <Route path={ROUTES.HOME} element={<HomePage />} />
         <Route path={ROUTES.PRODUCTS} element={<ProductsPage />} />
         <Route path={ROUTES.PRODUCT_DETAIL} element={<ProductDetailPage />} />

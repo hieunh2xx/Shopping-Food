@@ -1,8 +1,9 @@
 /**
- * Print kitchen/customer bill(s) for seller orders.
- * Each order is a separate printable page so batch printing still yields one bill per order.
+ * Tiện ích in hóa đơn phiếu đơn hàng (cho bếp / người bán / khách hàng).
+ * Hỗ trợ in đơn lẻ hoặc in theo lô (batch print), tự động ngắt trang cho mỗi đơn hàng.
  */
 
+/** Cấu trúc một món ăn trong hóa đơn in */
 export interface OrderBillItem {
   itemName?: string;
   quantity?: number;
@@ -13,6 +14,7 @@ export interface OrderBillItem {
   isGift?: boolean;
 }
 
+/** Cấu trúc dữ liệu đơn hàng dùng để render hóa đơn in */
 export interface OrderBillData {
   id: string;
   contactName?: string;
@@ -30,10 +32,20 @@ export interface OrderBillData {
   batchPickupCode?: string | null;
 }
 
+/**
+ * Định dạng số tiền thành chuỗi hiển thị có đơn vị "đ" (ví dụ: "35.000 đ").
+ * @param n - Số tiền
+ * @returns Chuỗi tiền tệ đã định dạng
+ */
 function formatMoney(n: number | undefined | null) {
   return `${(n ?? 0).toLocaleString('vi-VN')} đ`;
 }
 
+/**
+ * Xử lý escape các ký tự đặc biệt trong chuỗi để tránh lỗi XSS và hiển thị chuẩn trong HTML.
+ * @param s - Chuỗi đầu vào
+ * @returns Chuỗi an toàn đã escape HTML
+ */
 function escapeHtml(s: string) {
   return s
     .replace(/&/g, '&amp;')
@@ -42,6 +54,14 @@ function escapeHtml(s: string) {
     .replace(/"/g, '&quot;');
 }
 
+/**
+ * Tạo mã HTML cho một phiếu hóa đơn đơn hàng cụ thể.
+ * @param order - Thông tin đơn hàng cần in
+ * @param restaurantName - Tên quán / nhà hàng
+ * @param index - Số thứ tự của túi/đơn trong lô
+ * @param total - Tổng số túi/đơn trong đợt in lô
+ * @returns Khối HTML biểu diễn phiếu đơn hàng
+ */
 function renderOrderBillHtml(order: OrderBillData, restaurantName?: string, index?: number, total?: number) {
   const short = order.id.substring(0, 8).toUpperCase();
   const otp = order.id.slice(-6).toUpperCase();
@@ -107,6 +127,11 @@ function renderOrderBillHtml(order: OrderBillData, restaurantName?: string, inde
     </section>`;
 }
 
+/**
+ * Mở cửa sổ in hóa đơn của trình duyệt và gửi danh sách đơn hàng đã format ra trang in.
+ * @param orders - Danh sách đơn hàng cần in hóa đơn
+ * @param options - Tùy chọn tiêu đề và tên nhà hàng
+ */
 export function printSellerOrderBills(
   orders: OrderBillData[],
   options?: { restaurantName?: string; title?: string }

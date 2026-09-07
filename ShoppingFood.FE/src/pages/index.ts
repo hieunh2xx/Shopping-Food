@@ -1,8 +1,18 @@
+/**
+ * Tệp Xuất Khẩu Tập Trung Các Trang Giao Diện (Pages Barrel Index).
+ * Tập hợp và tái xuất khẩu (re-export) tất cả các trang của toàn bộ ứng dụng:
+ * - Public & Customer Pages (Trang chủ, Đăng nhập, Thực đơn, Hồ sơ, Thanh toán...)
+ * - Seller Portal Pages (Quản lý món, Đơn hàng, Topping, Giảm giá, Chat...)
+ * - Shipper Hub Pages (Nhận đơn, Thu nhập, Hồ sơ tài xế...)
+ * - Coordinator Pages (Bảng điều phối, Giám sát shipper, Xử lý sự cố...)
+ * - Admin Control Center Pages (Duyệt hồ sơ, Báo cáo vi phạm, Cấu hình hệ thống, Đối soát tài chính...).
+ */
 export { CustomerMessagesPage } from './CustomerMessagesPage';
 export { HomePage } from './HomePage';
 export { LoginPage } from './LoginPage';
 export { RegisterPage } from './RegisterPage';
 export { ProductsPage } from './ProductsPage';
+
 export * from './ProductDetailPage';
 export * from './RestaurantDetailPage';
 export * from './SellerDashboardPage';

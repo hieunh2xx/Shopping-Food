@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Modal, Button } from '../../../components/common';
 import { shipperService } from '../../../services/ShipperService';
 import { authService } from '../../../services/AuthService';
@@ -14,6 +14,10 @@ interface SuccessDeliveryModalProps {
   onSuccess: (orderId: string) => void;
 }
 
+/**
+ * Modal Xác Nhận Giao Hàng Thành Công (SuccessDeliveryModal).
+ * Yêu cầu tài xế tải lên hình ảnh chụp bằng chứng đã giao đồ ăn tận tay khách hàng kèm tọa độ GPS.
+ */
 export const SuccessDeliveryModal: React.FC<SuccessDeliveryModalProps> = ({
   isOpen,
   onClose,
@@ -24,6 +28,7 @@ export const SuccessDeliveryModal: React.FC<SuccessDeliveryModalProps> = ({
 }) => {
   const [proofImageFile, setProofImageFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {

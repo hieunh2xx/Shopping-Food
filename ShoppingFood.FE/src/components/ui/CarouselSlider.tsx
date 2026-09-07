@@ -4,21 +4,30 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 interface CarouselSliderProps {
   children: React.ReactNode;
   className?: string;
-  itemWidth?: string; // Optional: specify item width, e.g., 'w-[160px]'
+  itemWidth?: string; // Tùy chọn: chiều rộng từng phần tử, vd: 'w-[160px]'
   autoPlay?: boolean;
   autoPlayInterval?: number;
 }
 
+/**
+ * Thanh Cuộn Trượt Ngang Băng Chuyền (CarouselSlider).
+ * Hỗ trợ:
+ * - Nút bấm mũi tên điều hướng Trái / Phải tự động ẩn/hiện khi đạt đầu hoặc cuối danh sách
+ * - Tự động trượt (AutoPlay) có thể cấu hình chu kỳ lặp lại
+ * - Chế độ Snap cuộn mượt mà trên cả máy tính và thiết bị di động.
+ */
 export function CarouselSlider({ children, className = '', itemWidth, autoPlay = false, autoPlayInterval = 4000 }: CarouselSliderProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
 
+  /**
+   * Kiểm tra vị trí thanh cuộn để ẩn/hiện các nút mũi tên điều hướng.
+   */
   const checkScroll = () => {
     if (scrollRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
       setShowLeftArrow(scrollLeft > 0);
-      // Small buffer (1px) to prevent precision issues
       setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 1);
     }
   };
@@ -29,6 +38,7 @@ export function CarouselSlider({ children, className = '', itemWidth, autoPlay =
     return () => window.removeEventListener('resize', checkScroll);
   }, [children]);
 
+  // Xử lý tự động cuộn (AutoPlay)
   useEffect(() => {
     if (!autoPlay || React.Children.count(children) <= 1) return;
     
@@ -52,14 +62,18 @@ export function CarouselSlider({ children, className = '', itemWidth, autoPlay =
     return () => clearInterval(intervalId);
   }, [autoPlay, autoPlayInterval, children]);
 
+  /**
+   * Thực hiện cuộn sang trái hoặc sang phải theo 80% chiều rộng khung nhìn.
+   * @param direction - Hướng cuộn ('left' hoặc 'right')
+   */
   const scroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
       const { clientWidth } = scrollRef.current;
-      // Scroll by 80% of the container width for a smoother experience
       const scrollAmount = direction === 'left' ? -(clientWidth * 0.8) : clientWidth * 0.8;
       scrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
   };
+
 
   return (
     <div className={`relative group ${className}`}>

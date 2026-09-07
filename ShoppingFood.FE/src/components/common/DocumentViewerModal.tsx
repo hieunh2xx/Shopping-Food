@@ -9,6 +9,11 @@ interface DocumentViewerModalProps {
   fileName: string | null;
 }
 
+/**
+ * Modal Xem trước Tài liệu Đính kèm (DocumentViewerModal).
+ * Hỗ trợ xem trước trực tiếp các loại tệp: Hình ảnh (Image), Tài liệu PDF (qua thẻ iframe), và Tệp Word/Tài liệu khác (qua Google Docs Viewer hoặc nút tải xuống).
+ * @param props - Thuộc tính cấu hình DocumentViewerModal
+ */
 export function DocumentViewerModal({
   isOpen,
   onClose,

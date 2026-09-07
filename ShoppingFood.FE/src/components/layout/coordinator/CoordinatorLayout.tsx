@@ -14,11 +14,24 @@ import { useAuth, useSupportChatWatcher } from '../../../hooks';
 import { ROUTES } from '../../../routes/routeConfig';
 import { DashboardLayout } from '../DashboardLayout';
 
+/**
+ * Layout Kênh Điều phối Đơn hàng & Vận hành (CoordinatorLayout).
+ * Dành cho nhân viên Điều phối viên (Coordinator) để quản lý:
+ * - Bảng điều phối đơn hàng trực tiếp
+ * - Giám sát và định vị tài xế Shipper
+ * - Xem lịch sử điều phối và giải quyết sự cố giao hàng
+ * - Duyệt nộp COD và duyệt rút tiền
+ * - Live Chat hỗ trợ khách hàng và tài xế
+ * - Hồ sơ cá nhân.
+ */
 export function CoordinatorLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const unreadChatCount = useSupportChatWatcher(user?.role || null);
 
+  /**
+   * Xử lý đăng xuất tài khoản Điều phối viên.
+   */
   const handleLogout = () => {
     logout();
     navigate(ROUTES.LOGIN);

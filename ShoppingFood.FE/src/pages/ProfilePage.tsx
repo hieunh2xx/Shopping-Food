@@ -18,6 +18,17 @@ import { CustomerLoyalty } from '../components/profile/CustomerLoyalty';
 import { CustomerWalletPage } from './payment/CustomerWalletPage';
 import { CustomerApplications } from '../components/profile/CustomerApplications';
 
+/**
+ * Trang Hồ Sơ Người Dùng (ProfilePage).
+ * Quản lý toàn diện tài khoản khách hàng cá nhân qua các tab:
+ * - Thông tin cá nhân (Info): Họ tên, số điện thoại, ngày sinh, giới tính, avatar, đổi mật khẩu
+ * - Sổ địa chỉ (Address): Quản lý địa chỉ giao hàng và tọa độ GPS mặc định
+ * - Ví tiền & Hoàn tiền (Wallet): Lịch sử giao dịch, số dư ví, nạp tiền
+ * - Điểm thưởng & Đổi quà (Loyalty): Hạng thành viên, tích lũy điểm, đổi quà
+ * - Ví voucher (Vouchers): Danh sách mã giảm giá đã lưu
+ * - Quán yêu thích (Favorites): Danh sách nhà hàng yêu thích
+ * - Đơn ứng tuyển (Applications): Theo dõi trạng thái nộp hồ sơ bán hàng/tài xế.
+ */
 export function ProfilePage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -35,6 +46,7 @@ export function ProfilePage() {
   const [isLockModalOpen, setIsLockModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
 
   const [formData, setFormData] = useState({
     fullName: '',

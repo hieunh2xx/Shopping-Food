@@ -5,6 +5,14 @@ import { Button, Input, Modal } from '../common';
 import { MapPin, Check, Trash2, Edit2, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+/**
+ * Quản Lý Sổ Địa Chỉ Giao Hàng (UserAddressManager).
+ * Giúp người dùng quản lý các địa điểm nhận hàng:
+ * - Xem danh sách địa chỉ, đánh dấu địa chỉ mặc định
+ * - Thêm mới và chỉnh sửa địa chỉ (tên người nhận, SĐT, số nhà, đường)
+ * - Tự động lấy tọa độ GPS hiện tại và dịch ngược sang tên đường qua OpenStreetMap Reverse Geocoding
+ * - Xóa địa chỉ khỏi sổ tay.
+ */
 export function UserAddressManager() {
   const [addresses, setAddresses] = useState<IUserAddressDto[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -12,7 +20,7 @@ export function UserAddressManager() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  // Form State
+  // Trạng thái Form nhập liệu
   const [contactName, setContactName] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [addressLine, setAddressLine] = useState('');
@@ -21,6 +29,9 @@ export function UserAddressManager() {
   const [isDefault, setIsDefault] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
+  /**
+   * Tải danh sách địa chỉ đã lưu của người dùng.
+   */
   const fetchAddresses = async () => {
     setIsLoading(true);
     try {
@@ -39,6 +50,9 @@ export function UserAddressManager() {
     fetchAddresses();
   }, []);
 
+  /**
+   * Đặt lại toàn bộ dữ liệu biểu mẫu và đóng form.
+   */
   const resetForm = () => {
     setContactName('');
     setContactPhone('');
@@ -51,6 +65,10 @@ export function UserAddressManager() {
     setIsFormOpen(false);
   };
 
+  /**
+   * Mở form chỉnh sửa cho một địa chỉ cụ thể.
+   * @param addr - Địa chỉ được chọn để chỉnh sửa
+   */
   const handleOpenEdit = (addr: IUserAddressDto) => {
     setContactName(addr.contactName);
     setContactPhone(addr.contactPhone);
@@ -63,6 +81,9 @@ export function UserAddressManager() {
     setIsFormOpen(true);
   };
 
+  /**
+   * Lấy tọa độ GPS từ trình duyệt của người dùng.
+   */
   const handleGetLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -81,6 +102,11 @@ export function UserAddressManager() {
     }
   };
 
+  /**
+   * Gọi OpenStreetMap Reverse Geocoding API để chuyển đổi tọa độ GPS thành chuỗi tên đường / địa chỉ văn bản.
+   * @param lat - Vĩ độ
+   * @param lng - Kinh độ
+   */
   const fetchAddressFromCoordinates = async (lat: number, lng: number) => {
     try {
       const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=vi`);
@@ -100,6 +126,9 @@ export function UserAddressManager() {
     }
   };
 
+  /**
+   * Kiểm tra tính hợp lệ của các trường dữ liệu bắt buộc trong form.
+   */
   const validateForm = () => {
     const errors: Record<string, string> = {};
     if (!contactName.trim()) errors.contactName = 'Vui lòng nhập tên người nhận';
@@ -109,6 +138,10 @@ export function UserAddressManager() {
     return Object.keys(errors).length === 0;
   };
 
+  /**
+   * Xử lý lưu địa chỉ mới hoặc cập nhật địa chỉ cũ.
+   * @param e - Sự kiện FormEvent
+   */
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -138,10 +171,17 @@ export function UserAddressManager() {
     }
   };
 
+  /**
+   * Mở modal xác nhận xóa địa chỉ.
+   * @param id - ID địa chỉ cần xóa
+   */
   const handleDelete = (id: string) => {
     setDeletingId(id);
   };
 
+  /**
+   * Xác nhận thực hiện xóa địa chỉ trên máy chủ.
+   */
   const confirmDelete = async () => {
     if (!deletingId) return;
     setIsLoading(true);
@@ -161,6 +201,10 @@ export function UserAddressManager() {
     }
   };
 
+  /**
+   * Đặt địa chỉ được chọn làm địa chỉ mặc định cho các đơn hàng tiếp theo.
+   * @param id - ID địa chỉ
+   */
   const handleSetDefault = async (id: string) => {
     setIsLoading(true);
     try {
@@ -177,6 +221,7 @@ export function UserAddressManager() {
       setIsLoading(false);
     }
   };
+
 
   return (
     <div className="space-y-6 animate-in fade-in">

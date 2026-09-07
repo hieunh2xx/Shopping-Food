@@ -9,6 +9,10 @@ interface ProductLocationMetaProps {
   className?: string;
 }
 
+/**
+ * Thành Phần Hiển Thị Khoảng Cách & Địa Chỉ Món Ăn/Quán Ăn (ProductLocationMeta).
+ * Tự động tính toán khoảng cách theo km từ tọa độ hiện tại của người dùng đến tọa độ nhà hàng bằng công thức Haversine.
+ */
 export function ProductLocationMeta({
   restaurantAddress,
   restaurantLatitude,
@@ -62,7 +66,7 @@ export function ProductLocationMeta({
     );
   }
 
-  // GPS on nhưng quán chưa có tọa độ → vẫn hiện địa chỉ + gợi ý
+  // Khi GPS bật nhưng quán chưa có tọa độ: vẫn hiển thị địa chỉ quán
   if (hasGps && address) {
     return (
       <p
@@ -100,3 +104,4 @@ export function ProductLocationMeta({
     </p>
   );
 }
+

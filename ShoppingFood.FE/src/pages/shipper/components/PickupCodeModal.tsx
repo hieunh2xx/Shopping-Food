@@ -9,9 +9,14 @@ interface PickupCodeModalProps {
   isLoading?: boolean;
 }
 
+/**
+ * Modal Nhập Mã Lấy Hàng Đơn Lẻ (PickupCodeModal).
+ * Gồm 6 ô nhập mã OTP xác nhận đã nhận đúng túi đồ ăn từ nhân viên quán.
+ */
 export function PickupCodeModal({ isOpen, onClose, onConfirm, isLoading = false }: PickupCodeModalProps) {
   const [code, setCode] = useState<string[]>(Array(6).fill(''));
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
 
   useEffect(() => {
     if (isOpen) {

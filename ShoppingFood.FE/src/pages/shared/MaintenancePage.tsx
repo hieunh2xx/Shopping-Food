@@ -2,9 +2,14 @@ import React from 'react';
 import { Hammer } from 'lucide-react';
 import { Button } from '../../components/common';
 
+/**
+ * Trang Thông Báo Hệ Thống Bảo Trì (MaintenancePage).
+ * Hiển thị màn hình bảo trì khi toàn bộ hệ thống hoặc API bảo trì định kỳ.
+ */
 const MaintenancePage: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+
       <div className="max-w-md w-full text-center space-y-6 bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
         <div className="flex justify-center">
           <div className="w-24 h-24 bg-orange-100 rounded-full flex items-center justify-center">

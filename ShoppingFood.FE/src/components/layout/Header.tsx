@@ -6,6 +6,10 @@ import { NotificationBell } from './NotificationBell';
 import { ROUTES } from '../../routes/routeConfig';
 import { useState, useEffect } from 'react';
 
+/**
+ * Thành phần Thanh điều hướng Đầu trang (Header).
+ * Bao gồm: Logo UniEats, Vị trí hiện tại của người dùng (GPS Geolocation), Thanh tìm kiếm món ăn, Hộp giỏ hàng & theo dõi đơn (ShoppingDrawer), Huy hiệu tin nhắn chat (Live Chat), Chuông thông báo Realtime và Menu tài khoản người dùng.
+ */
 export function Header() {
   const { user, isAuthenticated, logout } = useAuth();
   const { address, fullAddress, isLoading: isLocationLoading } = useUserLocation();
@@ -15,14 +19,21 @@ export function Header() {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    // Keep empty or remove entirely as track=true is handled in ShoppingDrawer
+    // Theo dõi tham số tìm kiếm URL
   }, [location.search]);
 
+  /**
+   * Xử lý đăng xuất tài khoản và chuyển hướng về trang chủ.
+   */
   const handleLogout = () => {
     logout();
     navigate(ROUTES.HOME);
   };
 
+  /**
+   * Xử lý gửi biểu mẫu tìm kiếm món ăn / quán ăn.
+   * @param e - Sự kiện FormEvent
+   */
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {

@@ -18,6 +18,14 @@ interface ExplanationItem {
   requestedByName?: string;
 }
 
+/**
+ * Trang Xử Lý Sự Cố Đơn Hàng Dành Cho Điều Phối Viên (CoordinatorIncidentsPage).
+ * Trung tâm giải quyết khiếu nại và sự cố vận hành:
+ * - Lọc danh sách sự cố theo loại (Giao hàng thất bại, Khách hủy đơn, Shipper hủy đơn, Sai món...)
+ * - Xem chi tiết đơn hàng, biên bản sự cố, hình ảnh bằng chứng
+ * - Yêu cầu tài xế gửi văn bản giải trình sự cố
+ * - Ra quyết định xử lý: Lỗi do khách hàng, Lỗi do tài xế (trừ điểm uy tín), Bồi thường cho khách, hoặc Chuyển tiếp Admin.
+ */
 export function CoordinatorIncidentsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const deepLinkHandledRef = useRef(false);
@@ -54,6 +62,7 @@ export function CoordinatorIncidentsPage() {
     penaltyScore: 0,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
 
   useEffect(() => {
     fetchIncidents();

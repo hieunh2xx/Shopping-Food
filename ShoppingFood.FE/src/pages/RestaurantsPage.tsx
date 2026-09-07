@@ -7,6 +7,13 @@ import { Link } from 'react-router-dom';
 import { ROUTES } from '../routes/routeConfig';
 import { Input, Pagination } from '../components/common';
 
+/**
+ * Trang Khám Phá Danh Sách Nhà Hàng (RestaurantsPage).
+ * Hiển thị tất cả nhà hàng đối tác quanh khu vực người dùng:
+ * - Tự động định vị GPS để tìm các quán ăn gần nhất
+ * - Ô tìm kiếm nhanh theo tên quán hoặc địa chỉ
+ * - Lưới thẻ nhà hàng kèm phân trang.
+ */
 export function RestaurantsPage() {
   const [restaurants, setRestaurants] = useState<INearbyRestaurantDto[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -18,8 +25,12 @@ export function RestaurantsPage() {
     fetchRestaurants();
   }, []);
 
+  /**
+   * Lấy tọa độ GPS người dùng và gọi API lấy danh sách nhà hàng lân cận.
+   */
   const fetchRestaurants = () => {
     setIsLoading(true);
+
 
     const defaultLocation = { latitude: 10.7769, longitude: 106.7009 }; // Default to HCMC
 

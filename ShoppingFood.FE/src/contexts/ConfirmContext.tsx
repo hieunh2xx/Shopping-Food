@@ -29,10 +29,16 @@ interface ConfirmContextType {
   alert: (options: ModalOptions) => Promise<void>;
 }
 
+/**
+ * Context Hộp thoại Xác nhận & Modal Thông báo (ConfirmContext).
+ */
 const ConfirmContext = createContext<ConfirmContextType | undefined>(undefined);
 
 let modalNotifier: ((opts: ModalOptions) => Promise<void>) | null = null;
 
+/**
+ * Hook tùy chỉnh để sử dụng hộp thoại xác nhận (Confirm/Modal) thay thế cho alert/confirm mặc định của trình duyệt.
+ */
 export function useConfirm() {
   const context = useContext(ConfirmContext);
   if (!context) {
@@ -41,6 +47,10 @@ export function useConfirm() {
   return context;
 }
 
+/**
+ * Hàm phân tích và chuyển đổi chuỗi hoặc đối tượng thông báo toast thành văn bản hiển thị.
+ * @param message - Tin nhắn toast
+ */
 function resolveToastMessage(message: unknown): string {
   if (typeof message === 'string') return message;
   if (typeof message === 'function') {
@@ -55,11 +65,19 @@ function resolveToastMessage(message: unknown): string {
   return String(message);
 }
 
+/**
+ * Provider Quản lý hiển thị Hộp thoại Xác nhận và Modal thông báo toàn cục (ConfirmProvider).
+ * Tự động ghi đè toast.error để hiển thị modal cảnh báo rõ ràng cho người dùng.
+ */
 export function ConfirmProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [options, setOptions] = useState<ConfirmOptions | null>(null);
   const resolverRef = useRef<{ resolve: (value: boolean) => void } | null>(null);
 
+  /**
+   * Mở hộp thoại xác nhận 2 nút (Đồng ý / Hủy) và trả về Promise<boolean>.
+   * @param opts - Tùy chọn tiêu đề, nội dung, nút bấm
+   */
   const confirm = useCallback((opts: ConfirmOptions): Promise<boolean> => {
     setOptions(opts);
     setIsOpen(true);
@@ -68,6 +86,10 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  /**
+   * Mở modal thông báo 1 nút Đã hiểu (thay thế cho alert).
+   * @param opts - Tùy chọn modal
+   */
   const showModal = useCallback(async (opts: ModalOptions): Promise<void> => {
     await confirm({
       title: opts.title ?? 'Thông báo',
@@ -78,6 +100,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
     });
   }, [confirm]);
 
+  // Ghi đè phương thức toast.error để hiển thị modal cảnh báo đẹp mắt
   useEffect(() => {
     modalNotifier = showModal;
     const originalError = toast.error.bind(toast);
@@ -100,12 +123,18 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
     };
   }, [showModal]);
 
+  /**
+   * Xử lý khi người dùng nhấn nút Xác nhận (Đồng ý / Đã hiểu).
+   */
   const handleConfirm = () => {
     resolverRef.current?.resolve(true);
     resolverRef.current = null;
     setIsOpen(false);
   };
 
+  /**
+   * Xử lý khi người dùng nhấn nút Hủy bỏ.
+   */
   const handleCancel = () => {
     resolverRef.current?.resolve(false);
     resolverRef.current = null;

@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Users, ShoppingCart, TrendingUp, TrendingDown, Map as MapIcon, UserPlus, Truck, Store, Download, Wallet, ChevronRight } from 'lucide-react';
 import { Card } from '../components/common';
@@ -18,6 +18,9 @@ import {
 import type { IAdminDashboardStats, IHeatmapPoint } from '../interfaces';
 import { ROUTES } from '../routes/routeConfig';
 
+/**
+ * Thẻ Thống Kê Có Thể Nhấp Để Điều Hướng (StatLink).
+ */
 function StatLink({
   to,
   className = '',
@@ -45,6 +48,15 @@ function StatLink({
   );
 }
 
+/**
+ * Bảng Thống Kê Tổng Quan Quản Trị Viên (AdminDashboardPage).
+ * Cung cấp bức tranh tài chính và vận hành toàn diện cho Admin:
+ * - Tổng giá trị giao dịch hàng hóa (GMV), Doanh thu sàn, Chi trả cho Nhà hàng và Tài xế
+ * - Tỷ lệ tăng trưởng người dùng mới, tài xế mới và quán ăn mới
+ * - Biểu đồ phân bổ doanh thu theo ngày (Recharts LineChart)
+ * - Bản đồ nhiệt mật độ đơn hàng (OrderHeatmap)
+ * - Xuất báo cáo tài chính ra file Excel hoặc PDF.
+ */
 export function AdminDashboardPage() {
   const [days, setDays] = useState<number>(7);
   const [stats, setStats] = useState<IAdminDashboardStats | null>(null);
@@ -56,6 +68,9 @@ export function AdminDashboardPage() {
     fetchHeatmap();
   }, [days]);
 
+  /**
+   * Tải số liệu thống kê tổng hợp từ máy chủ cho khoảng thời gian lựa chọn.
+   */
   const fetchStats = async () => {
     setIsLoading(true);
     try {
@@ -72,6 +87,9 @@ export function AdminDashboardPage() {
     }
   };
 
+  /**
+   * Tải danh sách tọa độ đơn hàng để dựng bản đồ nhiệt (Heatmap).
+   */
   const fetchHeatmap = async () => {
     try {
       const res = await adminService.getOrderHeatmap(days);
@@ -83,6 +101,10 @@ export function AdminDashboardPage() {
     }
   };
 
+  /**
+   * Xuất báo cáo tài chính dưới dạng file Excel hoặc PDF.
+   * @param format - Định dạng file ('excel' hoặc 'pdf')
+   */
   const handleExport = async (format: 'excel' | 'pdf') => {
     try {
       const toastId = toast.loading(`Đang xuất báo cáo ${format.toUpperCase()}...`);
@@ -101,10 +123,16 @@ export function AdminDashboardPage() {
     }
   };
 
+  /**
+   * Định dạng số tiền sang chuẩn tiền tệ Việt Nam VNĐ.
+   */
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
   };
 
+  /**
+   * Render huy hiệu tăng trưởng kèm mũi tên xanh (tăng) / đỏ (giảm).
+   */
   const renderGrowthBadge = (rate: number) => {
     const isPositive = rate >= 0;
     return (
@@ -115,6 +143,9 @@ export function AdminDashboardPage() {
     );
   };
 
+  /**
+   * Định dạng tooltip hiển thị trên biểu đồ đường doanh thu.
+   */
   const chartTooltipFormatter = (value: unknown, name: unknown) => {
     const key = String(name);
     const labels: Record<string, string> = {
@@ -128,6 +159,7 @@ export function AdminDashboardPage() {
     if (key === 'ordersCount') return [num, labels[key]];
     return [formatCurrency(num), labels[key] || key];
   };
+
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">

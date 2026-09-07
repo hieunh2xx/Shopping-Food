@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { restaurantService } from '../services/RestaurantService';
 import { orderService } from '../services/OrderService';
 import { Link } from 'react-router-dom';
@@ -16,6 +16,13 @@ import {
 } from 'lucide-react';
 import { Card } from '../components/common';
 
+/**
+ * Trang Bảng Điều Khiển Nhà Hàng / Người Bán (SellerDashboardPage).
+ * Trung tâm thống kê và quản lý nhanh cho chủ nhà hàng:
+ * - Tổng doanh thu, số lượng đơn hàng, số món đang bán, đánh giá trung bình
+ * - Lọc số liệu theo các mốc thời gian: Hôm nay, 7 ngày, 30 ngày qua
+ * - Danh sách 5 đơn hàng mới nhất cần chuẩn bị.
+ */
 export function SellerDashboardPage() {
   const [stats, setStats] = useState<any | null>(null);
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
@@ -26,8 +33,12 @@ export function SellerDashboardPage() {
     fetchDashboardData();
   }, [timeRange]);
 
+  /**
+   * Tải số liệu thống kê kinh doanh và danh sách đơn hàng gần đây của nhà hàng.
+   */
   const fetchDashboardData = async () => {
     setIsLoading(true);
+
     try {
       // Calculate start & end date based on timeRange
       let startDate: string | undefined;

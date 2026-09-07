@@ -12,6 +12,11 @@ import { useCart } from '../../hooks';
 import { ROUTES } from '../../routes/routeConfig';
 import toast from 'react-hot-toast';
 
+/**
+ * Mục Hiển Thị Chương Trình Khuyến Mãi Mua X Tặng Y (BuyXGetYSection).
+ * Trưng bày danh sách các gói ưu đãi mua X tặng Y hot nhất trên trang chủ dưới dạng slider cuộn ngang,
+ * tính toán giá combo và hỗ trợ nút thêm nhanh cả combo kèm quà vào giỏ hàng.
+ */
 export function BuyXGetYSection() {
   const navigate = useNavigate();
   const { addBuyXGetY } = useCart();
@@ -22,6 +27,9 @@ export function BuyXGetYSection() {
     fetchPromotions();
   }, []);
 
+  /**
+   * Tải danh sách chương trình khuyến mãi Mua X Tặng Y đang hoạt động và nạp thông tin món ăn/nhà hàng.
+   */
   const fetchPromotions = async () => {
     setIsLoading(true);
     try {
@@ -35,7 +43,7 @@ export function BuyXGetYSection() {
         });
         const topPromos = validPromos.slice(0, 4);
         
-        // Fetch product and restaurant details to match UI requirements
+        // Tải chi tiết sản phẩm và nhà hàng tương ứng
         const combined = await Promise.all(topPromos.map(async (promo) => {
           let p: IProductDto | null = null;
           let r: IRestaurantDto | null = null;
@@ -65,6 +73,7 @@ export function BuyXGetYSection() {
       setIsLoading(false);
     }
   };
+
 
   if (isLoading || promotions.length === 0) {
     return null;

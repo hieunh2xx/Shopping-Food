@@ -5,12 +5,19 @@ import { useAuth } from '../../hooks';
 import { chatService } from '../../services/ChatService';
 import type { ISellerOrderChatSummary } from '../../services/ChatService';
 import type { IChatMessage } from '../../interfaces';
+import toast from 'react-hot-toast';
 
 interface ISellerOrderChatSummaryLocal extends ISellerOrderChatSummary {
   hasUnread?: boolean;
 }
-import toast from 'react-hot-toast';
 
+/**
+ * Trang Trò Chuyện Trực Tiếp Dành Cho Người Bán (SellerChatPage).
+ * Hỗ trợ chủ quán kết nối nhanh với khách hàng theo từng phiên / đơn hàng:
+ * - Danh sách cuộc trò chuyện theo đơn hàng kèm chỉ báo tin nhắn mới chưa đọc
+ * - Khung chat trực tiếp SignalR Realtime hỗ trợ cuộn tải thêm lịch sử tin nhắn
+ * - Hỗ trợ liên kết trực tiếp (Deep link) từ trang đơn hàng qua query `orderId` hoặc `sessionId`.
+ */
 export function SellerChatPage() {
   const { user, token } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -27,6 +34,7 @@ export function SellerChatPage() {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const deepLinkHandledRef = useRef(false);
   const loadingMoreRef = useRef(false);
+
 
   const handleReceive = useCallback((message: IChatMessage) => {
     if (!activeSession || message.sessionId !== activeSession.id) {

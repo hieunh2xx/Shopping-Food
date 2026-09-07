@@ -1,6 +1,6 @@
 /**
- * Centralized route path constants
- * Single source of truth for all application routes
+ * Hằng số đường dẫn điều hướng toàn hệ thống (ROUTES).
+ * Là nguồn chân lý duy nhất (Single Source of Truth) định nghĩa tất cả các URI tuyến đường trong ứng dụng.
  */
 export const ROUTES = {
   HOME: '/',
@@ -77,8 +77,10 @@ export const ROUTES = {
 } as const;
 
 /**
- * Generate product detail path from ID
+ * Tạo đường dẫn chi tiết món ăn từ ID sản phẩm.
+ * @param id - Mã định danh sản phẩm
  */
 export function getProductDetailPath(id: string): string {
   return `/products/${id}`;
 }
+

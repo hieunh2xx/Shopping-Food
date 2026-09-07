@@ -2,18 +2,25 @@ import { useState, useEffect } from 'react';
 import { supportService } from '../../services/SupportService';
 import { Loading } from '../../components/common';
 
+/**
+ * Trang Chính Sách Bảo Mật (PrivacyPolicyPage).
+ * Hiển thị toàn văn các điều khoản chính sách bảo vệ thông tin và dữ liệu cá nhân của người dùng do ban quản trị cập nhật động từ hệ thống.
+ */
 export function PrivacyPolicyPage() {
   const [content, setContent] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    /**
+     * Tải nội dung văn bản chính sách bảo mật từ cài đặt pháp lý hệ thống.
+     */
     const fetchContent = async () => {
       try {
         const response = await supportService.getLegalSettings();
         if (!response.error && response.data && response.data.privacyPolicy) {
           setContent(response.data.privacyPolicy);
         } else {
-          // Fallback if empty
+          // Văn bản dự phòng nếu chưa có
           setContent('<h2>Chính sách bảo mật</h2><p>Hệ thống đang cập nhật nội dung. Vui lòng quay lại sau.</p>');
         }
       } catch (error) {
@@ -24,6 +31,7 @@ export function PrivacyPolicyPage() {
     };
     fetchContent();
   }, []);
+
 
   return (
     <div className="bg-white min-h-screen py-12">

@@ -1,8 +1,13 @@
 const STORAGE_KEY = 'customer_chat_unread';
 const READ_EVENT = 'customer_chat_read_updated';
 
+/** Bản đồ lưu số lượng tin nhắn chưa đọc theo từng phiên chat (sessionId -> số tin chưa đọc) */
 export type CustomerChatUnreadMap = Record<string, number>;
 
+/**
+ * Đọc bản đồ số lượng tin nhắn chưa đọc từ LocalStorage.
+ * @returns Object CustomerChatUnreadMap
+ */
 function readMap(): CustomerChatUnreadMap {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -14,12 +19,19 @@ function readMap(): CustomerChatUnreadMap {
   }
 }
 
+/**
+ * Ghi bản đồ số lượng tin nhắn chưa đọc vào LocalStorage và phát sự kiện window event để cập nhật UI realtime.
+ * @param map - Đối tượng bản đồ tin nhắn chưa đọc
+ */
 function writeMap(map: CustomerChatUnreadMap) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
   window.dispatchEvent(new Event(READ_EVENT));
 }
 
-/** Legacy last-read timestamps (sessionId → ISO). */
+/**
+ * Lấy danh sách mốc thời gian đọc tin nhắn gần nhất của từng phiên chat (sessionId → ISO timestamp).
+ * @returns Bản đồ mốc thời gian đọc
+ */
 export function getCustomerChatLastReadMap(): Record<string, string> {
   try {
     const raw = localStorage.getItem('customer_chat_last_read');
@@ -30,20 +42,38 @@ export function getCustomerChatLastReadMap(): Record<string, string> {
   }
 }
 
+/**
+ * Cập nhật mốc thời gian đọc tin nhắn mới nhất cho một phiên chat cụ thể.
+ * @param sessionId - Mã định danh phiên chat
+ * @param at - Thời gian đọc ISO (mặc định là thời gian hiện tại)
+ */
 export function setCustomerChatLastRead(sessionId: string, at = new Date().toISOString()) {
   const map = getCustomerChatLastReadMap();
   map[sessionId] = at;
   localStorage.setItem('customer_chat_last_read', JSON.stringify(map));
 }
 
+/**
+ * Lấy toàn bộ bản đồ số lượng tin nhắn chưa đọc hiện tại của khách hàng.
+ * @returns Bản đồ sessionId -> số lượng tin chưa đọc
+ */
 export function getCustomerUnreadMap(): CustomerChatUnreadMap {
   return readMap();
 }
 
+/**
+ * Tính tổng số lượng tin nhắn chưa đọc của tất cả các phiên chat.
+ * @returns Tổng số tin nhắn chưa đọc
+ */
 export function getCustomerTotalUnread(): number {
   return Object.values(readMap()).reduce((sum, n) => sum + (Number(n) || 0), 0);
 }
 
+/**
+ * Đánh dấu đã đọc cho một phiên chat (và các phiên chat liên quan), xóa số đếm chưa đọc và cập nhật timestamp.
+ * @param sessionId - Mã phiên chat chính
+ * @param relatedSessionIds - Danh sách các mã phiên chat liên quan cần đánh dấu đã đọc
+ */
 export function markCustomerSessionRead(sessionId: string, relatedSessionIds: string[] = []) {
   const ids = Array.from(new Set([sessionId, ...relatedSessionIds]));
   const map = readMap();
@@ -62,6 +92,11 @@ export function markCustomerSessionRead(sessionId: string, relatedSessionIds: st
   }
 }
 
+/**
+ * Tăng số lượng tin nhắn chưa đọc cho một phiên chat cụ thể khi nhận được tin nhắn mới từ người bán.
+ * @param sessionId - Mã phiên chat
+ * @param by - Số lượng tin nhắn tăng thêm (mặc định là 1)
+ */
 export function incrementCustomerSessionUnread(sessionId: string, by = 1) {
   if (!sessionId || by <= 0) return;
   const map = readMap();
@@ -69,7 +104,11 @@ export function incrementCustomerSessionUnread(sessionId: string, by = 1) {
   writeMap(map);
 }
 
-/** Sync unread from API list: unread thread with no local count → at least 1. */
+/**
+ * Đồng bộ trạng thái chưa đọc từ danh sách phiên chat trả về từ API backend với bộ nhớ cục bộ.
+ * @param sessions - Danh sách phiên chat từ API
+ * @returns Tổng số tin nhắn chưa đọc sau khi đồng bộ
+ */
 export function syncCustomerUnreadFromSessions(
   sessions: Array<{
     id: string;
@@ -111,4 +150,5 @@ export function syncCustomerUnreadFromSessions(
   return getCustomerTotalUnread();
 }
 
+/** Tên sự kiện phát đi khi trạng thái đọc tin nhắn thay đổi */
 export const CUSTOMER_CHAT_READ_EVENT = READ_EVENT;

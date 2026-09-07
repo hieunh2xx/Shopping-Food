@@ -3,17 +3,27 @@ import { ROUTES } from '../../routes/routeConfig';
 import { User, Store, Heart, MapPin, LogOut, Ticket, Award, ClipboardList, Wallet } from 'lucide-react';
 import { useAuth } from '../../hooks';
 
-
+/**
+ * Layout Khu vực Quản lý Tài khoản Cá nhân (UserLayout).
+ * Bao gồm menu dọc bên trái điều hướng qua các tab: Hồ sơ, Quán yêu thích, Sổ địa chỉ, Ví Voucher, Điểm thưởng, Ví hệ thống, Lịch sử đăng ký, Đăng ký bán hàng / shipper và Đăng xuất.
+ */
 export function UserLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
+  /**
+   * Xử lý đăng xuất tài khoản và chuyển hướng tới trang Đăng nhập.
+   */
   const handleLogout = async () => {
     await logout();
     navigate(ROUTES.LOGIN);
   };
 
+  /**
+   * Kiểm tra xem tab hiện tại trên URL có trùng khớp với tab đang duyệt không.
+   * @param tab - Tên tab
+   */
   const isProfileTab = (tab: string) => {
     const search = new URLSearchParams(location.search);
     if (tab === 'info' && (!search.get('tab') || search.get('tab') === 'info') && location.pathname === ROUTES.PROFILE) return true;

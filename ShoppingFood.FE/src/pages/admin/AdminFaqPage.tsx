@@ -1,10 +1,18 @@
-﻿import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Plus, Edit, Trash2, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button, Input, Modal, Loading } from '../../components/common';
 import { faqService } from '../../services';
 import type { IFaqDto, ICreateFaqRequest, IUpdateFaqRequest } from '../../interfaces';
 import toast from 'react-hot-toast';
 
+/**
+ * Trang Quản Lý Câu Hỏi Thường Gặp (AdminFaqPage).
+ * Cho phép quản trị viên xây dựng mục Trợ giúp / FAQ cho người dùng:
+ * - Danh sách câu hỏi và câu trả lời
+ * - Thêm mới câu hỏi thường gặp
+ * - Chỉnh sửa nội dung câu hỏi, thứ tự hiển thị và trạng thái kích hoạt
+ * - Xóa câu hỏi.
+ */
 export function AdminFaqPage() {
   const [faqs, setFaqs] = useState<IFaqDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -17,6 +25,7 @@ export function AdminFaqPage() {
   const [displayOrder, setDisplayOrder] = useState<number>(0);
   const [isActive, setIsActive] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
 
   // Delete State
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);

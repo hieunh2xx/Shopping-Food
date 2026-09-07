@@ -8,15 +8,25 @@ import toast from 'react-hot-toast';
 import { auth } from '../../config/firebase';
 import { RecaptchaVerifier } from 'firebase/auth';
 import { supportService } from '../../services/SupportService';
+
 interface RegisterFormProps {
   isSeller?: boolean;
 }
 
+
+/**
+ * Biểu Mẫu Đăng Ký Tài Khoản (RegisterForm).
+ * Hỗ trợ 2 luồng:
+ * 1. Đăng ký khách hàng (Customer): Nhập thông tin cá nhân cơ bản và đồng ý điều khoản dịch vụ.
+ * 2. Đăng ký đối tác bán hàng (Seller): Gồm 2 bước:
+ *    - Bước 1: Tài khoản người dùng (tên đăng nhập, mật khẩu, họ tên, email, sđt)
+ *    - Bước 2: Thông tin quán (tên cửa hàng, địa chỉ, ảnh mặt tiền, giấy phép kinh doanh/hợp đồng, chứng nhận an toàn thực phẩm ATTP).
+ */
 export function RegisterForm({ isSeller = false }: RegisterFormProps) {
   const navigate = useNavigate();
   const { register, registerSeller, isLoading } = useAuth();
 
-  // Multi-step State
+  // Trạng thái Form & Stepper
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({
@@ -26,7 +36,7 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
     fullName: '',
     email: '',
     phone: '',
-    // Seller fields
+    // Thông tin cửa hàng (Seller)
     businessName: '',
     businessAddress: '',
     businessLicenseUrl: '',
@@ -37,7 +47,7 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // File Upload State
+  // Trạng thái tệp đính kèm (File Upload)
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedFoodSafetyFile, setSelectedFoodSafetyFile] = useState<File | null>(null);
   const [selectedShopFile, setSelectedShopFile] = useState<File | null>(null);
@@ -49,6 +59,9 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
     isLoading: false,
   });
 
+  /**
+   * Mở modal xem Điều khoản dịch vụ hoặc Chính sách bảo mật tương ứng với đối tượng đăng ký.
+   */
   const handleOpenLegalModal = async (e: React.MouseEvent, type: 'terms' | 'privacy') => {
     e.preventDefault();
     setLegalModalState({
@@ -75,7 +88,6 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
   };
 
   useEffect(() => {
-    // Initialize recaptcha if not already initialized
     if (!window.recaptchaVerifier) {
       window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-register-container', {
         size: 'invisible'
@@ -87,6 +99,9 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [isShopViewerOpen, setIsShopViewerOpen] = useState(false);
 
+  /**
+   * Xử lý tải lên file Giấy phép kinh doanh.
+   */
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -117,6 +132,9 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
     }
   };
 
+  /**
+   * Xử lý tải lên file Giấy chứng nhận An toàn thực phẩm (ATTP).
+   */
   const handleFoodSafetyFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -145,6 +163,9 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
     }
   };
 
+  /**
+   * Xử lý tải lên Ảnh chụp mặt tiền cửa hàng.
+   */
   const handleShopFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -175,6 +196,9 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
     }
   };
 
+  /**
+   * Cập nhật giá trị trường dữ liệu trong form và xóa lỗi liên quan nếu có.
+   */
   const updateField = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
@@ -186,6 +210,9 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
     }
   };
 
+  /**
+   * Xác thực dữ liệu bước 1 (Thông tin tài khoản người dùng).
+   */
   const validateStep1 = (): boolean => {
     const newErrors: Record<string, string> = {};
 
@@ -212,6 +239,9 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
     return Object.keys(newErrors).length === 0;
   };
 
+  /**
+   * Xác thực dữ liệu bước 2 (Thông tin cửa hàng đối tác).
+   */
   const validateStep2 = (): boolean => {
     const newErrors: Record<string, string> = {};
     if (!form.businessName.trim()) newErrors.businessName = 'Vui lòng nhập tên cửa hàng';
@@ -226,12 +256,22 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
     return Object.keys(newErrors).length === 0;
   };
 
+  /**
+   * Chuyển sang bước 2 nếu bước 1 hợp lệ.
+   */
   const handleNext = () => {
     if (validateStep1()) setStep(2);
   };
 
+  /**
+   * Quay lại bước 1.
+   */
   const handleBack = () => setStep(1);
 
+  /**
+   * Gửi form đăng ký tài khoản hoặc đăng ký đối tác bán hàng lên máy chủ.
+   * @param e - Sự kiện FormEvent
+   */
   const handleSubmit = async (e?: FormEvent) => {
     if (e) e.preventDefault();
 
@@ -293,6 +333,7 @@ export function RegisterForm({ isSeller = false }: RegisterFormProps) {
       }
     }
   };
+
 
   return (
     <div className="w-full">

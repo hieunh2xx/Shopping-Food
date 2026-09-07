@@ -16,6 +16,13 @@ type Props = {
   userTier?: string | null;
 };
 
+/**
+ * Khung Ghi Chú Ưu Đãi Hạng Thành Viên (MemberTierPricingNote).
+ * Hiển thị ước tính mức giảm giá được hưởng theo hạng thành viên (Bạc, Vàng, Kim Cương) khi mua sản phẩm:
+ * - Nếu sản phẩm đang Flash Sale: Thông báo giá đã tối ưu và không cộng dồn giảm hạng
+ * - Nếu chưa đăng nhập: Gợi ý đăng nhập để nhận ưu đãi
+ * - Nếu đã đăng nhập: Hiển thị tỷ lệ giảm %, số tiền giảm ước tính và điều kiện giá trị đơn tối thiểu.
+ */
 export function MemberTierPricingNote({
   displayPrice,
   isFlashSale,

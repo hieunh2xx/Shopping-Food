@@ -19,6 +19,11 @@ const sizeClasses = {
   lg: 'max-w-2xl',
 };
 
+/**
+ * Thành phần Cửa sổ Modal Popup dùng chung (Modal).
+ * Hiển thị qua React Portal vào document.body, hỗ trợ đóng khi nhấn phím Escape hoặc click nền đen (backdrop).
+ * @param props - Thuộc tính cấu hình Modal
+ */
 export function Modal({
   isOpen,
   onClose,
@@ -28,7 +33,7 @@ export function Modal({
   closeOnBackdrop = true,
   zIndexClass = 'z-[10000]',
 }: ModalProps) {
-  // Close on Escape key
+  // Lắng nghe phím Escape để đóng modal và khóa cuộn trang
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -47,13 +52,13 @@ export function Modal({
 
   return createPortal(
     <div className={`fixed inset-0 ${zIndexClass} flex items-center justify-center p-4`}>
-      {/* Backdrop */}
+      {/* Nền mờ Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
         onClick={closeOnBackdrop ? onClose : undefined}
       />
 
-      {/* Modal content */}
+      {/* Nội dung Modal */}
       <div
         className={`
           relative w-full ${sizeClasses[size]}
@@ -61,7 +66,7 @@ export function Modal({
           animate-in zoom-in-95 fade-in duration-200
         `}
       >
-        {/* Header */}
+        {/* Tiêu đề Header */}
         {title && (
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
@@ -74,7 +79,7 @@ export function Modal({
           </div>
         )}
 
-        {/* Body */}
+        {/* Thân Body */}
         <div className="px-6 py-4">{children}</div>
       </div>
     </div>,

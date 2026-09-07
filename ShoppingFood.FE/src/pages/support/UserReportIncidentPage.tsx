@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ShieldAlert, AlertTriangle, Plus, Edit } from 'lucide-react';
 import { Button, Loading } from '../../components/common';
 import { supportService, orderService, authService } from '../../services';
@@ -6,6 +6,13 @@ import type { ISubmitOrderComplaintRequest, IOrderSummary } from '../../interfac
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
+/**
+ * Trang Người Dùng Gửi Báo Cáo Sự Cố & Khiếu Nại Đơn Hàng (UserReportIncidentPage).
+ * Cho phép khách hàng gửi khiếu nại về các đơn hàng có vấn đề:
+ * - Chọn đơn hàng từ danh sách các đơn đã đặt
+ * - Chọn phân loại lý do (Giao trễ, thiếu món, món ăn không đúng chất lượng, thái độ tài xế...)
+ * - Tải ảnh chụp bằng chứng (bill, ảnh món ăn) và mô tả chi tiết sự việc.
+ */
 export function UserReportIncidentPage() {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<IOrderSummary[]>([]);
@@ -18,9 +25,14 @@ export function UserReportIncidentPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
+  /**
+   * Tải ảnh chụp bằng chứng sự cố lên hệ thống máy chủ.
+   * @param e - Sự kiện ChangeEvent của input file
+   */
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
 
     if (!file.type.startsWith('image/')) {
       toast.error('Vui lòng chọn file hình ảnh');

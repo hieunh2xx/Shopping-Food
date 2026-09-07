@@ -1,4 +1,4 @@
-﻿import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { X } from 'lucide-react';
 import { Button, Input } from '../common';
 import { authService } from '../../services/AuthService';
@@ -9,6 +9,10 @@ interface ChangePasswordModalProps {
   onClose: () => void;
 }
 
+/**
+ * Modal Đổi Mật Khẩu Người Dùng (ChangePasswordModal).
+ * Yêu cầu nhập mật khẩu cũ, mật khẩu mới (tối thiểu 8 ký tự, không trùng mật khẩu cũ) và nhập lại mật khẩu xác nhận.
+ */
 export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProps) {
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -18,6 +22,9 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
 
   if (!isOpen) return null;
 
+  /**
+   * Kiểm tra tính hợp lệ của các trường mật khẩu nhập vào.
+   */
   const validate = () => {
     const newErrors: Record<string, string> = {};
     if (!oldPassword) newErrors.oldPassword = 'Trường mật khẩu không được để trống';
@@ -34,6 +41,10 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
     return Object.keys(newErrors).length === 0;
   };
 
+  /**
+   * Gửi yêu cầu đổi mật khẩu lên máy chủ API.
+   * @param e - Sự kiện FormEvent
+   */
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
@@ -54,6 +65,9 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
     }
   };
 
+  /**
+   * Đóng modal và đặt lại toàn bộ form về trạng thái rỗng.
+   */
   const handleClose = () => {
     setOldPassword('');
     setNewPassword('');

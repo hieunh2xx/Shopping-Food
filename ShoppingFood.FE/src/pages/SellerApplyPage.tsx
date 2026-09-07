@@ -1,10 +1,16 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/AuthService';
 import { toast } from 'react-hot-toast';
 import { ROUTES } from '../routes/routeConfig';
 import { Store, MapPin, Phone, FileText, UploadCloud, CheckCircle2 } from 'lucide-react';
 
+/**
+ * Trang Đăng Ký Trở Thành Đối Tác Bán Hàng Dành Cho Khách Hàng Đã Đăng Nhập (SellerApplyPage).
+ * Cho phép tài khoản Customer nộp hồ sơ xin nâng cấp thành Seller:
+ * - Điền thông tin nhà hàng, địa chỉ, số điện thoại liên hệ
+ * - Tải lên các giấy tờ pháp lý: Giấy phép kinh doanh, Giấy chứng nhận ATTP, Logo cửa hàng.
+ */
 export function SellerApplyPage() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -17,8 +23,13 @@ export function SellerApplyPage() {
   const [shopImageFile, setShopImageFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
+  /**
+   * Xử lý xác thực tệp tin tải lên và nộp hồ sơ đăng ký đối tác người bán lên máy chủ.
+   * @param e - Sự kiện FormEvent
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
 
     if (!businessLicenseFile) {
       toast.error('Vui lòng tải lên giấy phép kinh doanh');

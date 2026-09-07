@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, ChevronRight, ChevronLeft, ChefHat, CheckCircle2, UploadCloud } from 'lucide-react';
 import { Button, Input, Modal, Loading } from '../components/common';
@@ -8,7 +8,10 @@ import { supportService } from '../services/SupportService';
 import { ROUTES } from '../routes/routeConfig';
 import { useAuth } from '../hooks/useAuth';
 
-// --- File Upload UI ---
+// --- Giao diện tải tệp tin giấy tờ ---
+/**
+ * Ô tải tệp tin kèm preview và thông báo lỗi hợp lệ cho form đăng ký tài xế.
+ */
 const FileUploadField = ({
   label, file, errorKey, required = true, setter, handleFileSelect, errors
 }: {
@@ -64,15 +67,24 @@ const FileUploadField = ({
   </div>
 );
 
+/**
+ * Trang Đăng Ký Trở Thành Tài Xế Giao Hàng Dành Cho Khách Vãng Lai (ShipperApplyPage).
+ * Luồng nhiều bước (Multi-step wizard):
+ * - Bước 1: Thông tin tài khoản (Tên, email, số điện thoại, mật khẩu)
+ * - Bước 2: Thông tin phương tiện & Khu vực hoạt động (Biển số xe, loại xe)
+ * - Bước 3: Tải hồ sơ giấy tờ tùy thân (CCCD mặt trước/sau, Bằng lái xe A1/A2, Đăng ký xe cavet, Lý lịch tư pháp)
+ * - Bước 4: Chờ xét duyệt hồ sơ từ Quản trị viên.
+ */
 export function ShipperApplyPage() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/shipper/apply'); // Adjust the route to AuthShipperApplyPage if needed
+      navigate('/shipper/apply');
     }
   }, [isAuthenticated, navigate]);
+
 
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);

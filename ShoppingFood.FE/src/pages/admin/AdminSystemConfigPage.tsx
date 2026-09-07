@@ -1,9 +1,16 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Button, Loading, Input } from '../../components/common';
 import { ShieldAlert, Save, Clock } from 'lucide-react';
 import { adminService } from '../../services';
 import toast from 'react-hot-toast';
 
+/**
+ * Trang Cấu Hình Chế Độ Bảo Trì Hệ Thống (AdminSystemConfigPage).
+ * Cho phép quản trị viên bật tắt chế độ bảo trì và lên lịch bảo trì:
+ * - Bật/tắt chế độ bảo trì tức thời
+ * - Lên lịch thời gian bảo trì định kỳ trong tương lai
+ * - Tùy chỉnh tiêu đề và thông điệp thông báo gửi đến toàn bộ người dùng khi vào web.
+ */
 export function AdminSystemConfigPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -12,6 +19,7 @@ export function AdminSystemConfigPage() {
   const [scheduledStartTime, setScheduledStartTime] = useState<string>('');
   const [notificationTitle, setNotificationTitle] = useState('');
   const [notificationBody, setNotificationBody] = useState('');
+
 
   const fetchSettings = async () => {
     setIsLoading(true);

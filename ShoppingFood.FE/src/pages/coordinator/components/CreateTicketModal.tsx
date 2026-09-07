@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { Plus, Edit, FileText } from 'lucide-react';
 import { Button, Input, Loading, Modal } from '../../../components/common';
 import { adminService, authService } from '../../../services';
@@ -11,6 +11,10 @@ interface CreateTicketModalProps {
   onSuccess: () => void;
 }
 
+/**
+ * Modal Tạo Phiếu Hỗ Trợ Thủ Công Dành Cho Điều Phối Viên (CreateTicketModal).
+ * Cho phép nhân viên điều phối chủ động tạo ticket khiếu nại thay cho khách hàng hoặc tài xế.
+ */
 export function CreateTicketModal({ isOpen, onClose, onSuccess }: CreateTicketModalProps) {
   const [orderId, setOrderId] = useState('');
   const [customerId, setCustomerId] = useState('');
@@ -19,6 +23,7 @@ export function CreateTicketModal({ isOpen, onClose, onSuccess }: CreateTicketMo
   const [evidenceUrl, setEvidenceUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+
 
   const resetForm = () => {
     setOrderId('');

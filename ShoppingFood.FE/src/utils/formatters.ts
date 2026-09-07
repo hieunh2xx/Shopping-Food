@@ -1,5 +1,7 @@
 /**
- * Format currency to Vietnamese Dong
+ * Định dạng số tiền thành chuỗi tiền tệ Việt Nam Đồng (VNĐ).
+ * @param amount - Số tiền cần định dạng (có thể là số, undefined hoặc null)
+ * @returns Chuỗi tiền tệ định dạng chuẩn VNĐ (ví dụ: "50.000 ₫")
  */
 export function formatCurrency(amount: number | undefined | null): string {
   const validAmount = (typeof amount === 'number' && !isNaN(amount)) ? amount : 0;
@@ -10,7 +12,9 @@ export function formatCurrency(amount: number | undefined | null): string {
 }
 
 /**
- * Format date to Vietnamese locale
+ * Định dạng chuỗi ngày tháng theo chuẩn định dạng tiếng Việt (ngày/tháng/năm giờ:phút).
+ * @param dateString - Chuỗi thời gian ISO hoặc định dạng ngày hợp lệ
+ * @returns Chuỗi ngày giờ hiển thị theo định dạng VN (ví dụ: "15:30 19/08/2026")
  */
 export function formatDate(dateString: string): string {
   return new Intl.DateTimeFormat('vi-VN', {
@@ -23,7 +27,9 @@ export function formatDate(dateString: string): string {
 }
 
 /**
- * Convert UTC date string to local YYYY-MM-DDTHH:mm format for datetime-local inputs
+ * Chuyển đổi chuỗi ngày UTC sang định dạng ngày giờ cục bộ YYYY-MM-DDTHH:mm dùng cho thẻ <input type="datetime-local">.
+ * @param dateString - Chuỗi thời gian UTC
+ * @returns Chuỗi ngày giờ cục bộ theo định dạng HTML5 datetime-local
  */
 export function toLocalDatetimeLocal(dateString: string): string {
   if (!dateString) return '';
@@ -38,7 +44,10 @@ export function toLocalDatetimeLocal(dateString: string): string {
 }
 
 /**
- * Truncate text with ellipsis
+ * Cắt ngắn chuỗi văn bản nếu vượt quá độ dài tối đa và thêm dấu chấm lửng "..." vào cuối.
+ * @param text - Chuỗi văn bản gốc
+ * @param maxLength - Độ dài ký tự tối đa cho phép
+ * @returns Chuỗi văn bản đã được cắt ngắn nếu vượt độ dài
  */
 export function truncateText(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text;
@@ -46,7 +55,9 @@ export function truncateText(text: string, maxLength: number): string {
 }
 
 /**
- * Get stock status label
+ * Lấy nhãn tiếng Việt hiển thị cho trạng thái kho hàng của sản phẩm.
+ * @param status - Mã trạng thái kho (InStock, OutOfStock,...)
+ * @returns Nhãn tiếng Việt tương ứng ("Còn hàng", "Hết hàng")
  */
 export function getStockStatusLabel(status: string): string {
   const map: Record<string, string> = {
@@ -57,7 +68,9 @@ export function getStockStatusLabel(status: string): string {
 }
 
 /**
- * Get order status label (fulfillment)
+ * Lấy nhãn tiếng Việt hiển thị cho trạng thái tiến trình đơn hàng (Fulfillment status).
+ * @param status - Mã trạng thái đơn hàng (Pending, Confirmed, Preparing, Shipping,...)
+ * @returns Nhãn trạng thái tiếng Việt thân thiện với người dùng
  */
 export function getOrderStatusLabel(status: string): string {
   const map: Record<string, string> = {
@@ -72,6 +85,11 @@ export function getOrderStatusLabel(status: string): string {
   return map[status] || status;
 }
 
+/**
+ * Lấy lớp CSS Tailwind màu sắc tương ứng với trạng thái đơn hàng (để hiển thị badge trạng thái).
+ * @param status - Mã trạng thái đơn hàng
+ * @returns Chuỗi class Tailwind CSS (màu nền và màu chữ)
+ */
 export function getOrderStatusColor(status: string): string {
   const map: Record<string, string> = {
     Pending: 'bg-yellow-100 text-yellow-800',
@@ -85,7 +103,11 @@ export function getOrderStatusColor(status: string): string {
   return map[status] || 'bg-gray-100 text-gray-800';
 }
 
-/** Order.PaymentStatus from backend enum */
+/**
+ * Lấy nhãn tiếng Việt cho trạng thái thanh toán của đơn hàng (Backend Enum Order.PaymentStatus).
+ * @param status - Mã trạng thái thanh toán
+ * @returns Nhãn tiếng Việt ("Chưa thanh toán", "Đã thanh toán",...)
+ */
 export function getPaymentStatusLabel(status: string): string {
   const map: Record<string, string> = {
     Pending: 'Chưa thanh toán',
@@ -97,6 +119,11 @@ export function getPaymentStatusLabel(status: string): string {
   return map[status] || status;
 }
 
+/**
+ * Lấy lớp CSS Tailwind màu sắc badge tương ứng với trạng thái thanh toán đơn hàng.
+ * @param status - Mã trạng thái thanh toán
+ * @returns Chuỗi class Tailwind CSS
+ */
 export function getPaymentStatusColor(status: string): string {
   const map: Record<string, string> = {
     Pending: 'bg-amber-100 text-amber-800',
@@ -108,7 +135,12 @@ export function getPaymentStatusColor(status: string): string {
   return map[status] || 'bg-gray-100 text-gray-800';
 }
 
-/** Canonical payment session display status from API */
+/**
+ * Lấy nhãn tiếng Việt cho phiên thanh toán chuẩn từ API hoặc SePay.
+ * @param status - Trạng thái phiên thanh toán (paid, awaiting_payment, expired,...)
+ * @param statusLabel - Nhãn tùy chọn ghi đè từ API
+ * @returns Nhãn hiển thị tiếng Việt
+ */
 export function getPaymentDisplayStatusLabel(status: string, statusLabel?: string): string {
   if (statusLabel) return statusLabel;
   const map: Record<string, string> = {
@@ -127,6 +159,11 @@ export function getPaymentDisplayStatusLabel(status: string, statusLabel?: strin
   return map[status] || status;
 }
 
+/**
+ * Lấy lớp CSS Tailwind màu sắc badge tương ứng với trạng thái phiên thanh toán SePay.
+ * @param status - Trạng thái phiên thanh toán
+ * @returns Chuỗi class Tailwind CSS
+ */
 export function getPaymentDisplayStatusColor(status: string): string {
   const map: Record<string, string> = {
     paid: 'bg-green-100 text-green-800',
@@ -143,6 +180,11 @@ export function getPaymentDisplayStatusColor(status: string): string {
   return map[status] || 'bg-gray-100 text-gray-800';
 }
 
+/**
+ * Lấy nhãn tiếng Việt hiển thị cho phương thức thanh toán.
+ * @param method - Mã phương thức (COD, CreditCard, EWallet, Sepay,...)
+ * @returns Tên phương thức thanh toán bằng tiếng Việt
+ */
 export function getPaymentMethodLabel(method: string): string {
   const map: Record<string, string> = {
     COD: 'Tiền mặt khi nhận hàng',
@@ -155,7 +197,9 @@ export function getPaymentMethodLabel(method: string): string {
 }
 
 /**
- * Get role label
+ * Lấy nhãn hiển thị tiếng Việt tương ứng cho vai trò người dùng trong hệ thống.
+ * @param role - Tên vai trò (Customer, Shipper, Seller, Admin, Coordinator)
+ * @returns Tên vai trò bằng tiếng Việt
  */
 export function getRoleLabel(role: string): string {
   const map: Record<string, string> = {
@@ -169,7 +213,9 @@ export function getRoleLabel(role: string): string {
 }
 
 /**
- * Format transaction description to truncate UUIDs
+ * Rút gọn các mã UUID dài trong chuỗi mô tả giao dịch để giao diện gọn gàng hơn (ví dụ: chỉ giữ 8 ký tự đầu).
+ * @param desc - Chuỗi mô tả giao dịch ban đầu
+ * @returns Chuỗi mô tả sau khi đã rút gọn mã UUID
  */
 export function formatTransactionDescription(desc: string): string {
   if (!desc) return desc;
@@ -177,7 +223,14 @@ export function formatTransactionDescription(desc: string): string {
   return desc.replace(uuidRegex, (_match, p1) => `#${p1.toUpperCase()}`);
 }
 
-/** Haversine distance in kilometers */
+/**
+ * Tính toán khoảng cách địa lý theo đường chim bay giữa hai tọa độ (vĩ độ, kinh độ) theo công thức Haversine.
+ * @param lat1 - Vĩ độ điểm thứ nhất
+ * @param lon1 - Kinh độ điểm thứ nhất
+ * @param lat2 - Vĩ độ điểm thứ hai
+ * @param lon2 - Kinh độ điểm thứ hai
+ * @returns Khoảng cách tính bằng kilomet (km)
+ */
 export function haversineDistanceKm(
   lat1: number,
   lon1: number,
@@ -193,7 +246,11 @@ export function haversineDistanceKm(
   return 12742 * Math.asin(Math.sqrt(a));
 }
 
-/** Under 1000 m → meters; otherwise → km (1 decimal). */
+/**
+ * Định dạng khoảng cách hiển thị: dưới 1000m hiển thị đơn vị mét (m), từ 1000m trở lên hiển thị kilomet (km).
+ * @param distanceKm - Khoảng cách tính theo kilomet
+ * @returns Chuỗi khoảng cách định dạng (ví dụ: "450 m" hoặc "3.2 km")
+ */
 export function formatDistanceKm(distanceKm: number): string {
   if (!Number.isFinite(distanceKm) || distanceKm < 0) return '';
   const meters = Math.round(distanceKm * 1000);
@@ -203,7 +260,11 @@ export function formatDistanceKm(distanceKm: number): string {
   return `${(meters / 1000).toFixed(1)} km`;
 }
 
-/** Mask email for admin UIs: j***@gmail.com */
+/**
+ * Ẩn bớt ký tự email bảo mật cho giao diện quản trị (ví dụ: j***@gmail.com).
+ * @param email - Địa chỉ email cần ẩn
+ * @returns Email đã được che bớt ký tự
+ */
 export function maskEmail(email?: string | null): string {
   if (!email || !email.includes('@')) return email ? '***' : '—';
   const [local, domain] = email.split('@');
@@ -212,7 +273,11 @@ export function maskEmail(email?: string | null): string {
   return `${local.slice(0, keep)}${'*'.repeat(Math.max(3, local.length - keep))}@${domain}`;
 }
 
-/** Mask phone: 090***4567 (keep first 3 + last 4 when long enough) */
+/**
+ * Ẩn bớt số điện thoại bảo mật thông tin (ví dụ: 090***4567, giữ 3 số đầu và 4 số cuối).
+ * @param phone - Số điện thoại cần ẩn
+ * @returns Số điện thoại đã được che ký tự
+ */
 export function maskPhone(phone?: string | null): string {
   if (!phone) return '—';
   const digits = phone.replace(/\D/g, '');

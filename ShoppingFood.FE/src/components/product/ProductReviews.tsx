@@ -6,6 +6,14 @@ import { productService } from '../../services';
 import type { IProductReviewDto } from '../../interfaces';
 import toast from 'react-hot-toast';
 
+/**
+ * Khu Vực Đánh Giá & Bình Luận Món Ăn (ProductReviews).
+ * Cho phép:
+ * - Khách hàng xem danh sách nhận xét, số sao trung bình của món
+ * - Khách hàng gửi bài đánh giá kèm số sao 1-5 và bình luận
+ * - Chủ quán (Seller/Mall) phản hồi trực tiếp các bình luận của khách
+ * - Người dùng báo cáo các bình luận có nội dung không phù hợp hoặc vi phạm.
+ */
 export function ProductReviews({ productId, restaurantId }: { productId: string; restaurantId?: string }) {
   const { isAuthenticated, user } = useAuth();
   const [reviews, setReviews] = useState<IProductReviewDto[]>([]);
@@ -17,7 +25,7 @@ export function ProductReviews({ productId, restaurantId }: { productId: string;
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState('');
 
-  // Report Modal states
+  // Trạng thái modal báo cáo bình luận
   const [reportModal, setReportModal] = useState({ isOpen: false, reviewId: '', reason: '' });
   const [isReporting, setIsReporting] = useState(false);
 
@@ -25,6 +33,9 @@ export function ProductReviews({ productId, restaurantId }: { productId: string;
     fetchReviews();
   }, [productId]);
 
+  /**
+   * Tải danh sách đánh giá của sản phẩm từ API.
+   */
   const fetchReviews = async () => {
     setIsLoading(true);
     try {
@@ -33,12 +44,16 @@ export function ProductReviews({ productId, restaurantId }: { productId: string;
         setReviews(res.data);
       }
     } catch {
-      // silently fail — reviews are non-critical
+      // Bỏ qua lỗi âm thầm khi tải đánh giá
     } finally {
       setIsLoading(false);
     }
   };
 
+  /**
+   * Gửi đánh giá món ăn mới từ khách hàng.
+   * @param e - Sự kiện FormEvent
+   */
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!comment.trim()) return;
@@ -49,7 +64,7 @@ export function ProductReviews({ productId, restaurantId }: { productId: string;
         toast.success('Đánh giá của bạn đã được gửi!');
         setComment('');
         setRating(5);
-        fetchReviews(); // reload
+        fetchReviews();
       } else {
         toast.error(res.message);
       }
@@ -58,6 +73,10 @@ export function ProductReviews({ productId, restaurantId }: { productId: string;
     }
   };
 
+  /**
+   * Chủ quán gửi phản hồi cho một bình luận của khách hàng.
+   * @param reviewId - ID của bài đánh giá
+   */
   const handleSubmitReply = async (reviewId: string) => {
     if (!replyContent.trim()) return;
 
@@ -76,6 +95,10 @@ export function ProductReviews({ productId, restaurantId }: { productId: string;
     }
   };
 
+  /**
+   * Gửi báo cáo vi phạm bài đánh giá lên hệ thống quản trị.
+   * @param e - Sự kiện FormEvent
+   */
   const handleReportReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reportModal.reason.trim()) {
@@ -98,12 +121,16 @@ export function ProductReviews({ productId, restaurantId }: { productId: string;
     }
   };
 
+  /**
+   * Định dạng chuỗi ngày tháng sang định dạng Việt Nam dd/MM/yyyy.
+   */
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return '';
     return new Date(dateStr).toLocaleDateString('vi-VN', {
       day: '2-digit', month: '2-digit', year: 'numeric'
     });
   };
+
 
   const avgRating = reviews.length > 0
     ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)

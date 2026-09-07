@@ -7,11 +7,19 @@ import { Button, Input, Modal, PromptModal } from '../../components/common';
 import { formatDate, toLocalDatetimeLocal } from '../../utils/formatters';
 import { useConfirm } from '../../hooks';
 
+/**
+ * Trang Quản Lý Chiến Dịch Flash Sale Toàn Sàn (AdminFlashSalePage).
+ * Cho phép ban quản trị tạo và điều phối các phiên Flash Sale:
+ * - Tạo phiên Flash Sale theo khung giờ (Tiêu đề, Thời gian bắt đầu / kết thúc)
+ * - Kiểm duyệt danh sách món ăn do các người bán đăng ký tham gia phiên Flash Sale
+ * - Phê duyệt hoặc từ chối món ăn tham gia Flash Sale có gửi kèm lý do.
+ */
 export function AdminFlashSalePage() {
   const { confirm } = useConfirm();
   const [flashSales, setFlashSales] = useState<IFlashSale[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
   const [formData, setFormData] = useState<ICreateFlashSaleRequest>({
     title: '',
     startDate: '',

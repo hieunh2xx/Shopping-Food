@@ -5,10 +5,19 @@ import { adminService } from '../../services/AdminService';
 import { supportService } from '../../services/SupportService';
 import toast from 'react-hot-toast';
 
+/**
+ * Trang Cài Đặt Điều Khoản & Chính Sách Pháp Lý (AdminLegalSettingsPage).
+ * Cho phép quản trị viên soạn thảo và cập nhật các văn bản quy định hệ thống:
+ * - Điều khoản sử dụng dành cho Khách hàng
+ * - Điều khoản sử dụng dành cho Người bán
+ * - Điều khoản sử dụng dành cho Tài xế
+ * - Chính sách bảo mật thông tin cá nhân.
+ */
 export function AdminLegalSettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [termsOfUseCustomer, setTermsOfUseCustomer] = useState('');
+
   const [termsOfUseSeller, setTermsOfUseSeller] = useState('');
   const [termsOfUseShipper, setTermsOfUseShipper] = useState('');
   const [privacyPolicy, setPrivacyPolicy] = useState('');

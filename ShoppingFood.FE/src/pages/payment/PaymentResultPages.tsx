@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { CheckCircle, Loader2, AlertCircle, Clock, RefreshCw } from 'lucide-react';
 import { paymentService } from '../../services/PaymentService';
@@ -9,6 +9,13 @@ import toast from 'react-hot-toast';
 
 type PageState = 'confirming' | 'success' | 'timeout';
 
+/**
+ * Trang Kết Quả Thanh Toán Thành Công (PaymentSuccessPage).
+ * Kiểm tra trạng thái giao dịch từ SePay:
+ * - Trạng thái `confirming`: Đang chờ xác nhận giao dịch qua Webhook / Polling
+ * - Trạng thái `timeout`: Hết thời gian chờ, cung cấp nút đối soát thủ công (Reconcile)
+ * - Trạng thái `success`: Xác nhận đã thanh toán thành công, hiển thị chi tiết hóa đơn.
+ */
 export function PaymentSuccessPage() {
   const [searchParams] = useSearchParams();
   const invoice = searchParams.get('invoice') ?? '';
@@ -17,6 +24,9 @@ export function PaymentSuccessPage() {
   const [status, setStatus] = useState<IPaymentSessionStatusDto | null>(null);
   const [reconciling, setReconciling] = useState(false);
 
+  /**
+   * Gọi API đối soát thủ công với SePay khi thanh toán chưa được xác nhận tự động.
+   */
   const handleReconcile = async () => {
     setReconciling(true);
     const res = await paymentService.reconcileSepayPayment({
@@ -191,6 +201,9 @@ export function PaymentSuccessPage() {
   );
 }
 
+/**
+ * Trang Thông Báo Thanh Toán Thất Bại (PaymentErrorPage).
+ */
 export function PaymentErrorPage() {
   const [searchParams] = useSearchParams();
   const invoice = searchParams.get('invoice');
@@ -210,9 +223,13 @@ export function PaymentErrorPage() {
   );
 }
 
+/**
+ * Trang Thông Báo Đã Hủy Thanh Toán (PaymentCancelPage).
+ */
 export function PaymentCancelPage() {
   const [searchParams] = useSearchParams();
   const invoice = searchParams.get('invoice');
+
 
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center px-4 py-12">

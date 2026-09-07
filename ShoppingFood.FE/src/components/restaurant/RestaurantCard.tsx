@@ -7,6 +7,10 @@ interface Props {
   restaurant: INearbyRestaurantDto;
 }
 
+/**
+ * Thẻ Hiển Thị Nhà Hàng / Quán Ăn (RestaurantCard).
+ * Hiển thị logo quán, tên, huy hiệu Quán Chuẩn/Quán Mall, số sao đánh giá, khoảng cách km, giờ hoạt động và phí giao hàng.
+ */
 export function RestaurantCard({ restaurant }: Props) {
   return (
     <Link
@@ -65,3 +69,4 @@ export function RestaurantCard({ restaurant }: Props) {
     </Link>
   );
 }
+

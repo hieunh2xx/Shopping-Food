@@ -14,6 +14,7 @@ import { SepayQrPaymentModal } from '../payment/SepayQrPaymentModal';
 import { useAuth, useCart } from '../../hooks';
 import toast from 'react-hot-toast';
 
+
 interface OrderDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -23,6 +24,13 @@ interface OrderDetailModalProps {
   autoOpenChat?: boolean;
 }
 
+/**
+ * Modal Xem Chi Tiết Đơn Hàng Dành Cho Khách Hàng (CustomerOrderDetailModal).
+ * Cung cấp toàn bộ thông tin chi tiết của đơn hàng:
+ * - Trạng thái đơn, thời gian đặt, địa chỉ giao hàng, phương thức thanh toán
+ * - Danh sách món ăn kèm topping, size, quà tặng kèm Mua X Tặng Y
+ * - Các nút tác vụ nhanh: Thanh toán lại QR (Sepay), Hủy đơn khi còn Pending, Chat với người bán, Đặt lại đơn, Khiếu nại đơn, Báo cáo tài xế, Đánh giá tài xế và Đánh giá món ăn.
+ */
 export function CustomerOrderDetailModal({ isOpen, onClose, orderId, onNavigateAction, autoOpenChat = false }: OrderDetailModalProps) {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
@@ -31,7 +39,7 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId, onNavigateA
   const [orderData, setOrderData] = useState<any>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  // Modals inside details
+  // Modals con bên trong chi tiết đơn hàng
   const [orderComplaintModal, setOrderComplaintModal] = useState({ isOpen: false, orderId: '', reason: '', description: '', evidenceImageUrl: '' });
   const [shipperComplaintModal, setShipperComplaintModal] = useState({ isOpen: false, orderId: '', reason: '', description: '', evidenceImageUrl: '' });
   const [shipperReviewModal, setShipperReviewModal] = useState({ isOpen: false, orderId: '', rating: 5, comment: '' });
@@ -46,6 +54,9 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId, onNavigateA
   }>({ isOpen: false, orderId: '' });
   const autoOpenedForOrderRef = useRef<string>('');
 
+  /**
+   * Mở hộp thoại chat trực tiếp với cửa hàng đối tác của đơn này.
+   */
   const openSellerChat = (data: any) => {
     if (!data) return;
     setSellerChat({
@@ -57,6 +68,9 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId, onNavigateA
     });
   };
 
+  /**
+   * Kiểm tra xem đơn hàng này có cho phép chat với người bán không.
+   */
   const canChatWithSeller = (data: any) =>
     !!(data?.canMessageSeller || data?.orderChatSessionId);
 
@@ -70,6 +84,7 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId, onNavigateA
     }
   }, [isOpen, orderId, autoOpenChat]);
 
+  // Lắng nghe cập nhật đơn hàng theo thời gian thực từ SignalR Notification Hub
   useEffect(() => {
     const handleNotification = (notif: INotificationDto) => {
       if (notif.targetId === orderId && isOpen) {
@@ -82,6 +97,9 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId, onNavigateA
     };
   }, [orderId, isOpen]);
 
+  /**
+   * Tải toàn bộ dữ liệu chi tiết của đơn hàng từ API.
+   */
   const loadOrderDetails = async () => {
     setLoading(true);
     try {
@@ -94,7 +112,6 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId, onNavigateA
             sessionStorage.getItem(`sf_open_chat_${orderId}`) === '1'
             || new URLSearchParams(window.location.search).get('openChat') === '1'
           ));
-        // Từ thông báo tin nhắn: luôn mở chat (modal tự tạo session nếu cần)
         if (shouldAutoOpen && autoOpenedForOrderRef.current !== orderId) {
           autoOpenedForOrderRef.current = orderId;
           sessionStorage.removeItem(`sf_open_chat_${orderId}`);
@@ -112,6 +129,9 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId, onNavigateA
     }
   };
 
+  /**
+   * Xác nhận hủy đơn hàng từ phía khách hàng.
+   */
   const confirmCancelOrder = async () => {
     try {
       await orderService.cancelOrder({ orderId });
@@ -124,6 +144,9 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId, onNavigateA
     }
   };
 
+  /**
+   * Đặt lại đơn hàng (thêm toàn bộ các món cũ vào lại giỏ hàng).
+   */
   const handleReorder = async () => {
     try {
       await orderService.reorder({ orderId });
@@ -137,6 +160,9 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId, onNavigateA
     }
   };
 
+  /**
+   * Tải ảnh bằng chứng khiếu nại (đơn hàng hoặc tài xế).
+   */
   const handleUploadEvidence = async (e: React.ChangeEvent<HTMLInputElement>, target: 'order' | 'shipper') => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -169,6 +195,9 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId, onNavigateA
     }
   };
 
+  /**
+   * Gửi khiếu nại chất lượng đơn hàng lên bộ phận hỗ trợ.
+   */
   const handleSubmitOrderComplaint = async () => {
     if (!orderComplaintModal.reason.trim()) {
       toast.error('Vui lòng nhập lý do khiếu nại');
@@ -188,6 +217,9 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId, onNavigateA
     }
   };
 
+  /**
+   * Gửi báo cáo vi phạm về tài xế giao hàng.
+   */
   const handleSubmitShipperComplaint = async () => {
     if (!shipperComplaintModal.reason.trim()) {
       toast.error('Vui lòng nhập lý do khiếu nại');
@@ -208,6 +240,9 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId, onNavigateA
     }
   };
 
+  /**
+   * Gửi đánh giá sao và nhận xét cho tài xế giao hàng.
+   */
   const handleSubmitShipperReview = async () => {
     try {
       await shipperService.reviewShipper({
@@ -222,6 +257,7 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId, onNavigateA
       toast.error(errorMessage);
     }
   };
+
 
   if (!isOpen) return null;
 

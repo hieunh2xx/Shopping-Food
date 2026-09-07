@@ -11,10 +11,22 @@ import { useAuth } from '../../../hooks';
 import { ROUTES } from '../../../routes/routeConfig';
 import { DashboardLayout } from '../DashboardLayout';
 
+/**
+ * Layout Kênh Hoạt động của Tài xế Giao hàng (ShipperLayout).
+ * Dành cho Shipper để thực hiện các chức năng:
+ * - Tổng quan & Bật/Tắt trạng thái sẵn sàng nhận đơn, nhận đơn hàng gần nhất
+ * - Lịch sử các đơn đã giao thành công/thất bại
+ * - Báo cáo thu nhập theo ngày/tuần
+ * - Ví tiền, công nợ COD và lịch sử nộp COD
+ * - Hồ sơ tài xế, phương tiện và điểm uy tín.
+ */
 export function ShipperLayout() {
   const { logout } = useAuth();
   const navigate = useNavigate();
 
+  /**
+   * Xử lý đăng xuất tài khoản Tài xế.
+   */
   const handleLogout = () => {
     logout();
     navigate(ROUTES.LOGIN);

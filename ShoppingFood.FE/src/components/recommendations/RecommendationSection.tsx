@@ -9,11 +9,18 @@ import { CarouselSlider } from '../ui/CarouselSlider';
 import { formatCurrency } from '../../utils/formatters';
 import { ProductLocationMeta } from '../product/ProductLocationMeta';
 
+
 interface Props {
   latitude?: number;
   longitude?: number;
 }
 
+/**
+ * Khu Vực Gợi Ý Món Ăn Cá Nhân Hóa (RecommendationSection).
+ * Gợi ý món ngon dựa trên lịch sử ăn uống, sở thích cá nhân và vị trí địa lý của khách hàng:
+ * - Hiển thị nhãn lý do gợi ý (Hay ăn, Giờ Vàng Flash Sale, Xu hướng, Nổi bật)
+ * - Tự động ẩn nếu người dùng chưa đăng nhập hoặc chưa có dữ liệu đề xuất.
+ */
 export function RecommendationSection({ latitude, longitude }: Props) {
   const { isAuthenticated } = useAuth();
   const [recommendations, setRecommendations] = useState<IProductRecommendationDto[]>([]);
@@ -25,6 +32,9 @@ export function RecommendationSection({ latitude, longitude }: Props) {
     }
   }, [isAuthenticated, latitude, longitude]);
 
+  /**
+   * Tải danh sách món ăn gợi ý từ API gợi ý thông minh (Recommendation Service).
+   */
   const fetchRecommendations = async () => {
     setIsLoading(true);
     try {
@@ -47,6 +57,10 @@ export function RecommendationSection({ latitude, longitude }: Props) {
     return null;
   }
 
+  /**
+   * Trả về huy hiệu trực quan tương ứng với lý do gợi ý của hệ thống.
+   * @param tag - Mã lý do (frequently_ordered, flash_sale, trending_category, top_rated)
+   */
   const getReasonBadge = (tag: string) => {
     switch (tag) {
       case 'frequently_ordered':
@@ -77,6 +91,7 @@ export function RecommendationSection({ latitude, longitude }: Props) {
         return null;
     }
   };
+
 
   return (
     <section>

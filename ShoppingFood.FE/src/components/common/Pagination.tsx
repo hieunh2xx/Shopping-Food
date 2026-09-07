@@ -9,6 +9,11 @@ interface PaginationProps {
   onPageSizeChange?: (size: number) => void;
 }
 
+/**
+ * Thành phần Phân trang dùng chung (Pagination).
+ * Hỗ trợ hiển thị số trang có dấu ba chấm (...), nút Trang trước/Trang sau và tùy chọn số lượng mục trên mỗi trang (pageSize).
+ * @param props - Thuộc tính cấu hình phân trang
+ */
 export function Pagination({ 
   currentPage, 
   totalPages, 
@@ -21,7 +26,7 @@ export function Pagination({
 
   const pages: (number | string)[] = [];
 
-  // Build page numbers with ellipsis
+  // Tạo danh sách số trang thông minh với dấu ba chấm khi có nhiều hơn 7 trang
   if (totalPages <= 7) {
     for (let i = 1; i <= totalPages; i++) pages.push(i);
   } else {
@@ -36,7 +41,7 @@ export function Pagination({
 
   return (
     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-      {/* Page Size Selector */}
+      {/* Chọn số lượng bản ghi mỗi trang */}
       {pageSizeOptions && pageSizeOptions.length > 0 && onPageSizeChange && (
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-500">Hiển thị:</span>
@@ -52,7 +57,7 @@ export function Pagination({
         </div>
       )}
 
-      {/* Page Navigation */}
+      {/* Điều hướng chuyển trang */}
       {totalPages > 1 && (
         <div className="flex items-center gap-1.5">
           <button

@@ -11,6 +11,15 @@ interface ShipperOrderDetailModalProps {
   orderId: string | null;
 }
 
+/**
+ * Modal Xem Chi Tiết Đơn Hàng Dành Cho Tài Xế (ShipperOrderDetailModal).
+ * Hiển thị các thông tin phục vụ giao hàng:
+ * - Trạng thái đơn, thời gian cập nhật
+ * - Người nhận: Tên, SĐT, Địa chỉ giao hàng
+ * - Thanh toán: Hình thức, tổng tiền cần thu (nếu là COD)
+ * - Chi tiết thu nhập của tài xế: Phí cơ bản, phí theo khoảng cách km, thưởng giờ cao điểm và tổng thu nhập nhận được
+ * - Danh sách các món ăn cần lấy từ nhà hàng.
+ */
 export function ShipperOrderDetailModal({ isOpen, onClose, orderId }: ShipperOrderDetailModalProps) {
   const [loading, setLoading] = useState(false);
   const [order, setOrder] = useState<any>(null);
@@ -36,6 +45,7 @@ export function ShipperOrderDetailModal({ isOpen, onClose, orderId }: ShipperOrd
     })();
     return () => { cancelled = true; };
   }, [isOpen, orderId]);
+
 
   return (
     <Modal

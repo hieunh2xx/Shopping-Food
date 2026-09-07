@@ -9,6 +9,10 @@ interface Props {
   onActionClick?: () => void;
 }
 
+/**
+ * Tiêu Đề Khu Vực / Phân Đoạn (SectionHeader).
+ * Hiển thị biểu tượng, tiêu đề phân đoạn, phụ đề mô tả ngắn và nút điều hướng xem tất cả có mũi tên.
+ */
 export function SectionHeader({ icon, title, sub, action, onActionClick }: Props) {
   return (
     <div className="flex items-end justify-between mb-6">
@@ -28,3 +32,4 @@ export function SectionHeader({ icon, title, sub, action, onActionClick }: Props
     </div>
   );
 }
+

@@ -7,11 +7,19 @@ import toast from 'react-hot-toast';
 
 type PeriodDays = 7 | 30;
 
+/**
+ * Trang Thống Kê & Báo Cáo Doanh Thu Từng Tài Xế (AdminShipperRevenuePage).
+ * Giám sát và phân tích thu nhập của các đối tác giao hàng:
+ * - Lọc theo chu kỳ (7 ngày hoặc 30 ngày) và từng shipper cụ thể
+ * - Phân tích cấu trúc thu nhập: Phí cơ bản, Phí khoảng cách, Phụ phí giờ cao điểm, Tiền COD đã thu hộ
+ * - Xem bảng công thức tính chi trả thu nhập cho shipper.
+ */
 export function AdminShipperRevenuePage() {
   const [days, setDays] = useState<PeriodDays>(30);
   const [shipperId, setShipperId] = useState<string>('');
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
 
   const load = useCallback(async () => {
     setLoading(true);

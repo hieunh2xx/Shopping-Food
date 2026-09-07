@@ -13,17 +13,29 @@ import {
 } from '../utils/customerChatUnread';
 import toast from 'react-hot-toast';
 
+
 interface ICustomerChatLocal extends ICustomerChatSummary {
   hasUnread?: boolean;
   unreadCount?: number;
 }
 
+/**
+ * Kiểm tra xem tin nhắn có thuộc về phiên hội thoại hiện tại hoặc các phiên liên quan hay không.
+ */
 function isMessageInSession(session: ICustomerChatLocal | null, sessionId: string) {
   if (!session || !sessionId) return false;
   if (session.id === sessionId) return true;
   return (session.relatedSessionIds || []).includes(sessionId);
 }
 
+/**
+ * Trang Hộp Thư Tin Nhắn Khách Hàng (CustomerMessagesPage).
+ * Trung tâm trò chuyện thời gian thực giữa Khách hàng và các Nhà hàng/Cửa hàng đối tác:
+ * - Hiển thị danh sách các cuộc trò chuyện theo từng nhà hàng / đơn hàng kèm số tin nhắn chưa đọc
+ * - Khung chat trực tiếp hỗ trợ Realtime SignalR, tải thêm lịch sử tin nhắn cũ (Infinite scroll)
+ * - Tự động đánh dấu đã đọc khi xem tin nhắn
+ * - Hỗ trợ liên kết trực tiếp (Deep Link) qua URL query `orderId` hoặc `sessionId`.
+ */
 export function CustomerMessagesPage() {
   const { user, token, isAuthenticated } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -51,6 +63,9 @@ export function CustomerMessagesPage() {
     return () => setActiveCustomerChatSession(null);
   }, [activeSession]);
 
+  /**
+   * Đánh dấu cuộc hội thoại đã đọc và cập nhật bộ đếm chưa đọc.
+   */
   const markThreadRead = useCallback((session: ICustomerChatLocal) => {
     markCustomerSessionRead(session.id, session.relatedSessionIds || []);
     setSessions((prev) =>
@@ -62,6 +77,9 @@ export function CustomerMessagesPage() {
     );
   }, []);
 
+  /**
+   * Xử lý nhận tin nhắn mới theo thời gian thực từ SignalR Hub.
+   */
   const handleReceive = useCallback((message: IChatMessage) => {
     const current = activeSessionRef.current;
     const inActive = isMessageInSession(current, message.sessionId);
@@ -84,7 +102,7 @@ export function CustomerMessagesPage() {
       return;
     }
 
-    // Đang trong đoạn chat → đã đọc
+    // Đang trong đoạn chat → đánh dấu đã đọc ngay
     if (current) markThreadRead(current);
 
     setMessages((prev) => {
@@ -93,6 +111,9 @@ export function CustomerMessagesPage() {
     });
   }, [markThreadRead]);
 
+  /**
+   * Tải danh sách tất cả các cuộc hội thoại của khách hàng từ API.
+   */
   const fetchSessions = useCallback(async () => {
     setLoading(true);
     try {
@@ -121,6 +142,7 @@ export function CustomerMessagesPage() {
     }
     return [] as ICustomerChatLocal[];
   }, []);
+
 
   useEffect(() => {
     if (!token || !isAuthenticated) return;

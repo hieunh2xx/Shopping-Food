@@ -11,6 +11,10 @@ interface AdjustReputationModalProps {
   onSuccess: () => void;
 }
 
+/**
+ * Modal Điều Chỉnh Điểm Uy Tín Tài Xế (AdjustReputationModal).
+ * Cho phép điều phối viên trực tiếp tăng hoặc giảm điểm uy tín kèm theo lý do cụ thể.
+ */
 export const AdjustReputationModal: React.FC<AdjustReputationModalProps> = ({ shipper, onClose, onSuccess }) => {
   const [points, setPoints] = useState<string>('');
   const [reason, setReason] = useState('');
@@ -18,8 +22,13 @@ export const AdjustReputationModal: React.FC<AdjustReputationModalProps> = ({ sh
 
   if (!shipper) return null;
 
+  /**
+   * Xử lý gửi yêu cầu thay đổi điểm uy tín lên máy chủ.
+   * @param e - Sự kiện FormEvent
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     const parsedPoints = parseInt(points);
     if (isNaN(parsedPoints) || parsedPoints === 0) {
       toast.error('Số điểm thay đổi phải khác 0');

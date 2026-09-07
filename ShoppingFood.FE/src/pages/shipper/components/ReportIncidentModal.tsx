@@ -3,7 +3,7 @@ import { Modal, Button } from '../../../components/common';
 import { shipperService } from '../../../services/ShipperService';
 import toast from 'react-hot-toast';
 
-/** ReportTargetType: Order = 1, Restaurant = 4 */
+/** Phân loại đối tượng sự cố: Đơn hàng (Order) = 1, Nhà hàng (Restaurant) = 4 */
 export const SHIPPER_CANCEL_REASONS = [
   { code: 'customer_unreachable', label: 'Không liên lạc được khách', targetType: 1 },
   { code: 'wrong_address', label: 'Địa chỉ sai / khó tìm', targetType: 1 },
@@ -24,6 +24,10 @@ interface ReportIncidentModalProps {
   title?: string;
 }
 
+/**
+ * Modal Báo Cáo Giao Hàng Không Thành Công (ReportIncidentModal).
+ * Cho phép tài xế ghi nhận sự cố khi không thể giao đồ ăn cho khách.
+ */
 export const ReportIncidentModal: React.FC<ReportIncidentModalProps> = ({
   isOpen,
   onClose,
@@ -31,6 +35,7 @@ export const ReportIncidentModal: React.FC<ReportIncidentModalProps> = ({
   onReported,
   title = 'Báo cáo giao hàng không thành công',
 }) => {
+
   const [selectedCode, setSelectedCode] = useState<string>(SHIPPER_CANCEL_REASONS[0].code);
   const [content, setContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);

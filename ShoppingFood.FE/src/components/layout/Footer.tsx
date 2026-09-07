@@ -6,6 +6,10 @@ import { useAuth } from '../../hooks';
 import { Modal, Loading } from '../common';
 import { supportService } from '../../services/SupportService';
 
+/**
+ * Thành phần Chân trang chung của ứng dụng (Footer).
+ * Hiển thị thông tin thương hiệu, liên kết điều hướng (Thực đơn, Khuyến mãi), đăng ký đối tác (Người bán, Tài xế) và xem chính sách bảo mật/điều khoản sử dụng.
+ */
 export function Footer() {
   const { isAuthenticated, user } = useAuth();
   const [legalModalState, setLegalModalState] = useState({
@@ -15,6 +19,11 @@ export function Footer() {
     isLoading: false
   });
 
+  /**
+   * Mở modal xem nội dung Điều khoản sử dụng hoặc Chính sách bảo mật từ API.
+   * @param e - Sự kiện chuột
+   * @param type - Loại chính sách ('terms' | 'privacy')
+   */
   const handleOpenLegalModal = async (e: React.MouseEvent, type: 'terms' | 'privacy') => {
     e.preventDefault();
     setLegalModalState({
@@ -40,6 +49,9 @@ export function Footer() {
     }
   };
 
+  /**
+   * Xác định đường dẫn đăng ký bán hàng phù hợp với trạng thái đăng nhập của người dùng.
+   */
   const getPartnerRoute = () => {
     if (isAuthenticated && user?.role === 'Customer') {
       return ROUTES.SELLER_APPLY;
@@ -47,6 +59,9 @@ export function Footer() {
     return ROUTES.REGISTER_SELLER;
   };
 
+  /**
+   * Xác định đường dẫn đăng ký tài xế phù hợp với trạng thái đăng nhập của người dùng.
+   */
   const getShipperRoute = () => {
     if (isAuthenticated && (user?.role === 'Customer' || user?.role === 'Seller' || user?.role === 'Mall')) {
       return ROUTES.SHIPPER_APPLY;

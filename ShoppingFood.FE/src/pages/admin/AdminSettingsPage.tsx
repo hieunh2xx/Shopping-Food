@@ -1,13 +1,22 @@
-﻿import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Plus, Edit, Trash2, Eye, EyeOff, Layers, ArrowUpDown } from 'lucide-react';
 import { Button, Input, Modal, Loading } from '../../components/common';
 import { adminService, authService } from '../../services';
 import toast from 'react-hot-toast';
 
+/**
+ * Trang Quản Lý Danh Mục Món Ăn Toàn Sàn (AdminSettingsPage).
+ * Cho phép ban quản trị xây dựng cây phân loại ẩm thực toàn hệ thống:
+ * - Thêm mới danh mục món ăn (Tên, mô tả, ảnh đại diện, thứ tự sắp xếp)
+ * - Chỉnh sửa thông tin danh mục
+ * - Bật/tắt hiển thị danh mục trên ứng dụng
+ * - Xóa danh mục toàn sàn.
+ */
 export function AdminSettingsPage() {
   const [categories, setCategories] = useState<any[]>([]);
   const [showHidden, setShowHidden] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
+
 
   // Form Modal state
   const [isOpen, setIsOpen] = useState(false);

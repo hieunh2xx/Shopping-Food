@@ -13,6 +13,10 @@ export interface RestaurantChatModalProps {
   restaurantName?: string;
 }
 
+/**
+ * Modal Chat Hỏi Đáp Trực Tiếp Với Nhà Hàng (RestaurantChatModal).
+ * Phục vụ khách hàng trao đổi trực tiếp với quán khi đang xem menu (hỏi món, giờ mở cửa, giảm giá, topping...).
+ */
 export function RestaurantChatModal({
   isOpen,
   onClose,
@@ -28,6 +32,9 @@ export function RestaurantChatModal({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const activeSessionRef = useRef<string | null>(null);
 
+  /**
+   * Callback nhận tin nhắn từ SignalR và cập nhật tin nhắn hiển thị.
+   */
   const handleReceive = useCallback((message: IChatMessage) => {
     const activeSid = activeSessionRef.current;
     if (activeSid && message.sessionId !== activeSid) return;
@@ -95,6 +102,10 @@ export function RestaurantChatModal({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  /**
+   * Xử lý gửi tin nhắn của khách hàng tới nhà hàng.
+   * @param e - Sự kiện FormEvent
+   */
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim() || !sessionId || !user || !token) return;

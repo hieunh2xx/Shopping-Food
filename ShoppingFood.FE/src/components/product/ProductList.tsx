@@ -9,6 +9,10 @@ interface ProductListProps {
   flashSaleProducts?: IFlashSaleProduct[];
 }
 
+/**
+ * Danh Sách Món Ăn Dạng Lưới (ProductList).
+ * Nhận danh sách sản phẩm, trạng thái đang tải, thông báo rỗng và danh sách Flash Sale để render lưới các thẻ `ProductCard`.
+ */
 export function ProductList({ products, isLoading, emptyMessage = 'Không có sản phẩm nào.', flashSaleProducts = [] }: ProductListProps) {
   if (isLoading) {
     return (
@@ -41,3 +45,4 @@ export function ProductList({ products, isLoading, emptyMessage = 'Không có s�
     </div>
   );
 }
+

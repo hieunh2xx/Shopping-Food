@@ -7,9 +7,16 @@ interface RegisterPageProps {
   isSeller?: boolean;
 }
 
+/**
+ * Trang Đăng Ký Tài Khoản Mới (RegisterPage).
+ * Phục vụ cả 2 luồng:
+ * - Đăng ký tài khoản Khách hàng thông thường (`isSeller = false`)
+ * - Đăng ký trở thành Đối tác bán hàng (`isSeller = true`) kèm giấy phép kinh doanh và ATTP.
+ */
 export function RegisterPage({ isSeller = false }: RegisterPageProps) {
   return (
     <div className="min-h-screen flex bg-gray-50">
+
       {/* Left — Decorative */}
       <div className="hidden lg:flex lg:w-5/12 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 via-gray-50 to-gray-50" />

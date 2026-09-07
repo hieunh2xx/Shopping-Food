@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Database, Check, ShieldCheck, Search, Users, Loader2 } from 'lucide-react';
 import { Button, Input } from '../../components/common';
 import { adminService } from '../../services/AdminService';
@@ -14,10 +14,18 @@ const ROLES = [
   { id: 3, name: 'Customer', description: 'Khách hàng mua hàng.', color: 'bg-green-500' },
 ];
 
+/**
+ * Trang Quản Lý Phân Quyền API Cho Từng Vai Trò (AdminPermissionsPage).
+ * Thiết lập ma trận quyền hạn truy cập API cho từng Role:
+ * - Chọn vai trò (Admin, Coordinator, Seller, Mall, Shipper, Customer)
+ * - Tra cứu và tích chọn các API endpoint được phép truy cập
+ * - Lưu và áp dụng chính sách phân quyền bảo mật mới.
+ */
 export function AdminPermissionsPage() {
   const [selectedRole, setSelectedRole] = useState(ROLES[0]);
   const [search, setSearch] = useState('');
   const [searchPermission, setSearchPermission] = useState('');
+
   
   const [endpoints, setEndpoints] = useState<any[]>([]);
   const [rolePermissions, setRolePermissions] = useState<string[]>([]);

@@ -7,6 +7,10 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   required?: boolean;
 }
 
+/**
+ * Thành phần Ô nhập liệu văn bản (Input).
+ * Bao gồm nhãn (label), dấu bắt buộc (*), thông báo lỗi xác thực và văn bản hướng dẫn bổ trợ (helperText).
+ */
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ label, error, helperText, required, className = '', id, ...props }, ref) => {
     const inputId = id || label?.toLowerCase().replace(/\s+/g, '-');

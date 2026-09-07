@@ -9,6 +9,15 @@ import toast from 'react-hot-toast';
 import { adminService } from '../../services/AdminService';
 import { maskEmail, maskPhone } from '../../utils/formatters';
 
+/**
+ * Trang Quản Lý Tài Khoản Toàn Bộ Người Dùng (AdminUsersPage).
+ * Trung tâm quản lý tài khoản người dùng:
+ * - Xem danh sách mọi tài khoản: Khách hàng, Chủ quán, Tài xế, Điều phối viên, Quản trị viên
+ * - Tìm kiếm theo tên, email, số điện thoại
+ * - Khóa / Mở khóa tài khoản người dùng
+ * - Thêm mới tài khoản nhân viên / điều phối viên nội bộ (Coordinator)
+ * - Xem lịch sử khiếu nại của tài khoản.
+ */
 export function AdminUsersPage() {
   const [search, setSearch] = useState('');
   const [users, setUsers] = useState<IUserDto[]>([]);
@@ -16,6 +25,7 @@ export function AdminUsersPage() {
   const [page, setPage] = useState(1);
   const [take, setTake] = useState(10);
   const [isLoading, setIsLoading] = useState(true);
+
 
   // Tier Modal
   const [isTierModalOpen, setIsTierModalOpen] = useState(false);

@@ -9,6 +9,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../routes/routeConfig';
 import { CarouselSlider } from '../ui/CarouselSlider';
 
+/**
+ * Khối hiển thị ô số đếm ngược thời gian (TimeBlock).
+ */
 function TimeBlock({ val, label }: { val: string; label: string }) {
   return (
     <div className="flex flex-col items-center">
@@ -18,6 +21,12 @@ function TimeBlock({ val, label }: { val: string; label: string }) {
   );
 }
 
+/**
+ * Khu Vực Flash Sale Giờ Vàng (FlashSaleSection).
+ * Hiển thị các deal giảm giá sốc có giới hạn thời gian trên trang chủ:
+ * - Đồng hồ đếm ngược thời gian kết thúc từng giây (Giờ : Phút : Giây)
+ * - Slider các sản phẩm Flash Sale kèm % giảm giá và thanh tiến độ số lượng đã bán.
+ */
 export function FlashSaleSection() {
   const navigate = useNavigate();
   const [activeFlashSale, setActiveFlashSale] = useState<IFlashSale | null>(null);
@@ -29,6 +38,7 @@ export function FlashSaleSection() {
     fetchFlashSaleData();
   }, []);
 
+  // Bộ đếm ngược thời gian Flash Sale
   useEffect(() => {
     if (!activeFlashSale) return;
 
@@ -54,6 +64,9 @@ export function FlashSaleSection() {
     return () => clearInterval(timer);
   }, [activeFlashSale]);
 
+  /**
+   * Tải dữ liệu đợt Flash Sale đang hoạt động và danh sách sản phẩm đính kèm.
+   */
   const fetchFlashSaleData = async () => {
     setIsLoading(true);
     try {
@@ -75,7 +88,7 @@ export function FlashSaleSection() {
                const p = pDetails.find(pd => pd.id === fs.productId);
                return { fs, p };
              }).filter(x => x.p !== undefined) as Array<{fs: IFlashSaleProduct, p: IProductDto}>;
-             setCombinedProducts(combined.slice(0, 6)); // Display max 6
+             setCombinedProducts(combined.slice(0, 6)); // Hiển thị tối đa 6 sản phẩm
           }
         }
       } else {
@@ -87,6 +100,7 @@ export function FlashSaleSection() {
       setIsLoading(false);
     }
   };
+
 
   if (isLoading || !activeFlashSale || combinedProducts.length === 0) {
     return null;

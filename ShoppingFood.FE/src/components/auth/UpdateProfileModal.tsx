@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { X } from 'lucide-react';
 import { Button, Input } from '../common';
 import { authService } from '../../services/AuthService';
@@ -12,6 +12,10 @@ interface UpdateProfileModalProps {
   onSuccess: () => void;
 }
 
+/**
+ * Modal Cập Nhật Thông Tin Cá Nhân (UpdateProfileModal).
+ * Cho phép người dùng chỉnh sửa họ tên, giới tính và ngày sinh.
+ */
 export function UpdateProfileModal({ isOpen, onClose, profile, onSuccess }: UpdateProfileModalProps) {
   const [fullName, setFullName] = useState('');
   const [gender, setGender] = useState('');
@@ -30,6 +34,9 @@ export function UpdateProfileModal({ isOpen, onClose, profile, onSuccess }: Upda
 
   if (!isOpen) return null;
 
+  /**
+   * Kiểm tra tính hợp lệ của thông tin họ tên.
+   */
   const validate = () => {
     const newErrors: Record<string, string> = {};
     if (!fullName.trim()) newErrors.fullName = 'Vui lòng nhập họ tên';
@@ -38,6 +45,10 @@ export function UpdateProfileModal({ isOpen, onClose, profile, onSuccess }: Upda
     return Object.keys(newErrors).length === 0;
   };
 
+  /**
+   * Gửi thông tin hồ sơ cập nhật lên máy chủ API.
+   * @param e - Sự kiện FormEvent
+   */
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!validate()) return;

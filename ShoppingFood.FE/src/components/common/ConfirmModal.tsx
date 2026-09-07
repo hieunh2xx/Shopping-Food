@@ -12,6 +12,11 @@ interface ConfirmModalProps {
   isLoading?: boolean;
 }
 
+/**
+ * Modal Xác nhận Hành động (ConfirmModal).
+ * Hiển thị thông điệp cảnh báo và hai nút bấm Đồng ý / Hủy bỏ với nhiều chủ đề màu sắc (nguy hiểm, cảnh báo, thành công).
+ * @param props - Thuộc tính cấu hình ConfirmModal
+ */
 export function ConfirmModal({
   isOpen,
   onClose,
@@ -23,6 +28,9 @@ export function ConfirmModal({
   confirmVariant = 'primary',
   isLoading = false,
 }: ConfirmModalProps) {
+  /**
+   * Trả về lớp CSS của nút Xác nhận dựa trên biến thể variant được truyền vào.
+   */
   const getConfirmButtonClasses = () => {
     switch (confirmVariant) {
       case 'danger':

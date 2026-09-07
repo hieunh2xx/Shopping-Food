@@ -32,11 +32,20 @@ import { BatchPickupCodeModal } from './components/BatchPickupCodeModal';
 import type { BatchPickupOrderItem } from './components/BatchPickupCodeModal';
 import { Modal, Button } from '../../components/common';
 
+/**
+ * Bảng Điều Khiển Giao Hàng Của Tài Xế (ShipperDashboard).
+ * Trung tâm nhận và xử lý đơn giao hàng trực tiếp:
+ * - Bật/tắt trạng thái Sẵn sàng nhận đơn (Online / Offline)
+ * - Nhận popup thông báo đơn đề xuất trong vòng 60 giây (OrderProposalPopup)
+ * - Tiến trình giao hàng đa bước: Nhận đơn -> Đến quán -> Nhập mã lấy hàng (Pickup code đơn/hàng loạt) -> Đang giao -> Chụp ảnh giao thành công
+ * - Báo cáo sự cố không giao được hàng (ReportIncidentModal)
+ * - Gửi giải trình khi có yêu cầu từ điều phối viên.
+ */
 export function ShipperDashboard() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Real state from API (persisted locally across page changes)
+  // Trạng thái trực tuyến (lưu localStorage)
   const [isOnline, setIsOnline] = useState(() => {
     return localStorage.getItem('shipper_is_online') === 'true';
   });
@@ -51,6 +60,7 @@ export function ShipperDashboard() {
   const [explanationRequest, setExplanationRequest] = useState<{ id: string; requestMessage: string } | null>(null);
   const [explanationReply, setExplanationReply] = useState('');
   const [submittingExplanation, setSubmittingExplanation] = useState(false);
+
 
   // Modals for prompt replacement
   const [isPickupCodeModalOpen, setIsPickupCodeModalOpen] = useState(false);

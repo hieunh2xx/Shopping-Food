@@ -1,10 +1,11 @@
-﻿import { useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { productService } from '../services';
 import type { IProductDto, ISearchProductQuery, IAddProductRequest, IUpdateProductRequest } from '../interfaces';
 import toast from 'react-hot-toast';
 
 /**
- * useProducts hook — encapsulates all product CRUD and search logic
+ * Hook tùy chỉnh Quản lý Món ăn và Sản phẩm (useProducts).
+ * Đóng gói toàn bộ logic tìm kiếm món, xem chi tiết, lấy danh sách bán chạy (Best Sellers), thêm mới, cập nhật và xóa món ăn.
  */
 export function useProducts() {
   const [products, setProducts] = useState<IProductDto[]>([]);
@@ -14,6 +15,10 @@ export function useProducts() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  /**
+   * Tải danh sách sản phẩm theo bộ lọc (quán ăn, danh mục, từ khóa, phân trang).
+   * @param params - Bộ lọc sản phẩm
+   */
   const fetchProducts = useCallback(async (params?: { filter?: string; skip?: number; take?: number; restaurantId?: string; categoryId?: string; status?: string }) => {
     setIsLoading(true);
     setError(null);
@@ -32,6 +37,10 @@ export function useProducts() {
     }
   }, []);
 
+  /**
+   * Tải thông tin chi tiết của một sản phẩm theo ID.
+   * @param id - Mã sản phẩm
+   */
   const fetchProductById = useCallback(async (id: string) => {
     setIsLoading(true);
     setError(null);
@@ -49,6 +58,10 @@ export function useProducts() {
     }
   }, []);
 
+  /**
+   * Tìm kiếm sản phẩm theo từ khóa, sắp xếp, khoảng giá và phân trang (tự động loại bỏ món bị ẩn).
+   * @param query - Tiêu chí tìm kiếm
+   */
   const searchProducts = useCallback(async (query: ISearchProductQuery) => {
     setIsLoading(true);
     setError(null);
@@ -67,6 +80,10 @@ export function useProducts() {
     }
   }, []);
 
+  /**
+   * Tải danh sách các món ăn bán chạy nhất toàn sàn.
+   * @param take - Số lượng món cần lấy
+   */
   const fetchBestSellers = useCallback(async (take: number = 10) => {
     setIsLoading(true);
     try {
@@ -75,12 +92,16 @@ export function useProducts() {
         setBestSellers((response.data || []).filter(p => !p.isHidden));
       }
     } catch {
-      // Silent fail for best sellers
+      // Bỏ qua lỗi nếu không tải được món bán chạy
     } finally {
       setIsLoading(false);
     }
   }, []);
 
+  /**
+   * Thêm món ăn mới vào thực đơn quán của Người bán.
+   * @param data - Thông tin món ăn (tên, giá, ảnh, danh mục, size, topping)
+   */
   const createProduct = useCallback(async (data: IAddProductRequest) => {
     setIsLoading(true);
     setError(null);
@@ -104,6 +125,11 @@ export function useProducts() {
     }
   }, []);
 
+  /**
+   * Cập nhật thông tin món ăn theo ID.
+   * @param id - Mã món
+   * @param data - Dữ liệu cập nhật
+   */
   const updateProduct = useCallback(async (id: string, data: IUpdateProductRequest) => {
     setIsLoading(true);
     setError(null);
@@ -127,6 +153,10 @@ export function useProducts() {
     }
   }, []);
 
+  /**
+   * Xóa một món ăn khỏi thực đơn của quán.
+   * @param id - Mã món ăn cần xóa
+   */
   const deleteProduct = useCallback(async (id: string) => {
     setIsLoading(true);
     try {

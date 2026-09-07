@@ -11,6 +11,11 @@ const sizes = {
   lg: 'w-8 h-8',
 };
 
+/**
+ * Thành phần Hiển thị Biểu tượng Đang tải (Loading Spinner).
+ * @param props.size - Kích thước vòng xoay (sm, md, lg)
+ * @param props.text - Dòng chữ thông báo đang tải đi kèm
+ */
 export function Loading({ size = 'md', text }: LoadingProps) {
   return (
     <div className="flex flex-col items-center justify-center gap-3">

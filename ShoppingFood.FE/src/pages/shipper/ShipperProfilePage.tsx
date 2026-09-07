@@ -23,7 +23,7 @@ import { MapContainer, TileLayer, Marker, useMapEvents, Circle } from 'react-lea
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// Fix leaflet default icon issue
+// Sửa lỗi hiển thị icon mặc định của Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -31,6 +31,9 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
+/**
+ * Component Marker định vị vị trí hoạt động trên bản đồ Leaflet.
+ */
 function LocationMarker({ position, setPosition }: { position: [number, number] | null, setPosition: (p: [number, number]) => void }) {
   const map = useMapEvents({
     click(e) {
@@ -49,6 +52,13 @@ function LocationMarker({ position, setPosition }: { position: [number, number] 
   );
 }
 
+/**
+ * Trang Hồ Sơ & Cài Đặt Khu Vực Hoạt Động Của Tài Xế (ShipperProfilePage).
+ * Quản lý thông tin tài xế và lịch trực:
+ * - Tab "Thông tin": Xem thông tin cá nhân, bằng lái xe, CCCD, trạng thái duyệt
+ * - Tab "Khu vực & Lịch làm việc": Chọn tâm hoạt động GPS trên bản đồ Leaflet kèm bán kính quét đơn (km), đăng ký các ca làm việc trong tuần
+ * - Tab "Điểm uy tín": Xem chi tiết sao đánh giá và lịch sử biến động điểm uy tín (`ShipperReputationTab`).
+ */
 export function ShipperProfilePage() {
   const { user } = useAuth();
   const location = useLocation();
@@ -56,6 +66,7 @@ export function ShipperProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isChangeContactOpen, setIsChangeContactOpen] = useState(false);
+
 
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);

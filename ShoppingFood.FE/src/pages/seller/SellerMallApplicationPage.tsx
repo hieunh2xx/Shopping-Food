@@ -8,14 +8,19 @@ import { Modal, Input, Button } from '../../components/common';
 import { authService } from '../../services/AuthService';
 import { notificationRealtimeService } from '../../services/NotificationRealtimeService';
 
+/**
+ * Trang Đăng Ký Nâng Cấp Quán Lên UniEats Mall (SellerMallApplicationPage).
+ * Dành cho các nhà hàng đối tác mong muốn nâng cấp gian hàng chính hãng (Mall):
+ * - Theo dõi trạng thái đơn đăng ký nâng cấp (Chờ duyệt, Đã duyệt, Từ chối kèm lý do)
+ * - Nộp lại hồ sơ hoặc cập nhật thông tin giấy phép kinh doanh, ảnh cửa hàng khi bị từ chối.
+ */
 export function SellerMallApplicationPage() {
-
   const [loading, setLoading] = useState(true);
   const [mallApps, setMallApps] = useState<any[]>([]);
   const [page, setPage] = useState(1);
   const limit = 5;
 
-  // Update modal state
+  // Trạng thái Modal cập nhật hồ sơ
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [updatingApp, setUpdatingApp] = useState<any | null>(null);
   
@@ -24,6 +29,7 @@ export function SellerMallApplicationPage() {
   const [contactInfo, setContactInfo] = useState('');
   const [businessLicenseUrl, setBusinessLicenseUrl] = useState('');
   const [shopImageUrl, setShopImageUrl] = useState('');
+
   
   const [isUploadingLicense, setIsUploadingLicense] = useState(false);
   const [isUploadingShop, setIsUploadingShop] = useState(false);

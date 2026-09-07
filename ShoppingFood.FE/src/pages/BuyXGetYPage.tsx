@@ -9,6 +9,13 @@ import { Link } from 'react-router-dom';
 import { useCart, useConfirm } from '../hooks';
 import { ROUTES } from '../routes/routeConfig';
 
+/**
+ * Trang Danh Sách Toàn Bộ Khuyến Mãi Mua X Tặng Y (BuyXGetYPage).
+ * Hiển thị tất cả các chương trình ưu đãi mua kèm tặng kèm đang diễn ra trên hệ thống:
+ * - Lưới các thẻ ưu đãi với hình ảnh, tên món chính và món quà tặng kèm
+ * - Giá combo tính tự động theo số lượng mua
+ * - Nút thêm nhanh cả combo vào giỏ hàng.
+ */
 export function BuyXGetYPage() {
   const { addBuyXGetY } = useCart();
   const { showModal } = useConfirm();
@@ -19,6 +26,9 @@ export function BuyXGetYPage() {
     fetchPromotions();
   }, []);
 
+  /**
+   * Tải toàn bộ danh sách ưu đãi Mua X Tặng Y còn hiệu lực từ hệ thống.
+   */
   const fetchPromotions = async () => {
     setIsLoading(true);
     try {
@@ -31,7 +41,7 @@ export function BuyXGetYPage() {
           return endDate >= now;
         });
 
-        // Fetch product and restaurant details
+        // Tải chi tiết sản phẩm và nhà hàng tương ứng
         const combined = await Promise.all(validPromos.map(async (promo) => {
           let p: IProductDto | null = null;
           let r: IRestaurantDto | null = null;
@@ -59,6 +69,7 @@ export function BuyXGetYPage() {
       setIsLoading(false);
     }
   };
+
 
   const colors = [
     "from-orange-500 to-red-500",

@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Gift, Plus, Trash2, Edit2 } from 'lucide-react';
 import { Button, Input, Modal, Pagination } from '../../components/common';
 import toast from 'react-hot-toast';
@@ -7,6 +7,13 @@ import { productService } from '../../services/ProductService';
 import type { IBuyXGetYPromotionDto, ICreatePromotionRequest, IProductDto, IUpdatePromotionRequest } from '../../interfaces';
 import { useAuth, useConfirm } from '../../hooks';
 
+/**
+ * Trang Quản Lý Khuyến Mãi Mua X Tặng Y Của Quán (SellerPromotionsPage).
+ * Cho phép người bán thiết lập chương trình ưu đãi mua kèm tặng kèm:
+ * - Chọn món mua chính (Trigger Product) và số lượng mua tối thiểu
+ * - Chọn món quà tặng kèm (Gift Product) và số lượng quà tặng
+ * - Thiết lập thời gian hiệu lực và bật/tắt khuyến mãi.
+ */
 export function SellerPromotionsPage() {
   const { user } = useAuth();
   const { confirm } = useConfirm();
@@ -16,11 +23,12 @@ export function SellerPromotionsPage() {
   const [products, setProducts] = useState<IProductDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Pagination
+  // Phân trang
   const [page, setPage] = useState(1);
   const [take, setTake] = useState(10);
   const paginatedPromotions = promotions.slice((page - 1) * take, page * take);
   const total = promotions.length;
+
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -132,8 +140,8 @@ export function SellerPromotionsPage() {
           toast.error(res.message);
         }
       }
-    } catch {
-      toast.error('Lưu khuyến mãi thất bại do lỗi kết nối mạng.');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Lưu khuyến mãi thất bại do lỗi kết nối mạng.');
     }
   };
 
@@ -153,8 +161,8 @@ export function SellerPromotionsPage() {
       } else {
         toast.error(res.message);
       }
-    } catch {
-      toast.error('Xóa khuyến mãi thất bại do lỗi kết nối mạng.');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Xóa khuyến mãi thất bại do lỗi kết nối mạng.');
     }
   };
 

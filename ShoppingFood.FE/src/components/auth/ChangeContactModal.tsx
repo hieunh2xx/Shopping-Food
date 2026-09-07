@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { X, Mail, KeyRound } from 'lucide-react';
 import { Button } from '../common';
 import { authService } from '../../services/AuthService';
@@ -11,6 +11,12 @@ interface ChangeContactModalProps {
   initialEmail?: string | null;
 }
 
+/**
+ * Modal Xác thực & Thay đổi Email / Số điện thoại liên hệ (ChangeContactModal).
+ * Gồm 2 bước:
+ * 1. Nhập email mới và gửi yêu cầu cấp mã xác thực OTP
+ * 2. Nhập mã OTP 6 số để hoàn tất cập nhật email tài khoản.
+ */
 export function ChangeContactModal({ isOpen, onClose, onSuccess, initialEmail }: ChangeContactModalProps) {
   const [email, setEmail] = useState('');
   const [otpCode, setOtpCode] = useState('');
@@ -29,6 +35,10 @@ export function ChangeContactModal({ isOpen, onClose, onSuccess, initialEmail }:
 
   if (!isOpen) return null;
 
+  /**
+   * Gửi yêu cầu mã OTP đến địa chỉ email mới.
+   * @param e - Sự kiện FormEvent
+   */
   const handleRequestOtp = async (e: FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !email.includes('@')) {
@@ -53,6 +63,10 @@ export function ChangeContactModal({ isOpen, onClose, onSuccess, initialEmail }:
     }
   };
 
+  /**
+   * Xác thực mã OTP và hoàn tất đổi thông tin liên hệ email.
+   * @param e - Sự kiện FormEvent
+   */
   const handleVerifyOtp = async (e: FormEvent) => {
     e.preventDefault();
     if (!otpCode.trim() || otpCode.length < 6) {

@@ -23,6 +23,10 @@ export interface DashboardLayoutProps {
   globalBanner?: React.ReactNode;
 }
 
+/**
+ * Thành phần Nhóm Menu Điều hướng có thể thu gọn (Accordion Nav Group).
+ * Tự động mở nhóm nếu có mục con đang hoạt động.
+ */
 function NavGroupDropdown({ 
   groupName, 
   items, 
@@ -90,6 +94,11 @@ function NavGroupDropdown({
   );
 }
 
+/**
+ * Layout Khung Điều khiển Quản trị dùng chung (DashboardLayout).
+ * Cung cấp khung giao diện Dashboard chuẩn gồm Sidebar trái (thu gọn trên mobile, gom nhóm điều hướng), Header trên (chuông thông báo, tài khoản) và khu vực nội dung (Outlet).
+ * Dùng cho các phân hệ: Admin, Coordinator, Seller, Shipper.
+ */
 export function DashboardLayout({
   navItems,
   brandName,

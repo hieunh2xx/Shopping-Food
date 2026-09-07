@@ -8,25 +8,36 @@ import { Input } from '../common';
 import { ChevronRight, Upload } from 'lucide-react';
 import { notificationRealtimeService } from '../../services/NotificationRealtimeService';
 
+
+/**
+ * Quản Lý Lịch Sử Đăng Ký Trở Thành Đối Tác (CustomerApplications).
+ * Cho phép khách hàng xem tình trạng duyệt đơn đăng ký Người Bán (Seller) hoặc Tài Xế (Shipper):
+ * - Xem trạng thái: Đang chờ duyệt (Pending), Cần bổ sung thông tin (NeedsInfo), Đã phê duyệt (Approved), Bị từ chối (Rejected)
+ * - Đọc lý do và yêu cầu chi tiết từ Quản trị viên
+ * - Mở modal cập nhật, tải lại ảnh giấy tờ và gửi lại đơn khi nhận yêu cầu bổ sung thông tin.
+ */
 export function CustomerApplications() {
   const [loading, setLoading] = useState(true);
   const [applications, setApplications] = useState<any[]>([]);
 
-  // Update Modal State
+  // Trạng thái modal cập nhật hồ sơ
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [updatingApp, setUpdatingApp] = useState<any | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // Form State (Unified)
+  // Dữ liệu biểu mẫu cập nhật
   const [formData, setFormData] = useState<any>({});
   const [uploadingField, setUploadingField] = useState<string | null>(null);
 
+  /**
+   * Tải toàn bộ đơn đăng ký Người bán và Shipper của khách hàng từ máy chủ.
+   */
   const fetchApplications = async () => {
     setLoading(true);
     try {
       const res = await userService.getMyApplications();
       if (!res.error && res.data) {
-        // Combine seller and shipper applications
+        // Gộp danh sách đơn bán hàng và giao hàng, sắp xếp theo thời gian nộp mới nhất
         const sellers = (res.data.sellerApplications || []).map((app: any) => ({ ...app, appType: 'Seller' }));
         const shippers = (res.data.shipperApplications || []).map((app: any) => ({ ...app, appType: 'Shipper' }));
         const combined = [...sellers, ...shippers].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -43,7 +54,6 @@ export function CustomerApplications() {
     fetchApplications();
 
     const handleNotification = () => {
-      // Whenever there's a notification, fetch again to get latest status
       fetchApplications();
     };
 
@@ -53,11 +63,18 @@ export function CustomerApplications() {
     };
   }, []);
 
+  /**
+   * Kiểm tra xem đường dẫn ảnh/tài liệu có hợp lệ hay không.
+   */
   const isValidUrl = (url: string | undefined | null) => {
     if (!url) return false;
     return url.startsWith('http') || url.startsWith('data:') || url.startsWith('blob:') || url.startsWith('/');
   };
 
+  /**
+   * Mở modal chỉnh sửa đơn đăng ký khi đơn cần bổ sung thông tin.
+   * @param app - Đối tượng đơn đăng ký
+   */
   const openUpdateModal = (app: any) => {
     setUpdatingApp(app);
     if (app.appType === 'Seller') {
@@ -83,6 +100,11 @@ export function CustomerApplications() {
     setIsUpdateModalOpen(true);
   };
 
+  /**
+   * Tải ảnh/tài liệu đính kèm lên máy chủ và lưu URL vào form.
+   * @param e - Sự kiện ChangeEvent
+   * @param fieldName - Tên trường dữ liệu cần gán URL
+   */
   const handleUploadImage = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: string) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -103,6 +125,10 @@ export function CustomerApplications() {
     }
   };
 
+  /**
+   * Gửi lại đơn đăng ký đã bổ sung thông tin cho Quản trị viên duyệt lại.
+   * @param e - Sự kiện FormEvent
+   */
   const handleUpdateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!updatingApp) return;
@@ -145,6 +171,9 @@ export function CustomerApplications() {
     }
   };
 
+  /**
+   * Trả về class màu sắc viền và nền cho từng trạng thái xét duyệt.
+   */
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Pending': return 'text-blue-600 bg-blue-50 border-blue-200';
@@ -155,6 +184,9 @@ export function CustomerApplications() {
     }
   };
 
+  /**
+   * Trả về nhãn tiếng Việt tương ứng cho trạng thái xét duyệt đơn.
+   */
   const getStatusText = (status: string) => {
     switch (status) {
       case 'Pending': return 'Đang chờ duyệt';
@@ -164,6 +196,7 @@ export function CustomerApplications() {
       default: return status;
     }
   };
+
 
   if (loading) {
     return <Loading />;

@@ -12,6 +12,13 @@ import { orderService } from '../../services/OrderService';
 import { CustomerOrderDetailModal } from '../order/CustomerOrderDetailModal';
 import { notificationRealtimeService } from '../../services/NotificationRealtimeService';
 
+
+/**
+ * Ngăn Kéo Hoạt động Mua sắm (ShoppingDrawer).
+ * Gồm 2 tab chuyển đổi:
+ * 1. Tab "Giỏ hàng": Hiển thị các món ăn được nhóm theo từng quán (cho phép chọn 1 quán để thanh toán), hỗ trợ tăng giảm số lượng theo combo Mua X Tặng Y, áp dụng flash sale, topping, size.
+ * 2. Tab "Đơn hàng": Hiển thị lịch sử đơn hàng của khách hàng (hoặc khách vãng lai Guest) theo thời gian thực, tìm kiếm đơn nhanh, mở chi tiết và mở hộp chat đơn hàng.
+ */
 export function ShoppingDrawer() {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'cart' | 'orders'>('cart');
@@ -23,8 +30,11 @@ export function ShoppingDrawer() {
   const location = useLocation();
 
   // ---------------------------------------------------------
-  // CART LOGIC
+  // LOGIC GIỎ HÀNG (CART)
   // ---------------------------------------------------------
+  /**
+   * Gom nhóm danh sách món ăn trong giỏ theo từng nhà hàng (restaurantId).
+   */
   const groupedItems = useMemo(() => {
     return items.reduce((acc, item) => {
       const restId = item.product.restaurantId;
@@ -50,6 +60,9 @@ export function ShoppingDrawer() {
     }
   }, [selectedProvider, groupedItems, groups]);
 
+  /**
+   * Tính tổng tiền thanh toán của nhóm nhà hàng đang được chọn (bao gồm size, topping và bỏ qua quà tặng miễn phí).
+   */
   const selectedTotal = useMemo(() => {
     if (!selectedProvider || !groupedItems[selectedProvider]) return 0;
     return groupedItems[selectedProvider].items.reduce((sum, item) => {
@@ -72,6 +85,9 @@ export function ShoppingDrawer() {
     }, 0);
   }, [selectedProvider, groupedItems]);
 
+  /**
+   * Xử lý chuyển hướng đến trang Checkout đối với quán đã chọn.
+   */
   const handleCheckout = () => {
     if (!selectedProvider) return;
     const selectedGroup = groupedItems[selectedProvider];
@@ -86,7 +102,7 @@ export function ShoppingDrawer() {
   };
 
   // ---------------------------------------------------------
-  // ORDER TRACKING LOGIC
+  // LOGIC THEO DÕI ĐƠN HÀNG (ORDER TRACKING)
   // ---------------------------------------------------------
   const [orderCode, setOrderCode] = useState('');
   const [orders, setOrders] = useState<any[]>([]);
@@ -98,7 +114,7 @@ export function ShoppingDrawer() {
   const take = 10;
   const [hasMore, setHasMore] = useState(true);
 
-  // Auto open orders tab if query param has track=true or orderId
+  // Tự động mở tab đơn hàng nếu có param track=true hoặc orderId trên URL
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const orderId = searchParams.get('orderId');
@@ -111,7 +127,6 @@ export function ShoppingDrawer() {
           sessionStorage.setItem(`sf_open_chat_${orderId}`, '1');
         }
         setDetailModal({ isOpen: true, orderId, openChat });
-        // Xóa query để không mở lại khi refresh / back
         const next = new URLSearchParams(location.search);
         next.delete('orderId');
         next.delete('openChat');
@@ -122,14 +137,14 @@ export function ShoppingDrawer() {
     }
   }, [location.search, location.pathname]);
 
-  // Listen for custom event to switch to cart tab
+  // Lắng nghe sự kiện mở tab giỏ hàng từ các trang khác
   useEffect(() => {
     const handleOpenCartTab = () => setActiveTab('cart');
     window.addEventListener('openCartTab', handleOpenCartTab);
     return () => window.removeEventListener('openCartTab', handleOpenCartTab);
   }, []);
 
-  // Listen for custom event to open order detail directly (optional openChat from notification)
+  // Lắng nghe sự kiện mở modal chi tiết đơn hàng
   useEffect(() => {
     const handleOpenOrderDetail = (e: CustomEvent<string | { orderId?: string; openChat?: boolean }>) => {
       setIsOpen(true);
@@ -171,6 +186,11 @@ export function ShoppingDrawer() {
     };
   }, [isOpen, activeTab]);
 
+  /**
+   * Tải danh sách đơn hàng đã mua từ API (cho cả thành viên đã đăng nhập hoặc khách vãng lai).
+   * @param isLoadMore - Trạng thái tải thêm phân trang
+   * @param currentSkip - Số lượng bản ghi bỏ qua
+   */
   const fetchOrders = async (isLoadMore = false, currentSkip = 0) => {
     if (isLoadMore) setIsLoadingMore(true);
     else setIsLoading(true);
@@ -204,11 +224,17 @@ export function ShoppingDrawer() {
     }
   };
 
+  /**
+   * Xử lý tải thêm đơn hàng khi cuộn xuống cuối danh sách.
+   */
   const handleLoadMore = () => {
     if (!hasMore || isLoadingMore) return;
     fetchOrders(true, skip + take);
   };
 
+  /**
+   * Trả về icon biểu thị trạng thái đơn hàng.
+   */
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
       case 'pending': return <Clock className="w-5 h-5 text-yellow-500" />;
@@ -220,6 +246,9 @@ export function ShoppingDrawer() {
     }
   };
 
+  /**
+   * Trả về nhãn tiếng Việt của trạng thái đơn hàng.
+   */
   const getStatusText = (status: string) => {
     switch (status.toLowerCase()) {
       case 'pending': return 'Đang chờ xử lý';
@@ -233,6 +262,9 @@ export function ShoppingDrawer() {
     }
   };
 
+  /**
+   * Trả về màu chữ CSS tương ứng với trạng thái đơn.
+   */
   const getStatusColorClass = (status: string) => {
     switch (status.toLowerCase()) {
       case 'pending': return 'text-yellow-600';
@@ -243,6 +275,7 @@ export function ShoppingDrawer() {
       default: return 'text-gray-600';
     }
   };
+
 
   return (
     <>

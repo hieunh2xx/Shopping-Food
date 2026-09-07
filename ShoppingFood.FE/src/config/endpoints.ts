@@ -1,10 +1,9 @@
 /**
- * Centralized API Endpoints Configuration
- * Single source of truth for all backend API paths
- * Maps to ShoppingFood.API controllers
+ * Cấu hình tập trung toàn bộ các Endpoint API của hệ thống Frontend.
+ * Đóng vai trò là nguồn chân lý duy nhất (Single Source of Truth) kết nối trực tiếp đến các Controller của ShoppingFood.API.
  */
 export const API_ENDPOINTS = {
-  // === Auth & User (UserController) ===
+  // === Xác thực & Tài khoản (UserController) ===
   AUTH: {
     LOGIN: '/User/Login',
     REGISTER: '/User/Register',

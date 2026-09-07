@@ -13,6 +13,11 @@ interface PromptModalProps {
   isLoading?: boolean;
 }
 
+/**
+ * Modal Nhập Dữ liệu / Phản hồi nhanh (PromptModal).
+ * Cung cấp ô textarea nhập văn bản (ví dụ: lý do từ chối, lý do hủy đơn, nội dung kháng cáo) cùng nút xác nhận.
+ * @param props - Thuộc tính cấu hình PromptModal
+ */
 export function PromptModal({
   isOpen,
   onClose,
@@ -27,22 +32,28 @@ export function PromptModal({
   const [value, setValue] = useState('');
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
+  // Tự động focus vào ô textarea khi mở modal
   useEffect(() => {
     if (isOpen) {
       setValue('');
-      // Delay focus slightly to ensure modal is fully rendered
       setTimeout(() => {
         inputRef.current?.focus();
       }, 100);
     }
   }, [isOpen]);
 
+  /**
+   * Xử lý gửi form khi người dùng nhấn xác nhận.
+   */
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!value.trim()) return;
     onConfirm(value.trim());
   };
 
+  /**
+   * Trả về lớp CSS nút Xác nhận dựa theo kiểu dáng được chọn.
+   */
   const getConfirmButtonClasses = () => {
     switch (confirmVariant) {
       case 'danger':

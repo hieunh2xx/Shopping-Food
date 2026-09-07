@@ -1,5 +1,9 @@
 import { SupportChatDashboard } from '../../components/chat/SupportChatDashboard';
 
+/**
+ * Trang Quản Lý Live Chat Dành Cho Admin (AdminChatPage).
+ * Cho phép quản trị viên cấp cao theo dõi và trực tiếp hỗ trợ khách hàng/đối tác.
+ */
 export function AdminChatPage() {
   return (
     <div className="p-6">
@@ -11,3 +15,4 @@ export function AdminChatPage() {
     </div>
   );
 }
+

@@ -21,7 +21,7 @@ import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-lea
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
-// Fix Leaflet marker icon issue
+// Cấu hình icon mặc định cho bản đồ Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -29,12 +29,18 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
+/**
+ * Component hỗ trợ di chuyển mượt mà tâm bản đồ khi người dùng chọn tọa độ.
+ */
 function ChangeView({ center, zoom }: { center: [number, number], zoom: number }) {
   const map = useMap();
   map.flyTo(center, zoom, { duration: 1.5 });
   return null;
 }
 
+/**
+ * Bắt sự kiện nhấp chuột trên bản đồ để chọn vị trí giao hàng.
+ */
 function MapEvents({ onLocationSelected }: { onLocationSelected: (lat: number, lng: number) => void }) {
   useMapEvents({
     click(e) {
@@ -44,6 +50,15 @@ function MapEvents({ onLocationSelected }: { onLocationSelected: (lat: number, l
   return null;
 }
 
+/**
+ * Trang Đặt Hàng & Thanh Toán (CheckoutPage).
+ * Trung tâm xử lý hoàn tất đơn hàng:
+ * - Chọn địa chỉ giao hàng từ sổ tay hoặc chấm điểm trực tiếp trên bản đồ Leaflet
+ * - Áp dụng mã giảm giá voucher cửa hàng / toàn sàn và giảm giá hạng thành viên
+ * - Tính toán chi tiết phí giao hàng (khoảng cách km, giờ cao điểm, chính sách Freeship)
+ * - Lựa chọn phương thức thanh toán: COD, Chuyển khoản VietQR SePay, Ví điện tử, Ví hệ thống
+ * - Hỗ trợ đặt hàng cho cả khách vãng lai (Guest) kèm xác thực OTP và thành viên đã đăng nhập.
+ */
 export function CheckoutPage() {
   const navigate = useNavigate();
   const { items, clearCart, refreshCart } = useCart();
@@ -51,12 +66,13 @@ export function CheckoutPage() {
   
   const [searchParams] = useSearchParams();
   
-  // Always send guest id when present so BE can merge guest → user cart after login
+  // Gửi kèm guest id nếu có để BE tự động hợp nhất giỏ hàng sau khi đăng nhập
   const guestUserId = localStorage.getItem('sf_guest_id') || undefined;
 
   const urlRestaurantId = searchParams.get('restaurantId');
   const fallbackRestaurantId = items.length > 0 ? items[0].product.restaurantId : null;
   const restaurantId = urlRestaurantId || fallbackRestaurantId;
+
   
   const firstItemOfRestaurant = items.find(i => i.product.restaurantId === restaurantId);
   const restaurantName = firstItemOfRestaurant ? firstItemOfRestaurant.product.restaurantName : '';

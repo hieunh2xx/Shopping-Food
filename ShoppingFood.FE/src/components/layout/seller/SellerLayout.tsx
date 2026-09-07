@@ -23,12 +23,26 @@ import { DashboardLayout } from '../DashboardLayout';
 import { useSellerChatWatcher } from '../../../hooks/useSellerChatWatcher';
 import { PromptModal } from '../../common';
 
+/**
+ * Layout Kênh Quản lý Bán hàng của Đối tác (SellerLayout).
+ * Dành cho Người bán (Seller / Mall) để quản lý:
+ * - Tổng quan & Báo cáo doanh số
+ * - Quản lý đơn hàng, Đơn bị tài xế hủy
+ * - Thực đơn, Danh mục món, Tùy chọn Topping
+ * - Đánh giá từ khách, Mã giảm giá, Mua X Tặng Y, Flash Sale
+ * - Ví tiền & Yêu cầu rút tiền
+ * - Hộp thư trò chuyện với khách và Cài đặt thông tin cửa hàng.
+ * Hỗ trợ banner cảnh báo khi cửa hàng bị khóa và modal gửi yêu cầu nâng cấp lên Mall.
+ */
 export function SellerLayout() {
   const { user, logout, upgradeToMall } = useAuth();
   const navigate = useNavigate();
   const hasUnreadChat = useSellerChatWatcher();
   const [isMallModalOpen, setIsMallModalOpen] = useState(false);
 
+  /**
+   * Xử lý đăng xuất tài khoản Người bán.
+   */
   const handleLogout = () => {
     logout();
     navigate(ROUTES.LOGIN);

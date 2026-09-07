@@ -4,8 +4,8 @@ import { Footer } from './Footer';
 import { LiveChatWidget } from '../chat/LiveChatWidget';
 
 /**
- * MainLayout â€” wraps pages with Header and Footer
- * Uses React Router's <Outlet> to render child routes
+ * Layout Giao diện chính của Website (MainLayout).
+ * Bao bọc các trang công khai (Trang chủ, Thực đơn, Quán ăn, Chi tiết món) với Header ở trên, Footer ở dưới, Outlet ở giữa và Widget Trò chuyện trực tuyến (LiveChatWidget) nổi ở góc dưới.
  */
 export function MainLayout() {
   return (

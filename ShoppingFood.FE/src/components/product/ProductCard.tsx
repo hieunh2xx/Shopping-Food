@@ -12,6 +12,10 @@ interface ProductCardProps {
   flashSaleProduct?: IFlashSaleProduct;
 }
 
+/**
+ * Thẻ Hiển Thị Món Ăn (ProductCard).
+ * Trưng bày hình ảnh món, tên, nhà hàng, khoảng cách GPS, giá gốc/giá Flash Sale, rating sao, huy hiệu Hot/Hết hàng và nút Thêm vào giỏ nhanh.
+ */
 export function ProductCard({ product, flashSaleProduct }: ProductCardProps) {
   const navigate = useNavigate();
   const { addItem } = useCart();
@@ -21,7 +25,7 @@ export function ProductCard({ product, flashSaleProduct }: ProductCardProps) {
       className="group overflow-hidden cursor-pointer flex flex-col h-full hover:shadow-lg transition-all duration-300"
       onClick={() => navigate(getProductDetailPath(product.id))}
     >
-      {/* Image Container */}
+      {/* Khung ảnh món ăn */}
       <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
         {product.primaryImageUrl ? (
           <img

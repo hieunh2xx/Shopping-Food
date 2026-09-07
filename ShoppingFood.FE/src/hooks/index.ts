@@ -1,3 +1,6 @@
+/**
+ * Xuất tập trung toàn bộ các Custom Hooks của ứng dụng Frontend.
+ */
 export { useCustomerChatWatcher } from './useCustomerChatWatcher';
 export { useAuth } from './useAuth';
 export { useProducts } from './useProducts';
@@ -7,3 +10,4 @@ export { useAdmin } from './useAdmin';
 export { useCart } from './useCart';
 export { useUserLocation } from './useUserLocation';
 export { useConfirm } from '../contexts/ConfirmContext';
+

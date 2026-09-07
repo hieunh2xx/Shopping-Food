@@ -1,15 +1,22 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { adminService } from '../../services/AdminService';
 import { Button, Loading, Modal } from '../../components/common';
 import { AlertTriangle, CheckCircle, Trash2, Eye } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+/**
+ * Trang Kiểm Duyệt Báo Cáo Đánh Giá & Bình Luận (AdminReviewReportsPage).
+ * Tiếp nhận khiếu nại về các bình luận khiếm nhã, sai sự thật từ người dùng:
+ * - Xem nội dung bình luận và lý do người dùng báo cáo
+ * - Xử lý báo cáo: Bỏ qua (Dismiss), Xóa bình luận (DeleteReview), hoặc Cảnh cáo người dùng (WarnUser).
+ */
 export function AdminReviewReportsPage() {
   const [reports, setReports] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   const [moderateModal, setModerateModal] = useState({ isOpen: false, reportId: '', reviewContent: '', reason: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
 
   useEffect(() => {
     fetchReports();

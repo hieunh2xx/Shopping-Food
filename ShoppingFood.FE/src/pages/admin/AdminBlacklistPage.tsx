@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Plus, Trash2, ShieldBan } from 'lucide-react';
 import { Button, Input, Modal, Loading } from '../../components/common';
 import { adminService } from '../../services';
@@ -12,9 +12,17 @@ interface IBlacklistKeyword {
   createdAt: string;
 }
 
+/**
+ * Trang Quản Lý Từ Khóa Bị Cấm / Danh Sách Đen (AdminBlacklistPage).
+ * Ngăn chặn các nội dung vi phạm pháp luật, thuần phong mỹ tục:
+ * - Danh sách từ cấm được tự động phát hiện trong tên quán, tên món ăn, đánh giá và tin nhắn
+ * - Thêm từ khóa cấm mới
+ * - Xóa từ khóa cấm khỏi danh sách.
+ */
 export function AdminBlacklistPage() {
   const [keywords, setKeywords] = useState<IBlacklistKeyword[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
 
   // Add State
   const [isAddOpen, setIsAddOpen] = useState(false);

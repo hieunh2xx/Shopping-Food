@@ -16,6 +16,9 @@ import { SectionHeader } from '../components/ui/SectionHeader';
 import { CarouselSlider } from '../components/ui/CarouselSlider';
 import { ProductLocationMeta } from '../components/product/ProductLocationMeta';
 
+/**
+ * Định dạng số lượng đếm người dùng/đơn hàng thành dạng rút gọn (ví dụ: 10K+, 1.5M+).
+ */
 function formatStatCount(n: number): string {
   if (!Number.isFinite(n) || n < 0) return '0';
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M+`;
@@ -23,6 +26,16 @@ function formatStatCount(n: number): string {
   return n.toLocaleString('vi-VN');
 }
 
+/**
+ * Trang Chủ Ứng Dụng (HomePage).
+ * Trang đích chính của người dùng với đầy đủ các tính năng khám phá ẩm thực:
+ * - Banner chào mừng và danh mục ẩm thực toàn sàn (Global Categories)
+ * - Khối đếm ngược Flash Sale giờ vàng & Khuyến mãi Mua X Tặng Y
+ * - Danh sách món ăn được gợi ý cá nhân hóa (Recommendation)
+ * - Danh sách quán ăn gần bạn dựa trên tọa độ GPS
+ * - Danh sách món ăn bán chạy nhất (Best Sellers)
+ * - Khối đặt lại các món vừa đặt gần đây (Recent Orders).
+ */
 export function HomePage() {
   const navigate = useNavigate();
   const { bestSellers, fetchBestSellers, isLoading } = useProducts();
@@ -39,8 +52,9 @@ export function HomePage() {
     freeShippingMinimumOrder: number;
   } | null>(null);
 
-
-
+  /**
+   * Lấy đường dẫn đăng ký đối tác phù hợp theo vai trò người dùng hiện tại.
+   */
   const getPartnerRoute = () => {
     if (isAuthenticated && user?.role === 'Customer') {
       return ROUTES.SELLER_APPLY;
@@ -48,7 +62,7 @@ export function HomePage() {
     return ROUTES.REGISTER_SELLER;
   };
 
-  // Nearby Restaurants State
+  // Trạng thái danh sách quán ăn gần đây
   const [nearbyRestaurants, setNearbyRestaurants] = useState<INearbyRestaurantDto[]>([]);
   const [isNearbyLoading, setIsNearbyLoading] = useState(false);
   const [locationStatus, setLocationStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -59,6 +73,9 @@ export function HomePage() {
     fetchPlatformStats();
   }, []);
 
+  /**
+   * Tải số liệu thống kê toàn sàn từ máy chủ (số lượng quán, khách hàng, rating trung bình).
+   */
   const fetchPlatformStats = async () => {
     try {
       const res = await supportService.getPlatformStats();
@@ -76,6 +93,9 @@ export function HomePage() {
     }
   };
 
+  /**
+   * Tải danh mục thực đơn toàn sàn (Global Menu Categories).
+   */
   const fetchGlobalCategories = async () => {
     try {
       const res = await adminService.getGlobalMenuCategories(false);
@@ -93,6 +113,9 @@ export function HomePage() {
     }
   }, [isAuthenticated]);
 
+  /**
+   * Tải các món ăn trong các đơn hàng gần nhất của người dùng.
+   */
   const fetchRecentOrders = async () => {
     try {
       const res = await orderService.getRecentItems();
@@ -118,6 +141,9 @@ export function HomePage() {
     fetchNearbyRestaurants();
   }, []);
 
+  /**
+   * Xác định tọa độ vị trí của người dùng qua Geolocation API và tải danh sách quán gần nhất.
+   */
   const fetchNearbyRestaurants = () => {
     setIsNearbyLoading(true);
     setLocationStatus('loading');

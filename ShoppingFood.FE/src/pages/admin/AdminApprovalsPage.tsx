@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Store, Bike, UtensilsCrossed, CheckCircle, XCircle, FileText, Image as ImageIcon } from 'lucide-react';
 import { Button, Modal, Loading, Pagination } from '../../components/common';
 import { adminService, productService } from '../../services';
@@ -9,6 +9,14 @@ import { notificationRealtimeService } from '../../services/NotificationRealtime
 
 type TabType = 'sellers' | 'shippers' | 'products';
 
+/**
+ * Trang Phê Duyệt Hồ Sơ & Món Ăn Dành Cho Quản Trị Viên (AdminApprovalsPage).
+ * Trung tâm kiểm duyệt hệ thống:
+ * - Tab "Người bán": Duyệt đơn mở quán / nâng cấp Mall, kiểm tra giấy phép kinh doanh, ảnh gian hàng, tên chủ quán
+ * - Tab "Tài xế": Duyệt hồ sơ đăng ký đối tác giao hàng, kiểm tra CCCD 2 mặt, bằng lái xe, cavet xe
+ * - Tab "Món ăn": Kiểm duyệt món ăn mới do đối tác người bán đăng tải (hình ảnh, tên, giá, thành phần)
+ * - Thao tác: Phê duyệt (Approve), Từ chối (Reject có lý do) hoặc Yêu cầu bổ sung thông tin (NeedsInfo).
+ */
 export function AdminApprovalsPage() {
   const [activeTab, setActiveTab] = useState<TabType>('sellers');
   const [isLoading, setIsLoading] = useState(true);
@@ -16,6 +24,7 @@ export function AdminApprovalsPage() {
   const [sellers, setSellers] = useState<any[]>([]);
   const [shippers, setShippers] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
+
 
   // Pagination & Totals
   const [page, setPage] = useState(1);

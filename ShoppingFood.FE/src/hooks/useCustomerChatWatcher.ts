@@ -15,6 +15,11 @@ import {
 let activeCustomerChatSessionId: string | null = null;
 let activeCustomerRelatedSessionIds: string[] = [];
 
+/**
+ * Thiết lập mã phiên chat khách hàng đang hoạt động để tránh đếm trùng tin nhắn chưa đọc.
+ * @param sessionId - Mã phiên chat chính
+ * @param relatedSessionIds - Các phiên liên quan
+ */
 export function setActiveCustomerChatSession(
   sessionId: string | null,
   relatedSessionIds: string[] = []
@@ -23,17 +28,28 @@ export function setActiveCustomerChatSession(
   activeCustomerRelatedSessionIds = relatedSessionIds;
 }
 
+/**
+ * Kiểm tra xem một session chat có đang được người dùng mở xem trực tiếp trên màn hình hay không.
+ * @param sessionId - Mã phiên chat cần kiểm tra
+ */
 function isActiveCustomerThread(sessionId: string) {
   if (!sessionId || !activeCustomerChatSessionId) return false;
   if (sessionId === activeCustomerChatSessionId) return true;
   return activeCustomerRelatedSessionIds.includes(sessionId);
 }
 
+/**
+ * Hook tùy chỉnh Theo dõi Tin nhắn Chưa đọc của Khách hàng (useCustomerChatWatcher).
+ * Lắng nghe SignalR để cập nhật huy hiệu số tin nhắn chưa đọc (badge) trên thanh điều hướng Header.
+ */
 export function useCustomerChatWatcher() {
   const [unreadCount, setUnreadCount] = useState(0);
   const { token, user, isAuthenticated } = useAuth();
   const location = useLocation();
 
+  /**
+   * Cập nhật lại số lượng tin nhắn chưa đọc từ bộ nhớ cục bộ.
+   */
   const refreshCount = useCallback(() => {
     setUnreadCount(getCustomerTotalUnread());
   }, []);
@@ -46,6 +62,9 @@ export function useCustomerChatWatcher() {
 
     let isSubscribed = true;
 
+    /**
+     * Khởi tạo kết nối SignalR và đồng bộ số tin chưa đọc từ danh sách cuộc hội thoại ban đầu.
+     */
     const init = async () => {
       try {
         await chatService.startConnection(token);
@@ -63,6 +82,9 @@ export function useCustomerChatWatcher() {
 
     void init();
 
+    /**
+     * Xử lý khi có tin nhắn chat mới từ Người bán hoặc Quản trị viên.
+     */
     const handleReceive = (msg: IChatMessage) => {
       const fromStore = msg.senderRole === 'Seller' || msg.senderRole === 'Mall';
       if (!fromStore) return;

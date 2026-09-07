@@ -7,11 +7,19 @@ import toast from 'react-hot-toast';
 
 type PeriodDays = 7 | 30;
 
+/**
+ * Trang Thống Kê & Báo Cáo Doanh Thu Từng Nhà Hàng (AdminSellerRevenuePage).
+ * Phân tích hiệu quả tài chính chi tiết theo từng quán ăn đối tác:
+ * - Lọc theo khoảng thời gian (7 ngày hoặc 30 ngày) và từng nhà hàng cụ thể
+ * - Bảng phân tích: Doanh thu món bán, tiền COD / thanh toán trước, phí hoa hồng chiết khấu, cước shipper
+ * - Hiển thị công thức tính thu nhập thực nhận của nhà hàng.
+ */
 export function AdminSellerRevenuePage() {
   const [days, setDays] = useState<PeriodDays>(30);
   const [restaurantId, setRestaurantId] = useState<string>('');
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
 
   const load = useCallback(async () => {
     setLoading(true);

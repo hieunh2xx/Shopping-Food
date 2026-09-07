@@ -11,6 +11,11 @@ import { useAuth } from '../hooks';
 import { ROUTES } from '../routes/routeConfig';
 import toast from 'react-hot-toast';
 
+/**
+ * Kiểm tra xem nhà hàng hiện tại có đang mở cửa tiếp nhận đơn hay không dựa trên giờ mở và đóng cửa.
+ * @param openTime - Chuỗi giờ mở cửa (HH:mm)
+ * @param closeTime - Chuỗi giờ đóng cửa (HH:mm)
+ */
 const isRestaurantOpen = (openTime?: string, closeTime?: string) => {
   if (!openTime || !closeTime) return true;
   
@@ -29,10 +34,20 @@ const isRestaurantOpen = (openTime?: string, closeTime?: string) => {
   
   return currentTime >= openTimeMins && currentTime <= closeTimeMins;
 };
+
+/**
+ * Trang Chi Tiết Nhà Hàng (RestaurantDetailPage).
+ * Hiển thị thông tin tổng thể của một nhà hàng đối tác:
+ * - Ảnh bìa, tên quán, địa chỉ, số điện thoại, đánh giá sao, thời gian hoạt động, huy hiệu Mall/Chính hãng
+ * - Danh mục thực đơn và toàn bộ món ăn của quán
+ * - Nút yêu thích quán (Thêm/Bỏ yêu thích)
+ * - Nút mở khung chat trực tiếp với chủ quán (RestaurantChatModal).
+ */
 export function RestaurantDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+
   const [restaurant, setRestaurant] = useState<IRestaurantProfileDto | null>(null);
   const [products, setProducts] = useState<IProductDto[]>([]);
   const [categories, setCategories] = useState<IMenuCategoryDto[]>([]);

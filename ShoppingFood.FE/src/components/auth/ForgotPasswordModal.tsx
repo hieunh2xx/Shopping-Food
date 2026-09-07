@@ -1,4 +1,4 @@
-﻿import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { X, Mail, CheckCircle2 } from 'lucide-react';
 import { Button, Input } from '../common';
 import { authService } from '../../services/AuthService';
@@ -9,6 +9,13 @@ interface ForgotPasswordModalProps {
   onClose: () => void;
 }
 
+/**
+ * Modal Khôi Phục Mật Khẩu Quên (ForgotPasswordModal).
+ * Gồm quy trình 3 bước an toàn:
+ * - Bước 1: Nhập email tài khoản để nhận mã OTP
+ * - Bước 2: Xác thực mã OTP 6 số
+ * - Bước 3: Đặt mật khẩu mới và xác nhận cập nhật.
+ */
 export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProps) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [email, setEmail] = useState('');
@@ -20,6 +27,9 @@ export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProp
 
   if (!isOpen) return null;
 
+  /**
+   * Kiểm tra định dạng email nhập vào.
+   */
   const validateEmail = () => {
     if (!email) {
       setErrors({ email: 'Vui lòng nhập email' });
@@ -33,6 +43,10 @@ export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProp
     return true;
   };
 
+  /**
+   * Bước 1: Gửi mã xác thực OTP về email người dùng.
+   * @param e - Sự kiện FormEvent
+   */
   const handleRequestOtp = async (e: FormEvent) => {
     e.preventDefault();
     if (!validateEmail()) return;
@@ -53,6 +67,10 @@ export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProp
     }
   };
 
+  /**
+   * Bước 2: Kiểm tra tính hợp lệ của mã OTP.
+   * @param e - Sự kiện FormEvent
+   */
   const handleVerifyOtp = async (e: FormEvent) => {
     e.preventDefault();
     if (!otpCode) {
@@ -70,7 +88,7 @@ export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProp
       const response = await authService.verifyResetOtp({ email, otpCode });
       if (!response.error) {
         toast.success(response.message || 'Mã OTP hợp lệ');
-        setStep(3); // Proceed to enter new password
+        setStep(3); // Chuyển sang bước tạo mật khẩu mới
       } else {
         toast.error(response.message);
         setErrors({ otpCode: response.message || 'Mã OTP không hợp lệ' });
@@ -84,6 +102,10 @@ export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProp
     }
   };
 
+  /**
+   * Bước 3: Đặt lại mật khẩu mới cho tài khoản.
+   * @param e - Sự kiện FormEvent
+   */
   const handleResetPassword = async (e: FormEvent) => {
     e.preventDefault();
     const newErrors: Record<string, string> = {};
@@ -117,6 +139,9 @@ export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProp
     }
   };
 
+  /**
+   * Đóng modal và đặt lại tất cả trường về bước 1.
+   */
   const handleClose = () => {
     setStep(1);
     setEmail('');

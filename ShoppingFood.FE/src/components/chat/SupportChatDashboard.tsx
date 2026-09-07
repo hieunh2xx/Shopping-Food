@@ -8,6 +8,14 @@ export interface SupportChatDashboardProps {
   role: 'Admin' | 'Coordinator';
 }
 
+/**
+ * Bảng Điều Khiển Live Chat Hỗ Trợ Dành Cho Admin & Coordinator (SupportChatDashboard).
+ * Cho phép nhân viên trực tổng đài:
+ * - Theo dõi toàn bộ danh sách phiên chat mở từ khách hàng / tài xế
+ * - Tiếp nhận phiên hỗ trợ (Claim Session)
+ * - Trao đổi nhắn tin giải đáp sự cố theo thời gian thực (Realtime SignalR)
+ * - Đóng phiên hỗ trợ sau khi hoàn tất.
+ */
 export function SupportChatDashboard({ role }: SupportChatDashboardProps) {
   const { user, token } = useAuth();
   const [sessions, setSessions] = useState<IChatSession[]>([]);
@@ -29,6 +37,9 @@ export function SupportChatDashboard({ role }: SupportChatDashboardProps) {
     activeSessionIdRef.current = activeSessionId;
   }, [activeSessionId]);
 
+  /**
+   * Callback nhận tin nhắn từ SignalR và cập nhật tin nhắn phiên chat tương ứng.
+   */
   const handleReceiveMessage = useCallback((message: IChatMessage) => {
     setMessages(prev => {
       const sessionMsgs = prev[message.sessionId] || [];
@@ -58,22 +69,32 @@ export function SupportChatDashboard({ role }: SupportChatDashboardProps) {
     }
   }, []);
 
+  /**
+   * Callback khi có phiên chat mới được tạo từ người dùng.
+   */
   const handleNewSession = useCallback((newSession: IChatSession) => {
     setSessions(prev => (prev.find(s => s.id === newSession.id) ? prev : [newSession, ...prev]));
     setUnreadCounts(prev => ({ ...prev, [newSession.id]: (prev[newSession.id] || 0) + 1 }));
     chatService.joinSession(newSession.id).catch(console.error);
   }, []);
 
+  /**
+   * Callback khi có nhân viên tham gia hỗ trợ một phiên chat.
+   */
   const handleSupportJoined = useCallback((sessId: string, supportId: string) => {
     setSessions(prev => prev.map(s => (s.id === sessId ? { ...s, supportId } : s)));
   }, []);
 
+  /**
+   * Callback khi một phiên chat bị đóng.
+   */
   const handleSessionClosed = useCallback((sessId: string) => {
     setSessions(prev => prev.map(s => s.id === sessId ? { ...s, status: 'Closed' } : s));
   }, []);
 
-  
-
+  /**
+   * Tải danh sách tất cả các phiên chat đang mở từ API máy chủ.
+   */
   const fetchSessions = async () => {
     try {
       const res = await chatService.getOpenSessions();
@@ -114,7 +135,6 @@ export function SupportChatDashboard({ role }: SupportChatDashboardProps) {
     const connect = async () => {
       try {
         await chatService.startConnection(token);
-        // Nếu component đã unmount thì không đăng ký handler nữa
         if (!isMountedRef.current) {
           return;
         }
@@ -125,8 +145,6 @@ export function SupportChatDashboard({ role }: SupportChatDashboardProps) {
           await chatService.joinCoordinatorGroup();
         }
 
-        // Join tất cả sessions hiện có SAU KHI connection đã ready
-        // Tránh race condition với useEffect[sessions] bên dưới
         const fetchedSessions = await fetchSessions();
         if (fetchedSessions && fetchedSessions.length > 0) {
           for (const s of fetchedSessions) {
@@ -160,9 +178,10 @@ export function SupportChatDashboard({ role }: SupportChatDashboardProps) {
     }
   }, [messages, activeSessionId]);
 
-  // Sessions được join trong connect() sau khi hub đã sẵn sàng
-  // handleNewSession tự join session mới khi có user tạo
-
+  /**
+   * Chọn phiên chat để xem chi tiết tin nhắn và phản hồi.
+   * @param session - Đối tượng phiên chat
+   */
   const handleSelectSession = async (session: IChatSession) => {
     setActiveSessionId(session.id);
     setUnreadCounts(prev => ({ ...prev, [session.id]: 0 }));
@@ -185,17 +204,24 @@ export function SupportChatDashboard({ role }: SupportChatDashboardProps) {
     }
   };
 
+  /**
+   * Nhân viên nhận xử lý phiên chat (Claim session).
+   * @param session - Đối tượng phiên chat
+   */
   const handleClaimSession = async (session: IChatSession) => {
     if (!user) return;
     try {
       await chatService.claimSession(session.id, user.id);
-      // Update local state
       setSessions(prev => prev.map(s => s.id === session.id ? { ...s, supportId: user.id } : s));
     } catch (error) {
       console.error('Failed to claim session', error);
     }
   };
 
+  /**
+   * Gửi tin nhắn trả lời khách hàng từ nhân viên hỗ trợ.
+   * @param e - Sự kiện FormEvent
+   */
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim() || !activeSessionId || !user) return;
@@ -221,6 +247,7 @@ export function SupportChatDashboard({ role }: SupportChatDashboardProps) {
       console.error('Failed to send message', error);
     }
   };
+
 
   const activeSession = sessions.find(s => s.id === activeSessionId);
   const activeMessages = activeSessionId ? messages[activeSessionId] || [] : [];

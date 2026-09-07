@@ -1,12 +1,20 @@
-﻿import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { MessageCircle, X, Send, ChevronLeft, Plus, Clock, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../hooks';
 import { chatService } from '../../services';
 import type { IChatSession, IChatMessage, ChatTopic } from '../../interfaces';
 import toast from 'react-hot-toast';
 
+
 type WidgetView = 'history' | 'create' | 'chat';
 
+/**
+ * Widget Live Chat Hỗ Trợ Khách Hàng Nổi Trên Màn Hình (LiveChatWidget).
+ * Cho phép khách hàng hoặc người bán mở hộp thoại chat trực tuyến với Admin / Điều phối viên:
+ * - Xem danh sách lịch sử các phiên hỗ trợ cũ
+ * - Tạo yêu cầu hỗ trợ mới theo từng chủ đề: Vấn đề đơn hàng (OrderIssue), Lỗi hệ thống (SystemIssue), Thông tin chung (General)
+ * - Nhắn tin trao đổi thời gian thực qua SignalR Hub.
+ */
 export function LiveChatWidget() {
   const { user, token } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -22,6 +30,9 @@ export function LiveChatWidget() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const sessionIdRef = useRef<string | null>(null);
 
+  /**
+   * Tải lịch sử các phiên chat hỗ trợ của người dùng hiện tại từ API.
+   */
   const loadHistory = useCallback(async () => {
     if (!token) return;
     try {
@@ -43,13 +54,16 @@ export function LiveChatWidget() {
     }
   }, [user, token, isOpen, view, loadHistory]);
 
-  // Listen for custom event to open chat from anywhere
+  // Lắng nghe sự kiện tùy biến 'openLiveChat' để mở widget từ bất cứ đâu trong app
   useEffect(() => {
     const handleOpenChat = () => setIsOpen(true);
     window.addEventListener('openLiveChat', handleOpenChat);
     return () => window.removeEventListener('openLiveChat', handleOpenChat);
   }, []);
 
+  /**
+   * Callback xử lý khi nhận tin nhắn mới từ SignalR.
+   */
   const handleReceiveMessage = useCallback((message: IChatMessage) => {
     if (message.sessionId === sessionIdRef.current) {
       setMessages(prev => {
@@ -76,11 +90,17 @@ export function LiveChatWidget() {
     }
   }, []);
 
+  /**
+   * Callback xử lý khi có nhân viên hỗ trợ tham gia phiên chat.
+   */
   const handleSupportJoined = useCallback((_sessionId: string) => {
     setSupportJoined(true);
     toast.success('Nhân viên hỗ trợ đã tham gia cuộc trò chuyện');
   }, []);
 
+  /**
+   * Callback xử lý khi phiên chat bị đóng.
+   */
   const handleSessionClosed = useCallback(() => {
     setSession(prev => prev ? { ...prev, status: 'Closed' } : null);
     setSupportJoined(false);
@@ -91,6 +111,7 @@ export function LiveChatWidget() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, view]);
 
+  // Kết nối và đăng ký lắng nghe sự kiện SignalR khi mở phòng chat
   useEffect(() => {
     if (view !== 'chat' || !session?.id || !token || session.status === 'Closed') return;
 
@@ -123,6 +144,10 @@ export function LiveChatWidget() {
     };
   }, [session?.id, session?.status, token, view, handleReceiveMessage, handleSupportJoined, handleSessionClosed]);
 
+  /**
+   * Mở một phiên chat đã có từ danh sách lịch sử.
+   * @param s - Đối tượng phiên chat
+   */
   const openSession = async (s: IChatSession) => {
     try {
       setIsConnecting(true);
@@ -142,6 +167,10 @@ export function LiveChatWidget() {
     }
   };
 
+  /**
+   * Tạo phiên chat hỗ trợ mới với chủ đề đã chọn.
+   * @param topic - Chủ đề hỗ trợ
+   */
   const handleStartChat = async (topic: ChatTopic) => {
     if (!token) return;
     try {
@@ -164,6 +193,10 @@ export function LiveChatWidget() {
     }
   };
 
+  /**
+   * Gửi tin nhắn trong phiên chat hỗ trợ.
+   * @param e - Sự kiện FormEvent
+   */
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim() || !session || !user || !token || session.status === 'Closed') return;
@@ -189,6 +222,7 @@ export function LiveChatWidget() {
       setMessages(prev => prev.filter(m => m.id !== tempId));
     }
   };
+
 
   if (!user || user.role === 'Admin' || user.role === 'Coordinator') return null;
 

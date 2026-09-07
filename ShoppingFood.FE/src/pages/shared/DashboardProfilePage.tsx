@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Camera, BadgeCheck, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuthContext } from '../../contexts/AuthContext';
@@ -9,6 +9,13 @@ import { ChangePasswordModal } from '../../components/auth/ChangePasswordModal';
 import { UpdateProfileModal } from '../../components/auth/UpdateProfileModal';
 import { ChangeContactModal } from '../../components/auth/ChangeContactModal';
 
+/**
+ * Trang Hồ Sơ Tài Khoản Dùng Chung Cho Dashboard Đối Tác / Nhân Viên (DashboardProfilePage).
+ * Phục vụ Seller, Shipper, Coordinator, Admin:
+ * - Xem và chỉnh sửa thông tin cá nhân (Họ tên, ngày sinh, giới tính)
+ * - Cập nhật số điện thoại / email và đổi mật khẩu
+ * - Tải ảnh đại diện trực tiếp lên hệ thống.
+ */
 export function DashboardProfilePage() {
   const { user, updateUser } = useAuthContext();
   const [profile, setProfile] = useState<IUserDto | null>(null);
@@ -19,6 +26,9 @@ export function DashboardProfilePage() {
   const [isChangeContactOpen, setIsChangeContactOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  /**
+   * Tải dữ liệu hồ sơ cá nhân từ API.
+   */
   const fetchProfile = async () => {
     setIsLoading(true);
     try {
@@ -39,9 +49,14 @@ export function DashboardProfilePage() {
     fetchProfile();
   }, []);
 
+  /**
+   * Xử lý thay đổi và tải lên ảnh đại diện mới.
+   * @param event - Sự kiện ChangeEvent của input file
+   */
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
 
     if (!file.type.startsWith('image/')) {
       toast.error('Vui lòng chọn file hình ảnh');

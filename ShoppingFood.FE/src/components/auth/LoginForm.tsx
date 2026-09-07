@@ -10,14 +10,24 @@ import { auth } from '../../config/firebase';
 import { RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult } from 'firebase/auth';
 import { ForgotPasswordModal } from './ForgotPasswordModal';
 
+
 const MS_CLIENT_ID = 'b415c1cf-f993-460a-894d-66a9f5b109b5';
 const MS_REDIRECT_URI = window.location.origin;
 
+/**
+ * Biểu Mẫu Đăng Nhập (LoginForm).
+ * Hỗ trợ đa dạng phương thức đăng nhập:
+ * 1. Đăng nhập truyền thống (Tên đăng nhập / Email + Mật khẩu)
+ * 2. Xác thực 2 bước (2FA OTP qua Email/SMS) hoặc mở khóa tài khoản khi bị khóa
+ * 3. Đăng nhập nhanh bằng Google OAuth (Google Identity Services)
+ * 4. Đăng nhập Single Sign-On bằng Microsoft Entra ID (Azure AD popup)
+ * 5. Đăng nhập bằng Số điện thoại qua Firebase Phone OTP.
+ */
 export function LoginForm() {
   const navigate = useNavigate();
   const { login, sendLoginOtp, verifyLoginOtp, verifyUnlockAccount, loginGoogle, loginMicrosoft, loginFirebasePhone, isLoading } = useAuth();
 
-  // Step 1: Login
+  // Bước 1: Đăng nhập
   const [loginMethod] = useState<'standard' | 'phone'>('standard');
   const [userName, setUserName] = useState('');
   const [password, setPassword] = useState('');
@@ -26,7 +36,7 @@ export function LoginForm() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
 
-  // Step 2 & 3: OTP
+  // Bước 2 & 3: Xác thực OTP
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [preAuthToken, setPreAuthToken] = useState('');
   const [availableMethods, setAvailableMethods] = useState<string[]>([]);
@@ -37,7 +47,7 @@ export function LoginForm() {
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
 
   useEffect(() => {
-    // Initialize recaptcha if not already initialized
+    // Khởi tạo reCAPTCHA ẩn cho Firebase Phone Auth
     if (!window.recaptchaVerifier) {
       window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         size: 'invisible'
@@ -45,6 +55,7 @@ export function LoginForm() {
     }
   }, []);
 
+  // Tự động gửi xác thực khi người dùng nhập đủ 6 ký tự OTP
   useEffect(() => {
     if (otpCode.length === 6 && !isLoading) {
       if (isPhoneLogin) {
@@ -53,9 +64,11 @@ export function LoginForm() {
         handleVerifyOtp();
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [otpCode]);
 
+  /**
+   * Kiểm tra tính hợp lệ của biểu mẫu đăng nhập chuẩn.
+   */
   const validateLogin = (): boolean => {
     const newErrors: Record<string, string> = {};
     if (!userName.trim()) newErrors.userName = 'Vui lòng nhập tên đăng nhập';
@@ -64,6 +77,10 @@ export function LoginForm() {
     return Object.keys(newErrors).length === 0;
   };
 
+  /**
+   * Chuyển hướng người dùng về trang đích tương ứng với vai trò sau khi đăng nhập thành công.
+   * @param role - Vai trò của người dùng ('Admin' | 'Seller' | 'Shipper' | 'Coordinator' | 'Customer')
+   */
   const handleRedirectByRole = (role?: string) => {
     switch (role) {
       case 'Admin':
@@ -86,6 +103,10 @@ export function LoginForm() {
     }
   };
 
+  /**
+   * Xử lý gửi biểu mẫu đăng nhập chuẩn.
+   * @param e - Sự kiện FormEvent
+   */
   const handleLoginSubmit = async (e?: FormEvent) => {
     if (e) e.preventDefault();
     if (!validateLogin()) return;
@@ -101,13 +122,16 @@ export function LoginForm() {
         handleRedirectByRole(result.role);
       }
     } else {
-      // Show server error inline only under the password field
       setErrors({ 
         password: result.message || 'Tên đăng nhập hoặc mật khẩu không đúng' 
       });
     }
   };
 
+  /**
+   * Xử lý đăng nhập bằng Số điện thoại qua Firebase Phone Auth.
+   * @param e - Sự kiện FormEvent
+   */
   const handlePhoneLoginSubmit = async (e?: FormEvent) => {
     if (e) e.preventDefault();
     if (!loginPhone.trim()) {
@@ -122,7 +146,7 @@ export function LoginForm() {
         });
       }
 
-      // Format phone to E.164
+      // Chuẩn hóa định dạng số điện thoại sang chuẩn quốc tế E.164 (+84...)
       let formattedPhone = loginPhone;
       if (formattedPhone.startsWith('0')) {
         formattedPhone = '+84' + formattedPhone.substring(1);
@@ -141,6 +165,10 @@ export function LoginForm() {
     }
   };
 
+  /**
+   * Bước 2: Yêu cầu gửi mã OTP qua phương thức đã chọn (Email hoặc SMS).
+   * @param method - Phương thức nhận ('email' | 'phone')
+   */
   const handleSendOtp = async (method: string) => {
     setSelectedMethod(method);
     const success = await sendLoginOtp(preAuthToken, method);
@@ -149,6 +177,10 @@ export function LoginForm() {
     }
   };
 
+  /**
+   * Bước 3: Xác thực mã OTP đăng nhập hoặc mở khóa tài khoản.
+   * @param e - Sự kiện FormEvent
+   */
   const handleVerifyOtp = async (e?: FormEvent) => {
     if (e) e.preventDefault();
     if (otpCode.length < 6) return;
@@ -165,6 +197,10 @@ export function LoginForm() {
     }
   };
 
+  /**
+   * Xác thực mã OTP số điện thoại Firebase và lấy ID Token đăng nhập backend.
+   * @param e - Sự kiện FormEvent
+   */
   const handleVerifyPhoneLoginOtp = async (e?: FormEvent) => {
     if (e) e.preventDefault();
     if (otpCode.length < 6) return;
@@ -188,6 +224,10 @@ export function LoginForm() {
     }
   };
 
+  /**
+   * Xử lý đăng nhập Google OAuth thành công.
+   * @param credentialResponse - Phản hồi chứa Google ID Token JWT
+   */
   const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
     if (credentialResponse.credential) {
       const res = await loginGoogle(credentialResponse.credential);
@@ -201,6 +241,7 @@ export function LoginForm() {
     toast.error('Đăng nhập Google thất bại');
   };
 
+  // Lắng nghe sự kiện callback từ cửa sổ popup Microsoft OAuth
   useEffect(() => {
     const handleMessage = async (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
@@ -217,6 +258,9 @@ export function LoginForm() {
     return () => window.removeEventListener('message', handleMessage);
   }, [loginMicrosoft, navigate]);
 
+  /**
+   * Mở cửa sổ popup xác thực Microsoft Entra ID (Azure AD).
+   */
   const handleMicrosoftLogin = () => {
     const scope = encodeURIComponent('User.Read openid profile email');
     const redirectUri = encodeURIComponent(MS_REDIRECT_URI);
@@ -228,6 +272,7 @@ export function LoginForm() {
     const top = window.screenY + (window.outerHeight - height) / 2;
     window.open(authUrl, 'microsoft-login', `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`);
   };
+
 
   if (step === 2) {
     return (

@@ -1,3 +1,6 @@
+/**
+ * Xuất tập trung toàn bộ các dịch vụ (Services) của hệ thống Frontend.
+ */
 export { httpClient } from './base/HttpClient';
 export { BaseService } from './base/BaseService';
 export { authService } from './AuthService';
@@ -15,7 +18,7 @@ export { orderService } from './OrderService';
 export { coordinatorService } from './CoordinatorService';
 export { promotionService } from './PromotionService';
 export { loyaltyPointService } from './LoyaltyPointService';
-export {pointGiftConfigService} from './PointGiftConfigService';
+export { pointGiftConfigService } from './PointGiftConfigService';
 export * from './SupportService';
 export * from './NotificationService';
 export * from './FaqService';

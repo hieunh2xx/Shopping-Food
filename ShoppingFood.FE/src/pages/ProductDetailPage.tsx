@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Star, Truck, Clock, ShoppingCart, ShieldAlert, Check } from 'lucide-react';
 import { useProducts, useCart, useAuth } from '../hooks';
@@ -10,17 +10,27 @@ import { MemberTierPricingNote } from '../components/product/MemberTierPricingNo
 import { productService } from '../services';
 import toast from 'react-hot-toast';
 
+/**
+ * Trang Chi Tiết Món Ăn (ProductDetailPage).
+ * Cung cấp đầy đủ thông tin về món ăn:
+ * - Hình ảnh, tên, giá bán (kèm giá Flash Sale nếu có), thông tin nhà hàng và khoảng cách giao
+ * - Lựa chọn kích cỡ (Size) và các loại Topping ăn kèm với tính toán giá động theo thời gian thực
+ * - Ghi chú ưu đãi hạng thành viên (MemberTierPricingNote)
+ * - Nút thêm món vào giỏ hàng
+ * - Báo cáo vi phạm món ăn lên Admin
+ * - Khu vực bình luận và đánh giá chất lượng món (ProductReviews).
+ */
 export function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { product, isLoading, fetchProductById } = useProducts();
   const { addItem } = useCart();
   const { isAuthenticated, user } = useAuth();
 
-  // Selection states
+  // Trạng thái lựa chọn Size và Topping
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [selectedToppings, setSelectedToppings] = useState<string[]>([]);
 
-  // Report Modal states
+  // Trạng thái modal báo cáo vi phạm
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [reportReason, setReportReason] = useState('Vệ sinh an toàn thực phẩm');
   const [reportDetail, setReportDetail] = useState('');
@@ -62,7 +72,9 @@ export function ProductDetailPage() {
     );
   }
 
-  // Calculate dynamic display price
+  /**
+   * Tính toán tổng giá hiển thị linh hoạt dựa theo giá gốc/Flash Sale, size đã chọn và các topping đã tích.
+   */
   const getDisplayPrice = () => {
     let price = product.flashSalePrice ?? product.price;
     if (selectedSize) {
@@ -76,6 +88,10 @@ export function ProductDetailPage() {
     return price;
   };
 
+  /**
+   * Bật hoặc tắt lựa chọn một loại topping.
+   * @param toppingName - Tên topping
+   */
   const handleToppingToggle = (toppingName: string) => {
     setSelectedToppings((prev) =>
       prev.includes(toppingName)
@@ -84,10 +100,17 @@ export function ProductDetailPage() {
     );
   };
 
+  /**
+   * Thêm sản phẩm hiện tại cùng size và danh sách topping đã chọn vào giỏ hàng.
+   */
   const handleAddToCart = () => {
     addItem(product, 1, selectedSize || undefined, selectedToppings.length > 0 ? selectedToppings : undefined);
   };
 
+  /**
+   * Gửi báo cáo vi phạm về sản phẩm lên ban quản trị.
+   * @param e - Sự kiện FormEvent
+   */
   const handleReportSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmittingReport(true);
@@ -111,6 +134,7 @@ export function ProductDetailPage() {
       setIsSubmittingReport(false);
     }
   };
+
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">

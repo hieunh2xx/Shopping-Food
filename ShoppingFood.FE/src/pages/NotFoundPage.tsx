@@ -3,9 +3,15 @@ import { ChefHat } from 'lucide-react';
 import { Button } from '../components/common';
 import { ROUTES } from '../routes/routeConfig';
 
+/**
+ * Trang Báo Lỗi 404 Không Tìm Thấy Trang (NotFoundPage).
+ * Hiển thị giao diện thân thiện khi người dùng truy cập một URL không tồn tại,
+ * cung cấp các nút tắt quay lại Trang chủ hoặc Xem thực đơn món ăn.
+ */
 export function NotFoundPage() {
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4">
+
       <div className="max-w-md w-full text-center">
         {/* Animated Icon */}
         <div className="relative w-32 h-32 mx-auto mb-8">

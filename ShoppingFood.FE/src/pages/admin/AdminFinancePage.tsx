@@ -19,6 +19,15 @@ import {
 
 type PeriodDays = 7 | 30;
 
+/**
+ * Trang Đối Soát Tài Chính & Xử Lý Rút Tiền Dành Cho Admin (AdminFinancePage).
+ * Trung tâm quản trị dòng tiền toàn hệ thống:
+ * - Tổng quan tiền thu hộ COD của các tài xế
+ * - Biểu đồ dòng tiền thu/chi theo chu kỳ 7 hoặc 30 ngày
+ * - Danh sách yêu cầu rút tiền đang chờ duyệt (Pending)
+ * - Danh sách yêu cầu rút tiền đang tranh chấp (Disputed)
+ * - Duyệt lệnh chuyển khoản (kèm tải ảnh biên lai ngân hàng) hoặc từ chối có lý do.
+ */
 export function AdminFinancePage() {
   const [days, setDays] = useState<PeriodDays>(30);
   const [reconciliation, setReconciliation] = useState<any>(null);
@@ -26,6 +35,7 @@ export function AdminFinancePage() {
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
   const [disputedWithdrawals, setDisputedWithdrawals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
   const { confirm } = useConfirm();
 
   const [approveModalOpen, setApproveModalOpen] = useState(false);

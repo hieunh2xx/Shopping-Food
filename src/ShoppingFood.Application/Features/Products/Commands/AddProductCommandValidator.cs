@@ -37,6 +37,8 @@ namespace ShoppingFood.Application.Features.Products.Commands
 
         private async Task<bool> BeUniqueNameInRestaurant(AddProductCommand command, CancellationToken cancellationToken)
         {
+            if (string.IsNullOrWhiteSpace(command.ItemName)) return true;
+
             var existingProduct = await _productRepository.GetAsync(p => 
                 p.ItemName.ToLower() == command.ItemName.ToLower() && 
                 p.RestaurantId == command.RestaurantId);
@@ -50,14 +52,16 @@ namespace ShoppingFood.Application.Features.Products.Commands
             
             if (url.StartsWith("http://", global::System.StringComparison.OrdinalIgnoreCase) || 
                 url.StartsWith("https://", global::System.StringComparison.OrdinalIgnoreCase) ||
-                url.StartsWith("data:image", global::System.StringComparison.OrdinalIgnoreCase)) 
+                url.StartsWith("blob:", global::System.StringComparison.OrdinalIgnoreCase) ||
+                url.StartsWith("data:image", global::System.StringComparison.OrdinalIgnoreCase) ||
+                url.StartsWith("/", global::System.StringComparison.OrdinalIgnoreCase)) 
             {
                 return true;
             }
 
             var cleanUrl = url.Split('?')[0];
             var ext = Path.GetExtension(cleanUrl).ToLower();
-            return ext is ".jpg" or ".jpeg" or ".png" or ".webp" or ".gif";
+            return string.IsNullOrEmpty(ext) || ext is ".jpg" or ".jpeg" or ".png" or ".webp" or ".gif";
         }
     }
 }

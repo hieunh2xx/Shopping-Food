@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Loader2, Clock, Copy, AlertCircle, CheckCircle } from 'lucide-react';
 import { Modal } from '../common/Modal';
 import { paymentService } from '../../services/PaymentService';
@@ -32,6 +32,10 @@ type QrData = {
   accountHolder?: string;
 };
 
+
+/**
+ * Huy hiệu trạng thái thanh toán đơn hàng (StatusBadge).
+ */
 function StatusBadge({ displayStatus, statusLabel }: { displayStatus: string; statusLabel: string }) {
   return (
     <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium ${getPaymentDisplayStatusColor(displayStatus)}`}>
@@ -45,6 +49,15 @@ function StatusBadge({ displayStatus, statusLabel }: { displayStatus: string; st
   );
 }
 
+/**
+ * Modal Thanh Toán Trực Tuyến Qua SePay VietQR (SepayQrPaymentModal).
+ * Cung cấp giải pháp thanh toán QR động không gián đoạn:
+ * - Hiển thị mã QR VietQR động (chứa số tài khoản, số tiền và mã hóa đơn duy nhất)
+ * - Đếm ngược thời gian hết hạn (10 phút)
+ * - Tự động polling và lắng nghe webhook Realtime để xác nhận khi người dùng vừa chuyển khoản
+ * - Cho phép đối soát thủ công ("Đã chuyển khoản? Kiểm tra lại từ SePay")
+ * - Tự động hủy đơn treo khi hết hạn hoặc khi người dùng hủy.
+ */
 export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid, onAbandoned }: SepayQrPaymentModalProps) {
   const { confirm } = useConfirm();
   const [loading, setLoading] = useState(true);
@@ -55,6 +68,9 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid, onAban
   const paidNotifiedRef = useRef(false);
   const abandonedRef = useRef(false);
 
+  /**
+   * Đánh dấu giao diện đã thanh toán thành công.
+   */
   const markPaid = useCallback(() => {
     setQrData(prev => prev ? {
       ...prev,
@@ -64,6 +80,9 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid, onAban
     } : prev);
   }, []);
 
+  /**
+   * Thông báo thanh toán thành công một lần duy nhất qua callback onPaid.
+   */
   const notifyPaid = useCallback((invoiceNumber: string) => {
     if (paidNotifiedRef.current) return;
     paidNotifiedRef.current = true;
@@ -72,6 +91,9 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid, onAban
     onPaid(invoiceNumber);
   }, [onPaid, markPaid]);
 
+  /**
+   * Hủy phiên thanh toán chưa trả tiền (Abandon Unpaid Session).
+   */
   const abandonUnpaid = useCallback(async (opts?: { silent?: boolean }) => {
     if (!sessionId || abandonedRef.current || paidNotifiedRef.current) return { abandoned: false, alreadyPaid: false };
     abandonedRef.current = true;
@@ -102,6 +124,9 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid, onAban
     }
   }, [sessionId, markPaid, onAbandoned]);
 
+  /**
+   * Áp dụng trạng thái phiên thanh toán mới nhận được từ polling / webhook.
+   */
   const applySessionStatus = useCallback((data: {
     isPaid: boolean;
     isExpired?: boolean;
@@ -131,6 +156,9 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid, onAban
     }
   }, [notifyPaid]);
 
+  /**
+   * Tải thông tin mã QR và chi tiết chuyển khoản từ máy chủ.
+   */
   const loadQr = useCallback(async () => {
     if (!sessionId) return;
 
@@ -142,7 +170,6 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid, onAban
     if (res.code === 410) {
       setError('Mã QR đã hết hạn (10 phút). Vui lòng tạo đơn mới.');
       setLoading(false);
-      // Hết hạn phía server — hủy đơn treo
       void abandonUnpaid({ silent: true });
       return;
     }
@@ -186,6 +213,7 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid, onAban
     loadQr();
   }, [isOpen, sessionId, loadQr]);
 
+  // Bộ đếm ngược thời gian thanh toán từng giây
   useEffect(() => {
     if (!isOpen || !qrData || qrData.isPaid || qrData.isExpired) return;
     const t = setInterval(() => {
@@ -209,6 +237,7 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid, onAban
     return () => clearInterval(t);
   }, [isOpen, qrData?.isPaid, qrData?.isExpired, abandonUnpaid]);
 
+  // Polling trạng thái thanh toán mỗi 5 giây
   useEffect(() => {
     if (!isOpen || !sessionId || !qrData || qrData.isPaid || qrData.isExpired) return;
 
@@ -226,16 +255,16 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid, onAban
           });
         }
       } catch {
-        // Bỏ qua lỗi mạng tạm thời — lần poll sau sẽ thử lại
+        // Bỏ qua lỗi mạng tạm thời
       }
     };
 
-    // Poll ngay + mỗi 5s: gọi session/status (BE tự reconcile SePay API khi webhook miss)
     void pollStatus();
     const interval = setInterval(pollStatus, 5000);
     return () => clearInterval(interval);
   }, [isOpen, sessionId, qrData?.isPaid, qrData?.isExpired, applySessionStatus]);
 
+  // Lắng nghe sự kiện thông báo Realtime từ Notification Hub
   useEffect(() => {
     if (!isOpen || !sessionId || !qrData || qrData.isPaid || qrData.isExpired) return;
     
@@ -271,6 +300,9 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid, onAban
     }
   }, [isOpen]);
 
+  /**
+   * Sao chép nội dung chuyển khoản vào clipboard.
+   */
   const copyTransferContent = () => {
     if (qrData?.transferContent) {
       navigator.clipboard.writeText(qrData.transferContent);
@@ -278,6 +310,9 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid, onAban
     }
   };
 
+  /**
+   * Đối soát thủ công giao dịch với cổng SePay.
+   */
   const handleManualReconcile = async () => {
     if (!sessionId) return;
     const toastId = toast.loading('Đang đồng bộ từ SePay...');
@@ -298,16 +333,17 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid, onAban
     toast.error(res.data?.message || res.message);
   };
 
+  /**
+   * Xử lý khi người dùng nhấn nút Đóng modal hoặc nhấn ra ngoài.
+   */
   const handleRequestClose = async () => {
     if (abandoning) return;
 
-    // Đã thanh toán hoặc đang ở màn hình thành công → đóng bình thường
     if (paidNotifiedRef.current || qrData?.isPaid) {
       onClose();
       return;
     }
 
-    // Hết hạn / lỗi tải QR → hủy đơn treo rồi đóng
     if (qrData?.isExpired || error) {
       await abandonUnpaid({ silent: true });
       onClose();
@@ -323,15 +359,18 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid, onAban
     });
     if (!confirmed) return;
 
-    // Không abandon — đơn Pending unpaid vẫn còn để thanh toán lại
     onClose();
   };
 
+  /**
+   * Định dạng số giây còn lại thành chuỗi mm:ss.
+   */
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60);
     const sec = s % 60;
     return `${m}:${sec.toString().padStart(2, '0')}`;
   };
+
 
   return (
     <Modal

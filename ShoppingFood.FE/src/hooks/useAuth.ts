@@ -1,10 +1,15 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { useAuthContext } from '../contexts/AuthContext';
 import { authService } from '../services';
 import type { ILoginRequest, IRegisterRequest, IRegisterSellerRequest, IUserDto } from '../interfaces';
 import toast from 'react-hot-toast';
 import { StorageUtil } from '../utils/storage';
 
+/**
+ * Trích xuất thông điệp báo lỗi từ response Axios hoặc trả về câu thông báo mặc định.
+ * @param err - Đối tượng lỗi
+ * @param fallback - Câu thông báo dự phòng
+ */
 const extractErrorMessage = (err: any, fallback: string): string => {
   let message = err?.response?.data?.message || err?.response?.data?.title;
   if (!message) {
@@ -14,14 +19,18 @@ const extractErrorMessage = (err: any, fallback: string): string => {
 };
 
 /**
- * useAuth hook — encapsulates all auth-related logic
- * SRP: UI components don't need to know about authService directly
+ * Hook tùy chỉnh Xác thực và Quản lý Phiên đăng nhập (useAuth).
+ * Tuân thủ nguyên lý Single Responsibility Principle (SRP) — đóng gói toàn bộ logic đăng nhập, đăng ký, xác thực OAuth/Firebase và lấy thông tin hồ sơ.
  */
 export function useAuth() {
   const { login: ctxLogin, logout: ctxLogout, user, token, isAuthenticated, isLoading: ctxLoading } = useAuthContext();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  /**
+   * Tải và thiết lập thông tin hồ sơ cá nhân sau khi nhận JWT token từ máy chủ.
+   * @param loginData - Dữ liệu trả về từ API login
+   */
   const fetchAndSetProfile = async (loginData: any) => {
     StorageUtil.setToken(loginData.token);
     try {
@@ -32,7 +41,7 @@ export function useAuth() {
         throw new Error("Cannot fetch profile");
       }
     } catch {
-      // Fallback
+      // Dự phòng nếu không lấy được chi tiết hồ sơ
       const userDto: IUserDto = {
         id: '',
         userName: loginData.username,
@@ -48,6 +57,10 @@ export function useAuth() {
     }
   };
 
+  /**
+   * Đăng nhập tài khoản bằng tên đăng nhập và mật khẩu thông thường.
+   * @param credentials - Thông tin đăng nhập
+   */
   const login = async (credentials: ILoginRequest) => {
     setIsLoading(true);
     setError(null);
@@ -83,6 +96,10 @@ export function useAuth() {
     }
   };
 
+  /**
+   * Đăng nhập tài khoản Google thông qua Google Identity Services ID token.
+   * @param credential - JWT credential token từ Google
+   */
   const loginGoogle = async (credential: string) => {
     setIsLoading(true);
     setError(null);
@@ -108,6 +125,11 @@ export function useAuth() {
     }
   };
 
+  /**
+   * Đăng nhập tài khoản Microsoft Office365 / Entra ID thông qua mã xác thực code.
+   * @param code - Authorization code từ Microsoft
+   * @param redirectUri - URI chuyển hướng
+   */
   const loginMicrosoft = async (code: string, redirectUri: string) => {
     setIsLoading(true);
     setError(null);
@@ -133,6 +155,10 @@ export function useAuth() {
     }
   };
 
+  /**
+   * Đăng nhập nhanh bằng mã OTP số điện thoại xác thực qua Firebase Phone Auth.
+   * @param idToken - Firebase idToken
+   */
   const loginFirebasePhone = async (idToken: string) => {
     setIsLoading(true);
     setError(null);
@@ -158,6 +184,10 @@ export function useAuth() {
     }
   };
 
+  /**
+   * Đăng ký tài khoản khách hàng thông thường mới.
+   * @param data - Thông tin đăng ký
+   */
   const register = async (data: IRegisterRequest) => {
     setIsLoading(true);
     setError(null);
@@ -185,6 +215,10 @@ export function useAuth() {
     }
   };
 
+  /**
+   * Đăng ký mở gian hàng đối tác Người bán hàng (Seller).
+   * @param data - Hồ sơ quán ăn, giấy phép, CCCD
+   */
   const registerSeller = async (data: IRegisterSellerRequest) => {
     setIsLoading(true);
     setError(null);
@@ -212,6 +246,10 @@ export function useAuth() {
     }
   };
 
+  /**
+   * Gửi yêu cầu nâng cấp tài khoản cửa hàng lên danh hiệu Mall chính hãng.
+   * @param reason - Lý do và chứng nhận đính kèm
+   */
   const upgradeToMall = async (reason: string) => {
     setIsLoading(true);
     setError(null);
@@ -235,6 +273,9 @@ export function useAuth() {
     }
   };
 
+  /**
+   * Đăng xuất tài khoản khỏi hệ thống.
+   */
   const logout = async () => {
     try {
       await authService.logout();
@@ -245,6 +286,11 @@ export function useAuth() {
     toast.success('Đã đăng xuất');
   };
 
+  /**
+   * Gửi mã OTP xác thực 2 bước qua Email hoặc SMS khi đăng nhập.
+   * @param preAuthToken - Token tạm
+   * @param method - Phương thức gửi (Email/Sms)
+   */
   const sendLoginOtp = async (preAuthToken: string, method: string) => {
     setIsLoading(true);
     setError(null);
@@ -268,6 +314,11 @@ export function useAuth() {
     }
   };
 
+  /**
+   * Xác thực mã OTP 2 bước để hoàn tất đăng nhập.
+   * @param preAuthToken - Token tạm
+   * @param otpCode - Mã 6 chữ số
+   */
   const verifyLoginOtp = async (preAuthToken: string, otpCode: string) => {
     setIsLoading(true);
     setError(null);
@@ -293,6 +344,11 @@ export function useAuth() {
     }
   };
 
+  /**
+   * Xác thực mã OTP để mở khóa tài khoản bị tạm khóa do nhập sai mật khẩu nhiều lần.
+   * @param preAuthToken - Token tạm
+   * @param otpCode - Mã OTP mở khóa
+   */
   const verifyUnlockAccount = async (preAuthToken: string, otpCode: string) => {
     setIsLoading(true);
     setError(null);
@@ -318,6 +374,10 @@ export function useAuth() {
     }
   };
 
+  /**
+   * Gửi mã OTP xác thực tới số điện thoại.
+   * @param phone - Số điện thoại
+   */
   const sendOtp = async (phone: string) => {
     setIsLoading(true);
     setError(null);

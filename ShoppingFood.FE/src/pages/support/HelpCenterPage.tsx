@@ -6,15 +6,24 @@ import { faqService } from '../../services';
 import type { IFaqDto } from '../../interfaces';
 import { Loading } from '../../components/common';
 
+/**
+ * Trang Trung Tâm Trợ Giúp & Giải Đáp Thắc Mắc (HelpCenterPage).
+ * Cung cấp cổng hỗ trợ người dùng:
+ * - Lối tắt đến Hồ sơ cá nhân, Báo cáo sự cố đơn hàng, Chat với CSKH
+ * - Danh sách câu hỏi thường gặp (FAQ) dạng mở rộng (Accordion).
+ */
 export function HelpCenterPage() {
   const [faqs, setFaqs] = useState<IFaqDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
+    /**
+     * Tải danh sách các câu hỏi thường gặp đang hoạt động từ máy chủ.
+     */
     const fetchFaqs = async () => {
       try {
-        const res = await faqService.getList(); // User chỉ xem được IsActive = true
+        const res = await faqService.getList();
         if (!res.error && res.data) {
           setFaqs(res.data);
         }
@@ -27,6 +36,10 @@ export function HelpCenterPage() {
     fetchFaqs();
   }, []);
 
+  /**
+   * Đóng/mở nội dung câu trả lời cho một câu hỏi FAQ.
+   * @param id - Mã định danh câu hỏi
+   */
   const toggleExpand = (id: string) => {
     const newSet = new Set(expandedIds);
     if (newSet.has(id)) {
@@ -36,6 +49,7 @@ export function HelpCenterPage() {
     }
     setExpandedIds(newSet);
   };
+
 
   return (
     <div className="bg-gray-50 min-h-screen py-12">

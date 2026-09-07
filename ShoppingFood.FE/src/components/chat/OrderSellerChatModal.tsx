@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Send, Loader2 } from 'lucide-react';
 import { Modal } from '../common/Modal';
 import { useAuth } from '../../hooks';
@@ -18,6 +18,11 @@ export interface OrderSellerChatModalProps {
   onSessionReady?: (sessionId: string, orderId: string) => void;
 }
 
+/**
+ * Modal Trò Chuyện Trực Tuyến Giữa Khách Hàng và Nhà Hàng Theo Đơn (OrderSellerChatModal).
+ * Phục vụ nhu cầu trao đổi trực tiếp về món ăn, yêu cầu thay đổi, hủy đơn hoặc hướng dẫn giao nhận.
+ * Hỗ trợ giao tiếp Realtime SignalR Hub hai chiều cho cả Customer và Seller.
+ */
 export function OrderSellerChatModal({
   isOpen,
   onClose,
@@ -38,12 +43,15 @@ export function OrderSellerChatModal({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const activeSessionRef = useRef<string | null>(null);
 
+  /**
+   * Callback nhận tin nhắn từ SignalR và cập nhật vào danh sách tin nhắn.
+   */
   const handleReceive = useCallback((message: IChatMessage) => {
     const activeSid = activeSessionRef.current;
     if (activeSid && message.sessionId !== activeSid) return;
     setMessages(prev => {
       if (prev.some(m => m.id === message.id)) return prev;
-      // Replace optimistic temp message with real one
+      // Thay thế tin nhắn tạm thời (optimistic) bằng tin nhắn chính thức từ server
       const withoutTemp = prev.filter(m => !(m.id.startsWith('temp-') && m.content === message.content && m.senderId === message.senderId));
       return [...withoutTemp, message];
     });
@@ -121,6 +129,9 @@ export function OrderSellerChatModal({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  /**
+   * Xử lý gửi tin nhắn mới lên phòng chat đơn hàng.
+   */
   const handleSend = async () => {
     if (!inputText.trim() || !sessionId || !user || !token) return;
     const content = inputText.trim();

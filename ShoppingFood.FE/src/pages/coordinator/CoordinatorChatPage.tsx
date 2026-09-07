@@ -1,5 +1,9 @@
 import { SupportChatDashboard } from '../../components/chat/SupportChatDashboard';
 
+/**
+ * Trang Quản Lý Live Chat Điều Phối Viên (CoordinatorChatPage).
+ * Cho phép nhân viên điều phối (Coordinator) tiếp nhận và trao đổi trực tiếp với khách hàng/tài xế.
+ */
 export function CoordinatorChatPage() {
   return (
     <div className="p-6">
@@ -11,3 +15,4 @@ export function CoordinatorChatPage() {
     </div>
   );
 }
+

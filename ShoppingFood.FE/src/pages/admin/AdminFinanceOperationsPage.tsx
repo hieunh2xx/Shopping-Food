@@ -5,16 +5,27 @@ import { adminService } from '../../services';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../../utils/formatters';
 
+/**
+ * Định dạng tiền tệ VNĐ hiển thị an toàn.
+ */
 function formatVnd(n: number | '' | null | undefined) {
   const v = typeof n === 'number' ? n : Number(n);
   if (!Number.isFinite(v)) return '—';
   return formatCurrency(v);
 }
 
+/**
+ * Trang Cấu Hình Vận Hành & Phí Nền Tảng Dành Cho Admin (AdminFinanceOperationsPage).
+ * Thiết lập các tỷ lệ chiết khấu, cước phí và phạm vi giao hàng:
+ * - Cấu hình giao hàng: Bán kính giao tối đa, bán kính freeship, phí giao hàng cơ bản, phí theo km
+ * - Cấu hình thu nhập tài xế: Cước cơ bản shipper, cước theo km, phụ phí giờ cao điểm
+ * - Cấu hình nhà hàng: Tỷ lệ hoa hồng sàn (Commission Rate %), phí duy trì gian hàng hàng tháng.
+ */
 export function AdminFinanceOperationsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [fullConfig, setFullConfig] = useState<any>(null);
+
 
   // Platform config state
   const [commissionRate, setCommissionRate] = useState<number | ''>('');

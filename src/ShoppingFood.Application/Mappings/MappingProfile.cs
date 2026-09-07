@@ -48,7 +48,7 @@ namespace ShoppingFood.Application.Mappings
             CreateMap<AddProductCommand, Product>()
                 .ForMember(dest => dest.Images, opt => opt.Ignore())
                 .ForMember(dest => dest.ProductToppings, opt => opt.Ignore())
-                .ForMember(dest => dest.ProductSizes, opt => opt.MapFrom(src => src.Sizes));
+                .ForMember(dest => dest.ProductSizes, opt => opt.Ignore());
 
             CreateMap<UpdateProductCommand, Product>()
                 .ForMember(dest => dest.Images, opt => opt.Ignore())

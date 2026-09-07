@@ -11,6 +11,16 @@ import toast from 'react-hot-toast';
 
 const DEFAULT_PAGE_SIZE = 8;
 
+/**
+ * Trang Khám Phá & Tìm Kiếm Thực Đơn Món Ăn (ProductsPage).
+ * Cung cấp bộ lọc toàn diện để tìm kiếm món ăn:
+ * - Tìm theo từ khóa tên món
+ * - Lọc theo danh mục thực đơn toàn sàn (Global Categories)
+ * - Lọc theo khoảng giá (min - max), đánh giá sao, chính sách Freeship
+ * - Lọc theo khoảng cách GPS "Gần tôi" (trong bán kính 5km)
+ * - Sắp xếp theo giá tăng/giảm, bán chạy, đánh giá cao
+ * - Phân trang danh sách món ăn.
+ */
 export function ProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialCategory = searchParams.get('globalCategoryId') || 'all';
@@ -55,9 +65,12 @@ export function ProductsPage() {
     }));
   }, [searchParams]);
 
+  /**
+   * Tải danh mục thực đơn toàn hệ thống cho khách và người dùng.
+   */
   const fetchGlobalCategories = async () => {
     try {
-      // Public system endpoint — works for guest + Customer (Admin path can 403)
+      // Endpoint công khai — hoạt động cho cả Guest và Customer
       const res = await supportService.getGlobalMenuCategories();
       if (!res.error && res.data) {
         setGlobalCategories(res.data);
@@ -66,6 +79,7 @@ export function ProductsPage() {
       console.error('Lỗi tải danh mục toàn sàn');
     }
   };
+
 
   useEffect(() => {
     searchProducts(searchQuery);

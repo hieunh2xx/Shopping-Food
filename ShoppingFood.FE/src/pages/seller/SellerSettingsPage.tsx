@@ -24,7 +24,7 @@ import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// Fix leaflet default icon issue
+// Sửa lỗi hiển thị icon mặc định của Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -32,6 +32,9 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
+/**
+ * Component Marker định vị vị trí quán ăn trên bản đồ Leaflet.
+ */
 function LocationMarker({ position, setPosition }: { position: [number, number] | null, setPosition: (p: [number, number]) => void }) {
   const map = useMapEvents({
     click(e) {
@@ -50,14 +53,22 @@ function LocationMarker({ position, setPosition }: { position: [number, number] 
   );
 }
 
-
-
+/**
+ * Trang Cài Đặt Hồ Sơ & Cửa Hàng Người Bán (SellerSettingsPage).
+ * Thiết lập các thông số hoạt động của nhà hàng:
+ * - Thông tin cơ bản: Tên quán, mô tả, số điện thoại liên hệ, hotline CSKH
+ * - Thời gian hoạt động: Giờ mở cửa / đóng cửa theo ca
+ * - Tọa độ vị trí: Chấm điểm GPS trên bản đồ Leaflet để tính khoảng cách và phí ship
+ * - Bật/tắt trạng thái nhận đơn (Đang mở cửa / Tạm nghỉ)
+ * - Tải ảnh đại diện và ảnh bìa của nhà hàng.
+ */
 export function SellerSettingsPage() {
   const { user } = useAuth();
   const [profile, setProfile] = useState<IUserDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isChangeContactOpen, setIsChangeContactOpen] = useState(false);
+
 
   const [basicInfo, setBasicInfo] = useState({
     restaurantName: '',

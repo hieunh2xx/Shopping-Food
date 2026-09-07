@@ -4,6 +4,10 @@ import { restaurantService } from '../../services/RestaurantService';
 import type { IFavoriteRestaurantDto } from '../../interfaces';
 import { RestaurantCard } from '../restaurant/RestaurantCard';
 
+/**
+ * Danh Sách Nhà Hàng / Quán Ăn Yêu Thích Của Người Dùng (FavoriteRestaurants).
+ * Cho phép khách hàng xem lại các quán ăn mình đã bấm yêu thích (Heart) để tiện truy cập nhanh và đặt hàng.
+ */
 export function FavoriteRestaurants() {
   const [favorites, setFavorites] = useState<IFavoriteRestaurantDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -12,6 +16,9 @@ export function FavoriteRestaurants() {
     fetchFavorites();
   }, []);
 
+  /**
+   * Tải danh sách quán ăn yêu thích từ API.
+   */
   const fetchFavorites = async () => {
     try {
       const res = await restaurantService.getFavorites({ take: 20 });
@@ -24,6 +31,7 @@ export function FavoriteRestaurants() {
       setIsLoading(false);
     }
   };
+
 
   if (isLoading) {
     return (

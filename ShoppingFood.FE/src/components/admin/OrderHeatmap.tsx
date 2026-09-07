@@ -14,6 +14,10 @@ interface OrderHeatmapProps {
   points: IHeatmapPoint[];
 }
 
+/**
+ * Lớp phủ Bản đồ Nhiệt Leaflet Heat (HeatmapLayer).
+ * Chuyển đổi danh sách tọa độ đơn hàng thành các điểm nhiệt (Heatmap) với màu sắc từ xanh lam (mật độ thấp) đến đỏ (mật độ cao).
+ */
 const HeatmapLayer = ({ points }: { points: IHeatmapPoint[] }) => {
   const map = useMap();
 
@@ -38,8 +42,12 @@ const HeatmapLayer = ({ points }: { points: IHeatmapPoint[] }) => {
   return null;
 };
 
+/**
+ * Bản Đồ Nhiệt Mật Độ Đơn Hàng (OrderHeatmap).
+ * Hiển thị trực quan khu vực tập trung đông đơn hàng trên nền bản đồ OpenStreetMap để Admin và Điều phối viên tiện theo dõi điều phối.
+ */
 export const OrderHeatmap: React.FC<OrderHeatmapProps> = ({ points }) => {
-  const defaultCenter: [number, number] = [10.762622, 106.660172]; // Ho Chi Minh City
+  const defaultCenter: [number, number] = [10.762622, 106.660172]; // TP. Hồ Chí Minh
   const center = points.length > 0 ? [points[0].latitude, points[0].longitude] as [number, number] : defaultCenter;
 
   return (
@@ -54,3 +62,4 @@ export const OrderHeatmap: React.FC<OrderHeatmapProps> = ({ points }) => {
     </div>
   );
 };
+

@@ -6,6 +6,9 @@ import { authService } from '../../services/AuthService';
 import { toast } from 'react-hot-toast';
 import { ROUTES } from '../../routes/routeConfig';
 
+/**
+ * Ô Tải Tệp Tin Đăng Ký Tài Xế.
+ */
 const FileUploadField = ({ label, file, setter, handleFileSelect }: { label: string; file: File | null; setter: React.Dispatch<React.SetStateAction<File | null>>, handleFileSelect: (e: React.ChangeEvent<HTMLInputElement>, setter: React.Dispatch<React.SetStateAction<File | null>>) => void }) => (
   <div className="pt-1">
     <label className="block text-sm font-medium text-gray-700 mb-2">{label} <span className="text-red-500">*</span></label>
@@ -33,6 +36,12 @@ const FileUploadField = ({ label, file, setter, handleFileSelect }: { label: str
   </div>
 );
 
+/**
+ * Trang Nộp Hồ Sơ Đăng Ký Làm Tài Xế Dành Cho Khách Hàng Đã Đăng Nhập (AuthShipperApplyPage).
+ * Cho phép tài khoản khách hàng cá nhân nộp hồ sơ xin làm tài xế:
+ * - Nhập số CCCD, loại xe, biển số xe
+ * - Tải ảnh CCCD 2 mặt, bằng lái xe máy/mô tô, đăng ký xe cavet.
+ */
 export function AuthShipperApplyPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -42,6 +51,7 @@ export function AuthShipperApplyPage() {
     vehicleType: 'Motorcycle',
     vehiclePlateNumber: ''
   });
+
 
   const [idFrontFile, setIdFrontFile] = useState<File | null>(null);
   const [idBackFile, setIdBackFile] = useState<File | null>(null);

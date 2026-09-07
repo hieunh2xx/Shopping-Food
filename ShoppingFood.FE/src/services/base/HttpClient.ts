@@ -4,12 +4,14 @@ import { StorageUtil } from '../../utils/storage';
 import { authService } from '../AuthService';
 
 /**
- * Singleton HTTP Client wrapper around Axios
+ * Lớp bọc HTTP Client Singleton xung quanh thư viện Axios.
  * 
- * Responsibilities (SRP):
- * - Manage single Axios instance
- * - Auto-attach Bearer token via request interceptor
- * - Handle 401 responses via response interceptor
+ * Nhiệm vụ chính (SRP):
+ * - Quản lý một đối tượng Axios duy nhất trong toàn ứng dụng (Singleton pattern)
+ * - Tự động đính kèm Bearer token vào Header của mọi request thông qua Interceptor
+ * - Tự động dịch mã lỗi từ tiếng Anh sang tiếng Việt thân thiện với người dùng
+ * - Tự động refresh token khi nhận mã lỗi 401 Unauthorized
+ * - Tự động chuyển hướng về trang bảo trì khi nhận mã lỗi 503
  */
 class HttpClient {
   private static instance: HttpClient;
@@ -31,7 +33,8 @@ class HttpClient {
   }
 
   /**
-   * Get singleton instance (Singleton Pattern)
+   * Lấy thể hiện duy nhất của HttpClient (Singleton Pattern).
+   * @returns Thể hiện duy nhất của HttpClient
    */
   public static getInstance(): HttpClient {
     if (!HttpClient.instance) {
@@ -41,7 +44,7 @@ class HttpClient {
   }
 
   /**
-   * Setup request & response interceptors
+   * Cấu hình các bộ đánh chặn (Interceptors) cho cả Request và Response.
    */
   private setupInterceptors(): void {
     // Request interceptor: attach Bearer token
@@ -580,14 +583,17 @@ class HttpClient {
   }
 
   /**
-   * Expose the Axios instance for services to use
+   * Truy xuất trực tiếp đối tượng AxiosInstance gốc để các dịch vụ đặc thù sử dụng khi cần.
    */
   public getAxios(): AxiosInstance {
     return this.axiosInstance;
   }
 
   /**
-   * Generic GET request
+   * Gửi yêu cầu HTTP GET thông thường.
+   * @param url - Đường dẫn API endpoint
+   * @param config - Cấu hình request Axios tùy chọn
+   * @returns Dữ liệu phản hồi từ server kiểu T
    */
   public async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.axiosInstance.get<T>(url, config);
@@ -595,7 +601,11 @@ class HttpClient {
   }
 
   /**
-   * Generic POST request
+   * Gửi yêu cầu HTTP POST thông thường.
+   * @param url - Đường dẫn API endpoint
+   * @param data - Dữ liệu payload gửi kèm
+   * @param config - Cấu hình request Axios tùy chọn
+   * @returns Dữ liệu phản hồi từ server kiểu T
    */
   public async post<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.axiosInstance.post<T>(url, data, config);
@@ -603,7 +613,11 @@ class HttpClient {
   }
 
   /**
-   * Generic PUT request
+   * Gửi yêu cầu HTTP PUT thông thường.
+   * @param url - Đường dẫn API endpoint
+   * @param data - Dữ liệu payload gửi kèm
+   * @param config - Cấu hình request Axios tùy chọn
+   * @returns Dữ liệu phản hồi từ server kiểu T
    */
   public async put<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.axiosInstance.put<T>(url, data, config);
@@ -611,7 +625,11 @@ class HttpClient {
   }
 
   /**
-   * Generic PATCH request
+   * Gửi yêu cầu HTTP PATCH thông thường.
+   * @param url - Đường dẫn API endpoint
+   * @param data - Dữ liệu payload cập nhật một phần
+   * @param config - Cấu hình request Axios tùy chọn
+   * @returns Dữ liệu phản hồi từ server kiểu T
    */
   public async patch<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.axiosInstance.patch<T>(url, data, config);
@@ -619,7 +637,10 @@ class HttpClient {
   }
 
   /**
-   * Generic DELETE request
+   * Gửi yêu cầu HTTP DELETE thông thường.
+   * @param url - Đường dẫn API endpoint
+   * @param config - Cấu hình request Axios tùy chọn
+   * @returns Dữ liệu phản hồi từ server kiểu T
    */
   public async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.axiosInstance.delete<T>(url, config);
@@ -627,6 +648,6 @@ class HttpClient {
   }
 }
 
-// Export singleton instance
+// Khởi tạo và xuất thể hiện duy nhất của HttpClient
 export const httpClient = HttpClient.getInstance();
 export default HttpClient;

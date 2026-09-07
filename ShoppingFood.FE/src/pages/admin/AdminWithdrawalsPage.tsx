@@ -8,11 +8,19 @@ import toast from 'react-hot-toast';
 
 type WithdrawalStatus = 'Pending' | 'Approved' | 'Rejected' | 'Completed' | 'Disputed';
 
+/**
+ * Trang Quản Lý Lệnh Rút Tiền Của Đối Tác (AdminWithdrawalsPage).
+ * Dành cho kế toán và ban quản trị phê duyệt giải ngân:
+ * - Lọc theo trạng thái yêu cầu rút tiền (Đang chờ, Đã duyệt, Đã từ chối, Hoàn tất, Đang tranh chấp)
+ * - Tải ảnh hóa đơn chuyển khoản ngân hàng thực tế để hoàn tất duyệt
+ * - Từ chối lệnh rút tiền kèm lý do gửi tới đối tác.
+ */
 export function AdminWithdrawalsPage() {
   const { confirm } = useConfirm();
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState<string>('');
+
 
   const [approveModalOpen, setApproveModalOpen] = useState(false);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);

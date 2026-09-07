@@ -8,6 +8,12 @@ import toast from 'react-hot-toast';
 
 type RemittanceStatus = '' | 'Pending' | 'Approved' | 'Rejected';
 
+/**
+ * Trang Phê Duyệt Nộp Tiền Thu Hộ COD Của Tài Xế (CodRemittancesPage).
+ * Đối soát các khoản tiền COD do tài xế nộp lại qua chuyển khoản ngân hàng:
+ * - Xem hình ảnh bill thanh toán chuyển khoản do shipper tải lên
+ * - Phê duyệt ghi nhận hoàn tất nộp tiền COD hoặc từ chối có nêu lý do.
+ */
 export function CodRemittancesPage() {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -17,6 +23,7 @@ export function CodRemittancesPage() {
   const [rejectReason, setRejectReason] = useState('');
   const [processing, setProcessing] = useState(false);
   const [proofUrl, setProofUrl] = useState<string | null>(null);
+
 
   const loadData = async () => {
     setLoading(true);

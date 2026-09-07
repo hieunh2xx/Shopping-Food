@@ -18,6 +18,9 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
+/**
+ * Tạo danh sách các tùy chọn tháng để lọc báo cáo (mặc định 12 tháng gần nhất).
+ */
 function buildMonthOptions(monthsBack = 12) {
   const now = new Date();
   const options: { key: string; label: string; start: Date; end: Date }[] = [];
@@ -38,6 +41,9 @@ function buildMonthOptions(monthsBack = 12) {
 
 /* ─── Shared helpers ─── */
 
+/**
+ * Lấy icon hiển thị cho giao dịch ví của đối tác.
+ */
 function getTransactionIcon(type: string, amount: number) {
   if (type === 'TopUp' || type === 'ShipperIncome' || type === 'Commission' || amount > 0) {
     return <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center shrink-0"><TrendingUp className="w-5 h-5 text-green-600" /></div>;
@@ -48,6 +54,9 @@ function getTransactionIcon(type: string, amount: number) {
   return <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0"><TrendingDown className="w-5 h-5 text-red-600" /></div>;
 }
 
+/**
+ * Lấy nhãn badge phân loại giao dịch của Seller/Shipper.
+ */
 function getTransactionBadge(type: string) {
   const map: Record<string, { label: string; cls: string }> = {
     TopUp: { label: 'Nạp tiền', cls: 'bg-green-100 text-green-700' },
@@ -69,6 +78,9 @@ function getTransactionBadge(type: string) {
   return <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${info.cls}`}>{info.label}</span>;
 }
 
+/**
+ * Component Bảng Lịch Sử Giao Dịch kèm biểu đồ cột Recharts thu/chi theo ngày.
+ */
 function TransactionHistory({
   transactions,
   totalCount,
@@ -98,6 +110,7 @@ function TransactionHistory({
   onMonthChange?: (key: string) => void;
   title?: string;
 }) {
+
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
   const chart = (chartData || []).map((d) => ({
     label: new Date(d.date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }),
@@ -266,9 +279,17 @@ function WithdrawalHistory({ withdrawals, onConfirm }: { withdrawals: any[]; onC
 }
 
 /* ═══════════════════════════════════════════════════════════
-   SELLER WALLET PAGE
+   TRANG VÍ TIỀN NGƯỜI BÁN (SELLER WALLET PAGE)
    ═══════════════════════════════════════════════════════════ */
 
+/**
+ * Trang Quản Lý Ví & Doanh Thu Người Bán (SellerWalletPage).
+ * Cung cấp giải pháp tài chính hoàn chỉnh cho chủ quán:
+ * - Theo dõi số dư khả dụng và số dư đóng băng
+ * - Nạp tiền vào ví qua cổng thanh toán SePay
+ * - Tạo yêu cầu rút tiền về tài khoản ngân hàng cá nhân/doanh nghiệp
+ * - Bảng lịch sử giao dịch bán hàng, thanh toán đơn, hoàn tiền, phí hoa hồng kèm biểu đồ cột Recharts.
+ */
 export function SellerWalletPage() {
   const navigate = useNavigate();
   const monthOptions = useMemo(() => buildMonthOptions(12), []);
@@ -287,6 +308,7 @@ export function SellerWalletPage() {
   const [monthKey, setMonthKey] = useState(monthOptions[0].key);
   const { confirm } = useConfirm();
   const selectedMonth = monthOptions.find((m) => m.key === monthKey) || monthOptions[0];
+
 
   const loadData = async () => {
     setLoading(true);
@@ -589,9 +611,17 @@ export function SellerWalletPage() {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   SHIPPER WALLET PAGE
+   TRANG VÍ TIỀN TÀI XẾ (SHIPPER WALLET PAGE)
    ═══════════════════════════════════════════════════════════ */
 
+/**
+ * Trang Quản Lý Ví & Tiền Thu Hộ COD Của Tài Xế (ShipperWalletPage).
+ * Trung tâm tài chính dành cho tài xế giao hàng:
+ * - Theo dõi số dư thu nhập giao hàng và hạn mức tiền thu hộ COD
+ * - Nộp hoàn trả tiền COD thu hộ về hệ thống qua cổng SePay
+ * - Tạo lệnh rút tiền thu nhập giao hàng về tài khoản ngân hàng
+ * - Quản lý lịch sử nộp tiền COD và nhật ký thu nhập từng đơn hàng.
+ */
 export function ShipperWalletPage() {
   const monthOptions = useMemo(() => buildMonthOptions(12), []);
   const [wallet, setWallet] = useState<IWalletDto | null>(null);
@@ -618,6 +648,7 @@ export function ShipperWalletPage() {
   const { confirm } = useConfirm();
 
   const selectedMonth = monthOptions.find((m) => m.key === monthKey) || monthOptions[0];
+
   const selectedCodMonth = monthOptions.find((m) => m.key === codMonthKey) || monthOptions[0];
 
   const loadWalletMeta = async () => {

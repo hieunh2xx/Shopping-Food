@@ -8,11 +8,16 @@ import { AppRoutes } from './routes/AppRoutes';
 import { ScrollToTop } from './components/common/ScrollToTop';
 
 /**
- * App Root Component
- * Wraps the application with providers:
- * - BrowserRouter (routing)
- * - AuthProvider (auth context - DIP)
- * - Toaster (notifications)
+ * Component Gốc Của Ứng Dụng (App Root Component).
+ * Bọc toàn bộ ứng dụng bằng các Provider quản lý trạng thái toàn cục:
+ * - BrowserRouter: Điều hướng và định tuyến URL
+ * - ScrollToTop: Tự động cuộn lên đầu trang khi chuyển Route
+ * - ConfirmProvider: Hộp thoại xác nhận hành động toàn cục
+ * - AuthProvider: Quản lý đăng nhập, phân quyền và phiên làm việc
+ * - UserLocationProvider: Quản lý GPS và tọa độ vị trí người dùng
+ * - Toaster: Hệ thống thông báo toast notification (thành công, lỗi, cảnh báo)
+ * - CartProvider: Quản lý giỏ hàng, tính toán món và mã giảm giá
+ * - AppRoutes: Bộ cây điều hướng trang.
  */
 function App() {
   return (
@@ -22,6 +27,7 @@ function App() {
         <AuthProvider>
           <UserLocationProvider>
             <Toaster
+
               position="top-right"
               containerStyle={{ zIndex: 99999 }}
               toastOptions={{

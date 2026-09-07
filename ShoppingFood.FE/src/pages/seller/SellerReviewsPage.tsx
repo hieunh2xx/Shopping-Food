@@ -5,6 +5,14 @@ import { productService } from '../../services';
 import type { IProductReviewDto } from '../../interfaces';
 import toast from 'react-hot-toast';
 
+/**
+ * Trang Quản Lý Đánh Giá Của Khách Hàng (SellerReviewsPage).
+ * Cho phép chủ quán theo dõi và phản hồi nhận xét món ăn:
+ * - Xem điểm sao và nội dung đánh giá của khách hàng
+ * - Lọc theo trạng thái: Đã trả lời / Chưa trả lời
+ * - Gửi phản hồi chính thức của nhà hàng tới khách hàng
+ * - Báo cáo đánh giá sai sự thật / vi phạm lên Admin.
+ */
 export function SellerReviewsPage() {
   const [reviews, setReviews] = useState<IProductReviewDto[]>([]);
   const [total, setTotal] = useState(0);
@@ -13,6 +21,7 @@ export function SellerReviewsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all'); // 'all', 'replied', 'unreplied'
   const take = 10;
+
 
   const [replyModal, setReplyModal] = useState({ isOpen: false, reviewId: '', content: '' });
   const [reportModal, setReportModal] = useState({ isOpen: false, reviewId: '', reason: '' });

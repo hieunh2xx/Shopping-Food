@@ -5,7 +5,7 @@ import { Modal, Button } from '../../../components/common';
 export interface BatchPickupOrderItem {
   orderId: string;
   contactName?: string;
-  /** Only arrived orders are selectable; accepted stay visible but disabled. */
+  /** Chỉ các đơn đã đến quán mới cho phép chọn; các đơn vừa nhận sẽ bị vô hiệu hóa */
   canSelect: boolean;
 }
 
@@ -18,6 +18,10 @@ interface BatchPickupCodeModalProps {
   isLoading?: boolean;
 }
 
+/**
+ * Modal Nhập Mã Lấy Hàng Hàng Loạt Tại Quán (BatchPickupCodeModal).
+ * Cho phép tài xế ghép nhiều đơn cùng quán nhập 1 mã OTP 6 ký tự để nhận tất cả các món ăn cùng lúc.
+ */
 export function BatchPickupCodeModal({
   isOpen,
   onClose,
@@ -26,6 +30,7 @@ export function BatchPickupCodeModal({
   restaurantName,
   isLoading = false,
 }: BatchPickupCodeModalProps) {
+
   const selectableIds = orders.filter((o) => o.canSelect).map((o) => o.orderId);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [code, setCode] = useState<string[]>(Array(6).fill(''));

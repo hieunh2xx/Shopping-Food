@@ -3,6 +3,11 @@ import { chatService } from '../services';
 import { useAuth } from './useAuth';
 import type { IChatMessage } from '../interfaces';
 
+/**
+ * Hook tùy chỉnh Theo dõi Tin nhắn Hỗ trợ Khách hàng (useSupportChatWatcher).
+ * Dành cho Admin và Nhân viên Điều phối (Coordinator) để nhận biết có phiên chat hỗ trợ mới hoặc tin nhắn khiếu nại chưa đọc từ khách hàng.
+ * @param role - Vai trò của người dùng ('Admin' | 'Coordinator')
+ */
 export function useSupportChatWatcher(role: string | null) {
   const [hasUnread, setHasUnread] = useState(false);
   const { token } = useAuth();
@@ -12,6 +17,9 @@ export function useSupportChatWatcher(role: string | null) {
 
     let isSubscribed = true;
 
+    /**
+     * Khởi tạo kết nối SignalR, tham gia nhóm hỗ trợ Admin/Coordinator và kiểm tra tin nhắn chưa xử lý.
+     */
     const init = async () => {
       try {
         await chatService.startConnection(token);
@@ -42,12 +50,18 @@ export function useSupportChatWatcher(role: string | null) {
 
     init();
 
+    /**
+     * Xử lý khi có tin nhắn chat mới được gửi tới từ người dùng.
+     */
     const handleReceive = (msg: IChatMessage) => {
       if (msg.senderRole !== 'Admin' && msg.senderRole !== 'Coordinator') {
         setHasUnread(true);
       }
     };
 
+    /**
+     * Xử lý khi có phiên hỗ trợ chat mới mở.
+     */
     const handleNewSession = () => {
       setHasUnread(true);
     };
@@ -56,10 +70,7 @@ export function useSupportChatWatcher(role: string | null) {
     chatService.onNewSession(handleNewSession);
 
     const checkStorage = () => {
-      // We can trigger re-check here if needed
-      // For now, if chat_last_read updates, we assume a session was read.
-      // We should really re-evaluate all sessions, but to avoid API spam, we can just fetch if we want.
-      init(); // Just re-init to be accurate
+      init();
     };
     window.addEventListener('chat_read_updated', checkStorage);
 

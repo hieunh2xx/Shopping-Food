@@ -9,11 +9,11 @@ import toast from 'react-hot-toast';
 
 // Removed PAGE_SIZE const, using state instead
 
-// ─── Product Form Modal ───────────────────────────────────────────────────────
+// ─── Modal Biểu Mẫu Thêm / Chỉnh Sửa Món Ăn ───────────────────────────────────
 interface ProductFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  product: IProductDto | null; // null = creating new
+  product: IProductDto | null; // null = tạo mới
   restaurantId: string;
   categories: { id: string; title: string }[];
   onSaved: () => void;
@@ -21,7 +21,11 @@ interface ProductFormModalProps {
   setIsSubmitting: (v: boolean) => void;
 }
 
+/**
+ * Modal biểu mẫu thêm hoặc cập nhật thông tin món ăn (hình ảnh, giá, size, topping).
+ */
 function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, onSaved, isSubmitting, setIsSubmitting }: ProductFormModalProps) {
+
   const [itemName, setItemName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState<number>(0);
@@ -189,11 +193,11 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
           globalCategoryId: globalCategoryId || undefined,
           imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
           sizes: sizes.filter(s => s.sizeName.trim()).map(s => ({
-            id: s.id || '',
-            sizeName: s.sizeName,
-            extraPrice: s.extraPrice,
-            isDefault: s.isDefault
-          })) as IProductSizeDto[],
+            id: (s.id && s.id.trim() !== '') ? s.id : undefined,
+            sizeName: s.sizeName.trim(),
+            extraPrice: Number(s.extraPrice) || 0,
+            isDefault: !!s.isDefault
+          })),
           toppingIds: selectedToppings,
         };
         const res = await productService.create(payload);
@@ -202,11 +206,19 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
           onSaved();
           onClose();
         } else {
-          toast.error(res.message);
+          toast.error(res.message || 'Thêm sản phẩm thất bại');
         }
       }
-    } catch (err) {
-      toast.error((err as any)?.response?.data?.message);
+    } catch (err: any) {
+      const data = err?.response?.data;
+      let errMsg = data?.message || data?.title;
+      if (!errMsg && data?.errors) {
+        const errorList = Object.values(data.errors).flat();
+        if (errorList.length > 0) {
+          errMsg = errorList.join(', ');
+        }
+      }
+      toast.error(errMsg || err?.message || 'Có lỗi xảy ra khi lưu sản phẩm. Vui lòng thử lại.');
     } finally {
       setIsSubmitting(false);
     }
@@ -315,6 +327,7 @@ function ProductFormModal({ isOpen, onClose, product, restaurantId, categories, 
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
+                  e.stopPropagation();
                   const val = e.currentTarget.value.trim();
                   if (val && imageUrls.length < 5) {
                     setImageUrls([...imageUrls, val]);
@@ -445,7 +458,16 @@ function StockBadge({ status }: { status: string }) {
   );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// ─── Trang Chính Quản Lý Món Ăn ───────────────────────────────────────────────
+/**
+ * Trang Quản Lý Thực Đơn & Món Ăn Của Nhà Hàng (SellerProductsPage).
+ * Toàn bộ tính năng quản lý sản phẩm ẩm thực của gian hàng:
+ * - Tìm kiếm theo tên món, lọc theo danh mục thực đơn
+ * - Thêm mới món ăn: Đặt tên, tải hình ảnh, chọn danh mục toàn sàn, gán các kích thước (Size) và các topping ăn kèm
+ * - Chỉnh sửa thông tin món ăn
+ * - Bật/tắt trạng thái mở bán (Còn hàng / Tạm hết)
+ * - Xóa món ăn khỏi thực đơn.
+ */
 export function SellerProductsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [take, setTake] = useState(10);
@@ -455,10 +477,11 @@ export function SellerProductsPage() {
   const [restaurantId, setRestaurantId] = useState<string>('');
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  // Modal state
+  // Trạng thái modal biểu mẫu
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<IProductDto | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
 
   // Delete state
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);

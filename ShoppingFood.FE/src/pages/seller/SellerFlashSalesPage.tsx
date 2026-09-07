@@ -8,13 +8,20 @@ import { authService } from '../../services/AuthService';
 import { Button, Input, Modal } from '../../components/common';
 import { formatDate } from '../../utils/formatters';
 
+/**
+ * Trang Đăng Ký Tham Gia Flash Sale Dành Cho Người Bán (SellerFlashSalesPage).
+ * Cho phép chủ quán đăng ký các món ăn tham gia đợt giảm giá giờ vàng:
+ * - Xem danh sách các đợt Flash Sale đang mở của hệ thống
+ * - Đăng ký món ăn, thiết lập giá Flash Sale và giới hạn số lượng mở bán
+ * - Quản lý danh sách các món đang tham gia và hủy đăng ký món khi cần.
+ */
 export function SellerFlashSalesPage() {
   const [flashSales, setFlashSales] = useState<IFlashSale[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [restaurantId, setRestaurantId] = useState('');
 
-  // Participating products state
+  // Trạng thái danh sách sản phẩm tham gia Flash Sale
   const [participatingProducts, setParticipatingProducts] = useState<any[]>([]);
   const [selectedSaleForProducts, setSelectedSaleForProducts] = useState<IFlashSale | null>(null);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
@@ -31,6 +38,7 @@ export function SellerFlashSalesPage() {
     flashSalePrice: '',
     quantityLimit: ''
   });
+
 
   useEffect(() => {
     fetchData();

@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Wallet, ArrowUpCircle, History, TrendingUp, TrendingDown, RefreshCw, ChevronDown, Sparkles } from 'lucide-react';
 import { Card, Button, Input } from '../../components/common';
 import { paymentService, type IWalletDto, type ITransactionDto } from '../../services/PaymentService';
@@ -10,6 +10,9 @@ import { ROUTES } from '../../routes/routeConfig';
 
 const QUICK_AMOUNTS = [50000, 100000, 200000, 500000, 1000000];
 
+/**
+ * Lấy biểu tượng icon hiển thị tương ứng với loại giao dịch ví (Cộng tiền / Trừ tiền).
+ */
 function getTransactionIcon(type: string, amount: number) {
   if (type === 'TopUp' || amount > 0) {
     return <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center shrink-0"><TrendingUp className="w-5 h-5 text-green-600" /></div>;
@@ -17,6 +20,9 @@ function getTransactionIcon(type: string, amount: number) {
   return <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0"><TrendingDown className="w-5 h-5 text-red-600" /></div>;
 }
 
+/**
+ * Lấy nhãn badge trạng thái/loại giao dịch (Nạp tiền, Thanh toán, Hoàn tiền...).
+ */
 function getTransactionBadge(type: string) {
   const map: Record<string, { label: string; cls: string }> = {
     TopUp: { label: 'Nạp tiền', cls: 'bg-green-100 text-green-700' },
@@ -33,6 +39,13 @@ function getTransactionBadge(type: string) {
   return <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${info.cls}`}>{info.label}</span>;
 }
 
+/**
+ * Trang Ví Tiền & Nạp Tiền Của Khách Hàng (CustomerWalletPage).
+ * Quản lý số dư và lịch sử giao dịch:
+ * - Xem số dư ví hiện có
+ * - Nạp tiền nhanh qua SePay VietQR (chọn số tiền mẫu hoặc nhập tùy chỉnh)
+ * - Danh sách lịch sử biến động số dư.
+ */
 export function CustomerWalletPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -42,6 +55,7 @@ export function CustomerWalletPage() {
   const [loading, setLoading] = useState(true);
   const [topUpLoading, setTopUpLoading] = useState(false);
   const [take, setTake] = useState(10);
+
 
 
   const loadData = async () => {

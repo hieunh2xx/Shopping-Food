@@ -24,12 +24,19 @@ interface ShipperCancelsPayload {
   items: ShipperCancelItem[];
 }
 
+/**
+ * Trang Thống Kê Các Đơn Bị Tài Xế Từ Chối / Hủy Nhận (SellerShipperCancelsPage).
+ * Giúp chủ quán phân tích nguyên nhân đơn bị tài xế từ chối:
+ * - Biểu đồ phân bổ tỷ lệ lý do từ chối (Thời gian chờ lâu, món cồng kềnh, không liên lạc được...)
+ * - Danh sách chi tiết các đơn bị hủy bởi tài xế và thời điểm hủy.
+ */
 export function SellerShipperCancelsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [days, setDays] = useState(30);
   const [data, setData] = useState<ShipperCancelsPayload | null>(null);
   const [selected, setSelected] = useState<ShipperCancelItem | null>(null);
+
 
   const fetchData = useCallback(async (rangeDays: number) => {
     setLoading(true);

@@ -30,11 +30,25 @@ import { useAuth, useSupportChatWatcher } from '../../../hooks';
 import { ROUTES } from '../../../routes/routeConfig';
 import { DashboardLayout } from '../DashboardLayout';
 
+/**
+ * Layout Khu vực Quản trị Hệ thống (AdminLayout).
+ * Cung cấp toàn bộ danh mục điều hướng quản lý của Quản trị viên (Admin):
+ * - Chung: Tổng quan, Hồ sơ
+ * - Quản lý tài khoản: Người dùng, Phân quyền
+ * - Quản lý đối tác: Duyệt đối tác, Nhà hàng, Shipper
+ * - Vận hành: Lịch sử điều phối, Khiếu nại, Sự cố, Live Chat, Báo cáo bình luận/sản phẩm, Blacklist từ khóa
+ * - Marketing & Ưu đãi: Khuyến mãi sàn, Flash Sale, Điểm loyalty, Hạng thành viên
+ * - Tài chính & Thanh toán: Báo cáo COD, Duyệt nộp COD, Doanh thu, Duyệt rút tiền, Cổng SePay QR
+ * - Hệ thống: Cấu hình Menu, Thiết lập vận hành, Gửi thông báo, Quản lý FAQ, Chính sách & Pháp lý, Nhật ký hệ thống (Audit Logs).
+ */
 export function AdminLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const unreadChatCount = useSupportChatWatcher(user?.role || null);
 
+  /**
+   * Xử lý đăng xuất tài khoản Admin.
+   */
   const handleLogout = () => {
     logout();
     navigate(ROUTES.LOGIN);

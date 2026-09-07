@@ -21,6 +21,11 @@ const sizeClasses = {
   lg: 'px-7 py-3 text-base',
 };
 
+/**
+ * Thành phần Nút bấm dùng chung (Button).
+ * Hỗ trợ nhiều biến thể giao diện (primary, secondary, danger, ghost, outline), kích thước và trạng thái đang tải (isLoading).
+ * @param props - Thuộc tính cấu hình Button
+ */
 export function Button({
   variant = 'primary',
   size = 'md',

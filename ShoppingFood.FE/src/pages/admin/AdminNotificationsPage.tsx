@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { Send, Users, Zap } from 'lucide-react';
 import { adminService } from '../../services/AdminService';
@@ -6,16 +6,24 @@ import { flashSaleService } from '../../services/FlashSaleService';
 import type { IFlashSale } from '../../interfaces';
 import { Button, Input } from '../../components/common';
 
+/**
+ * Trang Gửi Thông Báo Hệ Thống & Flash Sale (AdminNotificationsPage).
+ * Cho phép quản trị viên phát thông báo hàng loạt:
+ * - Chọn đợt Flash Sale đang diễn ra
+ * - Chọn nhóm đối tượng nhận tin: Tất cả khách hàng, Theo hạng thành viên (Đồng, Bạc, Vàng, Kim Cương), hoặc Danh sách ID cụ thể
+ * - Soạn thảo tin nhắn và gửi thông báo đẩy.
+ */
 export function AdminNotificationsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [flashSales, setFlashSales] = useState<IFlashSale[]>([]);
   const [formData, setFormData] = useState({
     flashSaleId: '',
     customMessage: '',
-    targetAudience: 0, // 0 = AllCustomers, 1 = ByTier, 2 = SpecificCustomers
-    targetTier: 0, // 0 = Bronze, 1 = Silver, 2 = Gold, 3 = Diamond
+    targetAudience: 0, // 0 = Tất cả khách hàng, 1 = Theo hạng thành viên, 2 = Khách hàng cụ thể
+    targetTier: 0, // 0 = Đồng, 1 = Bạc, 2 = Vàng, 3 = Kim Cương
     targetUserIds: ''
   });
+
 
   useEffect(() => {
     const fetchFlashSales = async () => {

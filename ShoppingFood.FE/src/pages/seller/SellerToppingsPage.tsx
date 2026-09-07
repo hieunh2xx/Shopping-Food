@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Plus, Edit, Trash2, ListPlus, ToggleLeft, ToggleRight, Loader2 } from 'lucide-react';
 import { Button, Input, Modal, Loading, Pagination } from '../../components/common';
 import { toppingService } from '../../services';
@@ -6,17 +6,25 @@ import { authService } from '../../services/AuthService';
 import type { IToppingDto } from '../../interfaces';
 import toast from 'react-hot-toast';
 
+/**
+ * Trang Quản Lý Topping Ăn Kèm (SellerToppingsPage).
+ * Cho phép người bán quản lý danh mục các loại topping / món thêm:
+ * - Thêm mới topping: Tên topping, giá bán, hình ảnh minh họa
+ * - Bật/tắt trạng thái còn hàng / hết hàng của từng loại topping
+ * - Chỉnh sửa thông tin topping và xóa topping.
+ */
 export function SellerToppingsPage() {
   const [restaurantId, setRestaurantId] = useState<string>('');
   const [toppings, setToppings] = useState<IToppingDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Pagination
+  // Phân trang
   const [currentPage, setCurrentPage] = useState(1);
   const [take, setTake] = useState(10);
   const paginatedToppings = toppings.slice((currentPage - 1) * take, currentPage * take);
   const total = toppings.length;
   const totalPages = Math.ceil(total / take);
+
 
   // Form Modal state
   const [isOpen, setIsOpen] = useState(false);

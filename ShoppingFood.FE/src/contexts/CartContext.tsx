@@ -5,10 +5,18 @@ import { cartService } from '../services/CartService';
 import { useAuth } from '../hooks/useAuth';
 
 const GUEST_ID_KEY = 'sf_guest_id';
-const CART_STORAGE_KEY = 'sf_cart'; // Keep for fallback/optimistic
+const CART_STORAGE_KEY = 'sf_cart'; // Lưu local storage để fallback và cập nhật giao diện lạc quan (optimistic)
 
+/**
+ * Context Giỏ hàng (CartContext).
+ * Cung cấp dữ liệu giỏ hàng, tổng tiền, số lượng và các hàm thao tác thêm/sửa/xóa món.
+ */
 const CartContext = createContext<ICartContext | undefined>(undefined);
 
+/**
+ * Provider Quản lý Giỏ hàng toàn cục (CartProvider).
+ * Tự động đồng bộ giỏ hàng với máy chủ backend (hỗ trợ cả khách vãng lai Guest và người dùng đã đăng nhập).
+ */
 export function CartProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth();
   const [items, setItems] = useState<ICartItem[]>(() => {
@@ -16,14 +24,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const saved = localStorage.getItem(CART_STORAGE_KEY);
       if (!saved) return [];
       const parsed = JSON.parse(saved);
-      // Filter out corrupted items to prevent crashes
+      // Lọc các phần tử lỗi để tránh crash ứng dụng
       return Array.isArray(parsed) ? parsed.filter(item => item && item.product && item.product.id) : [];
     } catch {
       return [];
     }
   });
 
-  // Get or create guest user ID — keep sending guest id after login so BE can merge guest cart
+  /**
+   * Lấy hoặc tạo mới mã định danh khách vãng lai (Guest ID) lưu trong localStorage.
+   */
   const getGuestUserId = useCallback(() => {
     let guestId = localStorage.getItem(GUEST_ID_KEY);
     if (!guestId && !isAuthenticated) {
@@ -33,15 +43,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
     return guestId || undefined;
   }, [isAuthenticated]);
 
-  // Sync cart state to localStorage for optimistic persistence
+  // Đồng bộ trạng thái giỏ hàng vào localStorage để hiển thị lạc quan
   useEffect(() => {
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
   }, [items]);
 
+  /**
+   * Tải dữ liệu giỏ hàng mới nhất từ máy chủ backend và chuẩn hóa dữ liệu giỏ hàng.
+   */
   const fetchCart = useCallback(async () => {
     try {
       const guestUserId = getGuestUserId();
-      // Authenticated users still pass guestUserId so server can merge leftover guest cart
+      // Người dùng đã đăng nhập vẫn truyền guestUserId để máy chủ tự động gộp giỏ hàng cũ của khách
       const res = await cartService.getCart(guestUserId);
       if (!res.error && res.data) {
         let apiItems: any[] = [];
@@ -106,7 +119,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           };
         });
 
-        // Không gộp dòng khuyến mãi / gift với món thường
+        // Không gộp dòng khuyến mãi / quà tặng với món thông thường
         const deduped = mappedItems.reduce<ICartItem[]>((acc, item) => {
           if (!item?.product?.id) return acc;
           if (item.id || item.buyXGetYPromotionId || item.isGift) {
@@ -135,21 +148,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setItems(deduped);
         return deduped;
       }
-      // API ok but empty/missing payload — trust server over ghost localStorage
+      // Dữ liệu trống, làm mới state
       setItems([]);
       return [];
     } catch (error) {
-      console.error('Failed to fetch cart', error);
+      console.error('Lỗi khi tải giỏ hàng:', error);
       return null;
     }
   }, [getGuestUserId]);
 
-  // Fetch cart from backend on mount or auth change
+  // Tải giỏ hàng từ backend khi component mount hoặc khi đăng nhập/đăng xuất
   useEffect(() => {
     fetchCart();
   }, [fetchCart, isAuthenticated, getGuestUserId]);
 
-  // Đếm theo “xuất/combo” trên UI: bỏ món tặng; KM Mua X Tặng Y = số set (quantity / buyQty)
+  // Tính tổng số lượng món ăn trong giỏ (bỏ qua món quà tặng, gói combo tính theo set)
   const totalItems = items.reduce((sum, item) => {
     if (!item || item.isGift) return sum;
     if (item.buyXGetYPromotionId) {
@@ -158,6 +171,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
     return sum + (item.quantity || 0);
   }, 0);
+
+  // Tính tổng tiền giỏ hàng (tính giá món, giá size tăng thêm và topping đi kèm)
   const totalPrice = items.reduce((sum, item) => {
     if (!item || !item.product) return sum;
     if (item.isGift) return sum;
@@ -182,6 +197,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     return sum + itemPrice * item.quantity;
   }, 0);
 
+  /**
+   * Thêm món ăn thông thường vào giỏ hàng (hỗ trợ chọn size, topping, ghi chú).
+   * @param product - Thông tin sản phẩm
+   * @param quantity - Số lượng
+   * @param selectedSize - Tùy chọn size đã chọn
+   * @param selectedToppings - Danh sách topping đi kèm
+   * @param note - Ghi chú cho quán
+   */
   const addItem = useCallback(async (
     product: IProductDto, 
     quantity: number = 1,
@@ -191,7 +214,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   ) => {
     let isExisting = false;
 
-    // Optimistic update
+    // Cập nhật giao diện lạc quan (Optimistic UI)
     setItems((prev) => {
       const existing = prev.find((item) => 
         item.product.id === product.id &&
@@ -211,7 +234,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return [...prev, { product, quantity, selectedSize, selectedToppings, note }];
     });
 
-    // Timeout prevents React batching issues with the ref flag
     setTimeout(() => {
       if (isExisting) {
         toast.success(`Đã cập nhật số lượng: ${product.itemName}`);
@@ -220,7 +242,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
     }, 0);
 
-    // API call — then re-sync from server (avoids ghost local-only cart)
+    // Gửi request API và đồng bộ lại từ backend
     try {
       await cartService.addToCart({
         productId: product.id,
@@ -236,6 +258,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [getGuestUserId, fetchCart]);
 
+  /**
+   * Thêm gói ưu đãi khuyến mãi "Mua X Tặng Y" vào giỏ hàng.
+   * @param param0.promotionId - Mã chương trình khuyến mãi
+   * @param param0.triggerProduct - Món chính mua
+   * @param param0.sets - Số lượng set mua
+   */
   const addBuyXGetY = useCallback(async ({
     promotionId,
     triggerProduct,
@@ -260,8 +288,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [getGuestUserId, fetchCart]);
 
+  /**
+   * Xóa một món ăn khỏi giỏ hàng.
+   * @param productId - Mã món ăn
+   * @param selectedSize - Size
+   * @param selectedToppings - Danh sách topping
+   */
   const removeItem = useCallback(async (productId: string, selectedSize?: string, selectedToppings?: string[]) => {
-    // Optimistic: xóa cả bundle nếu là dòng KM
+    // Xóa lạc quan: nếu là combo KM thì xóa cả món tặng kèm
     setItems((prev) => {
       const target = prev.find((item) =>
         item.product.id === productId &&
@@ -295,6 +329,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [getGuestUserId, fetchCart]);
 
+  /**
+   * Cập nhật số lượng của một món trong giỏ.
+   * @param productId - Mã món
+   * @param quantity - Số lượng mới
+   * @param selectedSize - Tùy chọn size
+   * @param selectedToppings - Tùy chọn topping
+   */
   const updateQuantity = useCallback(async (
     productId: string, 
     quantity: number,
@@ -306,7 +347,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return;
     }
     
-    // Optimistic update
+    // Cập nhật lạc quan
     setItems((prev) =>
       prev.map((item) =>
         item.product.id === productId &&
@@ -317,7 +358,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       )
     );
 
-    // API call
     try {
       await cartService.updateQuantity({
         productId,
@@ -331,12 +371,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [removeItem, getGuestUserId, fetchCart]);
 
+  /**
+   * Xóa sạch toàn bộ các món trong giỏ hàng.
+   */
   const clearCart = useCallback(async () => {
     setItems([]);
     try {
       await cartService.clearCart({ guestUserId: getGuestUserId() });
     } catch (error) {
-      console.error('Lỗi khi xóa toàn bộ giỏ hàng', error);
+      console.error('Lỗi khi xóa toàn bộ giỏ hàng:', error);
     }
   }, [getGuestUserId]);
 
@@ -359,6 +402,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * Hook tùy chỉnh để truy cập CartContext. Báo lỗi nếu gọi ngoài CartProvider.
+ */
 export function useCartContext(): ICartContext {
   const context = useContext(CartContext);
   if (context === undefined) {

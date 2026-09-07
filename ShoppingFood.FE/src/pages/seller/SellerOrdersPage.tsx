@@ -38,6 +38,15 @@ const STATUS_TABS = [
   { label: 'Đã hủy', value: 'Cancelled' }
 ];
 
+/**
+ * Trang Quản Lý Đơn Hàng Của Nhà Hàng (SellerOrdersPage).
+ * Trung tâm xử lý đơn hàng thời gian thực dành cho chủ quán:
+ * - Nhận thông báo Realtime SignalR khi có đơn mới, shipper nhận đơn, shipper hủy đơn
+ * - Chuyển trạng thái đơn: Xác nhận đơn -> Bắt đầu nấu -> Báo món đã nấu xong cho shipper
+ * - Từ chối nhận đơn / Hủy đơn có lý do
+ * - In hóa đơn bill bếp & bill khách (hỗ trợ in hàng loạt hoặc từng đơn)
+ * - Mở khung chat trực tiếp với khách hàng của đơn.
+ */
 export function SellerOrdersPage() {
   const { token } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -49,9 +58,10 @@ export function SellerOrdersPage() {
   const [rejectReason, setRejectReason] = useState('');
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   
-  // Cancel Modal state
+  // Trạng thái modal hủy đơn
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
+
 
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [restaurantName, setRestaurantName] = useState<string>('Shopping Food');

@@ -9,6 +9,13 @@ import type { IFlashSale, IFlashSaleProduct, IProductDto } from '../interfaces';
 import { formatCurrency } from '../utils/formatters';
 import { useCart } from '../hooks';
 
+/**
+ * Trang Danh Sách Sản Phẩm Flash Sale (FlashSalePage).
+ * Hiển thị tất cả sản phẩm đang trong chương trình giảm giá Flash Sale:
+ * - Đồng hồ đếm ngược thời gian kết thúc
+ * - Lưới sản phẩm Flash Sale kèm thanh phần trăm số lượng đã bán
+ * - Phân trang danh sách sản phẩm.
+ */
 export function FlashSalePage() {
   const [activeFlashSale, setActiveFlashSale] = useState<IFlashSale | null>(null);
   const [combinedProducts, setCombinedProducts] = useState<Array<{fs: IFlashSaleProduct, p: IProductDto}>>([]);
@@ -23,6 +30,7 @@ export function FlashSalePage() {
     fetchFlashSaleData();
   }, [pageIndex]);
 
+  // Bộ đếm ngược thời gian Flash Sale
   useEffect(() => {
     if (!activeFlashSale) return;
 
@@ -48,6 +56,9 @@ export function FlashSalePage() {
     return () => clearInterval(timer);
   }, [activeFlashSale]);
 
+  /**
+   * Tải dữ liệu đợt Flash Sale đang diễn ra và danh sách sản phẩm theo trang.
+   */
   const fetchFlashSaleData = async () => {
     setIsLoading(true);
     try {
@@ -85,6 +96,7 @@ export function FlashSalePage() {
       setIsLoading(false);
     }
   };
+
 
   if (isLoading) {
     return (

@@ -8,6 +8,14 @@ interface PrivateRouteProps {
   allowedRoles?: string[];
 }
 
+/**
+ * Tuyến Đường Bảo Vệ Phân Quyền (PrivateRoute).
+ * Kiểm tra trạng thái xác thực và vai trò (Role) của người dùng:
+ * - Đang tải: Hiển thị màn hình chờ "Đang kiểm tra phân quyền..."
+ * - Chưa đăng nhập: Tự động chuyển hướng về trang Đăng nhập kèm lưu lại vị trí trước đó
+ * - Vai trò không phù hợp: Chuyển hướng về Trang chủ
+ * - Hợp lệ: Cho phép truy cập và render các component con (`children`).
+ */
 export function PrivateRoute({ children, allowedRoles }: PrivateRouteProps) {
   const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
@@ -30,3 +38,4 @@ export function PrivateRoute({ children, allowedRoles }: PrivateRouteProps) {
 
   return <>{children}</>;
 }
+

@@ -6,6 +6,14 @@ import { discountService } from '../../services/DiscountService';
 import type { IDiscountDto, ICreateDiscountRequest, IUpdateDiscountRequest } from '../../interfaces';
 import { useAuth } from '../../hooks';
 
+/**
+ * Trang Quản Lý Mã Giảm Giá Của Quán (SellerDiscountsPage).
+ * Cho phép người bán tạo và theo dõi các chương trình ưu đãi của riêng mình:
+ * - Tạo mã giảm giá theo phần trăm (%) hoặc số tiền cố định (VNĐ)
+ * - Thiết lập giá trị đơn hàng tối thiểu, mức giảm tối đa, số lượng mã, giới hạn lượt dùng mỗi khách
+ * - Xem báo cáo thống kê hiệu quả sử dụng mã giảm giá
+ * - Bật/tắt trạng thái hoạt động hoặc xóa mã.
+ */
 export function SellerDiscountsPage() {
   const { user } = useAuth();
   const restaurantId = user?.sellerInfo?.restaurantId;
@@ -14,12 +22,13 @@ export function SellerDiscountsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [total, setTotal] = useState(0);
 
-  // Filters & Pagination
+  // Bộ lọc & Phân trang
   const [searchTerm, setSearchTerm] = useState('');
   const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
   const [stats, setStats] = useState<any>(null);
   const [page, setPage] = useState(1);
   const [take, setTake] = useState(10);
+
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);

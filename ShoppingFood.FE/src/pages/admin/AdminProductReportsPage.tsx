@@ -1,9 +1,16 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { adminService, productService } from '../../services';
 import { Button, Loading, Modal } from '../../components/common';
 import { AlertTriangle, CheckCircle, ShieldAlert, XCircle, Eye } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+/**
+ * Trang Kiểm Duyệt & Xử Lý Báo Cáo Sản Phẩm (AdminProductReportsPage).
+ * Tiếp nhận các báo cáo vi phạm liên quan đến món ăn (hình ảnh phản cảm, hàng cấm, sai thông tin):
+ * - Xem chi tiết món ăn bị báo cáo
+ * - Duyệt báo cáo và tự động ẩn món ăn khỏi thực đơn toàn sàn
+ * - Bác bỏ báo cáo nếu không vi phạm kèm lý do.
+ */
 export function AdminProductReportsPage() {
   const [reports, setReports] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -11,6 +18,7 @@ export function AdminProductReportsPage() {
   const [moderateModal, setModerateModal] = useState({ isOpen: false, report: null as any });
   const [productModal, setProductModal] = useState({ isOpen: false, product: null as any, isLoading: false });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
 
   const [adminNote, setAdminNote] = useState('');
   const [hideProduct, setHideProduct] = useState(true);

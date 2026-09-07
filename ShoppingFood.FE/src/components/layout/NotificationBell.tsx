@@ -9,6 +9,10 @@ import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../routes/routeConfig';
 
+/**
+ * Thành phần Chuông Thông báo Thời gian thực (NotificationBell).
+ * Nhận thông báo qua SignalR, đếm số lượng chưa đọc, hiển thị danh sách dạng dropdown menu, xem chi tiết trong modal và điều hướng thông minh theo từng loại sự kiện (đơn hàng, khiếu nại, duyệt hồ sơ, nộp COD).
+ */
 export function NotificationBell() {
   const { user, token } = useAuth();
   const [notifications, setNotifications] = useState<INotificationDto[]>([]);
@@ -19,7 +23,7 @@ export function NotificationBell() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  // Close dropdown on click outside
+  // Đóng dropdown khi click ra ngoài vùng hiển thị
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -30,7 +34,9 @@ export function NotificationBell() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Fetch notifications
+  /**
+   * Tải danh sách toàn bộ thông báo của người dùng từ API.
+   */
   const fetchNotifications = async () => {
     setIsLoading(true);
     try {
@@ -40,7 +46,7 @@ export function NotificationBell() {
         setUnreadCount(res.data.filter(n => !n.isRead).length);
       }
     } catch {
-      // Fail silently
+      // Bỏ qua lỗi
     } finally {
       setIsLoading(false);
     }
@@ -55,6 +61,9 @@ export function NotificationBell() {
       return;
     }
 
+    /**
+     * Xử lý nhận thông báo Realtime từ SignalR Hub.
+     */
     const onRealtime = (n: INotificationDto) => {
       setNotifications(prev => [n, ...prev.filter(x => x.id !== n.id)]);
       setUnreadCount(prev => prev + 1);
@@ -85,6 +94,9 @@ export function NotificationBell() {
     };
   }, [user?.id, token]);
 
+  /**
+   * Đóng/mở dropdown danh sách thông báo.
+   */
   const handleToggle = () => {
     setIsOpen(!isOpen);
     if (!isOpen) {
@@ -92,9 +104,13 @@ export function NotificationBell() {
     }
   };
 
+  /**
+   * Đánh dấu một thông báo cụ thể là đã đọc.
+   * @param id - Mã thông báo
+   */
   const handleMarkAsRead = async (id: string) => {
     try {
-      // Optimistic UI update
+      // Cập nhật giao diện ngay lập tức (Optimistic UI)
       setNotifications(prev => 
         prev.map(n => n.id === id ? { ...n, isRead: true } : n)
       );
@@ -102,7 +118,6 @@ export function NotificationBell() {
 
       const res = await notificationService.markAsRead(id);
       if (res.error) {
-        // Revert on error
         fetchNotifications();
       }
     } catch {
@@ -110,6 +125,9 @@ export function NotificationBell() {
     }
   };
 
+  /**
+   * Đánh dấu toàn bộ thông báo trong hộp thư là đã đọc.
+   */
   const handleMarkAllAsRead = async () => {
     try {
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
@@ -126,10 +144,13 @@ export function NotificationBell() {
     }
   };
 
+  /**
+   * Định dạng chuỗi thời gian thông báo dạng tương đối (Vừa xong, X phút trước, X giờ trước).
+   * @param dateStr - Chuỗi ngày tháng ISO
+   */
   const formatTime = (dateStr: string) => {
     if (!dateStr) return '';
     try {
-      // Fix EF Core datetime2 stripping UTC kind: append Z if no timezone is provided
       let parseStr = dateStr;
       if (!parseStr.endsWith('Z') && !parseStr.includes('+') && parseStr.indexOf('-', 11) === -1) {
         parseStr += 'Z';
@@ -147,6 +168,10 @@ export function NotificationBell() {
     }
   };
 
+  /**
+   * Trả về icon phù hợp với từng phân loại thông báo (Hệ thống, Đơn hàng, Giao hàng, Đánh giá).
+   * @param type - Loại thông báo
+   */
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'System':
@@ -162,9 +187,16 @@ export function NotificationBell() {
     }
   };
 
+  /**
+   * Kiểm tra thông báo có phải liên quan đến tin nhắn chat hay không.
+   */
   const isChatNotification = (n: INotificationDto) =>
     (n.title || '').toLowerCase().includes('tin nhắn');
 
+  /**
+   * Xác định đường dẫn điều hướng URL khi người dùng nhấn vào thông báo dựa trên vai trò và nội dung.
+   * @param n - Dữ liệu thông báo
+   */
   const getNotificationUrl = (n: INotificationDto): string | null => {
     const role = user?.role;
     const chatNotif = isChatNotification(n);
@@ -183,7 +215,7 @@ export function NotificationBell() {
 
     switch (n.notificationType) {
       case 'Order':
-        if (role === 'Customer') return null; // handled via custom event / chat URL above
+        if (role === 'Customer') return null;
         if (role === 'Seller' || role === 'Mall') {
           const lower = n.title?.toLowerCase() || '';
           if (lower.includes('tài xế hủy') || lower.includes('hủy giao')) {
@@ -216,7 +248,7 @@ export function NotificationBell() {
         }
         return null;
       case 'Delivery':
-        if (role === 'Customer') return null; // handled via custom event
+        if (role === 'Customer') return null;
         if (role === 'Shipper') return ROUTES.SHIPPER_DASHBOARD;
         if (role === 'Admin') {
           const lower = n.title?.toLowerCase() || '';
@@ -289,7 +321,7 @@ export function NotificationBell() {
           return null;
         }
 
-        // Applicant: NeedsInfo / application status → nơi bổ sung hồ sơ
+        // Người nộp đơn: Bổ sung hồ sơ
         if (isApplicationSupplement) {
           if ((lower.includes('mall') || msgLower.includes('mall')) && (role === 'Seller' || role === 'Mall')) {
             return ROUTES.SELLER_MALL_APPLICATION;
@@ -336,6 +368,9 @@ export function NotificationBell() {
     }
   };
 
+  /**
+   * Kiểm tra thông báo có phải là thông báo đơn hàng của khách hàng hay không.
+   */
   const isCustomerOrderNav = (n: INotificationDto, role?: string) => {
     if (role !== 'Customer') return false;
     if (n.notificationType === 'Order' || n.notificationType === 'Delivery') return true;
@@ -343,11 +378,18 @@ export function NotificationBell() {
     return false;
   };
 
+  /**
+   * Xử lý khi nhấn vào một thông báo trong danh sách: đánh dấu đã đọc và mở modal chi tiết.
+   * @param n - Dữ liệu thông báo
+   */
   const handleNotificationClick = (n: INotificationDto) => {
     if (!n.isRead) handleMarkAsRead(n.id);
-    setSelectedNotification(n); // Always show modal first
+    setSelectedNotification(n);
   };
 
+  /**
+   * Chuyển hướng tới trang liên quan từ modal chi tiết thông báo.
+   */
   const handleNavigateFromModal = () => {
     if (!selectedNotification) return;
     const role = user?.role;
@@ -382,7 +424,7 @@ export function NotificationBell() {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* Bell Button */}
+      {/* Nút Chuông */}
       <button 
         onClick={handleToggle}
         className="relative p-2.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
@@ -396,7 +438,7 @@ export function NotificationBell() {
         )}
       </button>
 
-      {/* Dropdown Menu */}
+      {/* Menu Dropdown */}
       {isOpen && (
         <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden z-50 transform origin-top-right transition-all">
           {/* Header */}
@@ -413,7 +455,7 @@ export function NotificationBell() {
             )}
           </div>
 
-          {/* List */}
+          {/* Danh sách thông báo */}
           <div className="max-h-96 overflow-y-auto divide-y divide-gray-100">
             {isLoading && notifications.length === 0 ? (
               <div className="flex items-center justify-center py-12 text-gray-400">
@@ -468,7 +510,7 @@ export function NotificationBell() {
         </div>
       )}
 
-      {/* Notification Detail Modal */}
+      {/* Modal Chi tiết Thông báo */}
       <Modal
         isOpen={!!selectedNotification}
         onClose={() => setSelectedNotification(null)}

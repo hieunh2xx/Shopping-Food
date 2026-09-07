@@ -1,15 +1,24 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { ShieldAlert, Send } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { httpClient } from '../../services/base/HttpClient';
 import { API_ENDPOINTS } from '../../config/endpoints';
 
+/**
+ * Trang Gửi Khiếu Nại Yêu Cầu Mở Khóa Cửa Hàng (SellerAppealPage).
+ * Cho phép đối tác người bán bị khóa tài khoản hoặc tạm ngưng gửi giải trình lên Admin để xin xem xét mở lại quán.
+ */
 export default function SellerAppealPage() {
   const [reason, setReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  /**
+   * Gửi đơn khiếu nại lên ban quản trị hệ thống.
+   * @param e - Sự kiện FormEvent
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!reason.trim()) {
       toast.error('Vui lòng nhập lý do khiếu nại.');
       return;

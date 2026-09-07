@@ -4,6 +4,10 @@ import { chatService } from '../services';
 import { useAuth } from './useAuth';
 import type { IChatMessage } from '../interfaces';
 
+/**
+ * Hook tùy chỉnh Theo dõi Tin nhắn Chưa đọc của Người bán hàng (useSellerChatWatcher).
+ * Lắng nghe kênh SignalR theo nhà hàng (JoinSellerInbox) để hiển thị thông báo chấm đỏ/badge khi có tin nhắn hoặc đơn hàng chat mới.
+ */
 export function useSellerChatWatcher() {
   const [hasUnread, setHasUnread] = useState(false);
   const { token, user } = useAuth();
@@ -15,6 +19,9 @@ export function useSellerChatWatcher() {
 
     let isSubscribed = true;
 
+    /**
+     * Khởi tạo kết nối SignalR, tham gia nhóm hộp thư nhà hàng và kiểm tra các cuộc trò chuyện chưa đọc.
+     */
     const init = async () => {
       try {
         await chatService.startConnection(token);
@@ -29,10 +36,10 @@ export function useSellerChatWatcher() {
           try {
             if (storedLastRead) lastReadTimes = JSON.parse(storedLastRead);
           } catch (e) {
-            console.error('Failed to parse seller_chat_last_read', e);
+            console.error('Lỗi khi đọc seller_chat_last_read từ localStorage', e);
           }
 
-          // Kiểm tra xem có tin nhắn nào của Customer mà chưa đọc không
+          // Kiểm tra xem có tin nhắn nào của Customer gửi mà quán chưa đọc không
           const hasUnreadMessages = res.data.some(s => {
             const lastRead = lastReadTimes[s.id];
             if (!s.lastMessageAt) return false;
@@ -49,12 +56,15 @@ export function useSellerChatWatcher() {
           }
         }
       } catch (error) {
-        console.error('SellerChatWatcher init failed', error);
+        console.error('Lỗi khởi tạo SellerChatWatcher', error);
       }
     };
 
     init();
 
+    /**
+     * Xử lý khi có tin nhắn chat mới từ Khách hàng.
+     */
     const handleReceive = (msg: IChatMessage) => {
       if (msg.senderRole === 'Customer') {
         if (location.pathname !== '/seller/chat') {
@@ -63,6 +73,9 @@ export function useSellerChatWatcher() {
       }
     };
 
+    /**
+     * Xử lý khi có phiên chat theo đơn hàng mới được tạo.
+     */
     const handleNewOrderChat = () => {
       if (location.pathname !== '/seller/chat') {
         setHasUnread(true);

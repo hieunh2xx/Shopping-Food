@@ -4,9 +4,14 @@ import type { IShipperReputationHistory } from '../../../interfaces';
 import { Loader2, ShieldCheck, AlertCircle, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+/**
+ * Tab Xem Điểm Uy Tín & Lịch Sử Đánh Giá Của Tài Xế (ShipperReputationTab).
+ * Hiển thị điểm sao tích lũy hiện tại và nhật ký các lần cộng / trừ điểm uy tín.
+ */
 export const ShipperReputationTab: React.FC = () => {
   const [history, setHistory] = useState<IShipperReputationHistory[]>([]);
   const [loading, setLoading] = useState(true);
+
 
   useEffect(() => {
     fetchHistory();

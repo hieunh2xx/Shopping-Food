@@ -8,6 +8,14 @@ import type { IUserDto } from '../../interfaces';
 import { maskEmail, maskPhone } from '../../utils/formatters';
 import toast from 'react-hot-toast';
 
+/**
+ * Trang Quản Lý Phân Hạng Thành Viên Người Dùng (AdminMemberRanksPage).
+ * Giám sát và quản trị cấp bậc hội viên khách hàng:
+ * - Xem danh sách khách hàng kèm hạng thành viên (Đồng, Bạc, Vàng, Kim Cương)
+ * - Lọc theo hạng thành viên hoặc tìm kiếm theo tên/SĐT
+ * - Điều chỉnh nâng/hạ hạng thành viên thủ công cho từng người dùng
+ * - Chạy lệnh tính toán và cập nhật hạng tự động toàn sàn.
+ */
 export function AdminMemberRanksPage() {
   const [search, setSearch] = useState('');
   const [tierFilter, setTierFilter] = useState<string>('all');
@@ -17,6 +25,7 @@ export function AdminMemberRanksPage() {
   const [take, setTake] = useState(10);
   const [isLoading, setIsLoading] = useState(true);
   const [isEvaluating, setIsEvaluating] = useState(false);
+
 
   const [isTierModalOpen, setIsTierModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<IUserDto | null>(null);

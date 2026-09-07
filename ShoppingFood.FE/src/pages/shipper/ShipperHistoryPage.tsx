@@ -23,6 +23,9 @@ import { ShipperOrderDetailModal } from '../../components/order/ShipperOrderDeta
 import type { IDailyIncomeReportDto, IShipperCompletedOrderDto } from '../../interfaces/IShipper';
 import { formatCurrency } from '../../utils/formatters';
 
+/**
+ * Tạo danh sách các tùy chọn tháng để lọc lịch sử giao hàng.
+ */
 function buildMonthOptions(monthsBack = 12) {
   const now = new Date();
   const options: { key: string; label: string; start: Date; end: Date }[] = [];
@@ -41,6 +44,13 @@ function buildMonthOptions(monthsBack = 12) {
   return options;
 }
 
+/**
+ * Trang Lịch Sử Chuyến Giao Hàng & Thu Nhập Của Tài Xế (ShipperHistoryPage).
+ * Tổng hợp các chuyến giao hàng thành công:
+ * - Biểu đồ cột Recharts thống kê thu nhập theo ngày trong tháng
+ * - Danh sách đơn hàng đã hoàn tất kèm chi tiết cước phí cơ bản, cước khoảng cách và thưởng cao điểm
+ * - Mở modal xem lại lộ trình và thông tin đơn hàng đã giao (`ShipperOrderDetailModal`).
+ */
 export function ShipperHistoryPage() {
   const monthOptions = useMemo(() => buildMonthOptions(12), []);
   const [monthKey, setMonthKey] = useState(monthOptions[0].key);
@@ -53,6 +63,7 @@ export function ShipperHistoryPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+
 
   const selectedMonth = monthOptions.find((m) => m.key === monthKey) || monthOptions[0];
 

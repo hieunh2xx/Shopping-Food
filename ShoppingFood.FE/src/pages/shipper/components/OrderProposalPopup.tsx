@@ -9,8 +9,16 @@ interface OrderProposalPopupProps {
   onTimeout: (orderId: string) => void;
 }
 
+/**
+ * Cửa Sổ Popup Đề Xuất Đơn Hàng Có Đếm Ngược 60 Giây (OrderProposalPopup).
+ * Hiển thị toàn màn hình kèm thanh đếm ngược tiến trình khi có đơn hàng phù hợp:
+ * - Thu nhập dự kiến và khoảng cách di chuyển
+ * - Địa chỉ nhà hàng và địa chỉ giao hàng của khách
+ * - Các nút Thao tác: Nhận đơn, Từ chối đơn hoặc Hết thời gian tự động đóng.
+ */
 export function OrderProposalPopup({ offer, onAccept, onReject, onTimeout }: OrderProposalPopupProps) {
   const [timeLeft, setTimeLeft] = useState(60);
+
 
   useEffect(() => {
     if (timeLeft <= 0) {

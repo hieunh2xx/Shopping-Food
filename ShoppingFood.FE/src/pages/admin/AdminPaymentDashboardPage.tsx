@@ -4,9 +4,17 @@ import { Card } from '../../components/common';
 import { paymentService } from '../../services/PaymentService';
 import { formatCurrency, getPaymentDisplayStatusLabel, getPaymentDisplayStatusColor } from '../../utils/formatters';
 
+/**
+ * Bảng Theo Dõi Cổng Thanh Toán & Webhook SePay (AdminPaymentDashboardPage).
+ * Giám sát trạng thái kỹ thuật của cổng thanh toán trực tuyến:
+ * - Tổng số phiên QR SePay đã thanh toán, đang chờ, hết hạn
+ * - Tổng lưu lượng tiền thanh toán trực tuyến
+ * - Giám sát hàng đợi tin nhắn (Message Queue) và tình trạng kết nối Webhook.
+ */
 export function AdminPaymentDashboardPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
 
   useEffect(() => {
     paymentService.getPaymentDashboard().then(res => {

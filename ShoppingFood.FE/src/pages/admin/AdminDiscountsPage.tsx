@@ -1,19 +1,27 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Tag, Search, Plus, Trash2, Edit2, Lock } from 'lucide-react';
 import { Button, Input, Modal, Pagination, ConfirmModal } from '../../components/common';
 import toast from 'react-hot-toast';
 import { discountService } from '../../services/DiscountService';
 import type { IDiscountDto, ICreateDiscountRequest, IUpdateDiscountRequest } from '../../interfaces';
 
+/**
+ * Trang Quản Lý Mã Giảm Giá Toàn Sàn (AdminDiscountsPage).
+ * Dành cho ban quản trị tạo mã ưu đãi áp dụng trên toàn bộ hệ thống:
+ * - Tạo mã giảm giá theo % hoặc số tiền cố định
+ * - Thiết lập mức chi tối thiểu, giảm tối đa, tổng lượt sử dụng toàn sàn và mỗi user
+ * - Xóa hoặc chỉnh sửa trạng thái voucher.
+ */
 export function AdminDiscountsPage() {
   const [discounts, setDiscounts] = useState<IDiscountDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [total, setTotal] = useState(0);
 
-  // Filters & Pagination
+  // Bộ lọc & Phân trang
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const [take, setTake] = useState(10);
+
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);

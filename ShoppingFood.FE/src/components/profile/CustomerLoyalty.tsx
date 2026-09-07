@@ -6,6 +6,14 @@ import type { ILoyaltyPointDto, IPointGiftConfigDto } from '../../interfaces';
 import toast from 'react-hot-toast';
 import { Button, Modal, MemberTierBadge, getMemberTierMeta } from '../common';
 
+/**
+ * Quản Lý Điểm Thưởng & Đổi Quà Thành Viên (CustomerLoyalty).
+ * Cung cấp tổng quan tài khoản khách hàng thân thiết:
+ * - Hiển thị hạng thành viên hiện tại (Đồng, Bạc, Vàng, Kim Cương) và số dư điểm
+ * - Danh mục quà tặng voucher có thể đổi bằng điểm tích lũy
+ * - Lịch sử cộng/trừ điểm từ đơn hàng hoặc đổi quà
+ * - Modal xác nhận đổi quà trực tiếp.
+ */
 export function CustomerLoyalty() {
   const [loyaltyData, setLoyaltyData] = useState<ILoyaltyPointDto | null>(null);
   const [gifts, setGifts] = useState<IPointGiftConfigDto[]>([]);
@@ -17,6 +25,7 @@ export function CustomerLoyalty() {
     fetchData();
   }, []);
 
+  // Tự động cập nhật điểm khi người dùng quay lại tab hoặc nhận thông báo Realtime
   useEffect(() => {
     const onFocus = () => fetchData();
     const onVisibility = () => {
@@ -47,6 +56,9 @@ export function CustomerLoyalty() {
     };
   }, []);
 
+  /**
+   * Tải dữ liệu điểm thành viên và danh sách quà tặng khả dụng.
+   */
   const fetchData = async () => {
     setIsLoading(true);
     try {
@@ -70,10 +82,17 @@ export function CustomerLoyalty() {
     }
   };
 
+  /**
+   * Mở modal xác nhận đổi phần quà tương ứng.
+   * @param giftId - ID cấu hình phần quà
+   */
   const handleRedeemGift = (giftId: string) => {
     setRedeemingGiftId(giftId);
   };
 
+  /**
+   * Xác nhận đổi điểm lấy quà tặng voucher.
+   */
   const confirmRedeem = async () => {
     if (!redeemingGiftId) return;
     setIsRedeeming(true);
@@ -81,7 +100,7 @@ export function CustomerLoyalty() {
       const res = await loyaltyPointService.redeemGift({ pointGiftConfigId: redeemingGiftId });
       if (!res.error) {
         toast.success('Đổi điểm thưởng thành công! Voucher đã được thêm vào kho quà của bạn.');
-        fetchData(); // refresh points
+        fetchData();
       } else {
         toast.error(res.message);
       }
@@ -92,6 +111,7 @@ export function CustomerLoyalty() {
       setRedeemingGiftId(null);
     }
   };
+
 
   if (isLoading) {
     return <div className="text-center p-6 text-gray-500">Đang tải điểm tích lũy...</div>;

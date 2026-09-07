@@ -6,6 +6,13 @@ import { Card } from '../../components/common';
 
 const statusColor = getPaymentDisplayStatusColor;
 
+/**
+ * Trang Lịch Sử Thanh Toán Đơn Hàng (PaymentHistoryPage).
+ * Hiển thị danh sách các lần thanh toán trực tuyến qua cổng VietQR SePay, thẻ ngân hàng hoặc ví điện tử:
+ * - Mã hóa đơn thanh toán
+ * - Trạng thái xử lý (Đang chờ, Đã thanh toán, Thất bại, Hết hạn)
+ * - Số tiền thanh toán và thời gian giao dịch.
+ */
 export function PaymentHistoryPage() {
   const [items, setItems] = useState<IPaymentHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -16,6 +23,7 @@ export function PaymentHistoryPage() {
       setLoading(false);
     });
   }, []);
+
 
   if (loading) return <div className="p-8 text-center">Đang tải lịch sử...</div>;
 
