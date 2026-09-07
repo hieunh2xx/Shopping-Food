@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
+using ShoppingFood.Application.Common;
 using ShoppingFood.Application.Interfaces;
 using ShoppingFood.Application.Models;
 using ShoppingFood.Application.Services;
@@ -76,6 +77,8 @@ namespace ShoppingFood.Application.Features.Payments.Commands
 
             decimal? itemsSubtotal = null;
             decimal? shippingFee = null;
+            decimal? discountAmount = null;
+            decimal? tierDiscountAmount = null;
             if (session.OrderId.HasValue)
             {
                 var order = await _orderRepository.GetByIdAsync(session.OrderId.Value);
@@ -83,6 +86,9 @@ namespace ShoppingFood.Application.Features.Payments.Commands
                 {
                     itemsSubtotal = order.ItemsSubtotal > 0 ? order.ItemsSubtotal : order.TotalAmount - order.ShippingFee;
                     shippingFee = order.ShippingFee;
+                    var (voucherAmount, memberTierDiscount) = OrderPricingHelper.ResolveDisplayedDiscounts(order, itemsSubtotal.Value);
+                    discountAmount = voucherAmount;
+                    tierDiscountAmount = memberTierDiscount;
                 }
             }
 
@@ -97,6 +103,8 @@ namespace ShoppingFood.Application.Features.Payments.Commands
                 amount = session.Amount,
                 itemsSubtotal,
                 shippingFee,
+                discountAmount,
+                tierDiscountAmount,
                 displayStatus = display.Code,
                 statusLabel = display.Label,
                 status = display.Code,
@@ -236,16 +244,22 @@ namespace ShoppingFood.Application.Features.Payments.Commands
 
             decimal? itemsSubtotal = null;
             decimal? shippingFee = null;
+            decimal? discountAmount = null;
+            decimal? tierDiscountAmount = null;
             if (session.OrderId.HasValue)
             {
                 var orders = await _orderRepository.GetAsync(
                     predicate: o => o.Id == session.OrderId.Value,
+                    include: q => q.Include(o => o.AppliedDiscount),
                     disableTracking: true);
                 var order = orders.FirstOrDefault();
                 if (order != null)
                 {
                     itemsSubtotal = order.ItemsSubtotal > 0 ? order.ItemsSubtotal : order.TotalAmount - order.ShippingFee;
                     shippingFee = order.ShippingFee;
+                    var (voucherAmount, memberTierDiscount) = OrderPricingHelper.ResolveDisplayedDiscounts(order, itemsSubtotal.Value);
+                    discountAmount = voucherAmount;
+                    tierDiscountAmount = memberTierDiscount;
                 }
             }
 
@@ -262,6 +276,8 @@ namespace ShoppingFood.Application.Features.Payments.Commands
                 amount = session.Amount,
                 itemsSubtotal,
                 shippingFee,
+                discountAmount,
+                tierDiscountAmount,
                 displayStatus = display.Code,
                 statusLabel = display.Label,
                 status = display.Code,

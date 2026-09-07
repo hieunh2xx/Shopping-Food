@@ -7,6 +7,7 @@ import { useCart, useAuth } from '../../hooks';
 import { Button, Input, ConfirmModal } from '../common';
 import { ROUTES } from '../../routes/routeConfig';
 import { formatCurrency, formatDate } from '../../utils/formatters';
+import { calcMemberTierDiscount } from '../../utils/memberTierDiscount';
 import type { ICartItem, INotificationDto } from '../../interfaces';
 import { orderService } from '../../services/OrderService';
 import { CustomerOrderDetailModal } from '../order/CustomerOrderDetailModal';
@@ -18,7 +19,7 @@ export function ShoppingDrawer() {
   const [clearCartConfirmModal, setClearCartConfirmModal] = useState(false);
   
   const { items, totalItems, updateQuantity, removeItem, clearCart } = useCart();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -71,6 +72,18 @@ export function ShoppingDrawer() {
       return sum + (itemPrice * item.quantity);
     }, 0);
   }, [selectedProvider, groupedItems]);
+
+  const selectedHasFlashSale = useMemo(() => {
+    if (!selectedProvider || !groupedItems[selectedProvider]) return false;
+    return groupedItems[selectedProvider].items.some((item) => item.product.flashSalePrice != null);
+  }, [selectedProvider, groupedItems]);
+
+  const selectedTierDiscount = useMemo(() => {
+    if (!isAuthenticated || selectedHasFlashSale) return 0;
+    return calcMemberTierDiscount(selectedTotal, user?.tier).amount;
+  }, [isAuthenticated, selectedHasFlashSale, selectedTotal, user?.tier]);
+
+  const selectedPayTotal = Math.max(0, selectedTotal - selectedTierDiscount);
 
   const handleCheckout = () => {
     if (!selectedProvider) return;
@@ -525,9 +538,24 @@ export function ShoppingDrawer() {
 
                 {groups.length > 0 && (
                   <div className="border-t border-gray-100 bg-white p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-10">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-gray-500 font-medium">Tổng thanh toán</p>
-                      <p className="text-orange-600 text-2xl font-black tracking-tight">{formatCurrency(selectedTotal)}</p>
+                    <div className="space-y-1.5 mb-2">
+                      <div className="flex items-center justify-between">
+                        <p className="text-gray-500 font-medium">Tạm tính món</p>
+                        <p className="text-gray-900 font-semibold">{formatCurrency(selectedTotal)}</p>
+                      </div>
+                      {selectedTierDiscount > 0 && (
+                        <div className="flex items-center justify-between text-violet-700">
+                          <p className="font-medium">Chiết khấu điểm hạng</p>
+                          <p className="font-semibold">-{formatCurrency(selectedTierDiscount)}</p>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between">
+                        <p className="text-gray-500 font-medium">Tổng thanh toán</p>
+                        <p className="text-orange-600 text-2xl font-black tracking-tight">{formatCurrency(selectedPayTotal)}</p>
+                      </div>
+                      {selectedTierDiscount > 0 && (
+                        <p className="text-[11px] text-violet-600 text-right">Ưu đãi hạng áp dụng lúc đặt hàng (chưa gồm phí ship / mã giảm)</p>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 mb-5">
                       <div className="h-1 flex-1 bg-orange-100 rounded-full overflow-hidden">

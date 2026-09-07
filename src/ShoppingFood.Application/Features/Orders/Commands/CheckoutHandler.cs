@@ -186,7 +186,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
 
                 totalAmount = Math.Max(0, totalAmount - discountAmount - tierDiscountAmount);
 
-                var order = CreateOrderEntity(request, totalAmount, shippingFee, shipperIncome, shipperBaseFee, shipperDistanceFee, shipperPeakBonus, itemsTotal);
+                var order = CreateOrderEntity(request, totalAmount, shippingFee, shipperIncome, shipperBaseFee, shipperDistanceFee, shipperPeakBonus, itemsTotal, discountAmount, tierDiscountAmount);
                 order.AppliedDiscountId = appliedDiscountId;
                 PopulateOrderItems(order, cart.Items);
 
@@ -233,7 +233,8 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     totalAmount = order.TotalAmount,
                     itemsSubtotal = order.ItemsSubtotal > 0 ? order.ItemsSubtotal : itemsTotal,
                     shippingFee = order.ShippingFee,
-                    discountAmount = discountAmount + tierDiscountAmount,
+                    discountAmount = discountAmount,
+                    tierDiscountAmount = tierDiscountAmount,
                     paymentStatus = order.PaymentStatus.ToString(),
                     paymentMethod = order.PaymentMethod.ToString(),
                     paymentSessionId = order.PaymentSessionId,
@@ -314,26 +315,9 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                     _discountRepository.Update(discount);
                 }
             }
-            decimal discountAmount = CalculateTotalAmount(discount, itemsTotal);
+            decimal discountAmount = OrderPricingHelper.CalculateVoucherAmount(discount, itemsTotal, 0);
 
             return (discountAmount, discount.Id, null);
-        }
-
-        private decimal CalculateTotalAmount(Discount discount, decimal cartAmount)
-        {
-            decimal discountAmount = 0;
-            if(discount.Type == DiscountType.Percentage)
-            {
-                discountAmount = cartAmount * (discount.Value / 100);
-                if (discount.MaxDiscountAmount.HasValue && discountAmount > discount.MaxDiscountAmount.Value)
-                    discountAmount = discount.MaxDiscountAmount.Value;
-            }
-            else if(discount.Type == DiscountType.FixedAmount)
-            {
-                discountAmount = discount.Value;
-                if (discountAmount > cartAmount) discountAmount = cartAmount;
-            }
-            return discountAmount;
         }
 
         private async Task<Cart?> GetCartWithItemsAsync(Guid? userId, Guid? guestUserId)
@@ -558,7 +542,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             return (itemsTotal + shippingFeeTotal, shippingFeeTotal, shipperIncomeTotal, shipperBaseFeeTotal, shipperDistanceFeeTotal, shipperPeakBonusTotal, null);
         }
 
-        private Order CreateOrderEntity(CheckoutCommand request, decimal totalAmount, decimal shippingFee, decimal shipperIncome, decimal shipperBaseFee, decimal shipperDistanceFee, decimal shipperPeakBonus, decimal itemsSubtotal)
+        private Order CreateOrderEntity(CheckoutCommand request, decimal totalAmount, decimal shippingFee, decimal shipperIncome, decimal shipperBaseFee, decimal shipperDistanceFee, decimal shipperPeakBonus, decimal itemsSubtotal, decimal discountAmount, decimal tierDiscountAmount)
         {
             return new Order
             {
@@ -572,6 +556,8 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 ShipperDistanceFeeAmount = shipperDistanceFee,
                 ShipperPeakBonus = shipperPeakBonus,
                 ItemsSubtotal = itemsSubtotal,
+                DiscountAmount = discountAmount,
+                TierDiscountAmount = tierDiscountAmount,
                 DeliveryAddress = request.DeliveryAddress,
                 ContactName = request.ContactName,
                 ContactPhone = request.ContactPhone,

@@ -5,6 +5,7 @@ import { useCart, useAuth } from '../hooks';
 import { Button, Input } from '../components/common';
 import { ROUTES } from '../routes/routeConfig';
 import { formatCurrency } from '../utils/formatters';
+import { calcMemberTierDiscount } from '../utils/memberTierDiscount';
 import { orderService } from '../services/OrderService';
 import { discountService } from '../services/DiscountService';
 import { cartService } from '../services/CartService';
@@ -325,10 +326,19 @@ export function CheckoutPage() {
     return 0;
   }, [checkoutTotal, selectedDiscount, shippingFee]);
 
+  const hasFlashSaleItem = useMemo(
+    () => paidCheckoutItems.some((item) => item.product.flashSalePrice != null),
+    [paidCheckoutItems]
+  );
+
+  const tierDiscountAmount = useMemo(() => {
+    if (!isAuthenticated || hasFlashSaleItem) return 0;
+    return calcMemberTierDiscount(checkoutTotal, user?.tier).amount;
+  }, [isAuthenticated, hasFlashSaleItem, checkoutTotal, user?.tier]);
+
   const finalTotal = useMemo(() => {
-    // FreeShipping: discountAmount === shippingFee → total = items only
-    return Math.max(0, checkoutTotal + shippingFee - discountAmount);
-  }, [checkoutTotal, shippingFee, discountAmount]);
+    return Math.max(0, checkoutTotal + shippingFee - discountAmount - tierDiscountAmount);
+  }, [checkoutTotal, shippingFee, discountAmount, tierDiscountAmount]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -989,6 +999,12 @@ export function CheckoutPage() {
                       {selectedDiscount.type === 'FreeShipping' ? ' — miễn ship' : ''})
                     </span>
                     <span className="font-medium">-{formatCurrency(discountAmount)}</span>
+                  </div>
+                )}
+                {tierDiscountAmount > 0 && (
+                  <div className="flex justify-between text-violet-700">
+                    <span>Chiết khấu điểm hạng</span>
+                    <span className="font-medium">-{formatCurrency(tierDiscountAmount)}</span>
                   </div>
                 )}
                 

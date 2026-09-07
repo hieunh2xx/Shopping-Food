@@ -203,6 +203,8 @@ export interface IPaymentSessionStatusDto {
   amount: number;
   itemsSubtotal?: number;
   shippingFee?: number;
+  discountAmount?: number;
+  tierDiscountAmount?: number;
   status: string;
   displayStatus?: string;
   statusLabel?: string;
@@ -227,6 +229,8 @@ export interface ISepayQrDto {
   amount: number;
   itemsSubtotal?: number;
   shippingFee?: number;
+  discountAmount?: number;
+  tierDiscountAmount?: number;
   status: string;
   displayStatus?: string;
   statusLabel?: string;

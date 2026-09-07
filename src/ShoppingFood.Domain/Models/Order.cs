@@ -34,6 +34,10 @@ namespace ShoppingFood.Domain.Models
         public double? DeliveryLatitude { get; set; }
         public double? DeliveryLongitude { get; set; }
         public Guid? AppliedDiscountId { get; set; }
+        /// <summary>Số tiền giảm từ mã voucher (không gồm ưu đãi hạng thành viên).</summary>
+        public decimal DiscountAmount { get; set; } = 0;
+        /// <summary>Chiết khấu điểm/hạng thành viên.</summary>
+        public decimal TierDiscountAmount { get; set; } = 0;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

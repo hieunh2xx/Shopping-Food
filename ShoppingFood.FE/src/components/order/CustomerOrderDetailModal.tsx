@@ -261,8 +261,14 @@ export function CustomerOrderDetailModal({ isOpen, onClose, orderId, onNavigateA
                 )}
                 {typeof orderData.discountAmount === 'number' && orderData.discountAmount > 0 && (
                   <p className="text-sm text-orange-600">
-                    <strong>Giảm giá{orderData.discountCode ? ` (${orderData.discountCode})` : ' (hạng TV/voucher)'}:</strong>{' '}
+                    <strong>Giảm giá{orderData.discountCode ? ` (${orderData.discountCode})` : ''}:</strong>{' '}
                     -{formatCurrency(orderData.discountAmount)}
+                  </p>
+                )}
+                {typeof orderData.tierDiscountAmount === 'number' && orderData.tierDiscountAmount > 0 && (
+                  <p className="text-sm text-violet-700">
+                    <strong>Chiết khấu điểm hạng:</strong>{' '}
+                    -{formatCurrency(orderData.tierDiscountAmount)}
                   </p>
                 )}
                 {typeof orderData.shippingFee === 'number' && (

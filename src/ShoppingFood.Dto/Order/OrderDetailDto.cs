@@ -37,8 +37,10 @@ namespace ShoppingFood.Dto.Order
         public string? RejectReason { get; set; }
         public decimal ShippingFee { get; set; }
         public decimal ItemsSubtotal { get; set; }
-        /// <summary>Giảm giá (voucher + hạng thành viên) = ItemsSubtotal - (TotalAmount - ShippingFee).</summary>
+        /// <summary>Giảm giá từ mã voucher (không gồm hạng thành viên).</summary>
         public decimal DiscountAmount { get; set; }
+        /// <summary>Chiết khấu điểm hạng thành viên.</summary>
+        public decimal TierDiscountAmount { get; set; }
         public decimal PlatformCommission { get; set; }
         public decimal SellerPayout { get; set; }
         public decimal ShipperIncome { get; set; }

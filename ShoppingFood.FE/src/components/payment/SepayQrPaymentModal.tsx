@@ -22,6 +22,8 @@ type QrData = {
   amount: number;
   itemsSubtotal?: number;
   shippingFee?: number;
+  discountAmount?: number;
+  tierDiscountAmount?: number;
   remainingSeconds: number;
   isPaid: boolean;
   isExpired: boolean;
@@ -158,6 +160,8 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid, onAban
         amount: res.data.amount,
         itemsSubtotal: res.data.itemsSubtotal,
         shippingFee: res.data.shippingFee,
+        discountAmount: res.data.discountAmount,
+        tierDiscountAmount: res.data.tierDiscountAmount,
         remainingSeconds: res.data.remainingSeconds,
         isPaid: res.data.isPaid,
         isExpired: res.data.isExpired || displayStatus === 'expired',
@@ -399,6 +403,18 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid, onAban
                     <span className="font-medium">{formatCurrency(qrData.itemsSubtotal)}</span>
                   </div>
                 )}
+                {qrData.discountAmount != null && qrData.discountAmount > 0 && (
+                  <div className="flex justify-between text-orange-600">
+                    <span>Giảm giá</span>
+                    <span className="font-medium">-{formatCurrency(qrData.discountAmount)}</span>
+                  </div>
+                )}
+                {qrData.tierDiscountAmount != null && qrData.tierDiscountAmount > 0 && (
+                  <div className="flex justify-between text-violet-700">
+                    <span>Chiết khấu điểm hạng</span>
+                    <span className="font-medium">-{formatCurrency(qrData.tierDiscountAmount)}</span>
+                  </div>
+                )}
                 {qrData.shippingFee != null && qrData.shippingFee > 0 && (
                   <div className="flex justify-between">
                     <span>Phí giao hàng</span>
@@ -498,6 +514,18 @@ export function SepayQrPaymentModal({ isOpen, sessionId, onClose, onPaid, onAban
                     <div className="flex justify-between">
                       <span>Tạm tính món</span>
                       <span>{formatCurrency(qrData.itemsSubtotal)}</span>
+                    </div>
+                  )}
+                  {qrData.discountAmount != null && qrData.discountAmount > 0 && (
+                    <div className="flex justify-between text-orange-600">
+                      <span>Giảm giá</span>
+                      <span>-{formatCurrency(qrData.discountAmount)}</span>
+                    </div>
+                  )}
+                  {qrData.tierDiscountAmount != null && qrData.tierDiscountAmount > 0 && (
+                    <div className="flex justify-between text-violet-700">
+                      <span>Chiết khấu điểm hạng</span>
+                      <span>-{formatCurrency(qrData.tierDiscountAmount)}</span>
                     </div>
                   )}
                   {qrData.shippingFee != null && qrData.shippingFee > 0 && (

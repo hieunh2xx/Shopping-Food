@@ -243,6 +243,9 @@ export function SellerOrdersPage() {
     paymentMethod: order.paymentMethod,
     itemsSubtotal: order.itemsSubtotal,
     shippingFee: order.shippingFee,
+    discountAmount: order.discountAmount,
+    tierDiscountAmount: order.tierDiscountAmount,
+    discountCode: order.discountCode,
     totalAmount: order.totalAmount,
     createdAt: order.createdAt,
     items: order.items,
@@ -953,6 +956,18 @@ export function SellerOrdersPage() {
                     {(selectedOrder.itemsSubtotal ?? Math.max(0, (selectedOrder.totalAmount || 0) - (selectedOrder.shippingFee || 0))).toLocaleString('vi-VN')} đ
                   </span>
                 </div>
+                {Number(selectedOrder.discountAmount) > 0 && (
+                  <div className="flex justify-between text-orange-600">
+                    <span>Giảm giá{selectedOrder.discountCode ? ` (${selectedOrder.discountCode})` : ''}:</span>
+                    <span className="font-medium">-{(selectedOrder.discountAmount || 0).toLocaleString('vi-VN')} đ</span>
+                  </div>
+                )}
+                {Number(selectedOrder.tierDiscountAmount) > 0 && (
+                  <div className="flex justify-between text-violet-700">
+                    <span>Chiết khấu điểm hạng:</span>
+                    <span className="font-medium">-{(selectedOrder.tierDiscountAmount || 0).toLocaleString('vi-VN')} đ</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-gray-500">
                   <span>Phí giao hàng:</span>
                   <span className="font-medium text-gray-900">{(selectedOrder.shippingFee ?? 0).toLocaleString('vi-VN')} đ</span>

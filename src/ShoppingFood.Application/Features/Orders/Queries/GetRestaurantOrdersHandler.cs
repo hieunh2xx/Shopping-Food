@@ -74,6 +74,7 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                     predicate: predicate,
                     orderBy: q => q.OrderByDescending(o => o.CreatedAt),
                     include: q => q.Include(o => o.Items).ThenInclude(i => i.Product)
+                                   .Include(o => o.AppliedDiscount)
                                    .Include(o => o.Shipper).ThenInclude(s => s.UserProfile).ThenInclude(p => p.UserAccount),
                     skip: request.Skip,
                     take: request.Take,
@@ -81,7 +82,12 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                 );
 
                 // 4. Map to DTO
-                var dtos = orders.Select(o => new OrderDetailDto
+                var dtos = orders.Select(o =>
+                {
+                    var itemsSum = o.Items?.Where(i => !i.IsGift).Sum(i => i.TotalPrice) ?? 0;
+                    var displaySubtotal = itemsSum > 0 ? itemsSum : o.ItemsSubtotal;
+                    var (voucherAmount, tierDiscountAmount) = OrderPricingHelper.ResolveDisplayedDiscounts(o, displaySubtotal);
+                    return new OrderDetailDto
                 {
                     Id = o.Id,
                     UserAccountId = o.UserAccountId,
@@ -99,8 +105,11 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                     CreatedAt = o.CreatedAt,
                     UpdatedAt = o.UpdatedAt,
                     RejectReason = o.RejectReason,
+                    DiscountCode = o.AppliedDiscount?.Code,
                     ShippingFee = o.ShippingFee,
-                    ItemsSubtotal = o.ItemsSubtotal,
+                    ItemsSubtotal = displaySubtotal,
+                    DiscountAmount = voucherAmount,
+                    TierDiscountAmount = tierDiscountAmount,
                     ShipperIncome = o.ShipperIncome,
                     ShipperBaseFeeAmount = o.ShipperBaseFeeAmount,
                     ShipperDistanceFeeAmount = o.ShipperDistanceFeeAmount,
@@ -118,6 +127,7 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                         IsGift = i.IsGift,
                         BuyXGetYPromotionId = i.BuyXGetYPromotionId
                     }).ToList()
+                };
                 }).ToList();
 
                 // 5. Attach batch pickup codes + readable bag labels (full Shipping set at restaurant)

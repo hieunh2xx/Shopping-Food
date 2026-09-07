@@ -23,6 +23,9 @@ export interface OrderBillData {
   paymentMethod?: string;
   itemsSubtotal?: number;
   shippingFee?: number;
+  discountAmount?: number;
+  tierDiscountAmount?: number;
+  discountCode?: string;
   totalAmount?: number;
   createdAt?: string;
   items?: OrderBillItem[];
@@ -99,6 +102,8 @@ function renderOrderBillHtml(order: OrderBillData, restaurantName?: string, inde
 
       <div class="totals">
         <div><span>Tiền món</span><span>${formatMoney(order.itemsSubtotal ?? Math.max(0, (order.totalAmount || 0) - (order.shippingFee || 0)))}</span></div>
+        ${order.discountAmount ? `<div><span>Giảm giá${order.discountCode ? ` (${escapeHtml(order.discountCode)})` : ''}</span><span>-${formatMoney(order.discountAmount)}</span></div>` : ''}
+        ${order.tierDiscountAmount ? `<div><span>Chiết khấu điểm hạng</span><span>-${formatMoney(order.tierDiscountAmount)}</span></div>` : ''}
         <div><span>Phí giao</span><span>${formatMoney(order.shippingFee)}</span></div>
         <div class="grand"><span>Tổng</span><span>${formatMoney(order.totalAmount)}</span></div>
       </div>

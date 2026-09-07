@@ -4,6 +4,7 @@ using ShoppingFood.Core.Base;
 using ShoppingFood.Domain.Enums;
 using ShoppingFood.Domain.Models;
 using ShoppingFood.Dto.Order;
+using ShoppingFood.Application.Common;
 using ShoppingFood.Repository.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -162,7 +163,7 @@ namespace ShoppingFood.Application.Features.Orders.Queries
         {
             var itemsSum = order.Items?.Where(i => !i.IsGift).Sum(i => i.TotalPrice) ?? 0;
             var displaySubtotal = itemsSum > 0 ? itemsSum : order.ItemsSubtotal;
-            var discountAmount = Math.Max(0, displaySubtotal - Math.Max(0, order.TotalAmount - order.ShippingFee));
+            var (voucherAmount, tierDiscountAmount) = OrderPricingHelper.ResolveDisplayedDiscounts(order, displaySubtotal);
 
             return new OrderDetailDto
             {
@@ -192,7 +193,8 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                 RejectReason = order.RejectReason,
                 ShippingFee = order.ShippingFee,
                 ItemsSubtotal = displaySubtotal,
-                DiscountAmount = discountAmount,
+                DiscountAmount = voucherAmount,
+                TierDiscountAmount = tierDiscountAmount,
                 PlatformCommission = order.PlatformCommission,
                 SellerPayout = order.SellerPayout,
                 ShipperIncome = order.ShipperIncome,

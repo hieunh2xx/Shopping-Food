@@ -340,6 +340,8 @@ namespace ShoppingFood.Domain.Context
                 entity.Property(e => e.PaymentMethod).HasConversion<string>().IsRequired();
                 entity.Property(e => e.PaymentStatus).HasConversion<string>().IsRequired().HasDefaultValue(PaymentStatus.Pending);
                 entity.Property(e => e.ItemsSubtotal).HasColumnType("decimal(12,2)").HasDefaultValue(0);
+                entity.Property(e => e.DiscountAmount).HasColumnType("decimal(12,2)").HasDefaultValue(0);
+                entity.Property(e => e.TierDiscountAmount).HasColumnType("decimal(12,2)").HasDefaultValue(0);
                 entity.Property(e => e.PlatformCommission).HasColumnType("decimal(12,2)").HasDefaultValue(0);
                 entity.Property(e => e.SellerPayout).HasColumnType("decimal(12,2)").HasDefaultValue(0);
                 entity.Property(e => e.IsFinancialSettled).HasDefaultValue(false);

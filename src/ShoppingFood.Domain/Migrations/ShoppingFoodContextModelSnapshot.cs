@@ -903,6 +903,11 @@ namespace ShoppingFood.Domain.Migrations
                     b.Property<string>("DeliveryProofImageUrl")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<decimal>("DiscountAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(12,2)")
+                        .HasDefaultValue(0m);
+
                     b.Property<Guid?>("GuestUserId")
                         .HasColumnType("uniqueidentifier");
 
@@ -983,6 +988,11 @@ namespace ShoppingFood.Domain.Migrations
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("TierDiscountAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(12,2)")
+                        .HasDefaultValue(0m);
 
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("decimal(12,2)");

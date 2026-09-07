@@ -4,6 +4,7 @@ using ShoppingFood.Core.Base;
 using ShoppingFood.Core.Interfaces;
 using ShoppingFood.Repository.Interfaces;
 using ShoppingFood.Dto.Order;
+using ShoppingFood.Application.Common;
 using ShoppingFood.Domain.Models;
 using ShoppingFood.Domain.Enums;
 using System;
@@ -39,7 +40,8 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                 // 1. Lấy đơn hàng chi tiết cùng danh sách sản phẩm
                 var orders = await _orderRepository.GetAsync(
                     predicate: o => o.Id == request.OrderId,
-                    include: q => q.Include(o => o.Items).ThenInclude(i => i.Product),
+                    include: q => q.Include(o => o.Items).ThenInclude(i => i.Product)
+                                   .Include(o => o.AppliedDiscount),
                     disableTracking: true
                 );
                 
@@ -132,7 +134,7 @@ namespace ShoppingFood.Application.Features.Orders.Queries
         {
             var itemsSum = order.Items?.Where(i => !i.IsGift).Sum(i => i.TotalPrice) ?? 0;
             var displaySubtotal = itemsSum > 0 ? itemsSum : order.ItemsSubtotal;
-            var discountAmount = Math.Max(0, displaySubtotal - Math.Max(0, order.TotalAmount - order.ShippingFee));
+            var (voucherAmount, tierDiscountAmount) = OrderPricingHelper.ResolveDisplayedDiscounts(order, displaySubtotal);
 
             return new OrderDetailDto
             {
@@ -150,9 +152,11 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                 CreatedAt = order.CreatedAt,
                 UpdatedAt = order.UpdatedAt,
                 RejectReason = order.RejectReason,
+                DiscountCode = order.AppliedDiscount?.Code,
                 ShippingFee = order.ShippingFee,
                 ItemsSubtotal = displaySubtotal,
-                DiscountAmount = discountAmount,
+                DiscountAmount = voucherAmount,
+                TierDiscountAmount = tierDiscountAmount,
                 PlatformCommission = order.PlatformCommission,
                 SellerPayout = order.SellerPayout,
                 ShipperIncome = order.ShipperIncome,

@@ -155,6 +155,18 @@ export function PaymentSuccessPage() {
               <span className="font-medium">{formatCurrency(status.itemsSubtotal)}</span>
             </div>
           )}
+          {status.discountAmount != null && status.discountAmount > 0 && (
+            <div className="flex justify-between text-orange-600">
+              <span>Giảm giá</span>
+              <span className="font-medium">-{formatCurrency(status.discountAmount)}</span>
+            </div>
+          )}
+          {status.tierDiscountAmount != null && status.tierDiscountAmount > 0 && (
+            <div className="flex justify-between text-violet-700">
+              <span>Chiết khấu điểm hạng</span>
+              <span className="font-medium">-{formatCurrency(status.tierDiscountAmount)}</span>
+            </div>
+          )}
           {status.shippingFee != null && status.shippingFee > 0 && (
             <div className="flex justify-between">
               <span>Phí giao hàng</span>
