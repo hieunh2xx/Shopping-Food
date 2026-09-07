@@ -10,7 +10,9 @@ import { RestaurantChatModal } from '../components/chat/RestaurantChatModal';
 import { useAuth } from '../hooks';
 import { ROUTES } from '../routes/routeConfig';
 import toast from 'react-hot-toast';
+import { isRestaurantOpenNow } from '../utils/restaurantHours';
 
+<<<<<<< HEAD
 /**
  * Kiểm tra xem nhà hàng hiện tại có đang mở cửa tiếp nhận đơn hay không dựa trên giờ mở và đóng cửa.
  * @param openTime - Chuỗi giờ mở cửa (HH:mm)
@@ -43,6 +45,8 @@ const isRestaurantOpen = (openTime?: string, closeTime?: string) => {
  * - Nút yêu thích quán (Thêm/Bỏ yêu thích)
  * - Nút mở khung chat trực tiếp với chủ quán (RestaurantChatModal).
  */
+=======
+>>>>>>> main
 export function RestaurantDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -62,7 +66,6 @@ export function RestaurantDetailPage() {
     if (id) {
       fetchRestaurant(id);
       fetchCategories(id);
-      fetchProducts(id, 'all');
     }
   }, [id]);
 
@@ -112,10 +115,23 @@ export function RestaurantDetailPage() {
 
   const handleCategoryChange = (categoryId: string) => {
     setActiveCategory(categoryId);
-    if (restaurant) {
-      fetchProducts(restaurant.id, categoryId);
-    }
   };
+
+  useEffect(() => {
+    if (!id || !restaurant) return;
+
+    const open =
+      restaurant.status === 'Active' &&
+      isRestaurantOpenNow(restaurant.openingTime, restaurant.closingTime, restaurant.isOpenNow);
+
+    if (!open) {
+      setProducts([]);
+      setIsProductsLoading(false);
+      return;
+    }
+
+    fetchProducts(id, activeCategory);
+  }, [id, restaurant?.id, restaurant?.status, restaurant?.openingTime, restaurant?.closingTime, restaurant?.isOpenNow, activeCategory]);
 
   const handleToggleFavorite = async () => {
     if (!restaurant) return;
@@ -182,6 +198,10 @@ export function RestaurantDetailPage() {
     );
   }
 
+  const restaurantIsOpen =
+    restaurant.status === 'Active' &&
+    isRestaurantOpenNow(restaurant.openingTime, restaurant.closingTime, restaurant.isOpenNow);
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Restaurant Header / Banner */}
@@ -220,7 +240,7 @@ export function RestaurantDetailPage() {
                     )}
                   </h1>
                   {restaurant.status === 'Active' ? (
-                    isRestaurantOpen(restaurant.openingTime, restaurant.closingTime) ? (
+                    restaurantIsOpen ? (
                       <span className="inline-flex items-center gap-1 bg-green-500/20 text-green-300 px-2 py-1 rounded-lg text-xs font-medium border border-green-500/30">
                         <ShieldCheck className="w-3.5 h-3.5" />
                         Đang mở cửa
@@ -358,7 +378,15 @@ export function RestaurantDetailPage() {
               </div>
             </div>
 
-            <ProductList products={products} isLoading={isProductsLoading} emptyMessage="Quán ăn hiện tại chưa có món nào." />
+            <ProductList
+              products={products}
+              isLoading={isProductsLoading}
+              emptyMessage={
+                restaurantIsOpen
+                  ? 'Quán ăn hiện tại chưa có món nào.'
+                  : 'Quán đang đóng cửa, thực đơn sẽ hiển thị khi quán mở lại.'
+              }
+            />
           </div>
 
         </div>

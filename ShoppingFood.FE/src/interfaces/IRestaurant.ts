@@ -27,6 +27,7 @@ export interface IRestaurantProfileDto {
   isMall?: boolean;
   openingTime?: string;
   closingTime?: string;
+  isOpenNow?: boolean;
   deliveryType?: 'PlatformDelivery' | 'SelfDelivery';
   maxDeliveryRadiusKm?: number;
   freeDeliveryRadiusKm?: number;
@@ -49,6 +50,7 @@ export interface INearbyRestaurantDto {
   reviewCount: number;
   openingTime?: string;
   closingTime?: string;
+  isOpenNow?: boolean;
   maxDeliveryRadius?: number;
   shippingFee: number;
   distanceKm: number;

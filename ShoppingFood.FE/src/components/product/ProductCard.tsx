@@ -19,6 +19,11 @@ interface ProductCardProps {
 export function ProductCard({ product, flashSaleProduct }: ProductCardProps) {
   const navigate = useNavigate();
   const { addItem } = useCart();
+  const restaurantOpen = product.isRestaurantOpenNow !== false;
+  const canAdd =
+    product.stockStatus !== 'OutOfStock' &&
+    product.isAvailableNow !== false &&
+    restaurantOpen;
 
   return (
     <Card
@@ -43,6 +48,14 @@ export function ProductCard({ product, flashSaleProduct }: ProductCardProps) {
           <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center">
             <span className="px-3 py-1 rounded-full bg-red-500 text-white text-sm font-medium">
               Hết hàng
+            </span>
+          </div>
+        )}
+
+        {product.stockStatus !== 'OutOfStock' && !restaurantOpen && (
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center">
+            <span className="px-3 py-1 rounded-full bg-gray-800 text-white text-sm font-medium">
+              Quán đóng cửa
             </span>
           </div>
         )}
@@ -128,14 +141,20 @@ export function ProductCard({ product, flashSaleProduct }: ProductCardProps) {
         <button
           onClick={(e) => {
             e.stopPropagation();
-            if (product.stockStatus !== 'OutOfStock') {
+            if (canAdd) {
               addItem(product, 1);
             }
           }}
-          disabled={product.stockStatus === 'OutOfStock'}
+          disabled={!canAdd}
           className="mt-2 w-full py-2 rounded-lg bg-orange-50 text-orange-600 text-sm font-medium hover:bg-orange-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {product.stockStatus === 'OutOfStock' ? 'Hết hàng' : 'Thêm vào giỏ'}
+          {product.stockStatus === 'OutOfStock'
+            ? 'Hết hàng'
+            : !restaurantOpen
+            ? 'Quán đóng cửa'
+            : product.isAvailableNow === false
+            ? 'Chưa tới giờ bán'
+            : 'Thêm vào giỏ'}
         </button>
       </div>
     </Card>

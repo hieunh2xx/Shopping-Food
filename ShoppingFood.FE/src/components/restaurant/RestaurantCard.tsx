@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Star, Clock, Truck, ShieldCheck, Crown } from 'lucide-react';
 import type { INearbyRestaurantDto } from '../../interfaces';
 import { formatCurrency } from '../../utils/formatters';
+import { isRestaurantOpenNow } from '../../utils/restaurantHours';
 
 interface Props {
   restaurant: INearbyRestaurantDto;
@@ -12,6 +13,7 @@ interface Props {
  * Hiển thị logo quán, tên, huy hiệu Quán Chuẩn/Quán Mall, số sao đánh giá, khoảng cách km, giờ hoạt động và phí giao hàng.
  */
 export function RestaurantCard({ restaurant }: Props) {
+  const isOpen = isRestaurantOpenNow(restaurant.openingTime, restaurant.closingTime, restaurant.isOpenNow);
   return (
     <Link
       to={`/restaurant/${restaurant.id}`}
@@ -37,6 +39,13 @@ export function RestaurantCard({ restaurant }: Props) {
         <div className="absolute bottom-3 right-3 px-2 py-1 bg-orange-500 rounded-lg text-xs font-bold text-white shadow-sm">
           {restaurant.distanceKm.toFixed(1)} km
         </div>
+        {!isOpen && (
+          <div className="absolute inset-0 bg-black/45 flex items-center justify-center">
+            <span className="px-3 py-1 rounded-full bg-gray-900/90 text-white text-xs font-bold">
+              Đã đóng cửa
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="p-4 flex flex-col flex-1">

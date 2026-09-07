@@ -60,6 +60,7 @@ namespace ShoppingFood.Application.Features.FlashSales.Queries
 
             // Group sản phẩm theo FlashSaleId để tránh N+1
             var productsByFlashSale = flashSaleProducts
+                .Where(fsp => fsp.Product?.Restaurant != null && fsp.Product.Restaurant.IsCurrentlyOpen(now))
                 .GroupBy(fsp => fsp.FlashSaleId)
                 .ToDictionary(g => g.Key, g => g.ToList());
 

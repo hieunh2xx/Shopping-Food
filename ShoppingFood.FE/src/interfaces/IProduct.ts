@@ -25,6 +25,7 @@ export interface IProductDto {
   availableFrom: string | null;
   availableTo: string | null;
   isAvailableNow: boolean;
+  isRestaurantOpenNow?: boolean;
   status: string;
   restaurantAddress?: string | null;
   restaurantLatitude?: number | null;
@@ -41,8 +42,11 @@ export interface IProductRecommendationDto extends IProductDto {
  */
 export interface IProductToppingDto {
   id: string;
-  name: string;
+  name?: string;
+  toppingName?: string;
   price: number;
+  imageUrl?: string | null;
+  isAvailable?: boolean;
 }
 
 /**

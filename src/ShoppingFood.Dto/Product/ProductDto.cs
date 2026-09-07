@@ -29,6 +29,7 @@ namespace ShoppingFood.Dto.Product
         public string? AvailableFrom { get; set; }
         public string? AvailableTo { get; set; }
         public bool IsAvailableNow { get; set; }
+        public bool IsRestaurantOpenNow { get; set; }
         public string Status { get; set; } = string.Empty;
         public string RestaurantAddress { get; set; } = string.Empty;
         public double? RestaurantLatitude { get; set; }

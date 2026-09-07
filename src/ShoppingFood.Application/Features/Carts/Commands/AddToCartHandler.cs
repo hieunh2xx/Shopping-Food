@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ShoppingFood.Application.Interfaces;
+using ShoppingFood.Application.Common;
 
 namespace ShoppingFood.Application.Features.Carts.Commands
 {
@@ -77,18 +78,28 @@ namespace ShoppingFood.Application.Features.Carts.Commands
 
                 var products = await _productRepository.GetAsync(
                     predicate: p => p.Id == request.ProductId,
-                    include: q => q.Include(p => p.ProductSizes).Include(p => p.ProductToppings).ThenInclude(pt => pt.Topping),
+                    include: q => q.Include(p => p.Restaurant)
+                                   .Include(p => p.ProductSizes)
+                                   .Include(p => p.ProductToppings).ThenInclude(pt => pt.Topping),
                     disableTracking: false
                 );
                 var product = products.FirstOrDefault();
                 if (product == null || product.Status != ProductStatus.Approved || product.IsHidden)
                     return ApiResponse.Failure(404, "Product not found or unavailable.");
 
+                var restaurantClosed = ProductAvailabilityHelper.ValidateRestaurantCanAcceptOrders(product.Restaurant, DateTime.UtcNow);
+                if (restaurantClosed != null)
+                    return ApiResponse.Failure(400, restaurantClosed);
+
                 if (!product.IsCurrentlyAvailable(DateTime.UtcNow))
                     return ApiResponse.Failure(400, "Món ăn này hiện chưa tới giờ mở bán.");
 
                 if (product.StockStatus != StockStatus.InStock)
                     return ApiResponse.Failure(400, "Product is out of stock.");
+
+                var toppingError = ProductAvailabilityHelper.ValidateSelectedToppings(product, request.SelectedToppings);
+                if (toppingError != null)
+                    return ApiResponse.Failure(400, toppingError);
 
                 var cart = await GetOrCreateCartAsync(request.CurrentUserId, guestUserId);
 
@@ -127,7 +138,9 @@ namespace ShoppingFood.Application.Features.Carts.Commands
                 include: q => q
                     .Include(p => p.TriggerProduct).ThenInclude(tp => tp.ProductSizes)
                     .Include(p => p.TriggerProduct).ThenInclude(tp => tp.ProductToppings).ThenInclude(pt => pt.Topping)
-                    .Include(p => p.GiftProduct).ThenInclude(gp => gp.Images),
+                    .Include(p => p.TriggerProduct).ThenInclude(tp => tp.Restaurant)
+                    .Include(p => p.GiftProduct).ThenInclude(gp => gp.Images)
+                    .Include(p => p.GiftProduct).ThenInclude(gp => gp.Restaurant),
                 disableTracking: false);
             var promo = promos.FirstOrDefault();
             if (promo == null || !promo.IsActive)
@@ -148,6 +161,14 @@ namespace ShoppingFood.Application.Features.Carts.Commands
                 return ApiResponse.Failure(400, "Món tặng trong khuyến mãi không khả dụng.");
             if (!trigger.IsCurrentlyAvailable(now) || !gift.IsCurrentlyAvailable(now))
                 return ApiResponse.Failure(400, "Món trong khuyến mãi hiện chưa tới giờ mở bán.");
+
+            var restaurantClosed = ProductAvailabilityHelper.ValidateRestaurantCanAcceptOrders(trigger.Restaurant ?? gift.Restaurant, now);
+            if (restaurantClosed != null)
+                return ApiResponse.Failure(400, restaurantClosed);
+
+            var toppingError = ProductAvailabilityHelper.ValidateSelectedToppings(trigger, request.SelectedToppings);
+            if (toppingError != null)
+                return ApiResponse.Failure(400, toppingError);
 
             if (request.ProductId != Guid.Empty && request.ProductId != promo.TriggerProductId)
                 return ApiResponse.Failure(400, "Sản phẩm không khớp chương trình Mua X Tặng Y.");
@@ -379,7 +400,7 @@ namespace ShoppingFood.Application.Features.Carts.Commands
                 foreach (var toppingName in selectedToppings)
                 {
                     var topping = product.ProductToppings.FirstOrDefault(pt => pt.Topping != null && pt.Topping.ToppingName.Equals(toppingName, StringComparison.OrdinalIgnoreCase))?.Topping;
-                    if (topping != null) extraPrice += topping.Price;
+                    if (topping != null && topping.IsAvailable) extraPrice += topping.Price;
                 }
                 selectedToppingsStr = string.Join(", ", selectedToppings);
             }

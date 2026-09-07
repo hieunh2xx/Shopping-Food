@@ -10,6 +10,7 @@ using ShoppingFood.Domain.Context;
 using ShoppingFood.Dto.Product;
 using ShoppingFood.Repository.Interfaces;
 using ShoppingFood.Application.Interfaces;
+using ShoppingFood.Application.Common;
 
 namespace ShoppingFood.Application.Features.Products.Queries
 {
@@ -36,6 +37,7 @@ namespace ShoppingFood.Application.Features.Products.Queries
 
             var productDtos = _mapper.Map<IReadOnlyList<ProductDto>>(products);
             await _flashSalePricingService.AttachFlashSalePricesAsync(productDtos);
+            ProductAvailabilityHelper.RemoveUnavailableToppings(productDtos);
 
             return ApiResponse.Success(productDtos, total: productDtos.Count);
         }

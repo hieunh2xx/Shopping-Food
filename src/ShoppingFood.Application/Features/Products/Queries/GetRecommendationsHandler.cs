@@ -102,6 +102,9 @@ namespace ShoppingFood.Application.Features.Products.Queries
                         include: q => q.Include(p => p.Images).Include(p => p.GlobalCategory).Include(p => p.Category).Include(p => p.Restaurant).Include(p => p.Reviews)
                     );
 
+                    var now = DateTime.UtcNow;
+                    candidates = candidates.Where(p => p.Restaurant != null && p.Restaurant.IsCurrentlyOpen(now)).ToList();
+
                     var candidateDtos = _mapper.Map<List<ProductRecommendationDto>>(candidates);
                     await _flashSalePricingService.AttachFlashSalePricesAsync(candidateDtos.Cast<ProductDto>().ToList());
 
@@ -149,7 +152,8 @@ namespace ShoppingFood.Application.Features.Products.Queries
             if (!recommendedProducts.Any())
             {
                 var bestSellers = await _productRepository.GetBestSellersAsync(request.Take);
-                var bestSellerDtos = _mapper.Map<List<ProductRecommendationDto>>(bestSellers);
+                var openBestSellers = bestSellers.Where(p => p.Restaurant != null && p.Restaurant.IsCurrentlyOpen(DateTime.UtcNow)).ToList();
+                var bestSellerDtos = _mapper.Map<List<ProductRecommendationDto>>(openBestSellers);
                 await _flashSalePricingService.AttachFlashSalePricesAsync(bestSellerDtos.Cast<ProductDto>().ToList());
                 
                 foreach (var dto in bestSellerDtos)

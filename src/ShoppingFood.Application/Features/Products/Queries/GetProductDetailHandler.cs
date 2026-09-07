@@ -11,6 +11,7 @@ using ShoppingFood.Domain.Models;
 using ShoppingFood.Domain.Enums;
 using ShoppingFood.Dto.Product;
 using ShoppingFood.Repository.Interfaces;
+using ShoppingFood.Application.Common;
 
 namespace ShoppingFood.Application.Features.Products.Queries
 {
@@ -54,49 +55,34 @@ namespace ShoppingFood.Application.Features.Products.Queries
                 return ApiResponse.Failure(404, "Product was not found.");
             }
 
-          
-            if (product.Status != ProductStatus.Pending && product.Status != ProductStatus.Approved)
+            UserProfile? currentProfile = null;
+            if (request.CurrentUserId.HasValue)
             {
-                bool isOwner = false;
-                if (request.CurrentUserId.HasValue)
-                {
-                    var users = await _userRepository.GetAsync(
-                        predicate: u => u.Id == request.CurrentUserId.Value,
-                        include: q => q.Include(u => u.Profile)
-                    );
-                    var user = users.FirstOrDefault();
-                    if (user?.Profile != null && product.Restaurant != null && product.Restaurant.OwnerId == user.Profile.Id)
-                    {
-                        isOwner = true;
-                    }
-                }
-                if (!isOwner)
-                {
-                    return ApiResponse.Failure(404, "Product was not found.");
-                }
+                var users = await _userRepository.GetAsync(
+                    predicate: u => u.Id == request.CurrentUserId.Value,
+                    include: q => q.Include(u => u.Profile)
+                );
+                currentProfile = users.FirstOrDefault()?.Profile;
             }
-            else if (product.Status == ProductStatus.Pending || product.IsHidden || product.IsDeleted)
+
+            bool isOwner = currentProfile != null
+                && product.Restaurant != null
+                && product.Restaurant.OwnerId == currentProfile.Id;
+            bool isAdmin = currentProfile?.Role == UserRole.Admin;
+            bool isOwnerOrAdmin = isOwner || isAdmin;
+
+            if (!isOwnerOrAdmin)
             {
-                bool isOwner = false;
-                if (request.CurrentUserId.HasValue)
-                {
-                    var users = await _userRepository.GetAsync(
-                        predicate: u => u.Id == request.CurrentUserId.Value,
-                        include: q => (Microsoft.EntityFrameworkCore.Query.IIncludableQueryable<User, object>)q.Include(u => u.Profile!)
-                    );
-                    var user = users.FirstOrDefault();
-                    if (user?.Profile != null && product.Restaurant != null && product.Restaurant.OwnerId == user.Profile.Id)
-                    {
-                        isOwner = true;
-                    }
-                }
-                if (!isOwner)
-                {
+                if (product.Status != ProductStatus.Approved || product.IsHidden || product.IsDeleted)
                     return ApiResponse.Failure(404, "Product was not found.");
-                }
+
+                if (product.Restaurant != null && product.Restaurant.Status != RestaurantStatus.Active)
+                    return ApiResponse.Failure(404, "Product was not found.");
             }
 
             var productDto = _mapper.Map<ProductDto>(product);
+            if (!isOwnerOrAdmin)
+                ProductAvailabilityHelper.RemoveUnavailableToppings(productDto);
 
             var now = DateTime.UtcNow;
             var activeFlashSale = await _flashSaleProductRepository.GetAsync(

@@ -100,11 +100,25 @@ export function ProductDetailPage() {
     );
   };
 
+<<<<<<< HEAD
   /**
    * Thêm sản phẩm hiện tại cùng size và danh sách topping đã chọn vào giỏ hàng.
    */
+=======
+  const restaurantOpen = product.isRestaurantOpenNow !== false;
+  const canOrder =
+    product.stockStatus !== 'OutOfStock' &&
+    product.isAvailableNow &&
+    restaurantOpen;
+
+>>>>>>> main
   const handleAddToCart = () => {
-    addItem(product, 1, selectedSize || undefined, selectedToppings.length > 0 ? selectedToppings : undefined);
+    if (!canOrder) return;
+    const availableToppings = selectedToppings.filter((topName) => {
+      const topOpt = product.toppings?.find((t) => t.name === topName || t.toppingName === topName);
+      return topOpt?.isAvailable !== false;
+    });
+    addItem(product, 1, selectedSize || undefined, availableToppings.length > 0 ? availableToppings : undefined);
   };
 
   /**
@@ -175,6 +189,13 @@ export function ProductDetailPage() {
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center">
               <span className="px-4 py-2 rounded-xl bg-red-500 text-white font-bold text-lg">
                 Hết hàng
+              </span>
+            </div>
+          )}
+          {product.stockStatus !== 'OutOfStock' && !restaurantOpen && (
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center">
+              <span className="px-4 py-2 rounded-xl bg-gray-800 text-white font-bold text-lg">
+                Quán đang đóng cửa
               </span>
             </div>
           )}
@@ -282,27 +303,36 @@ export function ProductDetailPage() {
               <h3 className="text-sm font-semibold text-gray-900 mb-2">Chọn món ăn kèm (Topping)</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {product.toppings.map((topping) => {
-                  const tName = topping.name || (topping as any).toppingName;
+                  const tName = topping.name || topping.toppingName || '';
+                  const toppingAvailable = topping.isAvailable !== false;
                   const isChecked = selectedToppings.includes(tName);
                   return (
                     <button
                       key={topping.id}
-                      onClick={() => handleToppingToggle(tName)}
+                      type="button"
+                      disabled={!toppingAvailable}
+                      onClick={() => toppingAvailable && handleToppingToggle(tName)}
                       className={`flex items-center justify-between p-3 rounded-xl border text-sm text-left transition-all ${
-                        isChecked
+                        !toppingAvailable
+                          ? 'border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed'
+                          : isChecked
                           ? 'border-orange-500 bg-orange-50/50 text-orange-700 font-semibold'
                           : 'border-gray-200 text-gray-600 hover:border-gray-300'
                       }`}
                     >
                       <span className="flex items-center gap-2">
                         <span className={`w-4 h-4 rounded flex items-center justify-center border transition-all ${
-                          isChecked ? 'border-orange-500 bg-orange-500 text-white' : 'border-gray-300 bg-white'
+                          !toppingAvailable
+                            ? 'border-gray-200 bg-gray-100'
+                            : isChecked ? 'border-orange-500 bg-orange-500 text-white' : 'border-gray-300 bg-white'
                         }`}>
-                          {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
+                          {isChecked && toppingAvailable && <Check className="w-3 h-3 stroke-[3]" />}
                         </span>
                         {tName}
                       </span>
-                      <span className="text-gray-500 font-medium">+{formatCurrency(topping.price)}</span>
+                      <span className="text-gray-500 font-medium">
+                        {toppingAvailable ? `+${formatCurrency(topping.price)}` : 'Hết topping'}
+                      </span>
                     </button>
                   );
                 })}
@@ -322,12 +352,14 @@ export function ProductDetailPage() {
           <Button
             size="lg"
             className="w-full mt-auto h-13 shadow-lg shadow-orange-500/25 bg-gradient-to-r from-orange-500 to-orange-600 border-0"
-            disabled={product.stockStatus === 'OutOfStock' || !product.isAvailableNow}
+            disabled={!canOrder}
             onClick={handleAddToCart}
           >
             <ShoppingCart className="w-5 h-5" />
             {product.stockStatus === 'OutOfStock'
               ? 'Hết hàng'
+              : !restaurantOpen
+              ? 'Quán đang đóng cửa'
               : !product.isAvailableNow
               ? 'Chưa tới giờ mở bán'
               : 'Thêm vào giỏ'}
