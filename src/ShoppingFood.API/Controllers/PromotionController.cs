@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using ShoppingFood.Application.Features.Promotions.Commands;
 using ShoppingFood.Application.Features.Promotions.Queries;
@@ -32,7 +32,7 @@ namespace ShoppingFood.API.Controllers
             var response = await _mediator.Send(command);
             return Ok(response);
         }
-        [HttpPost("{id}")]
+        [HttpPut("{id}")]
         public async Task<ActionResult<ApiResponse>> Update(Guid id, [FromBody] UpdatePromotionCommand command)
         {
             command.Id = id;
