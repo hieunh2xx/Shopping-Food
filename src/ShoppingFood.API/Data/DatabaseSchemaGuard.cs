@@ -71,6 +71,22 @@ namespace ShoppingFood.API.Data
                     ALTER TABLE dbo.RESTAURANT_PROFILE ADD LastMaintenanceFeeChargedAt datetime2 NULL;
                 """,
                 """
+                IF NOT EXISTS (
+                    SELECT 1 FROM sys.columns
+                    WHERE object_id = OBJECT_ID(N'dbo.[ORDER]') AND name = N'DiscountAmount'
+                )
+                    ALTER TABLE dbo.[ORDER] ADD DiscountAmount decimal(12,2) NOT NULL
+                        CONSTRAINT DF_ORDER_DiscountAmount DEFAULT(0);
+                """,
+                """
+                IF NOT EXISTS (
+                    SELECT 1 FROM sys.columns
+                    WHERE object_id = OBJECT_ID(N'dbo.[ORDER]') AND name = N'TierDiscountAmount'
+                )
+                    ALTER TABLE dbo.[ORDER] ADD TierDiscountAmount decimal(12,2) NOT NULL
+                        CONSTRAINT DF_ORDER_TierDiscountAmount DEFAULT(0);
+                """,
+                """
                 IF COL_LENGTH('dbo.CHAT_SESSION', 'OrderId') IS NULL
                     ALTER TABLE dbo.CHAT_SESSION ADD OrderId uniqueidentifier NULL;
                 """,

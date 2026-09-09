@@ -1,10 +1,14 @@
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
+using ShoppingFood.Domain.Context;
 
 #nullable disable
 
 namespace ShoppingFood.Domain.Migrations
 {
-    public partial class AddSellerMaintenanceFeeFields : Migration
+    [DbContext(typeof(ShoppingFoodContext))]
+    [Migration("20260814103000_AddSellerMaintenanceFeeFields")]
+    public class AddSellerMaintenanceFeeFields : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
