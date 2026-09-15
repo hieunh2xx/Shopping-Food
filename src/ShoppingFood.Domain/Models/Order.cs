@@ -40,6 +40,8 @@ namespace ShoppingFood.Domain.Models
         public decimal TierDiscountAmount { get; set; } = 0;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        /// <summary>Shipper confirmed food pickup at restaurant (order may still be Shipping until delivered).</summary>
+        public DateTime? FoodPickedUpAt { get; set; }
 
         // Navigation properties
         public virtual User? UserAccount { get; set; }

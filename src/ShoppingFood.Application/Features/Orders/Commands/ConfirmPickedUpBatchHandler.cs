@@ -65,6 +65,9 @@ namespace ShoppingFood.Application.Features.Orders.Commands
 
                     if (order.Status != OrderStatus.Shipping)
                         return ApiResponse.Failure(400, $"Invalid order status for picking up. Order {order.Id}: {order.Status}");
+
+                    if (order.FoodPickedUpAt.HasValue)
+                        return ApiResponse.Failure(400, "One or more orders were already picked up at the restaurant.");
                 }
 
                 var restaurantIds = requestedOrders
@@ -83,33 +86,52 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 var eligibleIds = eligibleOrders.Select(o => o.Id).ToHashSet();
 
                 if (requestedIds.Any(id => !eligibleIds.Contains(id)))
-                    return ApiResponse.Failure(400, "One or more selected orders are not eligible for batch pickup.");
+                    return ApiResponse.Failure(400, "One or more selected orders are not eligible for pickup.");
 
-                if (eligibleIds.Count < 2)
-                    return ApiResponse.Failure(400, "Batch pickup requires at least 2 orders at the same restaurant. Use single pickup instead.");
+                if (eligibleIds.Count == 0)
+                    return ApiResponse.Failure(400, "No orders are waiting for pickup at this restaurant.");
 
-                var expectedCode = BatchPickupCodeHelper.Compute(shipperProfile.Id, restaurantId, eligibleIds);
-                if (!request.VerificationCode.Equals(expectedCode, StringComparison.OrdinalIgnoreCase))
-                    return ApiResponse.Failure(400, "Invalid batch verification code. Please check the code with merchant.");
+                if (eligibleIds.Count == 1 && requestedIds.Count == 1)
+                {
+                    var orderIdString = requestedOrders[0].Id.ToString();
+                    var expectedSingle = orderIdString.Substring(orderIdString.Length - 6);
+                    if (!request.VerificationCode.Equals(expectedSingle, StringComparison.OrdinalIgnoreCase))
+                        return ApiResponse.Failure(400, "Invalid verification code. Please check the code with merchant.");
+                }
+                else
+                {
+                    if (eligibleIds.Count < 2)
+                        return ApiResponse.Failure(400, "Use the single-order pickup code for the remaining bag.");
+
+                    var expectedCode = BatchPickupCodeHelper.Compute(shipperProfile.Id, restaurantId, eligibleIds);
+                    if (!request.VerificationCode.Equals(expectedCode, StringComparison.OrdinalIgnoreCase))
+                        return ApiResponse.Failure(400, "Invalid batch verification code. Please check the code with merchant.");
+                }
 
                 shipperProfile.Latitude = request.Latitude;
                 shipperProfile.Longitude = request.Longitude;
                 shipperProfile.UpdatedAt = DateTime.UtcNow;
                 _shipperProfileRepository.Update(shipperProfile);
 
+                var pickedUpAt = DateTime.UtcNow;
                 var shipperName = shipperProfile.UserProfile?.FullName ?? "Shipper";
                 foreach (var order in requestedOrders)
                 {
+                    order.FoodPickedUpAt = pickedUpAt;
+                    order.UpdatedAt = pickedUpAt;
+                    _orderRepository.Update(order);
                     AddPickedUpNotification(order, shipperName);
                 }
 
                 await _unitOfWork.SaveChangesAsync();
 
+                var remainingEligibleCount = eligibleIds.Count - requestedIds.Count;
+
                 return ApiResponse.Success(
                     new
                     {
                         ConfirmedOrderIds = requestedIds,
-                        RemainingEligibleCount = eligibleIds.Count - requestedIds.Count
+                        RemainingEligibleCount = remainingEligibleCount
                     },
                     $"Food picked up successfully for {requestedIds.Count} order(s).");
             }
@@ -149,7 +171,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
             var orders = await _orderRepository.GetAsync(
                 predicate: o => orderIds.Contains(o.Id),
                 include: q => q.Include(o => o.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Restaurant),
-                disableTracking: true
+                disableTracking: false
             );
             return orders.ToList();
         }
@@ -160,6 +182,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 predicate: o =>
                     o.ShipperId == shipperProfileId &&
                     o.Status == OrderStatus.Shipping &&
+                    !o.FoodPickedUpAt.HasValue &&
                     o.Items.Any(i => i.Product != null && i.Product.RestaurantId == restaurantId),
                 include: q => q.Include(o => o.Items).ThenInclude(i => i.Product),
                 disableTracking: true

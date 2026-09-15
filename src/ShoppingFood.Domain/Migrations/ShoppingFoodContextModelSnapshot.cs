@@ -908,6 +908,9 @@ namespace ShoppingFood.Domain.Migrations
                         .HasColumnType("decimal(12,2)")
                         .HasDefaultValue(0m);
 
+                    b.Property<DateTime?>("FoodPickedUpAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<Guid?>("GuestUserId")
                         .HasColumnType("uniqueidentifier");
 

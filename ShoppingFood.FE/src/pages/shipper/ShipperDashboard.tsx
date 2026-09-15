@@ -546,19 +546,17 @@ export function ShipperDashboard() {
           toast.error(res.message);
         }
       } else if (activeDelivery.step === 'arrived') {
-        // Include picked_up siblings: they are still Shipping on BE, so batch code stays active
         const sameRestaurant = activeDeliveries.filter(
           (d) => restaurantKey(d) === restaurantKey(activeDelivery)
         );
-        if (sameRestaurant.length >= 2) {
+        const awaitingPickup = sameRestaurant.filter((d) => d.step === 'arrived');
+        if (awaitingPickup.length >= 2) {
           setBatchPickupOrders(
-            sameRestaurant
-              .filter((d) => d.step !== 'picked_up')
-              .map((d) => ({
-                orderId: d.orderId,
-                contactName: d.contactName,
-                canSelect: d.step === 'arrived',
-              }))
+            awaitingPickup.map((d) => ({
+              orderId: d.orderId,
+              contactName: d.contactName,
+              canSelect: true,
+            }))
           );
           setBatchPickupRestaurantName(activeDelivery.restaurantName);
           setIsBatchPickupModalOpen(true);

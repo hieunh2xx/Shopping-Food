@@ -134,6 +134,7 @@ namespace ShoppingFood.Application.Features.Orders.Queries
                 var allShippingAtRestaurant = await _orderRepository.GetAsync(
                     predicate: o =>
                         o.Status == OrderStatus.Shipping &&
+                        !o.FoodPickedUpAt.HasValue &&
                         o.ShipperId.HasValue &&
                         o.Items.Any(i => i.Product != null && i.Product.RestaurantId == restaurant.Id),
                     include: q => q.Include(o => o.Shipper).ThenInclude(s => s.UserProfile).ThenInclude(p => p.UserAccount),

@@ -59,6 +59,9 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 if (order.Status != OrderStatus.Shipping)
                     return ApiResponse.Failure(400, $"Invalid order status for picking up. Current status: {order.Status}");
 
+                if (order.FoodPickedUpAt.HasValue)
+                    return ApiResponse.Failure(400, "This order was already picked up at the restaurant.");
+
                 string orderIdString = order.Id.ToString();
                 string expectedCode = orderIdString.Substring(orderIdString.Length - 6);
 
@@ -69,6 +72,10 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 shipperProfile.Longitude = request.Longitude;
                 shipperProfile.UpdatedAt = DateTime.UtcNow;
                 _shipperProfileRepository.Update(shipperProfile);
+
+                order.FoodPickedUpAt = DateTime.UtcNow;
+                order.UpdatedAt = DateTime.UtcNow;
+                _orderRepository.Update(order);
 
                 AddPickedUpNotification(order, shipperProfile.UserProfile.FullName);
 
@@ -102,7 +109,7 @@ namespace ShoppingFood.Application.Features.Orders.Commands
         {
             var orders = await _orderRepository.GetAsync(
                 predicate: o => o.Id == orderId,
-                disableTracking: true
+                disableTracking: false
             );
             return orders.FirstOrDefault();
         }

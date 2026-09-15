@@ -104,6 +104,7 @@ namespace ShoppingFood.Application.Features.Coordinator.Queries
                     predicate: o =>
                         o.CreatedAt >= todayUtc &&
                         o.Status == OrderStatus.Shipping &&
+                        !o.FoodPickedUpAt.HasValue &&
                         o.ShipperId.HasValue,
                     include: q => q.Include(o => o.Items).ThenInclude(i => i.Product),
                     disableTracking: true
