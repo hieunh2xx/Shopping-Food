@@ -67,19 +67,22 @@ namespace ShoppingFood.Application.Features.Orders.Commands
                 order.UpdatedAt = DateTime.UtcNow;
 
                 _orderRepository.Update(order);
-                
-                var notification = new Notification
+
+                if (order.UserAccountId.HasValue)
                 {
-                    Id = Guid.NewGuid(),
-                    UserId = order.UserAccountId.Value,
-                    Title = "Đơn hàng đang được chuẩn bị",
-                    Message = $"Nhà hàng đang chuẩn bị món cho đơn #{Common.OrderDisplayHelper.ShortId(order.Id)}. Bạn sẽ được thông báo khi đơn sẵn sàng giao.",
-                    NotificationType = NotificationType.Order,
-                    TargetId = order.Id,
-                    IsRead = false,
-                    CreateAt = DateTime.UtcNow
-                };
-                _notificationRepository.Add(notification);
+                    var notification = new Notification
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = order.UserAccountId.Value,
+                        Title = "Đơn hàng đang được chuẩn bị",
+                        Message = $"Nhà hàng đang chuẩn bị món cho đơn #{Common.OrderDisplayHelper.ShortId(order.Id)}. Bạn sẽ được thông báo khi đơn sẵn sàng giao.",
+                        NotificationType = NotificationType.Order,
+                        TargetId = order.Id,
+                        IsRead = false,
+                        CreateAt = DateTime.UtcNow
+                    };
+                    _notificationRepository.Add(notification);
+                }
 
                 await _unitOfWork.SaveChangesAsync();
 

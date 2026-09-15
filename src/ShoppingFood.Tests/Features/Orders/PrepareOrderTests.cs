@@ -166,6 +166,32 @@ namespace ShoppingFood.Tests.Features.Orders
             _orderRepoMock.Verify(r => r.Update(order), Times.Once);
         }
 
+        // Guest checkout: no UserAccountId — must still transition to Preparing without notification
+        [Fact]
+        public async Task Handle_GuestOrder_PreparesWithoutCustomerNotification()
+        {
+            var restaurantId = Guid.NewGuid();
+            var product = new Product { Id = Guid.NewGuid(), RestaurantId = restaurantId };
+            var order = new Order
+            {
+                Id = Guid.NewGuid(),
+                Status = OrderStatus.Confirmed,
+                UserAccountId = null,
+                GuestUserId = Guid.NewGuid(),
+                Items = new List<OrderItem> { new OrderItem { Product = product } }
+            };
+            SetupOrderRepo(order);
+            SetupRestaurantRepo(new RestaurantProfile { Id = restaurantId });
+            _unitOfWorkMock.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+            var command = new PrepareOrderCommand { OrderId = order.Id, CurrentUserId = Guid.NewGuid() };
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            result.Code.Should().Be(200);
+            order.Status.Should().Be(OrderStatus.Preparing);
+            _notificationRepoMock.Verify(n => n.Add(It.IsAny<Notification>()), Times.Never);
+        }
+
         // ── UTC07 ─────────────────────────────────────────────────────────────
         // Abnormal: Dependency throws Exception → 400
         [Fact]
