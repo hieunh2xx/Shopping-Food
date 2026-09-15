@@ -1,29 +1,39 @@
 using System;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
+using ShoppingFood.Domain.Context;
 
 #nullable disable
 
 namespace ShoppingFood.Domain.Migrations
 {
-    /// <inheritdoc />
-    public partial class AddFoodPickedUpAtToOrder : Migration
+    /// <summary>
+    /// Marks when shipper confirmed food pickup at restaurant (order may still be Shipping).
+    /// </summary>
+    [DbContext(typeof(ShoppingFoodContext))]
+    [Migration("20260915160000_AddFoodPickedUpAtToOrder")]
+    public class AddFoodPickedUpAtToOrder : Migration
     {
-        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<DateTime>(
-                name: "FoodPickedUpAt",
-                table: "ORDER",
-                type: "datetime2",
-                nullable: true);
+            migrationBuilder.Sql("""
+                IF NOT EXISTS (
+                    SELECT 1 FROM sys.columns
+                    WHERE object_id = OBJECT_ID(N'dbo.[ORDER]') AND name = N'FoodPickedUpAt'
+                )
+                    ALTER TABLE dbo.[ORDER] ADD FoodPickedUpAt datetime2 NULL;
+                """);
         }
 
-        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "FoodPickedUpAt",
-                table: "ORDER");
+            migrationBuilder.Sql("""
+                IF EXISTS (
+                    SELECT 1 FROM sys.columns
+                    WHERE object_id = OBJECT_ID(N'dbo.[ORDER]') AND name = N'FoodPickedUpAt'
+                )
+                    ALTER TABLE dbo.[ORDER] DROP COLUMN FoodPickedUpAt;
+                """);
         }
     }
 }
