@@ -23,7 +23,8 @@ namespace ShoppingFood.Tests.Features.Payments
             Mock.Of<ISepayService>(),
             Mock.Of<IPaymentCacheService>(),
             Mock.Of<ISepayBankAccountResolver>(),
-            Mock.Of<INotificationRepository>());
+            Mock.Of<INotificationRepository>(),
+            null!);
 
         [Theory]
         [InlineData(115_000, 15_000, 0, 0.10, false, 100_000, 10_000, 90_000, 0)]

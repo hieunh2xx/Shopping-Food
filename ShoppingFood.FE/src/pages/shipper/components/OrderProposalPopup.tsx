@@ -1,15 +1,19 @@
 import { useEffect, useState } from 'react';
 import { Package, MapPin, Store, DollarSign, X, CheckCircle } from 'lucide-react';
 import type { IProposedDeliveryOfferDto } from '../../../interfaces/IShipper';
+import type { IGroupOrderForOrderDto } from '../../../interfaces';
+import { GroupOrderTag } from '../../../components/groupOrder/GroupOrderTag';
 
 interface OrderProposalPopupProps {
   offer: IProposedDeliveryOfferDto;
+  /** Có khi đơn là gom đơn nhóm (nhiều phần, giao nhiều phòng). */
+  groupInfo?: IGroupOrderForOrderDto;
   onAccept: (orderId: string) => void;
   onReject: (orderId: string) => void;
   onTimeout: (orderId: string) => void;
 }
 
-export function OrderProposalPopup({ offer, onAccept, onReject, onTimeout }: OrderProposalPopupProps) {
+export function OrderProposalPopup({ offer, groupInfo, onAccept, onReject, onTimeout }: OrderProposalPopupProps) {
   const [timeLeft, setTimeLeft] = useState(60);
 
   useEffect(() => {
@@ -125,6 +129,16 @@ export function OrderProposalPopup({ offer, onAccept, onReject, onTimeout }: Ord
           </div>
 
           <div className="space-y-4 pt-2">
+            {groupInfo && (
+              <div className="rounded-xl bg-violet-50 border border-violet-200 p-3 space-y-1">
+                <GroupOrderTag info={groupInfo} />
+                <p className="text-xs text-violet-800">
+                  1 lượt giao · {groupInfo.portionCount} phần {groupInfo.deliveryMode === 'Room'
+                    ? `tới ${groupInfo.portions.filter((p) => p.roomNumber).length} phòng (${groupInfo.portions.map((p) => p.roomNumber).filter(Boolean).join(', ')})`
+                    : `tại ${groupInfo.buildingName}`} · khách đã trả trước.
+                </p>
+              </div>
+            )}
             <div className="flex gap-3">
               <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
                 <Store className="w-5 h-5 text-orange-600" />

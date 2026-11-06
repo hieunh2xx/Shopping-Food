@@ -71,6 +71,11 @@ namespace ShoppingFood.Domain.Context
         public DbSet<SepayWebhookLog> SepayWebhookLogs { get; set; } = null!;
         public DbSet<ShipperReputationHistory> ShipperReputationHistories { get; set; } = null!;
         public DbSet<BlacklistKeyword> BlacklistKeywords { get; set; } = null!;
+        public DbSet<Campus> Campuses { get; set; } = null!;
+        public DbSet<CampusBuilding> CampusBuildings { get; set; } = null!;
+        public DbSet<GroupOrder> GroupOrders { get; set; } = null!;
+        public DbSet<GroupOrderMember> GroupOrderMembers { get; set; } = null!;
+        public DbSet<GroupOrderItem> GroupOrderItems { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -1060,6 +1065,102 @@ namespace ShoppingFood.Domain.Context
                 entity.ToTable("SYSTEM_CONFIG");
                 entity.HasKey(e => e.Key);
                 entity.Property(e => e.Key).HasMaxLength(100);
+            });
+
+            modelBuilder.Entity<Campus>(entity =>
+            {
+                entity.ToTable("CAMPUS");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Code).IsRequired().HasMaxLength(30);
+                entity.HasIndex(e => e.Code).IsUnique();
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.ShortName).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Address).IsRequired().HasMaxLength(300);
+                entity.Property(e => e.Description).HasMaxLength(1000);
+                entity.Property(e => e.GroupBaseShippingFee).HasColumnType("decimal(12,2)");
+                entity.Property(e => e.LobbySurchargePerMember).HasColumnType("decimal(12,2)");
+                entity.Property(e => e.RoomSurchargePerMember).HasColumnType("decimal(12,2)");
+                entity.Property(e => e.SingleRoomDeliveryFee).HasColumnType("decimal(12,2)");
+            });
+
+            modelBuilder.Entity<CampusBuilding>(entity =>
+            {
+                entity.ToTable("CAMPUS_BUILDING");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Code).IsRequired().HasMaxLength(30);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(150);
+                entity.Property(e => e.ShortName).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.BuildingType).HasConversion<string>().IsRequired().HasMaxLength(20);
+                entity.Property(e => e.Zone).HasMaxLength(150);
+                entity.Property(e => e.Description).HasMaxLength(500);
+                entity.Property(e => e.DropPoint).HasMaxLength(200);
+                entity.HasIndex(e => new { e.CampusId, e.Code }).IsUnique();
+
+                entity.HasOne(d => d.Campus)
+                    .WithMany(p => p.Buildings)
+                    .HasForeignKey(d => d.CampusId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<GroupOrder>(entity =>
+            {
+                entity.ToTable("GROUP_ORDER");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Code).IsRequired().HasMaxLength(10);
+                entity.HasIndex(e => e.Code).IsUnique();
+                entity.Property(e => e.Title).IsRequired().HasMaxLength(150);
+                entity.Property(e => e.DeliveryMode).HasConversion<string>().IsRequired().HasMaxLength(20);
+                entity.Property(e => e.PaymentMode).HasConversion<string>().IsRequired().HasMaxLength(20);
+                entity.Property(e => e.Status).HasConversion<string>().IsRequired().HasMaxLength(20);
+                entity.Property(e => e.BaseShippingFee).HasColumnType("decimal(12,2)");
+                entity.Property(e => e.SurchargePerMember).HasColumnType("decimal(12,2)");
+                entity.Property(e => e.ShippingFeeTotal).HasColumnType("decimal(12,2)");
+                entity.Property(e => e.ShipperIncome).HasColumnType("decimal(12,2)");
+                entity.Property(e => e.ItemsSubtotal).HasColumnType("decimal(12,2)");
+                entity.Property(e => e.TotalAmount).HasColumnType("decimal(12,2)");
+                entity.Property(e => e.Note).HasMaxLength(500);
+                entity.Property(e => e.CancelReason).HasMaxLength(500);
+                entity.HasIndex(e => new { e.BuildingId, e.Status });
+                entity.HasIndex(e => e.OrderId);
+
+                entity.HasOne(d => d.Campus).WithMany().HasForeignKey(d => d.CampusId).OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(d => d.Building).WithMany().HasForeignKey(d => d.BuildingId).OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(d => d.Restaurant).WithMany().HasForeignKey(d => d.RestaurantId).OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(d => d.HostUser).WithMany().HasForeignKey(d => d.HostUserId).OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(d => d.Order).WithMany().HasForeignKey(d => d.OrderId).OnDelete(DeleteBehavior.SetNull);
+            });
+
+            modelBuilder.Entity<GroupOrderMember>(entity =>
+            {
+                entity.ToTable("GROUP_ORDER_MEMBER");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.DisplayName).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Phone).IsRequired().HasMaxLength(15);
+                entity.Property(e => e.RoomNumber).HasMaxLength(30);
+                entity.Property(e => e.Note).HasMaxLength(300);
+                entity.Property(e => e.ItemsSubtotal).HasColumnType("decimal(12,2)");
+                entity.Property(e => e.ShippingShare).HasColumnType("decimal(12,2)");
+                entity.Property(e => e.PaidAmount).HasColumnType("decimal(12,2)");
+                entity.Property(e => e.PaymentStatus).HasConversion<string>().IsRequired().HasMaxLength(20);
+                entity.HasIndex(e => new { e.GroupOrderId, e.UserAccountId }).IsUnique();
+
+                entity.HasOne(d => d.GroupOrder).WithMany(p => p.Members).HasForeignKey(d => d.GroupOrderId).OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(d => d.UserAccount).WithMany().HasForeignKey(d => d.UserAccountId).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<GroupOrderItem>(entity =>
+            {
+                entity.ToTable("GROUP_ORDER_ITEM");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.ItemName).IsRequired().HasMaxLength(150);
+                entity.Property(e => e.ImageUrl).HasMaxLength(500);
+                entity.Property(e => e.UnitPrice).HasColumnType("decimal(12,2)");
+                entity.Property(e => e.SelectedSize).HasMaxLength(100);
+                entity.Property(e => e.SelectedToppings).HasMaxLength(500);
+                entity.Property(e => e.Note).HasMaxLength(200);
+
+                entity.HasOne(d => d.Member).WithMany(p => p.Items).HasForeignKey(d => d.GroupOrderMemberId).OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(d => d.Product).WithMany().HasForeignKey(d => d.ProductId).OnDelete(DeleteBehavior.Restrict);
             });
         }
     }

@@ -59,6 +59,11 @@ namespace ShoppingFood.API.Filters
                                 (method == "GET" && path.StartsWith("/api/System", StringComparison.OrdinalIgnoreCase)) ||
                                 (method == "GET" && path.StartsWith("/api/Faq", StringComparison.OrdinalIgnoreCase)) ||
 
+                                (method == "GET" && path.StartsWith("/api/Campus", StringComparison.OrdinalIgnoreCase)) ||
+
+                                (method == "GET" && path.StartsWith("/api/GroupOrder", StringComparison.OrdinalIgnoreCase) &&
+                                    !path.Equals("/api/GroupOrder/mine", StringComparison.OrdinalIgnoreCase)) ||
+
                                 (method == "GET" &&
                                     path.StartsWith("/api/Product", StringComparison.OrdinalIgnoreCase)) ||
 

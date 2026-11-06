@@ -35,3 +35,4 @@ export * from './IFlashSale';
 export * from './IFaq';
 export * from './INotification';
 export * from './IChat';
+export * from './IGroupOrder';

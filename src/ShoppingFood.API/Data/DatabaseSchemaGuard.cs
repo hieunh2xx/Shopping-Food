@@ -136,7 +136,9 @@ namespace ShoppingFood.API.Data
                 """,
             };
 
-            foreach (var sql in statements)
+            foreach (var sql in statements
+                .Concat(ShoppingFood.Domain.Migrations.GroupOrderSchemaSql.CreateStatements)
+                .Concat(ShoppingFood.Domain.Migrations.GroupOrderSchemaSql.MemberDeliveredAtStatements))
             {
                 await context.Database.ExecuteSqlRawAsync(sql);
             }

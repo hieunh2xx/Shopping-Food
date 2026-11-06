@@ -41,6 +41,7 @@ builder.Services.AddHostedService<PaymentProcessingWorker>();
 builder.Services.AddHostedService<PaymentExpiryWorker>();
 builder.Services.AddHostedService<SepayReconciliationWorker>();
 builder.Services.AddHostedService<SellerMaintenanceFeeWorker>();
+builder.Services.AddHostedService<GroupOrderExpiryWorker>();
 
 // Add API documentation via Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
@@ -134,6 +135,14 @@ using (var scope = app.Services.CreateScope())
         }
 
         await ShoppingFood.API.Data.DatabaseSchemaGuard.EnsureCriticalColumnsAsync(context);
+        try
+        {
+            await ShoppingFood.API.Data.CampusSeeder.SeedAsync(app.Services);
+        }
+        catch (Exception campusSeedEx)
+        {
+            Console.WriteLine($"[CampusSeeder] warning: {campusSeedEx.Message}");
+        }
 
         if (app.Environment.IsDevelopment())
         {

@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { User, LogOut, ChefHat, Search, MapPin, ChevronDown, MessageSquare } from 'lucide-react';
+import { User, LogOut, ChefHat, Search, MapPin, ChevronDown, MessageSquare, Users } from 'lucide-react';
 import { useAuth, useUserLocation, useCustomerChatWatcher } from '../../hooks';
 import { ShoppingDrawer } from './ShoppingDrawer';
 import { NotificationBell } from './NotificationBell';
@@ -89,6 +89,17 @@ export function Header() {
 
             {/* Right Actions */}
             <div className="flex items-center gap-1 sm:gap-3">
+              <Link
+                to={ROUTES.GROUP_ORDERS}
+                className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-colors ${
+                  location.pathname.startsWith(ROUTES.GROUP_ORDERS)
+                    ? 'bg-orange-500 text-white border-orange-500'
+                    : 'bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100'
+                }`}
+                title="Gom đơn nhóm cho sinh viên — ship tận phòng, chia tiền ship"
+              >
+                <Users className="w-4 h-4" /> Đơn nhóm
+              </Link>
               <nav className="flex items-center">
                 {isAuthenticated ? (
                   <>

@@ -26,6 +26,9 @@ import { Card, Button, Pagination, PromptModal, Input } from '../../components/c
 import { OrderSellerChatModal } from '../../components/chat/OrderSellerChatModal';
 import toast from 'react-hot-toast';
 import { printSellerOrderBills, type OrderBillData } from '../../utils/printOrderBill';
+import { useGroupOrdersForOrders } from '../../components/groupOrder/useGroupOrdersForOrders';
+import { GroupOrderTag } from '../../components/groupOrder/GroupOrderTag';
+import { GroupOrderPortionsPanel } from '../../components/groupOrder/GroupOrderPortionsPanel';
 
 const STATUS_TABS = [
   { label: 'Tất cả', value: '' },
@@ -42,6 +45,8 @@ export function SellerOrdersPage() {
   const { token } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [orders, setOrders] = useState<any[]>([]);
+  const groupOrderIds = useMemo(() => orders.map((o) => o.id as string), [orders]);
+  const { byOrderId: groupInfo } = useGroupOrdersForOrders(groupOrderIds);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(searchParams.get('status') || '');
@@ -630,6 +635,9 @@ export function SellerOrdersPage() {
                         {(order.batchOrderLabels?.length || order.batchOrderIds?.length || 0)} túi
                       </div>
                     )}
+                    {groupInfo[order.id] && (
+                      <div className="mt-2"><GroupOrderTag info={groupInfo[order.id]} /></div>
+                    )}
                     {!order.batchPickupCode && order.shipperName && order.status === 'Shipping' && (
                       <div className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md">
                         <Truck className="w-3.5 h-3.5" />
@@ -896,6 +904,10 @@ export function SellerOrdersPage() {
                   )}
                 </div>
               </div>
+
+              {groupInfo[selectedOrder.id] && (
+                <GroupOrderPortionsPanel info={groupInfo[selectedOrder.id]} mode="restaurant" restaurantName={restaurantName} />
+              )}
 
               {/* Items Section */}
               <div className="space-y-3">

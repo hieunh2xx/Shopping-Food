@@ -573,6 +573,18 @@ export function ShoppingDrawer() {
                     >
                       Tiến hành thanh toán
                     </Button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!selectedProvider) return;
+                        setIsOpen(false);
+                        navigate(`${ROUTES.GROUP_ORDERS}?restaurant=${selectedProvider}&fromCart=1`);
+                      }}
+                      disabled={!selectedProvider}
+                      className="mt-2 w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-orange-300 text-orange-600 text-sm font-bold hover:bg-orange-50 disabled:opacity-50"
+                    >
+                      Tạo đơn nhóm với giỏ này (chia ship, giao tận phòng)
+                    </button>
                   </div>
                 )}
               </>

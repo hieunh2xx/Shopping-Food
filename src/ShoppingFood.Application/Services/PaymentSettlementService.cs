@@ -24,6 +24,7 @@ namespace ShoppingFood.Application.Services
         private readonly IPaymentCacheService _paymentCache;
         private readonly ISepayBankAccountResolver _bankAccountResolver;
         private readonly INotificationRepository _notificationRepository;
+        private readonly ShoppingFood.Domain.Context.ShoppingFoodContext _db;
 
         public PaymentSettlementService(
             IPlatformFinanceConfigRepository configRepository,
@@ -38,8 +39,10 @@ namespace ShoppingFood.Application.Services
             ISepayService sepayService,
             IPaymentCacheService paymentCache,
             ISepayBankAccountResolver bankAccountResolver,
-            INotificationRepository notificationRepository)
+            INotificationRepository notificationRepository,
+            ShoppingFood.Domain.Context.ShoppingFoodContext db)
         {
+            _db = db;
             _configRepository = configRepository;
             _walletRepository = walletRepository;
             _transactionRepository = transactionRepository;
@@ -682,6 +685,9 @@ namespace ShoppingFood.Application.Services
                 return null;
             }
 
+            if (await RefundGroupOrderMembersAsync(order))
+                return null;
+
             var refundAmount = order.TotalAmount;
             if (refundAmount <= 0)
                 return null;
@@ -723,6 +729,52 @@ namespace ShoppingFood.Application.Services
             });
 
             return null;
+        }
+
+        /// <summary>
+        /// Đơn gom được nhiều người trả trước từ ví riêng — hoàn đúng số tiền về ví từng người trả.
+        /// Trả về false nếu đơn không thuộc phòng gom đơn nào.
+        /// </summary>
+        private async Task<bool> RefundGroupOrderMembersAsync(Order order)
+        {
+            var group = await _db.GroupOrders
+                .Include(g => g.Members)
+                .FirstOrDefaultAsync(g => g.OrderId == order.Id);
+            if (group == null)
+                return false;
+
+            var shortId = order.Id.ToString()[..8].ToUpperInvariant();
+            foreach (var member in group.Members.Where(m => m.PaymentStatus == GroupMemberPaymentStatus.Paid && m.PaidAmount > 0))
+            {
+                var payerId = member.PaidByUserId ?? member.UserAccountId;
+                var wallet = await GetOrCreateWalletAsync(WalletOwnerType.Customer, payerId);
+                await RecordTransactionAsync(wallet, FinancialTransactionType.Refund, member.PaidAmount,
+                    $"Hoàn tiền đơn gom #{group.Code} — phần {member.DisplayName}", order.Id, "Order");
+
+                _notificationRepository.Add(new Notification
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = payerId,
+                    Title = "Hoàn tiền đơn gom",
+                    Message = $"Đơn gom #{shortId} đã hủy. {member.PaidAmount:N0}đ (phần {member.DisplayName}) đã được hoàn vào ví của bạn.",
+                    NotificationType = NotificationType.Payment,
+                    TargetId = payerId == order.UserAccountId ? order.Id : null,
+                    IsRead = false,
+                    CreateAt = DateTime.UtcNow
+                });
+
+                member.PaymentStatus = GroupMemberPaymentStatus.Refunded;
+                member.PaidAmount = 0;
+            }
+
+            group.Status = GroupOrderStatus.Cancelled;
+            group.CancelReason = string.IsNullOrWhiteSpace(order.RejectReason) ? "Đơn hàng đã bị hủy" : order.RejectReason;
+            group.UpdatedAt = DateTime.UtcNow;
+
+            order.PaymentStatus = PaymentStatus.Refunded;
+            order.UpdatedAt = DateTime.UtcNow;
+            _orderRepository.Update(order);
+            return true;
         }
 
         private async Task<Guid?> GetOrderRestaurantIdAsync(Order order)

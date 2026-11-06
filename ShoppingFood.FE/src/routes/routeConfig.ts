@@ -74,6 +74,9 @@ export const ROUTES = {
   PAYMENT_HISTORY: '/payment/history',
   SELLER_CHAT: '/seller/chat',
   SELLER_MALL_APPLICATION: '/seller/mall-application',
+  GROUP_ORDERS: '/group-orders',
+  GROUP_ORDER_ROOM: '/group-orders/:id',
+  ADMIN_CAMPUSES: '/admin/campuses',
 } as const;
 
 /**

@@ -289,6 +289,36 @@ export const API_ENDPOINTS = {
     DASHBOARD: '/Payment/dashboard',
   },
 
+  // === Campus & gom đơn nội khu (CampusController, GroupOrderController) ===
+  CAMPUS: {
+    BASE: '/Campus',
+    ADMIN: '/Admin/campuses',
+    ADMIN_BY_ID: (id: string) => `/Admin/campuses/${id}`,
+    ADMIN_BUILDINGS: (campusId: string) => `/Admin/campuses/${campusId}/buildings`,
+    ADMIN_BUILDING_BY_ID: (buildingId: string) => `/Admin/campuses/buildings/${buildingId}`,
+  },
+
+  GROUP_ORDER: {
+    BASE: '/GroupOrder',
+    MINE: '/GroupOrder/mine',
+    RESTAURANTS: '/GroupOrder/restaurants',
+    MENU: (restaurantId: string) => `/GroupOrder/menu/${restaurantId}`,
+    BY_CODE: (code: string) => `/GroupOrder/code/${encodeURIComponent(code.replace(/^#/, '').trim())}`,
+    BY_ID: (id: string) => `/GroupOrder/${id}`,
+    JOIN: (id: string) => `/GroupOrder/${id}/join`,
+    ME: (id: string) => `/GroupOrder/${id}/me`,
+    ITEMS: (id: string) => `/GroupOrder/${id}/items`,
+    ITEM: (id: string, itemId: string) => `/GroupOrder/${id}/items/${itemId}`,
+    PAY: (id: string) => `/GroupOrder/${id}/pay`,
+    UNPAY: (id: string) => `/GroupOrder/${id}/unpay`,
+    LEAVE: (id: string) => `/GroupOrder/${id}/leave`,
+    MEMBER: (id: string, memberId: string) => `/GroupOrder/${id}/members/${memberId}`,
+    SUBMIT: (id: string) => `/GroupOrder/${id}/submit`,
+    CANCEL: (id: string) => `/GroupOrder/${id}/cancel`,
+    FOR_ORDERS: '/GroupOrder/for-orders',
+    PORTION_DELIVERED: (id: string, memberId: string) => `/GroupOrder/${id}/members/${memberId}/delivered`,
+  },
+
   CHAT: {
     CREATE_SESSION: '/Chat/sessions',
     GET_MESSAGES: (sessionId: string) => `/Chat/sessions/${sessionId}/messages`,

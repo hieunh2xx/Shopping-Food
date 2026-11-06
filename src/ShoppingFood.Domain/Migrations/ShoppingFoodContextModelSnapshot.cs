@@ -17,7 +17,7 @@ namespace ShoppingFood.Domain.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.29")
+                .HasAnnotation("ProductVersion", "8.0.33")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -133,6 +133,165 @@ namespace ShoppingFood.Domain.Migrations
                     b.HasIndex("TriggerProductId");
 
                     b.ToTable("BUY_X_GET_Y_PROMOTION", (string)null);
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.Campus", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<decimal>("GroupBaseShippingFee")
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("float");
+
+                    b.Property<decimal>("LobbySurchargePerMember")
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("float");
+
+                    b.Property<int>("MaxGroupMembers")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MinGroupMembers")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<decimal>("RoomSurchargePerMember")
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<string>("ShortName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal>("SingleRoomDeliveryFee")
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("CAMPUS", (string)null);
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.CampusBuilding", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("AllowRoomDelivery")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("BuildingType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid>("CampusId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("DropPoint")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("Floors")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("float");
+
+                    b.Property<double>("MapHeight")
+                        .HasColumnType("float");
+
+                    b.Property<double>("MapWidth")
+                        .HasColumnType("float");
+
+                    b.Property<double>("MapX")
+                        .HasColumnType("float");
+
+                    b.Property<double>("MapY")
+                        .HasColumnType("float");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("ShortName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Zone")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CampusId", "Code")
+                        .IsUnique();
+
+                    b.ToTable("CAMPUS_BUILDING", (string)null);
                 });
 
             modelBuilder.Entity("ShoppingFood.Domain.Models.Cart", b =>
@@ -290,6 +449,56 @@ namespace ShoppingFood.Domain.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("CHAT_SESSION", (string)null);
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.CodRemittanceRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("ProofImageUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("RejectReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ReviewedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ShipperProfileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ShipperProfileId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("COD_REMITTANCE_REQUEST", (string)null);
                 });
 
             modelBuilder.Entity("ShoppingFood.Domain.Models.CustomerDiscount", b =>
@@ -655,6 +864,234 @@ namespace ShoppingFood.Domain.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("GLOBAL_MENU_CATEGORY", (string)null);
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.GroupOrder", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("BaseShippingFee")
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<Guid>("BuildingId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CampusId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CancelReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeliveryMode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("HostUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("ItemsSubtotal")
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<int>("MaxMembers")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MinMembers")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid?>("OrderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PaymentMode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid>("RestaurantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("ShipperIncome")
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<decimal>("ShippingFeeTotal")
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime?>("SubmittedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("SurchargePerMember")
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CampusId");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("HostUserId");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("RestaurantId");
+
+                    b.HasIndex("BuildingId", "Status");
+
+                    b.ToTable("GROUP_ORDER", (string)null);
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.GroupOrderItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("GroupOrderMemberId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ImageUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("ItemName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SelectedSize")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("SelectedToppings")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("decimal(12,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GroupOrderMemberId");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("GROUP_ORDER_ITEM", (string)null);
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.GroupOrderMember", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("DeliveredAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("GroupOrderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsHost")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal>("ItemsSubtotal")
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<DateTime>("JoinedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<decimal>("PaidAmount")
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("PaidByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PaymentStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
+
+                    b.Property<string>("RoomNumber")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<decimal>("ShippingShare")
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<Guid>("UserAccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserAccountId");
+
+                    b.HasIndex("GroupOrderId", "UserAccountId")
+                        .IsUnique();
+
+                    b.ToTable("GROUP_ORDER_MEMBER", (string)null);
                 });
 
             modelBuilder.Entity("ShoppingFood.Domain.Models.GuestUser", b =>
@@ -1335,6 +1772,11 @@ namespace ShoppingFood.Domain.Migrations
                     b.Property<TimeSpan>("RushHourStartTime")
                         .HasColumnType("time");
 
+                    b.Property<decimal>("SellerMaintenanceFee")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(12,2)")
+                        .HasDefaultValue(0m);
+
                     b.Property<decimal>("ShipperBaseFee")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("decimal(12,2)")
@@ -1590,13 +2032,13 @@ namespace ShoppingFood.Domain.Migrations
                     b.Property<TimeSpan?>("ClosingTime")
                         .HasColumnType("time");
 
+                    b.Property<decimal>("CodPayableAmount")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<decimal?>("CustomCommissionRate")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("CodPayableAmount")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("DeliveryType")
@@ -1617,6 +2059,9 @@ namespace ShoppingFood.Domain.Migrations
 
                     b.Property<bool>("IsVerified")
                         .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastMaintenanceFeeChargedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<double?>("Latitude")
                         .HasColumnType("float");
@@ -2483,6 +2928,17 @@ namespace ShoppingFood.Domain.Migrations
                     b.Navigation("TriggerProduct");
                 });
 
+            modelBuilder.Entity("ShoppingFood.Domain.Models.CampusBuilding", b =>
+                {
+                    b.HasOne("ShoppingFood.Domain.Models.Campus", "Campus")
+                        .WithMany("Buildings")
+                        .HasForeignKey("CampusId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Campus");
+                });
+
             modelBuilder.Entity("ShoppingFood.Domain.Models.Cart", b =>
                 {
                     b.HasOne("ShoppingFood.Domain.Models.GuestUser", "GuestUser")
@@ -2568,6 +3024,17 @@ namespace ShoppingFood.Domain.Migrations
                     b.Navigation("Support");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.CodRemittanceRequest", b =>
+                {
+                    b.HasOne("ShoppingFood.Domain.Models.ShipperProfile", "ShipperProfile")
+                        .WithMany()
+                        .HasForeignKey("ShipperProfileId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ShipperProfile");
                 });
 
             modelBuilder.Entity("ShoppingFood.Domain.Models.CustomerDiscount", b =>
@@ -2657,6 +3124,86 @@ namespace ShoppingFood.Domain.Migrations
                     b.Navigation("FlashSale");
 
                     b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.GroupOrder", b =>
+                {
+                    b.HasOne("ShoppingFood.Domain.Models.CampusBuilding", "Building")
+                        .WithMany()
+                        .HasForeignKey("BuildingId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ShoppingFood.Domain.Models.Campus", "Campus")
+                        .WithMany()
+                        .HasForeignKey("CampusId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ShoppingFood.Domain.Models.User", "HostUser")
+                        .WithMany()
+                        .HasForeignKey("HostUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ShoppingFood.Domain.Models.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("ShoppingFood.Domain.Models.RestaurantProfile", "Restaurant")
+                        .WithMany()
+                        .HasForeignKey("RestaurantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Building");
+
+                    b.Navigation("Campus");
+
+                    b.Navigation("HostUser");
+
+                    b.Navigation("Order");
+
+                    b.Navigation("Restaurant");
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.GroupOrderItem", b =>
+                {
+                    b.HasOne("ShoppingFood.Domain.Models.GroupOrderMember", "Member")
+                        .WithMany("Items")
+                        .HasForeignKey("GroupOrderMemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ShoppingFood.Domain.Models.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Member");
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.GroupOrderMember", b =>
+                {
+                    b.HasOne("ShoppingFood.Domain.Models.GroupOrder", "GroupOrder")
+                        .WithMany("Members")
+                        .HasForeignKey("GroupOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ShoppingFood.Domain.Models.User", "UserAccount")
+                        .WithMany()
+                        .HasForeignKey("UserAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("GroupOrder");
+
+                    b.Navigation("UserAccount");
                 });
 
             modelBuilder.Entity("ShoppingFood.Domain.Models.LoyaltyPoint", b =>
@@ -3112,6 +3659,11 @@ namespace ShoppingFood.Domain.Migrations
                     b.Navigation("Wallet");
                 });
 
+            modelBuilder.Entity("ShoppingFood.Domain.Models.Campus", b =>
+                {
+                    b.Navigation("Buildings");
+                });
+
             modelBuilder.Entity("ShoppingFood.Domain.Models.Cart", b =>
                 {
                     b.Navigation("Items");
@@ -3125,6 +3677,16 @@ namespace ShoppingFood.Domain.Migrations
             modelBuilder.Entity("ShoppingFood.Domain.Models.GlobalMenuCategory", b =>
                 {
                     b.Navigation("Products");
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.GroupOrder", b =>
+                {
+                    b.Navigation("Members");
+                });
+
+            modelBuilder.Entity("ShoppingFood.Domain.Models.GroupOrderMember", b =>
+                {
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("ShoppingFood.Domain.Models.MenuCategory", b =>

@@ -75,3 +75,6 @@ export { AdminSystemLogsPage } from './admin/AdminSystemLogsPage';
 export { AdminOrderComplaintsPage } from './admin/AdminOrderComplaintsPage';
 export { SellerChatPage } from './seller/SellerChatPage';
 export { SellerMallApplicationPage } from './seller/SellerMallApplicationPage';
+export { GroupOrderHubPage } from './groupOrder/GroupOrderHubPage';
+export { GroupOrderRoomPage } from './groupOrder/GroupOrderRoomPage';
+export { AdminCampusesPage } from './admin/AdminCampusesPage';

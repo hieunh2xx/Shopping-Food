@@ -269,6 +269,42 @@ namespace ShoppingFood.Domain.Enums
         General
     }
 
+    public enum CampusBuildingType
+    {
+        Dormitory,
+        Lecture,
+        Gate,
+        Landmark
+    }
+
+    /// <summary>Gate = nhận ở cổng trường, Lobby = sảnh tầng 1 của tòa, Room = giao tận phòng.</summary>
+    public enum GroupDeliveryMode
+    {
+        Gate,
+        Lobby,
+        Room
+    }
+
+    public enum GroupOrderStatus
+    {
+        Open,
+        Submitted,
+        Cancelled
+    }
+
+    public enum GroupPaymentMode
+    {
+        Individual,
+        HostPaysAll
+    }
+
+    public enum GroupMemberPaymentStatus
+    {
+        Unpaid,
+        Paid,
+        Refunded
+    }
+
     public enum ComplaintResolutionType
     {
         Warning,

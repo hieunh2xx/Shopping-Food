@@ -24,7 +24,8 @@ import {
   ShieldBan,
   Activity,
   Wallet,
-  Banknote
+  Banknote,
+  School
 } from 'lucide-react';
 import { useAuth, useSupportChatWatcher } from '../../../hooks';
 import { ROUTES } from '../../../routes/routeConfig';
@@ -56,6 +57,7 @@ export function AdminLayout() {
 
     // Vận hành
     { name: 'Lịch sử điều phối', path: ROUTES.ADMIN_DISPATCH_HISTORY, icon: History, group: 'Vận hành' },
+    { name: 'Trường & KTX (gom đơn)', path: ROUTES.ADMIN_CAMPUSES, icon: School, group: 'Vận hành' },
     { name: 'Khiếu nại đơn hàng', path: '/admin/order-complaints', icon: ShieldAlert, group: 'Vận hành' },
     { name: 'Sự cố điều phối', path: ROUTES.ADMIN_INCIDENTS, icon: ShieldAlert, group: 'Vận hành' },
     { name: 'Live Chat', path: ROUTES.ADMIN_CHAT, icon: MessageSquare, group: 'Vận hành', badge: unreadChatCount },

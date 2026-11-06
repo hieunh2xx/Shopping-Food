@@ -34,6 +34,7 @@ namespace ShoppingFood.Application
             services.AddTransient<ShoppingFood.Application.Interfaces.IEmailService, ShoppingFood.Application.Services.EmailService>();
             services.AddTransient<ShoppingFood.Application.Interfaces.IPhotoService, ShoppingFood.Application.Services.PhotoService>();
             services.AddScoped<ShoppingFood.Application.Interfaces.IPaymentSettlementService, ShoppingFood.Application.Services.PaymentSettlementService>();
+            services.AddScoped<ShoppingFood.Application.Interfaces.IGroupOrderManager, ShoppingFood.Application.Services.GroupOrderManager>();
             services.AddHttpClient<ShoppingFood.Application.Interfaces.ISepayBankAccountResolver, ShoppingFood.Application.Services.SepayBankAccountResolver>();
             services.AddHttpClient<ShoppingFood.Application.Interfaces.ISepayTransactionApiClient, ShoppingFood.Application.Services.SepayTransactionApiClient>();
             services.AddSingleton<ShoppingFood.Application.Interfaces.ISepayService, ShoppingFood.Application.Services.SepayService>();

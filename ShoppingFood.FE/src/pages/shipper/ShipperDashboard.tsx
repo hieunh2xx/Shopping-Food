@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
@@ -31,6 +31,9 @@ import { PickupCodeModal } from './components/PickupCodeModal';
 import { BatchPickupCodeModal } from './components/BatchPickupCodeModal';
 import type { BatchPickupOrderItem } from './components/BatchPickupCodeModal';
 import { Modal, Button } from '../../components/common';
+import { useGroupOrdersForOrders } from '../../components/groupOrder/useGroupOrdersForOrders';
+import { GroupOrderTag } from '../../components/groupOrder/GroupOrderTag';
+import { GroupOrderPortionsPanel } from '../../components/groupOrder/GroupOrderPortionsPanel';
 
 export function ShipperDashboard() {
   const { user } = useAuth();
@@ -81,6 +84,16 @@ export function ShipperDashboard() {
 
   // Chi tiết đơn đang xem (null = danh sách)
   const [selectedActiveOrderId, setSelectedActiveOrderId] = useState<string | null>(null);
+
+  const trackedOrderIds = useMemo(
+    () => [
+      ...availableOffers.map((o) => o.orderId),
+      ...activeDeliveries.map((d) => d.orderId),
+      ...(proposalPopupOffer ? [proposalPopupOffer.orderId] : []),
+    ],
+    [availableOffers, activeDeliveries, proposalPopupOffer]
+  );
+  const { byOrderId: groupInfo, update: updateGroupInfo } = useGroupOrdersForOrders(trackedOrderIds, 15000);
   const prevActiveCountRef = useRef(0);
 
   // Save activeDeliveries to localStorage whenever it changes
@@ -884,6 +897,10 @@ export function ShipperDashboard() {
                         </div>
                       </div>
 
+                      {groupInfo[activeDelivery.orderId] && (
+                        <GroupOrderPortionsPanel info={groupInfo[activeDelivery.orderId]} mode="shipper" onUpdated={updateGroupInfo} />
+                      )}
+
                       {/* Progress tracker */}
                       <div className="relative py-4 px-2">
                         <div className="absolute left-[20px] top-[30px] bottom-[30px] w-0.5 bg-gray-200"></div>
@@ -960,7 +977,11 @@ export function ShipperDashboard() {
                             <span>{formatCurrency(activeDelivery.totalIncome)}</span>
                           </div>
                         </div>
-                        <p><strong>Tổng tiền thu hộ (COD):</strong> <span className="font-bold text-orange-600">{formatCurrency(activeDelivery.totalAmount)}</span></p>
+                        {groupInfo[activeDelivery.orderId]?.isPrepaid ? (
+                          <p><strong>Thu tiền khách:</strong> <span className="font-bold text-emerald-600">Không — đơn gom đã thanh toán trước</span></p>
+                        ) : (
+                          <p><strong>Tổng tiền thu hộ (COD):</strong> <span className="font-bold text-orange-600">{formatCurrency(activeDelivery.totalAmount)}</span></p>
+                        )}
 
                         {activeDelivery.items && activeDelivery.items.length > 0 && (
                           <div className="bg-orange-50/70 rounded-2xl p-3 border border-orange-100/80">
@@ -1071,6 +1092,9 @@ export function ShipperDashboard() {
                         <h3 className="font-bold text-gray-900 truncate">
                           #{delivery.orderId.slice(0, 8)} — {delivery.restaurantName}
                         </h3>
+                        {groupInfo[delivery.orderId] && (
+                          <GroupOrderTag info={groupInfo[delivery.orderId]} />
+                        )}
                         <p className="text-xs text-gray-500 truncate">
                           <MapPin className="w-3 h-3 inline mr-1 text-orange-400" />
                           {delivery.step === 'picked_up' ? delivery.deliveryAddress : delivery.restaurantAddress}
@@ -1137,6 +1161,16 @@ export function ShipperDashboard() {
                       <span className="font-extrabold text-sm text-emerald-600">{formatCurrency(offer.totalIncome)}</span>
                     </div>
 
+                    {groupInfo[offer.orderId] && (
+                      <div className="space-y-1">
+                        <GroupOrderTag info={groupInfo[offer.orderId]} />
+                        <p className="text-[11px] text-violet-700">
+                          1 lượt giao cho {groupInfo[offer.orderId].portionCount} người
+                          {groupInfo[offer.orderId].deliveryMode === 'Room' ? ' — giao tận từng phòng' : ''}, đã trả trước nên không cần thu tiền.
+                        </p>
+                      </div>
+                    )}
+
                     <div className="text-xs text-gray-500 space-y-1.5 bg-white p-2.5 rounded-xl border border-gray-100">
                       <p className="truncate flex items-start gap-1">
                         <Store className="w-3.5 h-3.5 text-orange-400 shrink-0 mt-0.5" />
@@ -1147,7 +1181,7 @@ export function ShipperDashboard() {
                         <span><strong>Giao:</strong> {offer.deliveryAddress}</span>
                       </p>
                       <p className="text-gray-400">
-                        <strong>Khách:</strong> {offer.contactName} • COD: {formatCurrency(offer.totalAmount)}
+                        <strong>Khách:</strong> {offer.contactName} • {groupInfo[offer.orderId]?.isPrepaid ? 'Đã trả trước' : `COD: ${formatCurrency(offer.totalAmount)}`}
                       </p>
 
                       {/* Items list for offer proposal card */}
@@ -1254,6 +1288,7 @@ export function ShipperDashboard() {
       {proposalPopupOffer && (
         <OrderProposalPopup
           offer={proposalPopupOffer}
+          groupInfo={groupInfo[proposalPopupOffer.orderId]}
           onAccept={handleAcceptProposal}
           onReject={handleRejectProposal}
           onTimeout={handleTimeoutProposal}

@@ -295,6 +295,12 @@ namespace ShoppingFood.API.Data
             new("*", "/api/chat", new[] { UserRole.Customer, UserRole.Seller, UserRole.Mall, UserRole.Shipper, UserRole.Coordinator }),
             new("*", "/api/chat/", new[] { UserRole.Customer, UserRole.Seller, UserRole.Mall, UserRole.Shipper, UserRole.Coordinator }),
             
+            // === Campus & Group order (gom đơn nội khu) ===
+            new("GET", "/api/campus", Array.Empty<UserRole>()),
+            new("GET", "/api/grouporder", Array.Empty<UserRole>()),
+            new("*", "/api/grouporder", new[] { UserRole.Customer, UserRole.Seller, UserRole.Mall, UserRole.Shipper }),
+            new("*", "/api/grouporder/", new[] { UserRole.Customer, UserRole.Seller, UserRole.Mall, UserRole.Shipper }),
+
             // === Admin Catch-all ===
             new("*", "/api/admin/", new[] { UserRole.Admin })
         };

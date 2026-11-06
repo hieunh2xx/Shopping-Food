@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Heart, MapPin, Clock, Star, Phone, ShieldCheck, Crown, MessageCircle, Copy, Check } from 'lucide-react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { Heart, MapPin, Clock, Star, Phone, ShieldCheck, Crown, MessageCircle, Copy, Check, Users } from 'lucide-react';
 import { restaurantService } from '../services/RestaurantService';
 import { productService } from '../services/ProductService';
 import { menuCategoryService } from '../services/MenuCategoryService';
@@ -246,6 +246,13 @@ export function RestaurantDetailPage() {
                   <MessageCircle className="w-5 h-5" />
                   Nhắn tin với quán
                 </button>
+                <Link
+                  to={`${ROUTES.GROUP_ORDERS}?restaurant=${restaurant.id}`}
+                  className="flex items-center gap-2 px-5 py-3 rounded-xl font-medium transition-colors border bg-white text-orange-600 border-orange-200 hover:bg-orange-50"
+                >
+                  <Users className="w-5 h-5" />
+                  Đặt đơn nhóm
+                </Link>
                 <button
                   onClick={handleToggleFavorite}
                   disabled={isFavoriting}

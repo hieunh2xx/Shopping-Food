@@ -84,7 +84,10 @@ import {
   AdminOrderComplaintsPage,
   SellerChatPage,
   SellerMallApplicationPage,
-  CustomerMessagesPage
+  CustomerMessagesPage,
+  GroupOrderHubPage,
+  GroupOrderRoomPage,
+  AdminCampusesPage
 } from '../pages';
 
 /**
@@ -112,6 +115,8 @@ export function AppRoutes() {
         <Route path={ROUTES.FLASH_SALE_PAGE} element={<FlashSalePage />} />
         <Route path={ROUTES.BUY_X_GET_Y} element={<BuyXGetYPage />} />
         <Route path={ROUTES.CHECKOUT} element={<CheckoutPage />} />
+        <Route path={ROUTES.GROUP_ORDERS} element={<GroupOrderHubPage />} />
+        <Route path={ROUTES.GROUP_ORDER_ROOM} element={<GroupOrderRoomPage />} />
         <Route path={ROUTES.PAYMENT_SEPAY} element={<PrivateRoute><SepayRedirectPage /></PrivateRoute>} />
         <Route path={ROUTES.PAYMENT_SUCCESS} element={<PaymentSuccessPage />} />
         <Route path={ROUTES.PAYMENT_ERROR} element={<PaymentErrorPage />} />
@@ -216,6 +221,7 @@ export function AppRoutes() {
         <Route path="payments" element={<AdminPaymentDashboardPage />} />
         <Route path="profile" element={<DashboardProfilePage />} />
         <Route path="system-logs" element={<AdminSystemLogsPage />} />
+        <Route path="campuses" element={<AdminCampusesPage />} />
       </Route>
 
       {/* Coordinator routes - protected with CoordinatorLayout */}
